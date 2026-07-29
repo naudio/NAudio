@@ -81,11 +81,18 @@ public readonly ref struct AsioProcessBuffers
                     : $"Expected index in [0, {context.InputChannelCount - 1}].");
         // Fast path: when the driver's native input format is already 32-bit float, alias the driver
         // buffer directly rather than returning a copy. The returned span is callback-scoped either way,
-        // so this is a pure allocation- and copy-free win. The duplex callback correspondingly skips the
-        // eager native→float copy for this format (see AsioDevice.OnBufferUpdateDuplex).
+        // so this is a pure allocation- and copy-free win.
         if (context.InputFormat == AsioSampleType.Float32LSB)
             return new ReadOnlySpan<float>((void*)context.InputNativeBuffers[channelIndex], context.Frames);
-        return context.InputFloatBuffers[channelIndex].AsSpan(0, context.Frames);
+        // Otherwise convert native→float on first access this callback, then reuse the staged result. The duplex
+        // callback resets InputConverted at the top of every buffer-switch, so this never serves stale audio.
+        var floats = context.InputFloatBuffers[channelIndex];
+        if (!context.InputConverted[channelIndex])
+        {
+            context.InputConverter(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
+            context.InputConverted[channelIndex] = true;
+        }
+        return floats.AsSpan(0, context.Frames);
     }
 
     /// <summary>
@@ -155,6 +162,11 @@ internal sealed class AsioCallbackContext
     public int InputNativeBytesPerChannel;
     public int OutputNativeBytesPerChannel;
     public bool[] OutputRawAccessed;        // set true by AsioProcessBuffers.RawOutput for the corresponding channel
+
+    // Lazy input conversion: for non-float formats the native→float conversion runs on first GetInput/GetChannel
+    // access rather than eagerly for every channel, so channels touched only via RawInput (or never read) pay nothing.
+    public AsioNativeToFloatConverter.ConverterFn InputConverter;  // native→float for the input format; null for output-only sessions
+    public bool[] InputConverted;           // per-channel guard: conversion runs once per callback, reset each buffer-switch
 
     public bool Valid;
 }

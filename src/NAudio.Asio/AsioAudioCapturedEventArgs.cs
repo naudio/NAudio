@@ -67,11 +67,18 @@ public sealed class AsioAudioCapturedEventArgs : EventArgs
         ThrowIfInvalid();
         if ((uint)channelIndex >= (uint)context.InputChannelCount)
             throw new ArgumentOutOfRangeException(nameof(channelIndex), $"Expected index in [0, {context.InputChannelCount - 1}].");
-        // Fast path: native input already 32-bit float → alias the driver buffer, no copy. The recording
-        // callback correspondingly skips the eager native→float copy for this format (see AsioDevice.OnBufferUpdateRecording).
+        // Fast path: native input already 32-bit float → alias the driver buffer, no copy.
         if (context.InputFormat == AsioSampleType.Float32LSB)
             return new ReadOnlySpan<float>((void*)context.InputNativeBuffers[channelIndex], context.Frames);
-        return context.InputFloatBuffers[channelIndex].AsSpan(0, context.Frames);
+        // Otherwise convert native→float on first access this callback, then reuse the staged result. The recording
+        // callback resets InputConverted at the top of every buffer-switch, so this never serves stale audio.
+        var floats = context.InputFloatBuffers[channelIndex];
+        if (!context.InputConverted[channelIndex])
+        {
+            context.InputConverter(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
+            context.InputConverted[channelIndex] = true;
+        }
+        return floats.AsSpan(0, context.Frames);
     }
 
     /// <summary>

@@ -379,6 +379,8 @@ public sealed class AsioDevice : IDisposable
             InputFloatBuffers = floatBuffers,
             InputNativeBuffers = new IntPtr[inputChannels.Length],
             InputNativeBytesPerChannel = framesPerBuffer * AsioNativeToFloatConverter.BytesPerSample(nativeFormat),
+            InputConverter = inputConverter,
+            InputConverted = new bool[inputChannels.Length],
             Valid = false
         };
 
@@ -469,6 +471,9 @@ public sealed class AsioDevice : IDisposable
             // BytesPerSample throws on the default (unset) format, so only compute it when there are inputs.
             InputNativeBytesPerChannel = hasInputs ? framesPerBuffer * AsioNativeToFloatConverter.BytesPerSample(inputFormat) : 0,
             OutputNativeBytesPerChannel = framesPerBuffer * AsioNativeToFloatConverter.BytesPerSample(outputFormat),
+            // Null converter for an output-only session — never invoked, since GetInput throws with no inputs.
+            InputConverter = duplexInputConverter,
+            InputConverted = new bool[inputChannels.Length],
             OutputRawAccessed = new bool[outputChannels.Length],
             Valid = false
         };
@@ -685,14 +690,13 @@ public sealed class AsioDevice : IDisposable
             ctx.SystemTimeNanoseconds = timing.SystemTimeNanoseconds;
             ctx.Speed = timing.Speed;
             ctx.TimeCode = timing.TimeCode;
-            // When the native input format is already 32-bit float, GetChannel aliases the driver buffer
-            // directly, so the per-channel native→float copy would be dead work — skip it.
-            bool inputIsFloat = ctx.InputFormat == AsioSampleType.Float32LSB;
+            // Snapshot driver pointers and reset the per-channel lazy-conversion guards. The native→float
+            // conversion is deferred to GetChannel, so channels read only via RawInput (or not read at all)
+            // never pay for it, and Float32LSB inputs are aliased directly and never converted.
             for (int i = 0; i < ctx.InputChannelCount; i++)
             {
                 ctx.InputNativeBuffers[i] = inputBuffers[i];
-                if (!inputIsFloat)
-                    inputConverter(inputBuffers[i], ctx.InputFloatBuffers[i].AsSpan(0, ctx.Frames), ctx.Frames);
+                ctx.InputConverted[i] = false;
             }
             ctx.Valid = true;
             try
@@ -733,15 +737,13 @@ public sealed class AsioDevice : IDisposable
             ctx.Speed = timing.Speed;
             ctx.TimeCode = timing.TimeCode;
 
-            // Snapshot driver pointers and convert native input → library float buffer for each selected input channel.
-            // When the native input format is already 32-bit float, GetInput aliases the driver buffer directly, so
-            // the per-channel native→float copy would be dead work — skip it.
-            bool inputIsFloat = ctx.InputFormat == AsioSampleType.Float32LSB;
+            // Snapshot driver pointers and reset the per-channel lazy-conversion guards. The native→float
+            // conversion is deferred to GetInput, so channels read only via RawInput (or not read at all)
+            // never pay for it, and Float32LSB inputs are aliased directly and never converted.
             for (int i = 0; i < ctx.InputChannelCount; i++)
             {
                 ctx.InputNativeBuffers[i] = inputBuffers[i];
-                if (!inputIsFloat)
-                    duplexInputConverter(inputBuffers[i], ctx.InputFloatBuffers[i].AsSpan(0, ctx.Frames), ctx.Frames);
+                ctx.InputConverted[i] = false;
             }
 
             // Reset the per-callback output state: zero the float staging buffers so unwritten outputs are silent,

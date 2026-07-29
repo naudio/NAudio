@@ -72,13 +72,19 @@ public readonly ref struct AsioProcessBuffers
     /// </summary>
     /// <param name="channelIndex">Zero-based index into the selected-inputs array, not the physical channel index. Valid range: <c>0</c> to <see cref="InputChannelCount"/> - 1.</param>
     /// <returns>A span of length <see cref="Frames"/>. Valid only for the duration of the callback.</returns>
-    public ReadOnlySpan<float> GetInput(int channelIndex)
+    public unsafe ReadOnlySpan<float> GetInput(int channelIndex)
     {
         if ((uint)channelIndex >= (uint)context.InputChannelCount)
             throw new ArgumentOutOfRangeException(nameof(channelIndex),
                 context.InputChannelCount == 0
                     ? "This is an output-only session (no input channels were selected), so there is no input to read."
                     : $"Expected index in [0, {context.InputChannelCount - 1}].");
+        // Fast path: when the driver's native input format is already 32-bit float, alias the driver
+        // buffer directly rather than returning a copy. The returned span is callback-scoped either way,
+        // so this is a pure allocation- and copy-free win. The duplex callback correspondingly skips the
+        // eager native→float copy for this format (see AsioDevice.OnBufferUpdateDuplex).
+        if (context.InputFormat == AsioSampleType.Float32LSB)
+            return new ReadOnlySpan<float>((void*)context.InputNativeBuffers[channelIndex], context.Frames);
         return context.InputFloatBuffers[channelIndex].AsSpan(0, context.Frames);
     }
 

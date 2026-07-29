@@ -72,14 +72,27 @@ public readonly ref struct AsioProcessBuffers
     /// </summary>
     /// <param name="channelIndex">Zero-based index into the selected-inputs array, not the physical channel index. Valid range: <c>0</c> to <see cref="InputChannelCount"/> - 1.</param>
     /// <returns>A span of length <see cref="Frames"/>. Valid only for the duration of the callback.</returns>
-    public ReadOnlySpan<float> GetInput(int channelIndex)
+    public unsafe ReadOnlySpan<float> GetInput(int channelIndex)
     {
         if ((uint)channelIndex >= (uint)context.InputChannelCount)
             throw new ArgumentOutOfRangeException(nameof(channelIndex),
                 context.InputChannelCount == 0
                     ? "This is an output-only session (no input channels were selected), so there is no input to read."
                     : $"Expected index in [0, {context.InputChannelCount - 1}].");
-        return context.InputFloatBuffers[channelIndex].AsSpan(0, context.Frames);
+        // Fast path: when the driver's native input format is already 32-bit float, alias the driver
+        // buffer directly rather than returning a copy. The returned span is callback-scoped either way,
+        // so this is a pure allocation- and copy-free win.
+        if (context.InputFormat == AsioSampleType.Float32LSB)
+            return new ReadOnlySpan<float>((void*)context.InputNativeBuffers[channelIndex], context.Frames);
+        // Otherwise convert native→float on first access this callback, then reuse the staged result. The duplex
+        // callback resets InputConverted at the top of every buffer-switch, so this never serves stale audio.
+        var floats = context.InputFloatBuffers[channelIndex];
+        if (!context.InputConverted[channelIndex])
+        {
+            context.InputConverter(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
+            context.InputConverted[channelIndex] = true;
+        }
+        return floats.AsSpan(0, context.Frames);
     }
 
     /// <summary>
@@ -149,6 +162,11 @@ internal sealed class AsioCallbackContext
     public int InputNativeBytesPerChannel;
     public int OutputNativeBytesPerChannel;
     public bool[] OutputRawAccessed;        // set true by AsioProcessBuffers.RawOutput for the corresponding channel
+
+    // Lazy input conversion: for non-float formats the native→float conversion runs on first GetInput/GetChannel
+    // access rather than eagerly for every channel, so channels touched only via RawInput (or never read) pay nothing.
+    public AsioNativeToFloatConverter.ConverterFn InputConverter;  // native→float for the input format; null for output-only sessions
+    public bool[] InputConverted;           // per-channel guard: conversion runs once per callback, reset each buffer-switch
 
     public bool Valid;
 }

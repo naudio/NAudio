@@ -462,7 +462,7 @@ public class AudioDevice : AudioObject
     /// another process owns exclusive access, that remains unchanged. If the
     /// current process owns exclusive access, it is released and made available to
     /// all processes again. If no process has exclusive access (meaning the current
-    /// value is -1), this process gains ownership of exclusive access.
+    /// value is <see langword="true"/>), this process gains ownership of exclusive access.
     /// </summary>
     public bool HogMode
     {

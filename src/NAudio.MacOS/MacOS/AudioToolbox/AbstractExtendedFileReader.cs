@@ -1,9 +1,8 @@
 
 using System;
 using System.Numerics;
-using System.Runtime.InteropServices;
+using System.Threading;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 using NAudio.Wave;
 using NAudio.Utils;
@@ -28,6 +27,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     /// <inheritdoc />
     protected AbstractExtendedFileReader([AllowNull] ExtendedFileReaderSettings settings)
     {
+        VersioningVerifier.VerifyWeAreInSupportedVersion();
         targetFormat = null;
         this.settings = settings;
     }
@@ -135,7 +135,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
             }
         }
 
-        // Construct native sides, then assign client format.
+        // Reinterpret the target format as a macOS ASBD structure.
         AudioStreamBasicDescription asbdOut = MacUtils.ConstructASBDFromWaveFormat(targetFormat);
 
         size = (uint)sizeof(AudioStreamBasicDescription);
@@ -148,10 +148,12 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
             )
         );
 
-        // If we have a client channel layout, create it and specify it.
+        // If we have a decoded speakers value, 
+        // create a channel layout for it and specify it
+        // as the client channel layout.
         if (decodedSpeakers != Speakers.None)
         {
-            AudioChannelLayout l = MacUtils.ConstructAudioChannelLayoutFromSpeakers(decodedSpeakers);
+            var l = MacUtils.ConstructAudioChannelLayoutFromSpeakers(decodedSpeakers);
             size = (uint)sizeof(AudioChannelLayout);
             ExtendedAudioFileException.ThrowIfError(
                 NativeMethods.ExtAudioFileSetProperty(
@@ -164,31 +166,26 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
         }
     }
 
-    private unsafe Speakers ComputeFileSpeakersValue(out bool needsExtensible)
+    private Speakers ComputeFileSpeakersValue(out bool needsExtensible)
     {
         ExtendedAudioFileException.ThrowIfError(
-            NativeMethods.ExtAudioFileGetPropertyInfo(extFileHandle, ExtendedAudioFileProperties.kExtAudioFileProperty_FileChannelLayout, out var layoutSize, out _)
+            NativeMethods.ExtAudioFileGetPropertyInfo(
+                extFileHandle,
+                ExtendedAudioFileProperties.kExtAudioFileProperty_FileChannelLayout,
+                out var layoutSize,
+                out _
+            )
         );
-        void* clientLayoutBlock = NativeMemory.Alloc(layoutSize);
-        // Zeroize the newly allocated mem block.
-        Unsafe.InitBlockUnaligned(clientLayoutBlock, 0, layoutSize);
-        try
-        {
-            ExtendedAudioFileException.ThrowIfError(
-                NativeMethods.ExtAudioFileGetProperty(
-                    extFileHandle,
-                    ExtendedAudioFileProperties.kExtAudioFileProperty_FileChannelLayout,
-                    ref layoutSize,
-                    new(clientLayoutBlock)
-                )
-            );
-            var ret = MacUtils.ConstructSpeakersValue(new(clientLayoutBlock), out _, out needsExtensible);
-            return ret;
-        }
-        finally
-        {
-            NativeMemory.Free(clientLayoutBlock);
-        }
+        using var handle = ChannelLayoutHandle.Allocate(layoutSize);
+        ExtendedAudioFileException.ThrowIfError(
+            NativeMethods.ExtAudioFileGetProperty(
+                extFileHandle,
+                ExtendedAudioFileProperties.kExtAudioFileProperty_FileChannelLayout,
+                ref layoutSize,
+                handle.DangerousGetHandle()
+            )
+        );
+        return MacUtils.ConstructSpeakersValue(handle.DangerousGetHandle(), out _, out needsExtensible);
     }
 
     /// <summary>
@@ -204,7 +201,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
         }
         catch
         {
-            DisposeReader();
+            DisposeNativeData();
             throw;
         }
     }
@@ -263,11 +260,48 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     public sealed override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
 
     /// <summary>
-    /// Gets/sets the position of this extended file reader, expressed in number of samples. <br />
-    /// You can query the exact total number of samples that the opened file contains by querying
-    /// the value of the <see cref="Length"/> property.
+    /// Gets an estimated position, in bytes, of this extended file reader.
     /// </summary>
+    /// <remarks>
+    /// This is a pure estimated value based on what it will be returned 
+    /// by the resampler end of the file reader; for accurate positioning, use
+    /// the <see cref="PositionInFrames"/> property.
+    /// </remarks>
     public sealed override long Position
+    {
+        get => (long)((PositionInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
+        set
+        {
+            // We could validate the value against the Length property,
+            // but that is just an estimate, and so could falsely flag
+            // ArgumentOutOfRangeException while there are still audio data to return.
+            if (value < 0L)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "New position cannot be less than zero.");
+            }
+            else
+            {
+                PositionInFrames = (long)((value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets an estimated length, in bytes, of this extended file reader.
+    /// </summary>
+    /// <remarks>
+    /// This is a pure estimated value based on what it will be returned 
+    /// by the resampler end of the file reader; for accurate length, use
+    /// the <see cref="LengthInFrames"/> property.
+    /// </remarks>
+    public sealed override long Length => (long)((LengthInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
+
+    /// <summary>
+    /// Gets/sets the position of this extended file reader, expressed in number of samples of the file format. <br />
+    /// You can query the exact total number of samples that the opened file contains by querying
+    /// the value of the <see cref="LengthInFrames"/> property.
+    /// </summary>
+    public long PositionInFrames
     {
         get
         {
@@ -282,9 +316,9 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     }
 
     /// <summary>
-    /// Gets the length of this extended file reader, expressed in number of samples.
+    /// Gets the length of this extended file reader, expressed in number of samples of the file format.
     /// </summary>
-    public sealed override unsafe long Length
+    public unsafe long LengthInFrames
     {
         get
         {
@@ -336,7 +370,12 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
         }
     }
 
-    private void DisposeReader()
+    /// <summary>
+    /// Disposes of any native data the reader has allocated. <br />
+    /// Subclasses that override this should call this implementation
+    /// by using the <see langword="base"/> keyword.
+    /// </summary>
+    protected virtual void DisposeNativeData()
     {
         if (extFileHandle != IntPtr.Zero)
         {
@@ -348,9 +387,17 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     }
 
     /// <inheritdoc />
-    protected override void Dispose(bool disposing)
+    protected sealed override void Dispose(bool disposing)
     {
-        base.Dispose(disposing);
-        if (disposing) { DisposeReader(); }
+        Monitor.Enter(this);
+        try
+        {
+            base.Dispose(disposing);
+            if (disposing) { DisposeNativeData(); }
+        }
+        finally
+        {
+            Monitor.Exit(this);
+        }
     }
 }

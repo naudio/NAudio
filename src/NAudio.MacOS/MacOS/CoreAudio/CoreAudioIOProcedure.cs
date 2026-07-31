@@ -20,8 +20,8 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     private static readonly unsafe AudioDeviceIOProc procedureInstance = &IOProcedureNative;
 
     private bool isRunning;
+    private GCHandle delegateGcHandle;
     private readonly AudioDevice device;
-    private readonly GCHandle delegateGcHandle;
 
     // Provide a custom signature for the IO procedure handle,
     // to avoid generics usage. Sure this can be pulled off with
@@ -165,8 +165,13 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     /// <returns>A value whether the IO procedure was freed sucessfully.</returns>
     protected sealed override bool ReleaseHandle()
     {
-        bool value = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
-        if (delegateGcHandle.IsAllocated) { delegateGcHandle.Free(); }
-        return value;
+        isRunning = false;
+        bool hasNoError = NativeMethods.AudioDeviceStop(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
+        if (hasNoError)
+        {
+            hasNoError = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
+        }
+        if (hasNoError && delegateGcHandle.IsAllocated) { delegateGcHandle.Free(); }
+        return hasNoError;
     }
 }

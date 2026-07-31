@@ -13,6 +13,9 @@ namespace NAudio.MacOS.Tests.AudioHALTests;
 [Category("IntegrationTest")]
 public class CoreAudioRecorderTests
 {
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
+
     [Test]
     public void RecordFromDefaultDevice_TryWithEvent()
     {

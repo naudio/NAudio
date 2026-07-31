@@ -1,7 +1,8 @@
 
 using System;
-using NAudio.Utils;
 using System.Runtime.Versioning;
+
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio.Interop;
 
 namespace NAudio.Wave;
@@ -11,6 +12,7 @@ namespace NAudio.Wave;
 /// This is the translated counterpart of the <c>AudioStreamRangedDescription</c> structure, and as such
 /// is only existing and relevant with the macOS assembly.
 /// </summary>
+[SupportedOSPlatform("ios")]
 [SupportedOSPlatform("macos")]
 public sealed class RangedWaveFormat
 {

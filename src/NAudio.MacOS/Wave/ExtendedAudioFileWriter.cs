@@ -16,10 +16,10 @@ namespace NAudio.Wave;
 /// </summary>
 public static class ExtendedAudioFileWriter
 {
-    private sealed class FileWriterImpl : AbstractExtendedFileWriter
+    private sealed unsafe class FileWriterImpl : AbstractExtendedFileWriter
     {
-        private readonly IntPtr streamFileID;
-        private readonly GCHandle streamGcHandle;
+        private IntPtr streamFileID;
+        private GCHandle streamGcHandle;
 
         private FileWriterImpl(nint hExtFileObject, ExtendedFileWriterSettings settings) : base(hExtFileObject, settings)
         {
@@ -48,7 +48,7 @@ public static class ExtendedAudioFileWriter
             "CA2208:Instantiate argument exceptions correctly",
             Justification = "Common helper method"
         )]
-        private unsafe void AssignClientFormat(WaveFormat format)
+        private void AssignClientFormat(WaveFormat format)
         {
             if (format is null) { throw new ArgumentException("OutputFormat property in settings object was not assigned to a valid WaveFormat instance.", "settings"); }
 
@@ -77,24 +77,22 @@ public static class ExtendedAudioFileWriter
             }
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void DisposeNativeData()
         {
-            base.Dispose(disposing);
-            if (disposing)
+            base.DisposeNativeData();
+            try
             {
-                try
+                if (streamFileID != IntPtr.Zero)
                 {
-                    if (streamFileID != IntPtr.Zero)
-                    {
-                        AudioFileException.ThrowIfError(
-                            NativeMethods.AudioFileClose(streamFileID)
-                        );
-                    }
+                    AudioFileException.ThrowIfError(
+                        NativeMethods.AudioFileClose(streamFileID)
+                    );
+                    streamFileID = IntPtr.Zero;
                 }
-                finally
-                {
-                    if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
-                }
+            }
+            finally
+            {
+                if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
             }
         }
 
@@ -113,7 +111,7 @@ public static class ExtendedAudioFileWriter
                     urlNative.NativeObject,
                     ft,
                     asbd,
-                    layout,
+                    layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
                     overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
                     out var outExtAudioFile
                 )
@@ -145,7 +143,7 @@ public static class ExtendedAudioFileWriter
                     urlNative.NativeObject,
                     ft,
                     asbd,
-                    layout,
+                    layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
                     overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
                     out var outExtAudioFile
                 )
@@ -162,7 +160,7 @@ public static class ExtendedAudioFileWriter
             }
         }
 
-        public static unsafe FileWriterImpl FromStream(
+        public static FileWriterImpl FromStream(
             Stream stream,
             ExtendedFileWriterSettings settings
         )
@@ -175,16 +173,16 @@ public static class ExtendedAudioFileWriter
             try
             {
                 int status = NativeMethods.AudioFileInitializeWithCallbacks(
-                        GCHandle.ToIntPtr(handle),
-                        AudioFileCallbacks.ReadProcedure,
-                        AudioFileCallbacks.WriteProcedure,
-                        AudioFileCallbacks.GetSizeProcedure,
-                        AudioFileCallbacks.SetSizeProcedure,
-                        ft,
-                        asbd,
-                        AudioFileFlags.None,
-                        out outAudioFile
-                    );
+                    GCHandle.ToIntPtr(handle),
+                    AudioFileCallbacks.ReadProcedure,
+                    AudioFileCallbacks.WriteProcedure,
+                    AudioFileCallbacks.GetSizeProcedure,
+                    AudioFileCallbacks.SetSizeProcedure,
+                    ft,
+                    asbd,
+                    AudioFileFlags.None,
+                    out outAudioFile
+                );
                 if (status == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
                 {
                     throw ((AudioFileCallbacks.CallbacksUserData)handle.Target).Exception;
@@ -298,7 +296,7 @@ public static class ExtendedAudioFileWriter
 
     /// <summary>
     /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
-    /// class, providing the data stream path where the encoded data will be placed to.
+    /// class, providing the data stream where the encoded data will be placed to.
     /// </summary>
     /// <param name="writeableStream">The data stream where to write data to</param>
     /// <param name="settings">Settings for the writer to use.</param>
@@ -313,9 +311,17 @@ public static class ExtendedAudioFileWriter
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(writeableStream);
 
+        if (!writeableStream.CanRead)
+        {
+            throw new ArgumentException("Stream must be readable.", nameof(writeableStream));
+        }
         if (!writeableStream.CanWrite)
         {
             throw new ArgumentException("Stream must be writeable.", nameof(writeableStream));
+        }
+        else if (!writeableStream.CanSeek)
+        {
+            throw new ArgumentException("Stream must be seekable.", nameof(writeableStream));
         }
         else if (string.IsNullOrWhiteSpace(settings.FileType))
         {

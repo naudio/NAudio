@@ -15,6 +15,9 @@ public class WriterTests
 {
     private static string CreateRandomFileName() => Path.Join(Environment.CurrentDirectory, Path.GetRandomFileName());
 
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 3, 1);
+
     [Test]
     public void WriteAAC() => UseURLWriter(new() { FileType = "audio/aac" });
 
@@ -45,7 +48,7 @@ public class WriterTests
         var fs = new FileStream(
             CreateRandomFileName(),
             FileMode.Create,
-            FileAccess.Write
+            FileAccess.ReadWrite
         );
 
         try

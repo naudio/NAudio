@@ -8,6 +8,9 @@ namespace NAudio.MacOS.Tests.AudioHALTests;
 [TestFixture]
 public class CanEnumerateDevices
 {
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast();
+
     [Test]
     public void LoopThroughDevices()
     {

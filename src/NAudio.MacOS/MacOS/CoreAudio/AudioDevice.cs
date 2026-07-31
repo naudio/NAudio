@@ -1,22 +1,12 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardwareBase.h
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the file AudioHardwareBase.h of the Core Audio Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
 using NAudio.Utils;
-
 using NAudio.MacOS.CoreAudio.Interop;
-using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -306,7 +296,8 @@ public class AudioDevice : AudioObject
                 return GetUriObjectValue(
                     AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
                         AudioDeviceProperties.kAudioDevicePropertyIcon
-                ));
+                    )
+                );
             }
             catch (CoreAudioPropertyNotFoundException)
             {
@@ -352,31 +343,24 @@ public class AudioDevice : AudioObject
     /// <summary>
     /// A <see cref="Speakers"/> value that indicates how each channel of the <see cref="AudioDevice"/> should be used.
     /// </summary>
-    public Speakers GetPreferredChannelLayout(AudioObjectPropertyScope scope, out bool needs_resampling, out bool needs_extensible)
+    // mdcdi1315: The return value of this will probably become Speakers[] because the constants on the device
+    // can be in any order. Very few layouts will match bit-perfectly for Speakers flags.
+    public Speakers GetPreferredChannelLayout(AudioObjectPropertyScope scope, out bool needsResampling, out bool needsExtensible)
     {
         try
         {
-            var acl = GetPreferredChannelLayout(scope);
-            if (acl == IntPtr.Zero)
-            {
-                needs_resampling = false;
-                needs_extensible = false;
-                return Speakers.None;
-            }
-            else
-            {
-                return MacUtils.ConstructSpeakersValue(acl, out needs_resampling, out needs_extensible);
-            }
+            using var acl = GetPreferredChannelLayout(scope);
+            return MacUtils.ConstructSpeakersValue(acl.DangerousGetHandle(), out needsResampling, out needsExtensible);
         }
         catch (CoreAudioPropertyNotFoundException)
         {
-            needs_resampling = false;
-            needs_extensible = false;
+            needsResampling = false;
+            needsExtensible = false;
             return Speakers.None;
         }
     }
 
-    internal unsafe IntPtr GetPreferredChannelLayout(AudioObjectPropertyScope scope)
+    internal CoreAudioTypes.ChannelLayoutHandle GetPreferredChannelLayout(AudioObjectPropertyScope scope)
     {
         if (scope != AudioObjectPropertyScopeConstants.Input &&
             scope != AudioObjectPropertyScopeConstants.Output)
@@ -385,17 +369,29 @@ public class AudioDevice : AudioObject
         }
         else
         {
-            IntPtr ret;
-            uint size = (uint)IntPtr.Size;
-            GetPropertyValueCustom(
-                AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
-                    AudioDeviceProperties.kAudioDevicePropertyPreferredChannelLayout,
-                    scope
-                ),
-                ref size,
-                new(&ret)
+            var address = AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
+                AudioDeviceProperties.kAudioDevicePropertyPreferredChannelLayout,
+                scope
             );
-            return ret;
+            // Query the size of the layout.
+            uint size = QueryPropertySize(address);
+            // Allocate the native memory block.
+            var handle = CoreAudioTypes.ChannelLayoutHandle.Allocate(size);
+
+            try
+            {
+                // Now get the actual data.
+                GetPropertyValueCustom(address, ref size, handle.DangerousGetHandle());
+            }
+            catch
+            {
+                // On failure, make sure we release the memory block we allocated before.
+                handle.Dispose();
+                throw;
+            }
+
+            // Return the allocated special safe handle that manages the allocated native block.
+            return handle;
         }
     }
 
@@ -519,7 +515,7 @@ public class AudioDevice : AudioObject
 
     /// <summary>
     /// A <see cref="bool"/> array which details the stream usage of a given I/O procedure. 
-    /// If a stream is marked as not being used (which the value of each array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
+    /// If a stream is marked as not being used (which the value of that array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
     /// will see a corresponding NULL buffer pointer in the AudioBufferList
     /// passed to its IO proc. Note that the number of streams detailed in the
     /// <see cref="bool"/> array must include all the streams of that
@@ -565,7 +561,7 @@ public class AudioDevice : AudioObject
 
     /// <summary>
     /// Set a <see cref="bool"/> array which details the stream usage of a given I/O procedure. 
-    /// If a stream is marked as not being used (which the value of each array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
+    /// If a stream is marked as not being used (which the value of that array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
     /// will see a corresponding NULL buffer pointer in the AudioBufferList
     /// passed to its IO proc. Note that the number of streams detailed in the
     /// <see cref="bool"/> array must include all the streams of that

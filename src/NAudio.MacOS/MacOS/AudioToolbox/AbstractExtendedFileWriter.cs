@@ -1,6 +1,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
@@ -23,6 +24,7 @@ public abstract class AbstractExtendedFileWriter : Stream
 
     private protected AbstractExtendedFileWriter(IntPtr hExtFileObject, ExtendedFileWriterSettings settings)
     {
+        VersioningVerifier.VerifyWeAreInSupportedVersion();
         length = 0L;
         this.settings = settings;
         extFileObject = hExtFileObject;
@@ -152,9 +154,17 @@ public abstract class AbstractExtendedFileWriter : Stream
             fileAsbd.mFramesPerPacket = (uint)settings.FramesPerPacket;
         }
 
-        layout = providingFormat is WaveFormatExtensible ext && ext.ChannelMask != 0
-            ? MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask)
-            : default;
+        layout = default;
+
+        if (providingFormat is WaveFormatExtensible ext)
+        {
+            var cm = ext.ChannelMask;
+            if (cm != 0)
+            {
+                layout = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
+            }
+        }
+
         return fileAsbd;
     }
 
@@ -234,16 +244,34 @@ public abstract class AbstractExtendedFileWriter : Stream
         throw new NotSupportedException("Can't set the length on extended file writer instances");
     }
 
-    /// <inheritdoc />
-    protected override void Dispose(bool disposing)
+    /// <summary>
+    /// Disposes of any native data the writer has allocated. <br />
+    /// Subclasses that override this should call this implementation
+    /// by using the <see langword="base"/> keyword.
+    /// </summary>
+    protected virtual void DisposeNativeData()
     {
-        base.Dispose(disposing);
-        if (disposing && extFileObject != IntPtr.Zero)
+        if (extFileObject != IntPtr.Zero)
         {
             ExtendedAudioFileException.ThrowIfError(
                 NativeMethods.ExtAudioFileDispose(extFileObject)
             );
             extFileObject = IntPtr.Zero;
+        }
+    }
+
+    /// <inheritdoc />
+    protected sealed override void Dispose(bool disposing)
+    {
+        Monitor.Enter(this);
+        try
+        {
+            base.Dispose(disposing);
+            if (disposing) { DisposeNativeData(); }
+        }
+        finally
+        {
+            Monitor.Exit(this);
         }
     }
 }

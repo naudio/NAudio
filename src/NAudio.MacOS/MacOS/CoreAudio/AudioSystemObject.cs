@@ -34,6 +34,7 @@ public sealed class AudioSystemObject : AudioObject
     private AudioSystemObject(AudioObjectID id)
         : base(id)
     {
+        VersioningVerifier.VerifyWeAreInSupportedVersion();
         devicesListChanged = null;
         defaultInputDeviceChanged = null;
         defaultOutputDeviceChanged = null;

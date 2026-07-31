@@ -47,6 +47,9 @@ public class ReaderTests
         }
     }
 
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 3, 1);
+
     [Test]
     public void CanReadARandomFile_DefaultSettings() => CreateFilePathReader();
 
@@ -72,8 +75,9 @@ public class ReaderTests
     {
         var settings = reader.Settings;
 
-        System.Console.WriteLine("Total # of samples: {0}", reader.Length);
         System.Console.WriteLine("Total time: {0}", reader.TotalTime);
+        System.Console.WriteLine("Total # of avg.bytes: {0}", reader.Length);
+        System.Console.WriteLine("Total # of samples: {0}", reader.LengthInFrames);
 
         WaveFormat outF = null;
         Assert.DoesNotThrow(() => outF = reader.WaveFormat);
@@ -113,7 +117,7 @@ public class ReaderTests
         System.Console.WriteLine("Read bytes: {0}", readBytes);
 
         // We can have a file with zero samples, so check that first.
-        if (reader.Length > 0L)
+        if (reader.LengthInFrames > 0L)
         {
             Assert.Greater(readBytes, 0L);
         }

@@ -49,6 +49,12 @@ internal static unsafe class AudioFileCallbacks
         uint* actualCount
     )
     {
+        *actualCount = 0U;
+        // Note: We want this to throw an unhandled exception;
+        // because this is not accessed through any public API
+        // and if this crashes, it would suggest to us that
+        // we are doing something really wrong.
+        // So, it is actually correct to terminate the process immediately.
         CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
 
         /*
@@ -108,11 +114,12 @@ internal static unsafe class AudioFileCallbacks
         uint* actualCount
     )
     {
+        *actualCount = 0U;
         CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
 
         try
         {
-            if (inPosition > ud.Stream.Length || inPosition < 0L)
+            if (inPosition < 0L)
             {
                 return AudioFileErrors.kAudioFilePositionError;
             }
@@ -162,19 +169,8 @@ internal static unsafe class AudioFileCallbacks
         }
         catch (Exception ex)
         {
-            if (ex is ObjectDisposedException)
-            {
-                return AudioFileErrors.kAudioFileNotOpenError;
-            }
-            else if (ex is NotSupportedException)
-            {
-                return AudioFileErrors.kAudioFileOperationNotSupportedError;
-            }
-            else
-            {
-                ud.AssignException(ex);
-                return CallbacksUserData.CustomErrorConst;
-            }
+            ud.AssignException(ex);
+            return 0;
         }
     }
 

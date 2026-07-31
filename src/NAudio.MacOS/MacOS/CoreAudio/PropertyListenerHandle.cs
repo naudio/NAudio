@@ -1,6 +1,8 @@
 
 using System;
 using System.Threading;
+using System.Diagnostics;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
@@ -15,44 +17,58 @@ namespace NAudio.MacOS.CoreAudio;
 /// </summary>
 public sealed unsafe class PropertyListenerHandle : IDisposable
 {
+    // mdcdi1315: Instead of using a GC handle, use a concurrent dictionary
+    // that manages the unmanaged->managed translations that also handles
+    // the registrations in a thread-safe manner, which we first add the mapping
+    // and then the doing the native call to define the handler.
+    // By defining the handler as a managed object as the type of the value
+    // in the mappings dictionary, we avoid completely using the GC handle API
+    // and instead the client data parameter recieves the allocated handler ID
+    // that is used in the below dictionary object to get the handler.
+    // We can in fact do this because even on 32-bit platforms an IntPtr is an int value,
+    // so it will safely work in terms of storage. In terms of memory management,
+    // the HAL thinks that the passed in client data is an arbitrary pointer that it
+    // does not have authority upon, so we are ok passing an arbitrary int value to it.
+    private static int nextID = 0;
+    private static readonly ConcurrentDictionary<int, Action<Span<AudioObjectPropertyAddress>>> handlerMappings = new();
+
+    private int handlerId;
+    private bool disposed;
     private readonly AudioObject audioObject;
-    private readonly GCHandle delegateGcHandle;
     private readonly AudioObjectPropertyAddress address;
     private readonly AudioObjectPropertyListenerProc listener;
 
     internal PropertyListenerHandle(AudioObject obj, AudioObjectPropertyAddress address)
     {
-        // The below handle retains a reference to the FireEventNative 
-        // method that is invoked from the native side to achieve the native -> managed translation.
-        // This method handle only retains the method itself, and the 'this' reference, required
-        // to actually invoke the event.
-        // This method also must accept a span of the addresses that this listener listens to.
-        // This happens because each HAL listener may be registered to handful of properties,
-        // even if the user wanted for actually one of them, so we verify the event dispatch 
-        // on the FireEventNative method.
-        delegateGcHandle = GCHandle.Alloc(new Action<Span<AudioObjectPropertyAddress>>(FireEventNative), GCHandleType.Normal);
+        handlerId = 0;
+        disposed = false;
         audioObject = obj;
         this.address = address;
+        // The reason why we need a new listener address for this is
+        // because this is a property listener and if it was a single
+        // shared pointer, it would unregister all the other property
+        // listeners on the same AudioObjectPropertyAddress.
         listener = &EventHandlerNativeMethodDecl;
-        try
-        {
-            AddNotificationHandler();
-        }
-        catch
-        {
-            // If an exception occurrs during notification handler registration, we must dispose the allocated GC handle,
-            // otherwise it will be leaked.
-            delegateGcHandle.Free();
-            throw;
-        }
         Event = new(DummyEventHandler);
+        AddNotificationHandler();
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static int EventHandlerNativeMethodDecl(AudioObjectID id, uint nAddresses, IntPtr addresses, IntPtr clientData)
     {
-        ((Action<Span<AudioObjectPropertyAddress>>)GCHandle.FromIntPtr(clientData).Target)
-            .Invoke(new(addresses.ToPointer(), checked((int)nAddresses)));
+        if (handlerMappings.TryGetValue(clientData.ToInt32(), out var action))
+        {
+            try
+            {
+                action.Invoke(new(addresses.ToPointer(), checked((int)nAddresses)));
+            }
+            catch (Exception ex)
+            {
+                // We cannot do anything if the event has code that throws, 
+                // the only thing that we will do is to report this on debug so that we (and the users using the debug assembly) know it.
+                Debug.WriteLine("[PropertyListenerHandle] Event invocation threw an exception: " + ex);
+            }
+        }
         return 0;
     }
 
@@ -82,26 +98,35 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
 
     private void AddNotificationHandler()
     {
+        int currentId = Interlocked.Add(ref nextID, 1);
+        if (!handlerMappings.TryAdd(currentId, new(FireEventNative)))
+        {
+            throw new InvalidOperationException(
+                $"Attempted to add a handler for which the ID {currentId} is already occupied!"
+            );
+        }
         AudioObject.ThrowOnStatusError(
             address,
             NativeMethods.AudioObjectAddPropertyListener(
                 audioObject.objectId,
                 address,
                 listener,
-                GCHandle.ToIntPtr(delegateGcHandle)
+                handlerId = currentId
             )
         );
     }
 
     private void RemoveNotificationHandler()
     {
+        // First try to remove the mapping, then the listener registration itself.
+        _ = handlerMappings.TryRemove(handlerId, out _);
         AudioObject.ThrowOnStatusError(
             address,
             NativeMethods.AudioObjectRemovePropertyListener(
                 audioObject.objectId,
                 address,
                 listener,
-                GCHandle.ToIntPtr(delegateGcHandle)
+                handlerId
             )
         );
     }
@@ -120,22 +145,22 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
     /// Frees this <see cref="PropertyListenerHandle"/> instance. <br />
     /// Thread-safe.
     /// </summary>
+    /// <remarks>
+    /// Note that instances of this class retain a shared ID
+    /// of the listener that needs to be disposed of. <br />
+    /// If you lose access to the instance, that means that
+    /// you leak that registration along with the native
+    /// property listener registration.
+    /// </remarks>
     public void Dispose()
     {
         Monitor.Enter(this);
         try
         {
-            if (delegateGcHandle.IsAllocated)
+            if (!disposed)
             {
-                try
-                {
-                    RemoveNotificationHandler();
-                }
-                finally
-                {
-                    // In either failure or success, the GC handle must be disposed of.
-                    delegateGcHandle.Free();
-                }
+                RemoveNotificationHandler();
+                disposed = true;
             }
         }
         finally

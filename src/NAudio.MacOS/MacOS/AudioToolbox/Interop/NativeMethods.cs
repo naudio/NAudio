@@ -349,7 +349,7 @@ internal static partial class NativeMethods
         IntPtr inURL,
         AudioFileTypeID inFileType,
         in AudioStreamBasicDescription inStreamDesc,
-        in AudioChannelLayout inChannelLayout,
+        /* AudioChannelLayout* */ IntPtr inChannelLayout,
         AudioFileFlags flags,
         out IntPtr outExtAudioFile
     );
@@ -642,10 +642,10 @@ internal static partial class NativeMethods
     [LibraryImport(MacLibraries.AudioToolbox)]
     public static unsafe partial int AudioFileOpenWithCallbacks(
         IntPtr inClientData,
-        AudioFile_ReadProc inReadFunc,
-        AudioFile_WriteProc inWriteFunc,
-        AudioFile_GetSizeProc inGetSizeFunc,
-        AudioFile_SetSizeProc inSetSizeFunc,
+        [DisallowNull] AudioFile_ReadProc inReadFunc,
+        [AllowNull] AudioFile_WriteProc inWriteFunc,
+        [DisallowNull] AudioFile_GetSizeProc inGetSizeFunc,
+        [AllowNull] AudioFile_SetSizeProc inSetSizeFunc,
         AudioFileTypeID inFileTypeHint,
         out IntPtr outAudioFile
     );

@@ -22,8 +22,8 @@ namespace NAudio.Wave;
 [SupportedOSPlatform("macos10.3.1")]
 public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileReader
 {
+    private GCHandle streamGcHandle;
     private IntPtr handleToAudioFile;
-    private readonly GCHandle streamGcHandle;
 
     /// <summary>
     /// Provides additional settings pertaining only 
@@ -110,12 +110,15 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
         {
             foreach (var id in ids)
             {
+                // Open the file always in read-only mode
+                // to avoid modifying the caller's stream
+                // in unexpected ways.
                 osStatus = NativeMethods.AudioFileOpenWithCallbacks(
                     GCHandle.ToIntPtr(streamGcHandle),
                     AudioFileCallbacks.ReadProcedure,
-                    AudioFileCallbacks.WriteProcedure,
+                    null,
                     AudioFileCallbacks.GetSizeProcedure,
-                    AudioFileCallbacks.SetSizeProcedure,
+                    null,
                     id,
                     out handleToAudioFile
                 );
@@ -160,14 +163,6 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
         {
             if (handleToAudioFile != IntPtr.Zero)
             {
-                // mdcdi1315: TODO: Verify whether the extended audio file closes this for us.
-                // This currently causes a dispose exception to be thrown.
-                //
-                // Specifically, it returns kAudioFileOperationNotSupportedError,
-                // which means that the close operation cannot be performed.
-                // How is that possible since we freed the extended file object?
-                //
-                // I have verified all the possible code paths, I cannot find what is going on.
                 AudioFileException.ThrowIfError(
                     NativeMethods.AudioFileClose(handleToAudioFile)
                 );
@@ -184,9 +179,9 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
     }
 
     /// <inheritdoc />
-    protected override void Dispose(bool disposing)
+    protected override void DisposeNativeData()
     {
-        base.Dispose(disposing);
-        if (disposing) { DisposeAudioFileAndGCHandle(); }
+        base.DisposeNativeData();
+        DisposeAudioFileAndGCHandle();
     }
 }

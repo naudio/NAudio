@@ -87,7 +87,7 @@ located in the root folder of the framework folder. So we use that.
 
 So, for Core Foundation framework the path is this: `/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation`.
 
-### Calling conventions and other things
+### About function calling conventions
 
 We assume that the calling convention of all the functions, as well as for the function pointers
 that is C. However, it is to be noted down that Apple does not explicitly mark their exports

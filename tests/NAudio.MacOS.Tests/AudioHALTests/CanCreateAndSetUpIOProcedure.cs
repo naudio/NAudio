@@ -21,6 +21,9 @@ public class CanCreateAndSetUpIOProcedure
         }
     }
 
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
+
     [Test]
     public void CanCreateInputIOProcedure()
     {
@@ -37,10 +40,10 @@ public class CanCreateAndSetUpIOProcedure
         {
             enabledStreams[I] = I == 0;
         }
-        dev.SetStreamUsage(p, AudioObjectPropertyScopeConstants.Input, enabledStreams);
-        p.Start();
-        p.Stop();
-        p.Dispose();
+        Assert.DoesNotThrow(() => dev.SetStreamUsage(p, AudioObjectPropertyScopeConstants.Input, enabledStreams));
+        Assert.DoesNotThrow(p.Start);
+        Assert.DoesNotThrow(p.Stop);
+        Assert.DoesNotThrow(p.Dispose);
     }
 
     [Test]
@@ -59,9 +62,9 @@ public class CanCreateAndSetUpIOProcedure
         {
             enabledStreams[I] = I == 0;
         }
-        dev.SetStreamUsage(p, AudioObjectPropertyScopeConstants.Output, enabledStreams);
-        p.Start();
-        p.Stop();
-        p.Dispose();
+        Assert.DoesNotThrow(() => dev.SetStreamUsage(p, AudioObjectPropertyScopeConstants.Output, enabledStreams));
+        Assert.DoesNotThrow(p.Start);
+        Assert.DoesNotThrow(p.Stop);
+        Assert.DoesNotThrow(p.Dispose);
     }
 }

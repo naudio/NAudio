@@ -20,6 +20,7 @@ public class MacException : ExternalException
 {
     private static string RetrieveDescriptionIfPossible(int osStatus)
     {
+        VersioningVerifier.VerifyWeAreInSupportedVersion();
         using var error = CFError.Create(new(osStatus), CFError.OSStatusDomain);
         string desc = error.Description;
         return string.IsNullOrWhiteSpace(desc) ? "An error was occurred." : desc;

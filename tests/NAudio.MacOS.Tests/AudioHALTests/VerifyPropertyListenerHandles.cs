@@ -10,6 +10,9 @@ namespace NAudio.MacOS.Tests.AudioHALTests;
 [TestFixture]
 public class VerifyPropertyListenerHandles
 {
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast();
+
     [Test]
     public void CanCreateDeviceControlListChanged()
     {

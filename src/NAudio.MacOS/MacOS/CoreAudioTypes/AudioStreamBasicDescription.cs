@@ -1,11 +1,5 @@
-/*!
-	@file		CoreAudioBaseTypes.h
-	@framework	CoreAudioTypes.framework
-	@copyright	(c) 1985-2021 by Apple, Inc., all rights reserved.
-    @abstract   Definition of types common to the Core Audio APIs.
-*/
-
-
+// This interop definition was derived from the file CoreAudioBaseTypes.h of the Core Audio Types Framework.
+// See https://developer.apple.com/documentation/coreaudiotypes for more information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -80,10 +74,10 @@ internal struct AudioStreamBasicDescription
     /// <returns>The test outcome.</returns>
     public static bool IsAudioFormatNativeEndian(AudioStreamBasicDescription f)
     {
-        bool native_endian = BitConverter.IsLittleEndian ?
+        bool nativeEndian = BitConverter.IsLittleEndian ?
             (f.mFormatFlags & AudioFormatFlags.kAudioFormatFlagIsBigEndian) == 0 :
             (f.mFormatFlags & AudioFormatFlags.kAudioFormatFlagIsBigEndian) != 0;
-        return native_endian && (f.mFormatID == AudioFormatIDs.kAudioFormatLinearPCM);
+        return nativeEndian && (f.mFormatID == AudioFormatIDs.kAudioFormatLinearPCM);
     }
 
     /// <summary>

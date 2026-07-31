@@ -31,9 +31,14 @@ internal sealed class CoreAudioOutOnlyIOProc : CoreAudioIOProcedure
     {
         if (shouldStopInNextCall)
         {
-            // This allows us to stop the playback, once the provided audio provider has been entirely consumed
-            Stop();
-            InvokeStoppedEvent();
+            // Attempt to stop playback.
+            try
+            {
+                // This allows us to stop the playback, once the provided audio provider has been entirely consumed
+                Stop();
+                InvokeStoppedEvent();
+            }
+            catch { }
             return;
         }
         int readBytes = 0;
@@ -73,6 +78,7 @@ internal sealed class CoreAudioOutOnlyIOProc : CoreAudioIOProcedure
                     // Process whatever we can process, then fire the stop event.
                     shouldStopInNextCall = true;
                     exception = ex;
+                    return;
                 }
                 if (readBytes == 0)
                 {

@@ -11,6 +11,9 @@ public class AudioStreamPropertyTests
 {
     private AudioStream testStream;
 
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast();
+
     [SetUp]
     public void FindStream()
     {

@@ -15,6 +15,9 @@ namespace NAudio.MacOS.Tests.AudioHALTests;
 [Category("IntegrationTest")]
 public class CoreAudioPlayerTests
 {
+    [OneTimeSetUp]
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
+
     [TestCase(44100, 2, false)]
     [TestCase(48000, 2, false)]
     [TestCase(48000, 1, false)]
@@ -26,6 +29,7 @@ public class CoreAudioPlayerTests
         var sg = new SignalGenerator(sampleRate, channels);
         sg.Frequency = 100;
         sg.Type = SignalGeneratorType.White;
+        sg.Gain = 0.7;
 
         IWaveProvider provider = useIeeeFloat ? sg.Take(TimeSpan.FromSeconds(10)).ToWaveProvider() : sg.Take(TimeSpan.FromSeconds(10)).ToWaveProvider16();
 

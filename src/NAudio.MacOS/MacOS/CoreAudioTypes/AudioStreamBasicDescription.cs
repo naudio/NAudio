@@ -130,4 +130,26 @@ internal struct AudioStreamBasicDescription
         asbd.mBitsPerChannel = inValidBitsPerChannel;
         return asbd;
     }
+
+    /// <summary>
+    /// Gets the size of an audio buffer equivalent to the latency in milliseconds.
+    /// </summary>
+    /// <param name="milliseconds">The milliseconds.</param>
+    /// <returns></returns>
+    public uint ConvertLatencyToByteSize(int milliseconds)
+    {
+        uint blkAlign = mBytesPerFrame;
+        if (mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved))
+        {
+            blkAlign *= mChannelsPerFrame;
+        }
+        uint bytes = (uint)(((mSampleRate * blkAlign) / 1000.0d) * milliseconds);
+        uint remBytes = bytes % blkAlign;
+        if (remBytes != 0)
+        {
+            // Return the upper BlockAligned
+            bytes = bytes + blkAlign - remBytes;
+        }
+        return bytes;
+    }
 }

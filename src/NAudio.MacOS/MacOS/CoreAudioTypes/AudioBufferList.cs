@@ -1,3 +1,5 @@
+// This interop definition was derived from the file CoreAudioBaseTypes.h of the Core Audio Types Framework.
+// See https://developer.apple.com/documentation/coreaudiotypes for more information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -9,16 +11,16 @@ namespace NAudio.MacOS.CoreAudioTypes;
 /// A variable length array of AudioBuffer structures.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal readonly struct AudioBufferList
+internal struct AudioBufferList
 {
     /// <summary>
     /// The number of <see cref="AudioBuffer"/>s in the mBuffers array.
     /// </summary>
-    public readonly UInt32 mNumberBuffers;
+    public UInt32 mNumberBuffers;
     /// <summary>
     /// A variable length array of AudioBuffers.
     /// </summary>
-    public readonly AudioBuffer mBuffers; // this is a variable length array of mNumberBuffers elements
+    public AudioBuffer mBuffers; // this is a variable length array of mNumberBuffers elements
 
     public AudioBufferList(AudioBuffer buffer)
     {
@@ -34,6 +36,14 @@ internal readonly struct AudioBufferList
         => ptr == IntPtr.Zero ? 0U : ((AudioBufferList*)ptr)->mNumberBuffers;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void SetNumberOfBuffersFromPointer(IntPtr ptr, uint nBuffers)
+        => ((AudioBufferList*)ptr)->mNumberBuffers = nBuffers;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe AudioBuffer GetAudioBufferFromPointer(IntPtr ptr, uint index)
         => (&((AudioBufferList*)ptr)->mBuffers)[index];
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void SetAudioBufferFromPointer(IntPtr ptr, uint index, AudioBuffer buffer)
+        => (&((AudioBufferList*)ptr)->mBuffers)[index] = buffer;
 }

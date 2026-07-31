@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <!--
-        Tests for the macOS wrappers - they need macOS 26 (Tahoe) to run,
+        Tests for the macOS wrappers - they should be run against 
+        the latest macOS (as the time of writing this, 26 (Tahoe)),
         although that they should run even back to 10.5, but we do not
         have such device to test the API's in such old macOS version.
         Also, specifying macOS 26 in the TFM needs XCode installed, which we do not
@@ -11,6 +12,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <EnableNUnitRunner>true</EnableNUnitRunner>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>

@@ -350,7 +350,7 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     /// </summary>
     /// <param name="cancellationToken">The token that can be used to manually stop recording (Although it is also possible by calling the <see cref="StopRecording"/> method).</param>
     /// <returns>An enumerable instance returning capture buffers in an asynchronous manner.</returns>
-    public async IAsyncEnumerable<CaptureBuffer> CaptureAsync(
+    public async IAsyncEnumerable<CoreAudioCaptureBuffer> CaptureAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
@@ -372,7 +372,7 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
             ioProcedure.Event += queue.EnqueueFromHandler;
             ioProcedure.Start();
             state = CaptureState.Capturing;
-            CaptureBuffer buffer;
+            CoreAudioCaptureBuffer buffer;
             // Note that the below loop may be also stopped by using the IsRunning property.
             // This might happen for a couple of reasons:
             // 1. An exception occurred on the I/O thread (although practically impossible because we just enqueue to a queue)
@@ -418,7 +418,7 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     /// <summary>
     /// Provides an event that is fired when new capture data are retrieved from the HAL.
     /// </summary>
-    public event CaptureDataAvailableHandler DataAvailable;
+    public event CoreAudioCaptureDataAvailableHandler DataAvailable;
 
     /// <summary>
     /// Provides an event that is fired when the recorder's capture format has been changed.

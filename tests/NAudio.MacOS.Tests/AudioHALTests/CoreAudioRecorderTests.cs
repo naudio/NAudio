@@ -74,7 +74,7 @@ public class CoreAudioRecorderTests
         };
 
         // Attempt to capture 15 buffers.
-        await foreach (CaptureBuffer buffer in recorder.CaptureAsync())
+        await foreach (CoreAudioCaptureBuffer buffer in recorder.CaptureAsync())
         {
             recordedBytes += buffer.Buffer.Length;
             if (I == 15) { break; }

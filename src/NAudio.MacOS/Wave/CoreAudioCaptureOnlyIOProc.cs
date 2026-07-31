@@ -81,7 +81,7 @@ internal sealed class CoreAudioCaptureOnlyIOProc : CoreAudioIOProcedure
         set => virtualFormat = value;
     }
 
-    public event CaptureDataAvailableHandler Event;
+    public event CoreAudioCaptureDataAvailableHandler Event;
 
     public event EventHandler<StoppedEventArgs> RecordingStopped;
 }

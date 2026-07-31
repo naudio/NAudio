@@ -1,42 +1,118 @@
-﻿<UserControl x:Class="NAudioWpfDemo.EqualizationDemo.EqualizationDemoView"
+<UserControl x:Class="NAudioWpfDemo.EqualizationDemo.EqualizationDemoView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:NAudioWpfDemo"
-             mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300">
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="600">
+    <UserControl.Resources>
+        <!-- The gain readout above each slider and the frequency caption below it. Both are
+             fixed-height so every column's slider spans exactly the same vertical range as the
+             dB scale printed down the left-hand side. -->
+        <Style x:Key="BandCaption" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#555" />
+        </Style>
+        <Style x:Key="ScaleCaption" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#555" />
+            <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="2*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
-        <StackPanel Orientation="Horizontal" Grid.Row="1">
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band1, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band2, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band3, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band4, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band5, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band6, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band7, Mode=TwoWay}"></Slider>
-            <Slider Orientation="Vertical" Margin="8" Minimum="{Binding MinimumGain}" Maximum="{Binding MaximumGain}" Value="{Binding Band8, Mode=TwoWay}"></Slider>
-        </StackPanel>
-        
-        <StackPanel Orientation="Horizontal" Grid.Row="2">
-            <Button Command="{Binding OpenFileCommand}" Margin="2" Padding="4" ToolTip="Open">
-                Open
-            </Button>
-            <Button Command="{Binding StopCommand}" Margin="2" ToolTip="Stop">
-                <Rectangle Fill="#404040" Width="15" Height="15" Margin="3" RadiusX="2" RadiusY="2"/>
-            </Button>
-            <Button Command="{Binding PauseCommand}" Margin="2" ToolTip="Pause">
-                <Path Fill="#404040" Width="15" Height="15" Margin="3" Data="M 0,0 h 1 v 1 h -1 Z M 2,0 h 1 v 1 h -1 Z" Stretch="Fill" StrokeLineJoin="Round"/>
-            </Button>
-            <Button Command="{Binding PlayCommand}" Margin="2" ToolTip="Play">
-                <Path Fill="#404040" Margin="3" Width="15" Height="15" Data="M 0,0 L 1,1 L 0,2 Z" Stretch="Fill" StrokeLineJoin="Round"/>
-            </Button>
-        </StackPanel>
+
+        <TextBlock Grid.Row="0" Margin="8,8,8,0" TextWrapping="Wrap" Foreground="#555"
+                   Text="Eight-band graphic EQ. Each slider boosts or cuts around its centre frequency." />
+
+        <Grid Grid.Row="1" Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Gain axis. The blank captions top and bottom mirror the ones in the band template
+                 so "+30 dB" lines up with the top of the sliders and "-30 dB" with the bottom. -->
+            <DockPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource BandCaption}" Text="" />
+                <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource BandCaption}" Text="" />
+                <Grid>
+                    <TextBlock VerticalAlignment="Top" Style="{StaticResource ScaleCaption}"
+                               Text="{Binding MaximumGainText}" />
+                    <TextBlock VerticalAlignment="Center" Style="{StaticResource ScaleCaption}" Text="0 dB" />
+                    <TextBlock VerticalAlignment="Bottom" Style="{StaticResource ScaleCaption}"
+                               Text="{Binding MinimumGainText}" />
+                </Grid>
+            </DockPanel>
+
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Bands}" HorizontalAlignment="Left">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="6,0" Width="52">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource BandCaption}"
+                                       Text="{Binding GainText}" ToolTip="Gain in dB" />
+                            <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource BandCaption}"
+                                       Text="{Binding FrequencyText}" ToolTip="Centre frequency" />
+                            <Slider Orientation="Vertical" HorizontalAlignment="Center"
+                                    IsMoveToPointEnabled="True"
+                                    Minimum="{Binding DataContext.MinimumGain, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    Maximum="{Binding DataContext.MaximumGain, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    Value="{Binding Gain, Mode=TwoWay}" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="8,4,8,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MinWidth="80" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button Command="{Binding OpenFileCommand}" Margin="2" Padding="4" ToolTip="Open">
+                    Open
+                </Button>
+                <Button Command="{Binding StopCommand}" Margin="2" ToolTip="Stop">
+                    <Rectangle Fill="#404040" Width="15" Height="15" Margin="3" RadiusX="2" RadiusY="2"/>
+                </Button>
+                <Button Command="{Binding PauseCommand}" Margin="2" ToolTip="Pause">
+                    <Path Fill="#404040" Width="15" Height="15" Margin="3" Data="M 0,0 h 1 v 1 h -1 Z M 2,0 h 1 v 1 h -1 Z" Stretch="Fill" StrokeLineJoin="Round"/>
+                </Button>
+                <Button Command="{Binding PlayCommand}" Margin="2" ToolTip="Play">
+                    <Path Fill="#404040" Margin="3" Width="15" Height="15" Data="M 0,0 L 1,1 L 0,2 Z" Stretch="Fill" StrokeLineJoin="Round"/>
+                </Button>
+            </StackPanel>
+
+            <Slider Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center"
+                    Minimum="0" Maximum="{Binding DurationSeconds}" Value="{Binding PositionSeconds}"
+                    IsMoveToPointEnabled="True" ToolTip="Playback position — drag or click to seek" />
+            <TextBlock Grid.Column="2" Margin="0,0,8,0" VerticalAlignment="Center" MinWidth="76"
+                       TextAlignment="Right" Text="{Binding PositionText}" ToolTip="Position / duration" />
+
+            <StackPanel Grid.Column="3" Orientation="Horizontal">
+                <TextBlock Text="Volume:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                <Slider Width="90" VerticalAlignment="Center" IsMoveToPointEnabled="True"
+                        Minimum="{Binding MinimumVolumeDb}" Maximum="0" Value="{Binding VolumeDb}"
+                        ToolTip="Output volume — applied after the equaliser" />
+                <TextBlock VerticalAlignment="Center" Margin="4,0,0,0" MinWidth="52"
+                           TextAlignment="Right" Text="{Binding VolumeText}" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

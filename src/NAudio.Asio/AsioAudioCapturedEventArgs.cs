@@ -1,4 +1,5 @@
 ﻿using System;
+using NAudio.Wave.Asio;
 
 namespace NAudio.Wave;
 
@@ -61,12 +62,23 @@ public sealed class AsioAudioCapturedEventArgs : EventArgs
     /// </summary>
     /// <param name="channelIndex">Zero-based index into the selected-inputs array, not the physical channel index. Valid range: <c>0</c> to <see cref="ChannelCount"/> - 1.</param>
     /// <returns>A span of length <see cref="Frames"/>. Valid only for the duration of the event handler.</returns>
-    public ReadOnlySpan<float> GetChannel(int channelIndex)
+    public unsafe ReadOnlySpan<float> GetChannel(int channelIndex)
     {
         ThrowIfInvalid();
         if ((uint)channelIndex >= (uint)context.InputChannelCount)
             throw new ArgumentOutOfRangeException(nameof(channelIndex), $"Expected index in [0, {context.InputChannelCount - 1}].");
-        return context.InputFloatBuffers[channelIndex].AsSpan(0, context.Frames);
+        // Fast path: native input already 32-bit float → alias the driver buffer, no copy.
+        if (context.InputFormat == AsioSampleType.Float32LSB)
+            return new ReadOnlySpan<float>((void*)context.InputNativeBuffers[channelIndex], context.Frames);
+        // Otherwise convert native→float on first access this callback, then reuse the staged result. The recording
+        // callback resets InputConverted at the top of every buffer-switch, so this never serves stale audio.
+        var floats = context.InputFloatBuffers[channelIndex];
+        if (!context.InputConverted[channelIndex])
+        {
+            context.InputConverter(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
+            context.InputConverted[channelIndex] = true;
+        }
+        return floats.AsSpan(0, context.Frames);
     }
 
     /// <summary>

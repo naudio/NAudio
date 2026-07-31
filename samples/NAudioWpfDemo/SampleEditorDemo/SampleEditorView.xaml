@@ -1,4 +1,4 @@
-<UserControl x:Class="NAudioWpfDemo.SampleEditorDemo.SampleEditorView"
+﻿<UserControl x:Class="NAudioWpfDemo.SampleEditorDemo.SampleEditorView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -17,6 +17,9 @@
             <Setter Property="IsEnabled" Value="{Binding Loaded}" />
             <!-- click the track to jump to that value, rather than stepping by LargeChange -->
             <Setter Property="IsMoveToPointEnabled" Value="True" />
+            <!-- SmallChange/LargeChange drive the arrow and page keys, and Slider's defaults
+                 (0.1 and 1) are absolute — useless on both a -100..100 and a 0..1 range — so
+                 each slider below sets its own, scaled to roughly 1% and 10% of its range. -->
         </Style>
     </UserControl.Resources>
     <Grid Margin="10">
@@ -67,19 +70,19 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Label}" Text="Root key" />
-                <Slider   Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="127" IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding RootKey}" />
+                <Slider   Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="127" IsSnapToTickEnabled="True" TickFrequency="1" SmallChange="1" LargeChange="12" Value="{Binding RootKey}" />
                 <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding RootKey}" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource Label}" Text="Tune (cents)" />
-                <Slider   Grid.Row="1" Grid.Column="1" Minimum="-100" Maximum="100" Value="{Binding TuneCents}" />
+                <Slider   Grid.Row="1" Grid.Column="1" Minimum="-100" Maximum="100" SmallChange="1" LargeChange="10" Value="{Binding TuneCents}" />
                 <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding TuneCents, StringFormat={}{0:N0}}" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource Label}" Text="Volume (dB)" />
-                <Slider   Grid.Row="2" Grid.Column="1" Minimum="-48" Maximum="12" Value="{Binding VolumeDb}" />
+                <Slider   Grid.Row="2" Grid.Column="1" Minimum="-48" Maximum="12" SmallChange="0.5" LargeChange="6" Value="{Binding VolumeDb}" />
                 <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding VolumeDb, StringFormat={}{0:N1}}" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource Label}" Text="Pan" />
-                <Slider   Grid.Row="3" Grid.Column="1" Minimum="-1" Maximum="1" Value="{Binding Pan}" />
+                <Slider   Grid.Row="3" Grid.Column="1" Minimum="-1" Maximum="1" SmallChange="0.02" LargeChange="0.2" Value="{Binding Pan}" />
                 <TextBlock Grid.Row="3" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding Pan, StringFormat={}{0:N2}}" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource Label}" Text="Loop mode" />
@@ -88,7 +91,7 @@
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Style="{StaticResource Label}" Text="Loop xfade (ms)"
                            ToolTip="Crossfades the loop seam to remove the click when the loop points don't match. Needs a loop start with some audio before it." />
-                <Slider   Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding LoopCrossfadeMs}" />
+                <Slider   Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" Value="{Binding LoopCrossfadeMs}" />
                 <TextBlock Grid.Row="5" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding LoopCrossfadeMs, StringFormat={}{0:N0}}" />
             </Grid>
 
@@ -105,23 +108,23 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Label}" Text="Attack (s)" />
-                <Slider   Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="5" Value="{Binding AttackSeconds}" />
+                <Slider   Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="5" SmallChange="0.05" LargeChange="0.5" Value="{Binding AttackSeconds}" />
                 <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding AttackSeconds, StringFormat={}{0:N2}}" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource Label}" Text="Hold (s)" />
-                <Slider   Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="5" Value="{Binding HoldSeconds}" />
+                <Slider   Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="5" SmallChange="0.05" LargeChange="0.5" Value="{Binding HoldSeconds}" />
                 <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding HoldSeconds, StringFormat={}{0:N2}}" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource Label}" Text="Decay (s)" />
-                <Slider   Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="5" Value="{Binding DecaySeconds}" />
+                <Slider   Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="5" SmallChange="0.05" LargeChange="0.5" Value="{Binding DecaySeconds}" />
                 <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding DecaySeconds, StringFormat={}{0:N2}}" />
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource Label}" Text="Sustain" />
-                <Slider   Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding SustainLevel}" />
+                <Slider   Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" Value="{Binding SustainLevel}" />
                 <TextBlock Grid.Row="3" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding SustainLevel, StringFormat={}{0:N2}}" />
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource Label}" Text="Release (s)" />
-                <Slider   Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="5" Value="{Binding ReleaseSeconds}" />
+                <Slider   Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="5" SmallChange="0.05" LargeChange="0.5" Value="{Binding ReleaseSeconds}" />
                 <TextBlock Grid.Row="4" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding ReleaseSeconds, StringFormat={}{0:N2}}" />
             </Grid>
         </Grid>

@@ -99,6 +99,8 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
             }
             else
             {
+                // This conversion to (int) also helps us to avoid having in the output format
+                // a sample rate that could be a fractional value, which the WaveFormat API today does not support.
                 sampleRate = (int)sourceAsbd.mSampleRate;
             }
 
@@ -272,6 +274,8 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
     public sealed override long Position
     {
+        // Note that because we use AverageBytesPerSecond to do the calculation,
+        // the returned value will always be in a BlockAlign multiple.
         get => (long)((PositionInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
         set
         {
@@ -284,6 +288,12 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
             }
             else
             {
+                // Ensure that the position is in a BlockAlign multiple.
+                value -= (value % targetFormat.BlockAlign);
+                // Calculate the new position: divide the input value by AverageBytesPerSecond 
+                // of the target format to get a value in seconds, then multiply by the file's 
+                // sample rate to get the actual position to seek to, expressed in the 
+                // file's sample frames.
                 long newPos = (long)((value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate);
                 long length = LengthInFrames;
                 // Because the above calculation is just an estimated value,
@@ -369,6 +379,9 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
 
     /// <inheritdoc />
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
+    // CurrentTime is sample-accurate: This happens because we use PositionInFrames and the file's sample 
+    // rate to deduce the TimeSpan and vice-versa, so the conversion is straightforward and always 
+    // produces accurate results.
     public sealed override TimeSpan CurrentTime
     {
         get => TimeSpan.FromSeconds(PositionInFrames / sourceAsbd.mSampleRate);

@@ -94,7 +94,6 @@ internal partial class MacUtils
                 AudioChannelLayout.GetChannelDescription(layout, I).mChannelLabel
             );
         }
-        bool isUncommonLayout;
         if (speakers.Length == 1)
         {
             needsTranslation = false;
@@ -108,10 +107,6 @@ internal partial class MacUtils
                 needsTranslation = false;
                 needsExtensible = false;
                 return Speakers.Stereo;
-            }
-            else
-            {
-                isUncommonLayout = true;
             }
         }
         else if (speakers.Length == 4)
@@ -127,20 +122,12 @@ internal partial class MacUtils
                 needsTranslation = false;
                 return Speakers.Quad;
             }
-            else
-            {
-                isUncommonLayout = true;
-            }
-        }
-        else
-        {
-            isUncommonLayout = true;
         }
         var returnValue = Speakers.None;
         foreach (var spk in speakers) { returnValue |= spk; }
         // Probably it needs translation, because the channels can be in any possible order.
         needsTranslation = returnValue != Speakers.None;
-        needsExtensible = isUncommonLayout; // And if we conclude to a result that is an uncommon layout, we will need extensible.
+        needsExtensible = true; // And if we conclude to a result that is an uncommon layout, we will need extensible.
         return returnValue;
     }
 

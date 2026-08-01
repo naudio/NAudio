@@ -1,10 +1,11 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using NAudio.MacOS.CoreAudio.Interop;
-using NAudio.MacOS.CoreAudioTypes;
-using NAudio.Utils;
+
 using NAudio.Wave;
+using NAudio.Utils;
+using NAudio.MacOS.CoreAudioTypes;
+using NAudio.MacOS.CoreAudio.Interop;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -46,6 +47,7 @@ public static class CoreAudioFunctions
     /// <param name="device">The audio device to get it's time.</param>
     /// <param name="scope">The the audio device time to query for (Input/Output).</param>
     /// <returns>The current time of the audio device, in seconds</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">The specified audio device does not have at least one I/O procedure running.</exception>
     public static double GetCurrentDeviceTime(AudioDevice device, AudioObjectPropertyScope scope)
     {
@@ -74,10 +76,12 @@ public static class CoreAudioFunctions
     /// <param name="device">The audio device to get it's time.</param>
     /// <param name="intermediateFormat">The currently used virtual format of the audio device.</param>
     /// <returns>The current time of the audio device, in seconds</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="device"/> and/or <paramref name="intermediateFormat"/> are <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">The specified audio device does not have at least one I/O procedure running.</exception>
     public static double GetCurrentDeviceTime(AudioDevice device, WaveFormat intermediateFormat)
     {
         ArgumentNullException.ThrowIfNull(device);
+        ArgumentNullException.ThrowIfNull(intermediateFormat);
         AudioTimeStamp stamp = new();
         // If possible, query only the sample time.
         stamp.mFlags |= AudioTimeStampFlags.kAudioTimeStampSampleTimeValid;

@@ -84,7 +84,7 @@ public class ExtendedAudioFileException : AudioFileException
             }
             else if (osStatus == ExtendedAudioFileErrors.kExtAudioFileError_AsyncWriteBufferOverflow)
             {
-                throw new TimeoutException("The specified asyncronous write take too long to be executed.");
+                throw new TimeoutException("The specified asyncronous write took too long to be executed.");
             }
             else
             {

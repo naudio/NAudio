@@ -6,6 +6,14 @@ namespace NAudio.Wave;
 /// <summary>
 /// Provides an event handler that provides the audio data captured by a CoreAudioCapture instance.
 /// </summary>
+/// <remarks>
+/// Note that the <paramref name="audioData"/> parameter points to an arbitrary memory block
+/// provided by the HAL so that it's clients can retrieve the audio data from the 
+/// hardware device; as such, just assigning the span to a field will later on cause
+/// memory corruption issues. So, provide your own allocated buffer and copy
+/// the data that the <paramref name="audioData"/> parameter contains to 
+/// your own buffer before the execution of the method reaches it's end.
+/// </remarks>
 /// <param name="audioData">The span of bytes containing the capture data.</param>
 /// <param name="currentTimeInSeconds">A HAL timestamp, in seconds, that indicate when the HAL invoked the handler.</param>
 /// <param name="firstByteAcquiredFromHALTimeInSeconds">A HAL timestamp, in seconds, that indicate when the first byte of the currently provided audio data was retrieved.</param>

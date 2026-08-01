@@ -4,7 +4,7 @@
     <!--
         Tests for the macOS wrappers - they should be run against 
         the latest macOS (as the time of writing this, 26 (Tahoe)),
-        although that they should run even back to 10.5, but we do not
+        although that they could run even back to 10.5, but we do not
         have such device to test the API's in such old macOS version.
         Also, specifying macOS 26 in the TFM needs XCode installed, which we do not
         need for our tests.
@@ -13,6 +13,8 @@
     <OutputType>Exe</OutputType>
     <EnableNUnitRunner>true</EnableNUnitRunner>
     <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+    <!-- Required for channel layout tests currently -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

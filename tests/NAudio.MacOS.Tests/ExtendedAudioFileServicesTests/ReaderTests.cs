@@ -1,4 +1,5 @@
 
+using System;
 using System.IO;
 
 using NAudio.Dmo;
@@ -73,6 +74,9 @@ public class ReaderTests
 
     private static void ReaderCommon(AbstractExtendedFileReader reader)
     {
+        // You cannot write to a reader
+        Assert.IsFalse(reader.CanWrite);
+
         var settings = reader.Settings;
 
         System.Console.WriteLine("Total time: {0}", reader.TotalTime);
@@ -122,7 +126,34 @@ public class ReaderTests
             Assert.Greater(readBytes, 0L);
         }
 
+        // Test whether the stream can be sought.
+        Assert.DoesNotThrow(() => reader.PositionInFrames = 0L);
+
+        // Now, attempt to read again.
+        read = reader.Read(buffer);
+
+        // The call should succeed, provided that we give a valid audio file that has a length of several minutes.
+        Assert.Greater(read, 0);
+
         // This must not throw any exception
         Assert.DoesNotThrow(reader.Dispose);
+
+        // You cannot read/seek from a disposed reader
+        Assert.IsFalse(reader.CanRead);
+
+        Assert.IsFalse(reader.CanSeek);
+
+        // All of the below calls must throw ObjectDisposedException.
+        Assert.Throws<ObjectDisposedException>(() => _ = reader.PositionInFrames);
+
+        Assert.Throws<ObjectDisposedException>(() => _ = reader.Position);
+
+        Assert.Throws<ObjectDisposedException>(() => _ = reader.LengthInFrames);
+
+        Assert.Throws<ObjectDisposedException>(() => _ = reader.Length);
+
+        Assert.Throws<ObjectDisposedException>(() => reader.PositionInFrames = 0L);
+
+        Assert.Throws<ObjectDisposedException>(() => reader.Position = 0L);
     }
 }

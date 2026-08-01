@@ -11,6 +11,7 @@ using NUnit.Framework;
 
 namespace NAudio.MacOS.Tests.ExtendedAudioFileServicesTests;
 
+[TestFixture]
 public class WriterTests
 {
     private static string CreateRandomFileName() => Path.Join(Environment.CurrentDirectory, Path.GetRandomFileName());
@@ -78,5 +79,11 @@ public class WriterTests
         System.Console.WriteLine("Written bytes: {0}", writtenBytes);
 
         Assert.DoesNotThrow(writer.Dispose);
+
+        // We can't write after the writer object is disposed of
+        Assert.IsFalse(writer.CanWrite);
+
+        // This should throw once the writer object is disposed of
+        Assert.Throws<ObjectDisposedException>(() => _ = writer.Position);
     }
 }

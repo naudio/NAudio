@@ -12,13 +12,15 @@ using NAudio.MacOS.AudioToolbox.Interop;
 namespace NAudio.MacOS.AudioToolbox;
 
 /// <summary>
-/// Provides the required logic to the public to use it as a 
-/// sink to write their own audio data into - 
-/// currently initialized internally and cannot be extended.
+/// Provides the required logic to the public for the users to
+/// use it as a sink to write their own audio data into - 
+/// currently initialized internally and cannot be extended. <br />
+/// If you want to use this class, see the methods on the <see cref="ExtendedAudioFileWriter"/> class.
 /// </summary>
 public abstract class AbstractExtendedFileWriter : Stream
 {
     private long length;
+    private bool disposed;
     private IntPtr extFileObject;
     private readonly ExtendedFileWriterSettings settings;
 
@@ -26,6 +28,7 @@ public abstract class AbstractExtendedFileWriter : Stream
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         length = 0L;
+        disposed = false;
         this.settings = settings;
         extFileObject = hExtFileObject;
     }
@@ -78,7 +81,11 @@ public abstract class AbstractExtendedFileWriter : Stream
             id == AudioFileTypeIDs.kAudioFileM4BType
         )
         {
-            return [AudioFormatIDs.kAudioFormatMPEG4AAC_HE, AudioFormatIDs.kAudioFormatMPEG4AAC, AudioFormatIDs.kAudioFormatMPEG4AAC_LD];
+            return [
+                AudioFormatIDs.kAudioFormatMPEG4AAC_HE,
+                AudioFormatIDs.kAudioFormatMPEG4AAC,
+                AudioFormatIDs.kAudioFormatMPEG4AAC_LD
+            ];
         }
         else if (
             id == AudioFileTypeIDs.kAudioFile3GPType ||
@@ -183,12 +190,16 @@ public abstract class AbstractExtendedFileWriter : Stream
     public sealed override bool CanSeek => false;
 
     /// <inheritdoc />
-    public sealed override bool CanWrite => true;
+    public sealed override bool CanWrite => !disposed;
 
     /// <inheritdoc />
     public sealed override long Position
     {
-        get => length;
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return length;
+        }
         set => throw new NotSupportedException("Seeking not supported on extended file writer instances");
     }
 
@@ -267,7 +278,11 @@ public abstract class AbstractExtendedFileWriter : Stream
         try
         {
             base.Dispose(disposing);
-            if (disposing) { DisposeNativeData(); }
+            if (disposing && (!disposed))
+            {
+                DisposeNativeData();
+                disposed = true;
+            }
         }
         finally
         {

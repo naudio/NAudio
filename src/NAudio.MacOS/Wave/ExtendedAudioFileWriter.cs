@@ -21,14 +21,16 @@ public static class ExtendedAudioFileWriter
         private IntPtr streamFileID;
         private GCHandle streamGcHandle;
 
-        private FileWriterImpl(nint hExtFileObject, ExtendedFileWriterSettings settings) : base(hExtFileObject, settings)
+        private FileWriterImpl(nint hExtFileObject, ExtendedFileWriterSettings settings)
+            : base(hExtFileObject, settings)
         {
             streamGcHandle = default;
             streamFileID = IntPtr.Zero;
             AssignClientFormat(settings.OutputFormat);
         }
 
-        private FileWriterImpl(nint hExtFileObject, IntPtr streamFileID, ExtendedFileWriterSettings settings, GCHandle streamHandle) : base(hExtFileObject, settings)
+        private FileWriterImpl(nint hExtFileObject, IntPtr streamFileID, ExtendedFileWriterSettings settings, GCHandle streamHandle)
+            : base(hExtFileObject, settings)
         {
             try
             {
@@ -301,8 +303,21 @@ public static class ExtendedAudioFileWriter
     /// <param name="writeableStream">The data stream where to write data to</param>
     /// <param name="settings">Settings for the writer to use.</param>
     /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
-    /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
+    /// <exception cref="ArgumentException">
+    /// The specified settings object does not define the minimal requirements for writing a file. <br /> <br />
+    /// 
+    /// -or- <br /> <br />
+    /// 
+    /// The stream is not writeable, seekable and readable.
+    /// </exception>
     /// <exception cref="ArgumentNullException"><paramref name="writeableStream"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
+    /// <remarks>
+    /// The native API requires that all the basic <see cref="Stream"/> implementations
+    /// are functional - that is, the stream must be able to be read, written and sought.
+    /// If you want to write to a stream that is not that capable, use an intermediate 
+    /// <see cref="MemoryStream"/> instance to make sure the writer can work with it,
+    /// then copy the data written to it to your target stream.
+    /// </remarks>
     public static AbstractExtendedFileWriter CreateFromStream(
         Stream writeableStream,
         ExtendedFileWriterSettings settings

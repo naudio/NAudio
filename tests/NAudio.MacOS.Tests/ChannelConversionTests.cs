@@ -126,7 +126,7 @@ public class ChannelConversionTests
 
         Assert.AreEqual(
             MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible),
-            Speakers.Stereo,
+            Speakers.Mono,
             "Layouts do not match!"
         );
 

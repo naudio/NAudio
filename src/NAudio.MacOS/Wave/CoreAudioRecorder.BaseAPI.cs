@@ -3,8 +3,8 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
@@ -13,67 +13,65 @@ using NAudio.MacOS.CoreAudio;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides a class of capturing audio from a specified audio device using the 
+/// Provides a class for capturing audio from a specified audio device using the 
 /// macOS HAL API for accessing the captured data.
 /// </summary>
-public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLatency
+/// <seealso cref="MacOS.CoreAudio"/>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.5")]
+public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 {
     private CaptureState state;
-    private RecordingFlags flags;
-    private AudioStream selectedStream;
+    private readonly object lockObject;
+    private RecorderProcedure ioProcedure;
+    private CoreAudioRecorderStateFlags flags;
     private readonly AudioDevice selectedDevice;
     private PropertyListenerHandle streamsChanged;
-    private CoreAudioCaptureOnlyIOProc ioProcedure;
     private PropertyListenerHandle virtualFormatChanged;
     private readonly PropertyListenerHandle deviceWasRemoved;
-    private readonly Func<AudioStream[], int> streamSelector;
+
+    /// <summary>
+    /// Initializes a new Core Audio recoder instance, using the default input
+    /// device to capture audio data.
+    /// </summary>
+    public CoreAudioRecorder() : this(AudioSystemObject.Instance.DefaultInputDevice) { }
 
     /// <summary>
     /// Initializes a new Core Audio recoder instance from the specified device.
     /// </summary>
     /// <param name="device">The <see cref="AudioDevice"/> to capture data from.</param>
     /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
-    public CoreAudioRecorder(AudioDevice device) : this(device, null) { }
-
-    /// <summary>
-    /// Initializes a new Core Audio recoder instance from the default input device.
-    /// </summary>
-    public CoreAudioRecorder() : this(AudioSystemObject.Instance.DefaultInputDevice) { }
-
-    /// <summary>
-    /// Initializes a new Core Audio recoder instance from the specified device, 
-    /// and a selector that selectsthe input stream that will be used for the capture.
-    /// </summary>
-    /// <param name="device">The <see cref="AudioDevice"/> to capture data from.</param>
-    /// <param name="streamSelector">A function that selects the input stream to use for recording. Can be <see langword="null"/>.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
-    public CoreAudioRecorder(AudioDevice device, [MaybeNull] Func<AudioStream[], int> streamSelector)
+    public CoreAudioRecorder(AudioDevice device)
     {
         ArgumentNullException.ThrowIfNull(device);
         if (!device.IsAlive)
         {
-            throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a capture device.");
+            throw new InvalidOperationException("This device will be removed soon, and as such cannot be used as a capture device.");
         }
+        ioProcedure = null;
+        lockObject = new();
         streamsChanged = null;
         selectedDevice = device;
-        flags = RecordingFlags.None;
+        virtualFormatChanged = null;
         state = CaptureState.Stopped;
-        this.streamSelector = streamSelector;
         deviceWasRemoved = device.ConstructIsAliveChangedEvent();
         deviceWasRemoved.Event += OnDeviceWillBeDestroyed;
     }
 
-    #region Private support code
+    #region Internal support code
 
-    private enum RecordingFlags : byte
+    /// <summary>
+    /// Behavioral flags that affect the recorder's state.
+    /// </summary>
+    [Flags]
+    private enum CoreAudioRecorderStateFlags : byte
     {
-        None = 0,
-        Initialized = 1 << 0,
-        EventHandleRegistered = 1 << 1,
-        // mdcdi1315: Defer loopback for now - it needs the aggregate device API's to be ported for this to work,
-        // and it might even be separate class.
-        // IsUsingLoopback = 1 << 2,
-        Invalid = 1 << 3
+        Disposed = 1 << 0,
+        Initialized = 1 << 1,
+        // When the device has been removed.
+        Invalidated = 1 << 2,
+        NonInterleaved = 1 << 3,
+        EventHandleWasRegistered = 1 << 4
     }
 
     private void FireDataAvailableEvent(
@@ -86,49 +84,33 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     [DebuggerStepThrough]
     private void ThrowIfInvalid()
     {
-        if (!flags.HasFlag(RecordingFlags.Initialized))
+        if (!flags.HasFlag(CoreAudioRecorderStateFlags.Initialized))
         {
             throw new InvalidOperationException("The Core Audio recorder has not been initialized yet.");
         }
-        else if (flags.HasFlag(RecordingFlags.Invalid))
+        else if (flags.HasFlag(CoreAudioRecorderStateFlags.Invalidated))
         {
             throw new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError);
         }
     }
 
-    private void OnVirtualFormatChanged(AudioObject _)
-    {
-        // Stop recording if is running. 
-        // The user will restart the recording if so he needs.
-        if (flags.HasFlag(RecordingFlags.Initialized)) { StopRecording(); }
-        if (ioProcedure is not null) { ioProcedure.VirtualFormat = selectedStream.VirtualFormat; }
-        CaptureFormatChanged?.Invoke(this);
-    }
+    private void OnRecordingStoppedHandlerFromIOProc(object sender, StoppedEventArgs e) => OnRecodingStopped(e);
 
-    private void OnStreamsChanged(AudioObject _)
+    private void OnRecodingStopped(Exception ex) => OnRecodingStopped(new StoppedEventArgs(ex));
+
+    private void OnRecodingStopped(StoppedEventArgs e)
     {
-        bool oldState = ioProcedure.IsRunning;
-        ioProcedure.Stop();
         state = CaptureState.Stopped;
-        InitRecordingInternal();
-        if (oldState) { ioProcedure.Start(); }
+        RecordingStopped?.Invoke(this, e);
     }
 
-    private void OnDeviceWillBeDestroyed(AudioObject _)
+    private double GetLatencyInSeconds()
     {
-        flags |= RecordingFlags.Invalid;
-        selectedStream = null;
-
-        // If we have an I/O procedure attached, do the following.
-        if (ioProcedure is not null && ioProcedure.IsRunning)
-        {
-            // Now, dispatch the recording stopped event with the event args containing
-            // a Core Audio exception saying the device is no longer available.
-            OnRecodingStopped(new CoreAudioException(
-                "The device used to perform I/O is now gone.",
-                MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError
-            ));
-        }
+        // Here, the direct virtual format from the selected stream suffices.
+        return (
+            selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Input) +
+            ioProcedure.StreamLatency
+        ) / ioProcedure.VirtualFormat.mSampleRate;
     }
 
     private void StopRecordingInternal()
@@ -136,7 +118,7 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
         try
         {
             state = CaptureState.Stopping;
-            if (flags.HasFlag(RecordingFlags.EventHandleRegistered))
+            if (flags.HasFlag(CoreAudioRecorderStateFlags.EventHandleWasRegistered))
             {
                 ioProcedure.Event -= FireDataAvailableEvent;
                 ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
@@ -150,146 +132,89 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
         }
         finally
         {
-            flags &= ~RecordingFlags.EventHandleRegistered;
+            flags &= ~CoreAudioRecorderStateFlags.EventHandleWasRegistered;
             state = CaptureState.Stopped;
         }
     }
 
-    private void InitRecordingInternal()
+    // After full initialization of the procedure, 
+    // implementers must call this to finalize initialization
+    // and register any crucial playback events.
+    private void OnInitializationComplete()
     {
-        MacUtils.EnsureDisposableObjectsDisposed(ioProcedure, streamsChanged, virtualFormatChanged);
-        int selectedIndex;
-        var streams = selectedDevice.GetStreams(AudioObjectPropertyScopeConstants.Input);
-        if (streams.Length == 0)
-        {
-            throw new InvalidOperationException("The specified device does not provide any streams to perform capture on!");
-        }
+        streamsChanged?.Dispose();
+        streamsChanged = selectedDevice.ConstructStreamsChangedEvent(AudioObjectPropertyScopeConstants.Input);
+        streamsChanged.Event += OnStreamsChanged;
+        flags |= CoreAudioRecorderStateFlags.Initialized;
+    }
 
-        if (streamSelector is null)
+    // Creates a WaveFormat that is equivalent to the format that the 
+    // HAL is capturing data into. 
+    // The method does all the necessary things
+    // to translate the format to the actual one,
+    // after all the conversions this class does
+    // have taken place.
+    private WaveFormat ConstructCaptureFormat()
+    {
+        var virtualFormat = ioProcedure.VirtualFormat;
+        Speakers spk = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Input, out _, out var needsExtensible);
+        int bits = (int)virtualFormat.mBitsPerChannel;
+        int sampleRate = (int)virtualFormat.mSampleRate;
+        int channels = (int)virtualFormat.mChannelsPerFrame;
+        bool IeeeFloat = virtualFormat.mFormatFlags.HasFlag(MacOS.CoreAudioTypes.AudioFormatFlags.kAudioFormatFlagIsFloat);
+        if (needsExtensible)
         {
-            selectedStream = streams[selectedIndex = 0];
+            return new WaveFormatExtensible(
+                sampleRate,
+                bits,
+                channels,
+                IeeeFloat,
+                bits,
+                spk
+            );
         }
         else
         {
-            selectedIndex = streamSelector.Invoke(streams);
-            try
-            {
-                selectedStream = streams[selectedIndex];
-            }
-            catch (IndexOutOfRangeException e)
-            {
-                throw new InvalidOperationException("The stream selector returned an invalid stream index: " + selectedIndex, e);
-            }
+            int blkAlign = channels * (bits / 8);
+            return WaveFormat.CreateCustomFormat(
+                IeeeFloat ? WaveFormatEncoding.IeeeFloat : WaveFormatEncoding.Pcm,
+                sampleRate,
+                channels,
+                sampleRate * blkAlign,
+                blkAlign,
+                bits
+            );
         }
-
-        InitializeIOProcedure(streams.Length, selectedIndex);
-        virtualFormatChanged = selectedStream.ConstructVirtualFormatChangedEvent();
-        virtualFormatChanged.Event += OnVirtualFormatChanged;
-        try
-        {
-            streamsChanged = selectedDevice.ConstructStreamsChangedEvent(AudioObjectPropertyScopeConstants.Input);
-            streamsChanged.Event += OnStreamsChanged;
-        }
-        catch
-        {
-            virtualFormatChanged.Dispose();
-            throw;
-        }
-    }
-
-    private void InitializeIOProcedure(int streamCount, int selectedIndex)
-    {
-        var virtualFormat = ConstructCaptureFormat();
-        // bool hasLoopback = flags.HasFlag(RecordingFlags.IsUsingLoopback);
-        ioProcedure = new(selectedDevice, virtualFormat, false);
-        try
-        {
-            int I = 0;
-            bool[] selectedStreams = new bool[streamCount];
-            for (; I < streamCount; I++)
-            {
-                selectedStreams[I] = I == selectedIndex;
-            }
-            selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, selectedStreams);
-        }
-        catch
-        {
-            ioProcedure.Dispose();
-            throw;
-        }
-    }
-
-    private double GetLatencyInSeconds()
-    {
-        // Here, the direct virtual format from the stream suffices.
-        return (
-            selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Input) +
-            selectedStream.Latency
-        ) / selectedStream.VirtualFormat.SampleRate;
-    }
-
-    private WaveFormat ConstructCaptureFormat()
-    {
-        var vf = selectedStream.VirtualFormat;
-        // mdcdi1315: We need to revisit this at the future, to see what we will do when
-        // the resampler is needed for the speakers enum value.
-        Speakers spk = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output, out _, out var needsExtensible);
-        if (needsExtensible)
-        {
-            return vf is WaveFormatExtensible ext
-                ? new WaveFormatExtensible(
-                    ext.SampleRate,
-                    ext.BitsPerSample,
-                    ext.Channels,
-                    ext.SubFormat,
-                    ext.ValidBitsPerSample,
-                    spk
-                )
-                : new WaveFormatExtensible(
-                    vf.SampleRate,
-                    vf.BitsPerSample,
-                    vf.Channels,
-                    vf.Encoding == WaveFormatEncoding.IeeeFloat,
-                    vf.BitsPerSample,
-                    spk
-                );
-        }
-        return vf;
-    }
-
-    private void OnRecordingStoppedHandlerFromIOProc(object sender, StoppedEventArgs e) => OnRecodingStopped(e);
-
-    private void OnRecodingStopped(Exception ex) => OnRecodingStopped(new StoppedEventArgs(ex));
-
-    private void OnRecodingStopped(StoppedEventArgs e)
-    {
-        state = CaptureState.Stopped;
-        RecordingStopped?.Invoke(this, e);
     }
 
     #endregion
 
-    #region Public surface
+    #region Public API
 
     /// <summary>Call this method once per instance to set up the recorder for recording.</summary>
     /// <remarks>
-    /// While this method can be called multiple times, 
+    /// This method can be called multiple times, 
     /// it is thread-safe and only the first thread that manages 
     /// to take the lock will perform the initialization task.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">The recoder could not be set up (invalid device, invalid streams, etc.)</exception>
+    /// <exception cref="InvalidOperationException">The recorder could not be set up (invalid device, invalid streams, etc.)</exception>
     public void InitializeRecording()
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
-            if (flags.HasFlag(RecordingFlags.Initialized)) { return; }
-            InitRecordingInternal();
-            flags |= RecordingFlags.Initialized;
+            if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized)) { return; }
+            Initialize();
+            // The below exception is thrown if the we forget to
+            // call the OnInitializationComplete method inside Initialize().
+            if (!flags.HasFlag(CoreAudioRecorderStateFlags.Initialized))
+            {
+                throw new InvalidOperationException("The recorder instance was not initialized successfully!");
+            }
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 
@@ -307,7 +232,7 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     public void StartRecording()
     {
         ThrowIfInvalid();
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             // Prefer to exit cleanly rather than racing the startup.
@@ -317,11 +242,11 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
             ioProcedure.RecordingStopped += OnRecordingStoppedHandlerFromIOProc;
             ioProcedure.Start();
             state = CaptureState.Capturing;
-            flags |= RecordingFlags.EventHandleRegistered;
+            flags |= CoreAudioRecorderStateFlags.EventHandleWasRegistered;
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 
@@ -470,8 +395,19 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     }
 
     /// <inheritdoc />
-    // Latency can be acquired when the DataAvailable event dispatches.
-    public TimeSpan CurrentLatency => AverageLatency;
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            ThrowIfInvalid();
+            double latencySeconds = ioProcedure.GetCurrentLatency();
+            if (latencySeconds == -1d)
+            {
+                latencySeconds = GetLatencyInSeconds();
+            }
+            return TimeSpan.FromSeconds(latencySeconds);
+        }
+    }
 
     /// <summary>
     /// Disposes this <see cref="CoreAudioRecorder"/> instance. <br />
@@ -479,23 +415,22 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     /// </summary>
     public void Dispose()
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
-            if (selectedStream is null) { return; }
-            selectedStream = null;
-            if (flags.HasFlag(RecordingFlags.Initialized) && state == CaptureState.Capturing) { StopRecordingInternal(); }
+            if (flags.HasFlag(CoreAudioRecorderStateFlags.Disposed)) { return; }
+            if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized) && state == CaptureState.Capturing) { StopRecordingInternal(); }
             MacUtils.EnsureDisposableObjectsDisposed(
                 ioProcedure,
                 streamsChanged,
                 virtualFormatChanged,
                 deviceWasRemoved
             );
-            selectedStream = null;
+            flags |= CoreAudioRecorderStateFlags.Disposed;
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 
@@ -512,4 +447,5 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     public ValueTask DisposeAsync() => new(Task.Run(Dispose));
 
     #endregion
+
 }

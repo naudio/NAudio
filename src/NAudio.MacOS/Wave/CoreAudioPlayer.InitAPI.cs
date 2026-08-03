@@ -2,6 +2,7 @@
 using System;
 
 using NAudio.Dmo;
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreAudioTypes;
 
@@ -212,10 +213,7 @@ public partial class CoreAudioPlayer
             {
                 // Non-interleaved case
                 ioProcedure = new NonInterleavedProcedure(selectedDevice);
-                for (int I = 0; I < streams.Length; I++)
-                {
-                    enabledStreams[I] = true;
-                }
+                Array.Fill(enabledStreams, true);
             }
             else
             {
@@ -239,8 +237,8 @@ public partial class CoreAudioPlayer
         }
         catch
         {
-            // Undo all of our progress so far if we do not made it.
-            selectedSource.Dispose();
+            // Undo all of our progress so far if we did not made it.
+            MacUtils.EnsureDisposableObjectsDisposed(ioProcedure, virtFormatChanged, selectedSource);
             throw;
         }
     }

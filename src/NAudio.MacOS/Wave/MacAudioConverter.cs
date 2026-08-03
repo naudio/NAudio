@@ -21,6 +21,7 @@ namespace NAudio.Wave;
 [SupportedOSPlatform("macos10.2")]
 public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
 {
+    private readonly object lockObject;
     private readonly WaveFormat targetFormat;
     private readonly LowLevelAudioConverter actualConverter;
 
@@ -56,6 +57,8 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
 
         ArgumentNullException.ThrowIfNull(targetFormat = outputFormat);
         ArgumentNullException.ThrowIfNull(providerToResample);
+
+        lockObject = new();
 
         // Although that the converter can also work with compressed formats,
         // it will probably return the encoded data only and not any useful headers
@@ -125,7 +128,16 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     {
         // mdcdi1315: I am considering of removing the below ThrowIf call to aid the audio thread to execute faster.
         ObjectDisposedException.ThrowIf(actualConverter.IsDisposed, this);
-        return actualConverter.Read(buffer);
+        if (buffer.Length < targetFormat.BlockAlign)
+        {
+            // We have a value less than BlockAlign.
+            // Throw to avoid such subtle issues.
+            throw new ArgumentException("Buffer length cannot be less than the stream's block alignment.", nameof(buffer));
+        }
+        else
+        {
+            return actualConverter.Read(buffer);
+        }
     }
 
     /// <summary>
@@ -217,7 +229,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// </summary>
     public void Dispose()
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             if (!actualConverter.IsDisposed)
@@ -227,7 +239,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 }

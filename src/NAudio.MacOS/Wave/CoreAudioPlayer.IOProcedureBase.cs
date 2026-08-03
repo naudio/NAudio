@@ -9,14 +9,14 @@ namespace NAudio.Wave;
 
 public partial class CoreAudioPlayer
 {
-    private unsafe class ProcedureImpl : CoreAudioIOProcedure
+    private unsafe abstract class PlayerProcedure : CoreAudioIOProcedure
     {
         private Exception exception;
         private IPlayerSource source;
         private bool shouldStopInNextCall;
         private AudioTimeStamp nowStamp, outTimeStamp;
 
-        public ProcedureImpl(AudioDevice dev)
+        public PlayerProcedure(AudioDevice dev)
             : base(dev)
         {
             source = null;
@@ -25,35 +25,17 @@ public partial class CoreAudioPlayer
             nowStamp = outTimeStamp = default;
         }
 
-        protected override void IOProcedure(nint inNow, nint inInputData, nint inInputTime, nint outOutputData, nint inOutputTime)
+        protected sealed override void IOProcedure(nint inNow, nint inInputData, nint inInputTime, nint outOutputData, nint inOutputTime)
         {
             if (shouldStopInNextCall)
             {
                 StopCode();
                 return;
             }
-            AudioBuffer buffer;
             uint cBuffers = AudioBufferList.GetNumberOfBuffersFromPointer(outOutputData);
             try
             {
-                for (uint I = 0; I < cBuffers; I++)
-                {
-                    buffer = AudioBufferList.GetAudioBufferFromPointer(outOutputData, I);
-                    if (buffer.mData == IntPtr.Zero)
-                    {
-                        // Unused stream, move to the next one
-                        continue;
-                    }
-                    int read;
-                    Span<byte> allocatedSpan = buffer.GetSpan();
-                    while (allocatedSpan.Length > 0)
-                    {
-                        read = source.Read(allocatedSpan);
-                        if (read == 0) { shouldStopInNextCall = true; break; }
-                        allocatedSpan = allocatedSpan.Slice(read);
-                    }
-                    if (shouldStopInNextCall) { break; }
-                }
+                shouldStopInNextCall = ProvideData(cBuffers, outOutputData, source);
             }
             catch (Exception ex)
             {
@@ -65,6 +47,8 @@ public partial class CoreAudioPlayer
             nowStamp = *(AudioTimeStamp*)inNow.ToPointer();
             outTimeStamp = *(AudioTimeStamp*)inOutputTime.ToPointer();
         }
+
+        protected abstract bool ProvideData(uint cBuffers, nint outOutputData, IPlayerSource source);
 
         // Make sure that the dispatch of the stopped event does not cause the HAL I/O
         // thread to be processor-overloaded.
@@ -88,7 +72,7 @@ public partial class CoreAudioPlayer
         }
 
         // source is only settable, it's value is provided by the player implementation.
-        public IPlayerSource Source
+        public virtual IPlayerSource Source
         {
             set => source = value;
         }

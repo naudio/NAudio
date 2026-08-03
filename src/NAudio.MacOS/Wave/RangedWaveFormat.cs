@@ -67,6 +67,7 @@ public sealed class RangedWaveFormat
         return otherFormat.BitsPerSample == baseFormat.BitsPerSample &&
                 otherFormat.BlockAlign == baseFormat.BlockAlign &&
                 otherFormat.Channels == baseFormat.Channels &&
+                otherFormat.Encoding == baseFormat.Encoding &&
                 otherFormat.SampleRate >= rangeMin && otherFormat.SampleRate <= rangeMax;
     }
 

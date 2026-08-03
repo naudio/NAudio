@@ -36,8 +36,10 @@ public class WriterTests
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
         settings ??= new();
         settings.OutputFormat = sg.WaveFormat;
-        var wr = ExtendedAudioFileWriter.CreateFromFilePath(CreateRandomFileName(), settings, true);
+        var path = CreateRandomFileName();
+        var wr = ExtendedAudioFileWriter.CreateFromFilePath(path, settings, true);
         WriteAndDisposeWriter(wr, sg);
+        TryDeleteTheCreatedFile(path);
     }
 
     private static void UseWriterWithStream(ExtendedFileWriterSettings settings)
@@ -46,8 +48,10 @@ public class WriterTests
         settings ??= new();
         settings.OutputFormat = sg.WaveFormat;
 
+        var path = CreateRandomFileName();
+
         var fs = new FileStream(
-            CreateRandomFileName(),
+            path,
             FileMode.Create,
             FileAccess.ReadWrite
         );
@@ -60,6 +64,19 @@ public class WriterTests
         finally
         {
             fs.Dispose();
+            TryDeleteTheCreatedFile(path);
+        }
+    }
+
+    private static void TryDeleteTheCreatedFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch (IOException)
+        {
+            // best-effort temp cleanup
         }
     }
 
@@ -77,6 +94,11 @@ public class WriterTests
         }
 
         System.Console.WriteLine("Written bytes: {0}", writtenBytes);
+
+        // Make a buffer less than BlockAlign to verify that it throws when the buffer is not at least a full sample frame.
+        buffer = new byte[provider.WaveFormat.BlockAlign - 1];
+
+        Assert.Throws<ArgumentException>(() => writer.Write(buffer), "Buffers that have a size less than BlockAlign should throw in the write call.");
 
         Assert.DoesNotThrow(writer.Dispose);
 

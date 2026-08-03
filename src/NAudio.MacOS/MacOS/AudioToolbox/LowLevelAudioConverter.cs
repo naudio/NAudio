@@ -106,7 +106,16 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
             // so we might be safe. However, it is useful to verify that in the future,
             // because there are also recoverable out of memory situations, if the runtime
             // somehow manages to free memory.
-            selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
+            try
+            {
+                selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
+            }
+            catch
+            {
+                // Free the native buffer we allocated above.
+                NativeMemory.Free(nativeBuffer);
+                throw;
+            }
         }
     }
 

@@ -1,22 +1,12 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardware.h
-
-     Contains:   API for communicating with audio hardware.
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the file AudioHardware.h of the Core Audio Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
+using System.Numerics;
 using System.Diagnostics;
+
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.CoreAudio.Interop;
-using System.Numerics;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -245,7 +235,7 @@ public abstract class AudioObject :
             address,
             NativeMethods.AudioObjectGetPropertyData(objectId, address, ref size, new(&id))
         );
-        return id == AudioObjectID.Unknown ? null : factory(id);
+        return AudioObjectID.IsUnknownID(id) ? null : factory(id);
     }
 
     private protected unsafe T GetAudioObjectValue<T, TQualifier>(AudioObjectPropertyAddress address, Func<AudioObjectID, T> factory, Span<TQualifier> qualifier_data)
@@ -258,7 +248,7 @@ public abstract class AudioObject :
             address,
             NativeMethods.AudioObjectGetPropertyData(objectId, address, qualifier_data, ref size, new(&id))
         );
-        return id == AudioObjectID.Unknown ? null : factory(id);
+        return AudioObjectID.IsUnknownID(id) ? null : factory(id);
     }
 
     private protected unsafe T[] GetAudioObjectValues<T>(AudioObjectPropertyAddress address, Func<AudioObjectID, T> factory)
@@ -281,7 +271,7 @@ public abstract class AudioObject :
         for (int I = 0; I < values.Length; I++)
         {
             id = ids[I];
-            values[I] = id == AudioObjectID.Unknown ? null : factory(id);
+            values[I] = AudioObjectID.IsUnknownID(id) ? null : factory(id);
         }
         return values;
     }
@@ -447,6 +437,14 @@ public abstract class AudioObject :
     /// <summary>
     /// Determines whether two <see cref="AudioObject"/> instances are pointing to the same Core Audio object.
     /// </summary>
+    /// <remarks>
+    /// Note that this operator tests whether the wrapped interop objects are the same;
+    /// as such, you could have two <see cref="AudioObject"/> instances that are different in .NET
+    /// (the test <see cref="object.ReferenceEquals(object?, object?)"/> is <see langword="false"/>)
+    /// but both are targeting the same natively wrapped object. This is actually valid,
+    /// because these classes are just wrapping the objects, and as such they have 
+    /// the exact same effects even if two different wrapper references are created.
+    /// </remarks>
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>
     /// <returns>A value whether the two objects are both non-null and are pointing to the same Core Audio object.</returns>
@@ -459,6 +457,14 @@ public abstract class AudioObject :
     /// <summary>
     /// Determines whether two <see cref="AudioObject"/> instances are pointing to a different Core Audio object.
     /// </summary>
+    /// <remarks>
+    /// Note that this operator tests whether the wrapped interop objects are the same;
+    /// as such, you could have two <see cref="AudioObject"/> instances that are different in .NET
+    /// (the test <see cref="object.ReferenceEquals(object?, object?)"/> is <see langword="false"/>)
+    /// but both are targeting the same natively wrapped object. This is actually valid,
+    /// because these classes are just wrapping the objects, and as such they have 
+    /// the exact same effects even if two different wrapper references are created.
+    /// </remarks>
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>
     /// <returns>A value whether the two objects are both non-null and are pointing to a different Core Audio object.</returns>

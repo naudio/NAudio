@@ -22,6 +22,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     private bool disposed;
     private IntPtr extFileHandle;
     private WaveFormat targetFormat;
+    private readonly object lockObject;
     private AudioStreamBasicDescription sourceAsbd;
     private readonly ExtendedFileReaderSettings settings;
 
@@ -29,6 +30,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         disposed = false;
+        lockObject = new();
         targetFormat = null;
         this.settings = settings;
     }
@@ -242,6 +244,12 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     {
         uint bufferLength = (uint)buffer.Length;
         uint numFramesToRead = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, targetFormat);
+        if (numFramesToRead == 0U && bufferLength > 0U)
+        {
+            // We have a value less than BlockAlign.
+            // Throw to avoid such subtle issues.
+            throw new ArgumentException("Buffer length cannot be less than the stream's block alignment.", nameof(buffer));
+        }
         fixed (byte* bufferData = buffer)
         {
             var list = AudioBufferList.FromSingleBuffer(
@@ -412,7 +420,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     /// <inheritdoc />
     protected sealed override void Dispose(bool disposing)
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             base.Dispose(disposing);
@@ -424,7 +432,7 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 }

@@ -94,41 +94,52 @@ internal partial class MacUtils
                 AudioChannelLayout.GetChannelDescription(layout, I).mChannelLabel
             );
         }
-        if (speakers.Length == 1)
+        if (speakers.Length == 0)
         {
+            // We do not need any translation, or the extensible wave format.
+            needsTranslation = false;
+            needsExtensible = false;
+            return Speakers.None;
+        }
+        else if (speakers.Length == 1)
+        {
+            // It is a single speaker, resolve to 
+            // mono, whatever the channel description is.
             needsTranslation = false;
             needsExtensible = false;
             return Speakers.Mono;
         }
-        else if (speakers.Length == 2)
+        else
         {
-            if (speakers[0] == Speakers.FrontLeft && speakers[1] == Speakers.FrontRight)
+            needsTranslation = false;
+            var builtSpeakersValue = Speakers.None;
+            // Whatever the layout is (except from stereo), we need WaveFormatExtensible.
+            needsExtensible = true;
+            // This loop builds the final speakers value
+            // and additionally checks whether the current description(s)
+            // match the Speakers enum layout semantics.
+            // If not, the needsTranslation parameter is set to true.
+            Speakers tempSpeaker;
+            int length = speakers.Length - 1;
+            for (int I = 0; I < length; I++)
             {
-                needsTranslation = false;
+                // For the returned speakers value to not need channel layout translation,
+                // the current speaker value needs to be less than or equal to the next value.
+                if ((tempSpeaker = speakers[I]) > speakers[I + 1])
+                {
+                    needsTranslation = true;
+                }
+                builtSpeakersValue |= tempSpeaker;
+            }
+            // The last speaker value won't be appended by the loop; do that now.
+            builtSpeakersValue |= speakers[length];
+            if (builtSpeakersValue == Speakers.Stereo)
+            {
+                // We resolved to a stereo layout, so we do not need WaveFormatExtensible.
                 needsExtensible = false;
-                return Speakers.Stereo;
             }
+            return builtSpeakersValue;
         }
-        else if (speakers.Length == 4)
-        {
-            if (
-                speakers[0] == Speakers.FrontLeft &&
-                speakers[1] == Speakers.FrontRight &&
-                speakers[2] == Speakers.BackLeft &&
-                speakers[3] == Speakers.BackRight
-            )
-            {
-                needsExtensible = true; // Probably.
-                needsTranslation = false;
-                return Speakers.Quad;
-            }
-        }
-        var returnValue = Speakers.None;
-        foreach (var spk in speakers) { returnValue |= spk; }
-        // Probably it needs translation, because the channels can be in any possible order.
-        needsTranslation = returnValue != Speakers.None;
-        needsExtensible = true; // And if we conclude to a result that is an uncommon layout, we will need extensible.
-        return returnValue;
     }
 
     public static Speakers ConstructSpeakersValue(IntPtr layout, out bool needsTranslation, out bool needsExtensible)
@@ -168,7 +179,7 @@ internal partial class MacUtils
         ))
         {
             var sp = (Speakers)AudioChannelLayout.GetAudioChannelBitmap(layout);
-            needsExtensible = sp != Speakers.Mono && sp != Speakers.Stereo;
+            needsExtensible = sp != Speakers.None && sp != Speakers.Mono && sp != Speakers.Stereo;
             return sp;
         }
         else if (MatchAudioChannelLayoutTagByConstantValueIgnoringSpeakerCount(
@@ -297,7 +308,7 @@ internal partial class MacUtils
             }
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_10 ||
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0_1
+                (needsTranslation = tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0_1)
             )
             {
                 needsTranslation = true;
@@ -305,7 +316,7 @@ internal partial class MacUtils
             }
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_11 ||
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1
+                (needsTranslation = tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1)
             )
             {
                 needsTranslation = true;

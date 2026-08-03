@@ -58,10 +58,10 @@ public class ReaderTests
     public void CanReadARandomFile_StreamCallbacks_DefaultSettings() => CreateStreamBasedReader();
 
     [Test]
-    public void CanReadARandomFile_ReqIEEEFloat() => CreateFilePathReader();
+    public void CanReadARandomFile_ReqIEEEFloat() => CreateFilePathReader(new() { RequestIeeeFloat = true });
 
     [Test]
-    public void CanReadARandomFile_StreamCallbacks_ReqIEEEFloat() => CreateStreamBasedReader();
+    public void CanReadARandomFile_StreamCallbacks_ReqIEEEFloat() => CreateStreamBasedReader(new() { RequestIeeeFloat = true });
 
     [Test]
     public void CanReadARandomFile_CustomFormat() => CreateFilePathReader(new() { OutputFormat = new(48000, 2) });
@@ -86,18 +86,74 @@ public class ReaderTests
         WaveFormat outF = null;
         Assert.DoesNotThrow(() => outF = reader.WaveFormat);
 
+        if (outF is WaveFormatExtensible extFormat)
+        {
+            System.Console.WriteLine(
+                "Reader Format:\n" +
+                "Sample Rate: {0}\n" +
+                "Channels: {1}\n" +
+                "Bits per sample: {2}\n" +
+                "Avg. bytes per second: {3}\n" +
+                "Block align: {4}\n" +
+                "Valid bits per sample: {5}\n" +
+                "Channel mask: {6}\n" +
+                "Sub format: {7}",
+                extFormat.SampleRate,
+                extFormat.Channels,
+                extFormat.BitsPerSample,
+                extFormat.AverageBytesPerSecond,
+                extFormat.BlockAlign,
+                extFormat.ValidBitsPerSample,
+                (Speakers)extFormat.ChannelMask,
+                extFormat.SubFormat
+            );
+        }
+        else
+        {
+            System.Console.WriteLine(
+                "Reader Format:\n" +
+                "Sample Rate: {0}\n" +
+                "Channels: {1}\n" +
+                "Bits per sample: {2}\n" +
+                "Avg. bytes per second: {3}\n" +
+                "Block align: {4}\n" +
+                "Encoding: {5}",
+                outF.SampleRate,
+                outF.Channels,
+                outF.BitsPerSample,
+                outF.AverageBytesPerSecond,
+                outF.BlockAlign,
+                outF.Encoding
+            );
+        }
+
         if (settings is not null)
         {
             WaveFormat formatFromSettings = settings.OutputFormat;
 
             if (formatFromSettings is null && settings.RequestIeeeFloat)
             {
-                if (
-                    outF.Encoding != WaveFormatEncoding.IeeeFloat ||
-                    (outF.Encoding == WaveFormatEncoding.Extensible && outF is WaveFormatExtensible e && e.SubFormat != AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT)
-                )
+                bool throwIeeeError = false;
+                if (outF.Encoding == WaveFormatEncoding.Extensible)
                 {
-                    Assert.Fail("Requested IEEE float while the output format is not IEEE float.");
+                    if (outF is WaveFormatExtensible ext)
+                    {
+                        throwIeeeError = ext.SubFormat != AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
+                    }
+                    else
+                    {
+                        Assert.Fail("Expected a WaveFormatExtensible here, but it was " + outF.GetType().FullName);
+                    }
+                }
+                else
+                {
+                    throwIeeeError = outF.Encoding != WaveFormatEncoding.IeeeFloat;
+                }
+                if (throwIeeeError)
+                {
+                    Assert.Fail(
+                        "Requested IEEE float while the output format is not IEEE float.\nSpecifically it was: " + outF
+                    );
                 }
             }
 
@@ -134,6 +190,11 @@ public class ReaderTests
 
         // The call should succeed, provided that we give a valid audio file that has a length of several minutes.
         Assert.Greater(read, 0);
+
+        // Make a buffer less than BlockAlign to verify that it throws when the buffer is not at least a full sample frame.
+        buffer = new byte[reader.WaveFormat.BlockAlign - 1];
+
+        Assert.Throws<ArgumentException>(() => _ = reader.Read(buffer), "Buffers that have a size less than BlockAlign should throw in the read call.");
 
         // This must not throw any exception
         Assert.DoesNotThrow(reader.Dispose);

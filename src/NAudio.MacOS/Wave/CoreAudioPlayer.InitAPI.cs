@@ -144,6 +144,9 @@ public partial class CoreAudioPlayer
             }
         }
 
+        uint reportedLatency = 0U;
+        foreach (var s in streams) { reportedLatency += s.Latency; }
+
         if (HasStateFlagFast(CoreAudioPlayerStateFlags.NonInterleaved))
         {
             // Non-interleaved case.
@@ -189,25 +192,26 @@ public partial class CoreAudioPlayer
             selectedSource = new ResamplerSource(
                 originalProvider,
                 asbdToUse,
-                clh
+                clh,
+                reportedLatency
             );
         }
         else
         {
             // Otherwise, just use our wave provider directly.
-            selectedSource = new RawSource(originalProvider, asbdToUse);
+            selectedSource = new RawSource(originalProvider, asbdToUse, reportedLatency);
         }
 
         try
         {
-            ioProcedure ??= new(selectedDevice);
-            ioProcedure.Source = selectedSource;
-            ioProcedure.PlaybackStopped += FirePlaybackStopped;
-            // Now, enable only the stream we need.
+            // Release any previously allocated I/O procedure.
+            ioProcedure?.Dispose();
+            // Now, enable only the stream(s) we need.
             bool[] enabledStreams = new bool[streams.Length];
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.NonInterleaved))
             {
                 // Non-interleaved case
+                ioProcedure = new NonInterleavedProcedure(selectedDevice);
                 for (int I = 0; I < streams.Length; I++)
                 {
                     enabledStreams[I] = true;
@@ -216,11 +220,14 @@ public partial class CoreAudioPlayer
             else
             {
                 // Interleaved case
+                ioProcedure = new InterleavedProcedure(selectedDevice);
                 for (int I = 0; I < streams.Length; I++)
                 {
                     enabledStreams[I] = I == selectedStream;
                 }
             }
+            ioProcedure.Source = selectedSource;
+            ioProcedure.PlaybackStopped += FirePlaybackStopped;
             selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Output, enabledStreams);
 
             virtFormatChanged?.Dispose();

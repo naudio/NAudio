@@ -22,6 +22,7 @@ public abstract class AbstractExtendedFileWriter : Stream
     private long length;
     private bool disposed;
     private IntPtr extFileObject;
+    private readonly object lockObject;
     private readonly ExtendedFileWriterSettings settings;
 
     private protected AbstractExtendedFileWriter(IntPtr hExtFileObject, ExtendedFileWriterSettings settings)
@@ -29,6 +30,7 @@ public abstract class AbstractExtendedFileWriter : Stream
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         length = 0L;
         disposed = false;
+        lockObject = new();
         this.settings = settings;
         extFileObject = hExtFileObject;
     }
@@ -222,14 +224,21 @@ public abstract class AbstractExtendedFileWriter : Stream
     /// <param name="buffer">The buffer of audio data to provide to the file writer.</param>
     public unsafe sealed override void Write(ReadOnlySpan<byte> buffer)
     {
-        uint bufferLength = (uint)buffer.Length;
         var outFormat = settings.OutputFormat;
+        uint bufferLength = (uint)buffer.Length;
+        uint numFramesToWrite = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outFormat);
+        if (numFramesToWrite == 0U && bufferLength > 0U)
+        {
+            // We have a value less than BlockAlign.
+            // Throw to avoid such subtle issues.
+            throw new ArgumentException("Buffer length cannot be less than the stream's block alignment.", nameof(buffer));
+        }
         fixed (byte* bufferPointer = buffer)
         {
             ExtendedAudioFileException.ThrowIfError(
                 NativeMethods.ExtAudioFileWrite(
                     extFileObject,
-                    MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outFormat),
+                    numFramesToWrite,
                     AudioBufferList.FromSingleBuffer(new(bufferPointer), bufferLength, (uint)outFormat.Channels)
                 )
             );
@@ -274,7 +283,7 @@ public abstract class AbstractExtendedFileWriter : Stream
     /// <inheritdoc />
     protected sealed override void Dispose(bool disposing)
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             base.Dispose(disposing);
@@ -286,7 +295,7 @@ public abstract class AbstractExtendedFileWriter : Stream
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 }

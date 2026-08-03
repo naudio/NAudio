@@ -1,16 +1,5 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardware.h
-
-     Contains:   API for communicating with audio hardware.
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the file AudioHardware.h of the Core Audio Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -42,7 +31,14 @@ internal unsafe struct AudioHardwareIOProcStreamUsage
 
     public static IntPtr CreateStreamUsage(AudioDeviceIOProc ioProc, uint nStreams, out uint size)
     {
-        size = (uint)(sizeof(AudioHardwareIOProcStreamUsage) + ((nStreams - 1U) * sizeof(uint)));
+        size = (uint)sizeof(AudioHardwareIOProcStreamUsage);
+        // Verify that nStreams is greater than zero;
+        // if zero, we just create a memory block
+        // with the size of this structure.
+        if (nStreams > 0U)
+        {
+            size += ((nStreams - 1U) * sizeof(uint));
+        }
         var usage = (AudioHardwareIOProcStreamUsage*)NativeMemory.Alloc(size);
         usage->mIOProc = ioProc;
         usage->mNumberStreams = nStreams;

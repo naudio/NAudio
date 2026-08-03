@@ -11,10 +11,12 @@ public partial class CoreAudioPlayer
 {
     private class ResamplerSource : IPlayerSource
     {
+        private readonly uint streamsLatency;
         private readonly LowLevelAudioConverter converter;
 
-        public unsafe ResamplerSource(IWaveProvider wp, AudioStreamBasicDescription requiredDesc, ChannelLayoutHandle channelLayoutOut)
+        public unsafe ResamplerSource(IWaveProvider wp, AudioStreamBasicDescription requiredDesc, ChannelLayoutHandle channelLayoutOut, uint streamsLatency)
         {
+            this.streamsLatency = streamsLatency;
             converter = new(new(wp.Read), MacUtils.ConstructASBDFromWaveFormat(wp.WaveFormat), requiredDesc);
 
             if (wp.WaveFormat is WaveFormatExtensible ext && ext.ChannelMask != 0)
@@ -40,9 +42,11 @@ public partial class CoreAudioPlayer
             converter.InitializeNativeBuffer();
         }
 
-        public AudioStreamBasicDescription ReinterpretedFormat => converter.outputFormat;
+        public uint StreamsLatency => streamsLatency;
 
         public int Read(Span<byte> HALbuffer) => converter.Read(HALbuffer);
+
+        public AudioStreamBasicDescription ReinterpretedFormat => converter.outputFormat;
 
         public void Dispose() => converter.Dispose();
     }

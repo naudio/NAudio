@@ -1,18 +1,10 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardware.h
-
-     Contains:   API for communicating with audio hardware.
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the file AudioHardware.h of the Core Audio Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
+using System.Diagnostics;
+
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio.Interop;
 using NAudio.MacOS.CoreFoundationApi;
 
@@ -57,15 +49,24 @@ public sealed class AudioSystemObject : AudioObject
 
     private void OnServiceRestarted(AudioObject thisObj)
     {
-        // Keep these try/catch clauses to ensure that all the previous
-        // listener handles are safely freed
-        try { devicesListChanged?.Dispose(); } catch { }
+        try
+        {
+            MacUtils.EnsureDisposableObjectsDisposed(
+                devicesListChanged,
+                defaultInputDeviceChanged,
+                defaultOutputDeviceChanged,
+                defaultSystemOutputDeviceChanged
+            );
+        }
+        catch (AggregateException ex)
+        {
+            // Report to debug any exception of any failure that occurs
+            // while we dispose the older property listeners.
+            Debug.WriteLine("[AudioSystemObject] Exception occurred while disposing the older property listeners: " + ex);
+        }
         devicesListChanged = null;
-        try { defaultInputDeviceChanged?.Dispose(); } catch { }
         defaultInputDeviceChanged = null;
-        try { defaultOutputDeviceChanged?.Dispose(); } catch { }
         defaultOutputDeviceChanged = null;
-        try { defaultSystemOutputDeviceChanged?.Dispose(); } catch { }
         defaultSystemOutputDeviceChanged = null;
         devicesListChanged = CreateNotificationHandler(
             AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(

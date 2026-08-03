@@ -21,7 +21,7 @@ public class CoreAudioPlayerTests
     [TestCase(44100, 2, false)]
     [TestCase(48000, 2, false)]
     [TestCase(48000, 1, false)]
-    [TestCase(48000, 1, false)]
+    [TestCase(52000, 1, false)]
     [TestCase(48000, 2, true)]
     [TestCase(52000, 4, true)]
     public void CanPlayTenSecondSignal(int sampleRate, int channels, bool useIeeeFloat)
@@ -37,38 +37,53 @@ public class CoreAudioPlayerTests
 
         Assert.DoesNotThrow(() => player.Init(provider));
 
-        player.Play();
+        Exception capturedException = null;
 
         player.PlaybackStopped += (object sender, StoppedEventArgs e) =>
         {
-            if (e.Exception is not null)
-            {
-                throw e.Exception;
-            }
+            capturedException = e.Exception;
         };
+
+        Assert.DoesNotThrow(player.Play);
 
         while (player.PlaybackState == PlaybackState.Playing)
         {
             Thread.Sleep(500);
         }
 
-        player.Stop();
+        if (capturedException is not null)
+        {
+            Assert.Fail("The player was stopped abruptly: " + capturedException);
+        }
 
-        player.Dispose();
+        Assert.DoesNotThrow(player.Stop);
+
+        Assert.DoesNotThrow(player.Dispose);
     }
 
     [Test]
     public void IsHardenedAgainstVirtualFormatChanges()
     {
-        var sg = new SignalGenerator(48000, 2);
-
-        IWaveProvider provider = sg.Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
-
         CoreAudioPlayer player = new();
 
-        player.Init(provider);
+        var streams = player.Device.GetStreams(AudioObjectPropertyScopeConstants.Output);
+        if (streams.Length > 1)
+        {
+            Assert.Ignore("This test requires an audio device with an interleaved output stream.");
+        }
 
-        player.Play();
+        var sg = new SignalGenerator(48000, 2);
+
+        Assert.DoesNotThrow(() => player.Init(sg.Take(TimeSpan.FromSeconds(5)).ToWaveProvider()));
+
+        Exception capturedException = null;
+
+        player.PlaybackStopped += (object sender, StoppedEventArgs e) =>
+        {
+            capturedException = e.Exception;
+        };
+
+        Assert.DoesNotThrow(player.Play);
 
         new Thread(() => PerformArbitraryChanges(player)).Start();
 
@@ -77,9 +92,14 @@ public class CoreAudioPlayerTests
             Thread.Sleep(500);
         }
 
-        player.Stop();
+        if (capturedException is not null)
+        {
+            Assert.Fail("The player was stopped abruptly: " + capturedException);
+        }
 
-        player.Dispose();
+        Assert.DoesNotThrow(player.Stop);
+
+        Assert.DoesNotThrow(player.Dispose);
     }
 
     private static void PerformArbitraryChanges(CoreAudioPlayer instance)

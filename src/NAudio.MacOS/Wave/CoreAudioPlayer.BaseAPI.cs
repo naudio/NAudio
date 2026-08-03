@@ -3,6 +3,8 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
@@ -23,9 +25,12 @@ namespace NAudio.Wave;
 /// See the <see cref="AudioDevice"/> properties and methods to see what can be configured.
 /// </summary>
 /// <seealso cref="MacOS.CoreAudio"/>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.5")]
 public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePosition, IAsyncDisposable
 {
-    private ProcedureImpl ioProcedure;
+    private readonly object lockObject;
+    private PlayerProcedure ioProcedure;
     private IPlayerSource selectedSource;
     private IWaveProvider originalProvider;
     private CoreAudioPlayerStateFlags flags;
@@ -55,6 +60,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         {
             throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a capture device.");
         }
+        lockObject = new();
         selectedSource = null;
         originalProvider = null;
         selectedDevice = device;
@@ -71,11 +77,14 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     // or when on deinterleaved cases, the resampler.
     private interface IPlayerSource : IDisposable
     {
-        // Reads from the source
-        int Read(Span<byte> HALbuffer);
+        // Reads from the source.
+        int Read(Span<byte> halBuffer);
 
         // The format of the audio that will be written from the source provider during reads.
         AudioStreamBasicDescription ReinterpretedFormat { get; }
+
+        // Reported stream latency computed during the player's initialization.
+        uint StreamsLatency { get; }
     }
 
     /// <summary>
@@ -128,47 +137,92 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
     #region Public API
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Modifies the volume of the selected playback device <br />
+    /// To individually modify channels, obtain the control list of the
+    /// device and modify the value for each of it's volume controls.
+    /// </summary>
+    /// <remarks>
+    /// Note that modifying the volume of the audio device can be in
+    /// general disruptive as the user sets this to a desired value.
+    /// If you want to modify the gain of the audio provider that 
+    /// you use to provide data to the player without modifying this, 
+    /// inject a <see cref="SampleProviders.VolumeSampleProvider"/>.
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// When setting the property: The selected volume is less than 0,
+    /// or more than 1.
+    /// </exception>
     public float Volume
     {
         get
         {
-            ThrowIfInvalidOrDisposed();
-            float max = 0f;
+            if (HasStateFlagFast(CoreAudioPlayerStateFlags.Invalidated))
+            {
+                throw new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError);
+            }
+            // Note - getting the AudioLevelControl's ScalarValue
+            // is a very attractive option, however getting it
+            // returns a stale value of 1, which does not 
+            // work for us for getting the gain value,
+            // so we use DecibelValue and min-max it 
+            // by each control's decibel range.
+            // Finally, we test the produced value
+            // whether is less than the current presumed volume,
+            // which if it is, is replaced.
+            float volume = 1f;
             foreach (var c in selectedDevice.ControlList)
             {
-                if (c is not null && c.Kind == AudioControlKind.VolumeControl)
+                if (c is AudioLevelControl lc && lc.Kind == AudioControlKind.VolumeControl)
                 {
-                    var (minimum, maximum) = ((AudioLevelControl)c).DecibelRange;
-                    var v = ((AudioLevelControl)c).DecibelValue;
-                    float vol = (float)((v - minimum) / (maximum - minimum));
-                    if (vol > max) { max = vol; }
+                    var (minimum, maximum) = lc.DecibelRange;
+                    float vol = (float)((lc.DecibelValue - minimum) / (maximum - minimum));
+                    if (vol < volume) { volume = vol; }
                 }
             }
-            return max;
+            return volume;
         }
         set
         {
-            ThrowIfInvalidOrDisposed();
-            foreach (var c in selectedDevice.ControlList)
+            if (HasStateFlagFast(CoreAudioPlayerStateFlags.Invalidated))
             {
-                if (c is not null && c.Kind == AudioControlKind.VolumeControl)
+                throw new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError);
+            }
+            else if (value < 0f || value > 1f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Desired volume value cannot be less than 0 and more than 1.");
+            }
+            else if (HasStateFlagFast(CoreAudioPlayerStateFlags.Disposed))
+            {
+                // Do not modify the volume if this object was disposed of
+                return;
+            }
+            else
+            {
+                // Note that setting the scalar value here actually
+                // works; it does the intended result.
+                foreach (var c in selectedDevice.ControlList)
                 {
-                    ((AudioLevelControl)c).ScalarValue = value;
+                    if (c is AudioLevelControl lc && lc.Kind == AudioControlKind.VolumeControl)
+                    {
+                        lc.ScalarValue = value;
+                    }
                 }
             }
         }
     }
 
     /// <inheritdoc />
-    public PlaybackState PlaybackState
-    {
-        get
-        {
-            ThrowIfInvalidOrDisposed();
-            return ioProcedure.IsRunning ? PlaybackState.Playing : PlaybackState.Stopped;
-        }
-    }
+    /// <remarks>
+    /// Note that this property can only 
+    /// return <see cref="PlaybackState.Stopped"/> or 
+    /// <see cref="PlaybackState.Playing"/> states;
+    /// See remarks section in <see cref="Pause"/> 
+    /// to get an explanation why this happens.
+    /// </remarks>
+    public PlaybackState PlaybackState => ioProcedure is null ?
+        PlaybackState.Stopped :
+        ioProcedure.IsRunning ? PlaybackState.Playing : PlaybackState.Stopped;
 
     /// <summary>
     /// Gets the <see cref="WaveFormat"/> that is the virtual HAL format
@@ -189,7 +243,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         get
         {
             ThrowIfInvalidOrDisposed();
-            double latencyFrames = selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output);
+            double latencyFrames = selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) + selectedSource.StreamsLatency;
             return TimeSpan.FromSeconds(latencyFrames / selectedSource.ReinterpretedFormat.mSampleRate);
         }
     }
@@ -211,6 +265,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// <summary>
     /// Gets the selected audio device where the player renders data to.
     /// </summary>
+    [NotNull]
     public AudioDevice Device => selectedDevice;
 
     /// <inheritdoc />
@@ -239,7 +294,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     public void Init(IWaveProvider waveProvider)
     {
         ArgumentNullException.ThrowIfNull(waveProvider);
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.Initialized))
@@ -257,7 +312,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 
@@ -295,7 +350,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// </summary>
     public void Dispose()
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.Disposed)) { return; }
@@ -315,11 +370,14 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Disposes this <see cref="CoreAudioPlayer"/> instance asynchronously. <br />
+    /// Disposal is thread-safe, because the returned task puts <see cref="Dispose()"/> in the thread pool.
+    /// </summary>
     public ValueTask DisposeAsync() => new(Task.Run(new Action(Dispose)));
 
     #endregion

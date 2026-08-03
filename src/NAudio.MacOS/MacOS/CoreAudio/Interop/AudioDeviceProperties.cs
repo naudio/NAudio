@@ -1,14 +1,5 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardwareBase.h
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the file AudioHardwareBase.h of the Core Audio Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 #pragma warning disable IDE0055 // We want the properties to have a consistent view.
 
@@ -268,8 +259,8 @@ internal static class AudioDeviceProperties
     public static readonly AudioObjectPropertySelector kAudioDevicePropertyIOThreadOSWorkgroup             = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("oswg");
     /// <summary>
     /// A UInt32 where a non-zero value indicates that the current process's audio
-	/// will be zeroed out by the system. Note that this property does not apply to
-	/// aggregate devices, just real, physical devices.
+    /// will be zeroed out by the system. Note that this property does not apply to
+    /// aggregate devices, just real, physical devices.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioDevicePropertyProcessMute					   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("appm");
+    public static readonly AudioObjectPropertySelector kAudioDevicePropertyProcessMute                     = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("appm");
 }

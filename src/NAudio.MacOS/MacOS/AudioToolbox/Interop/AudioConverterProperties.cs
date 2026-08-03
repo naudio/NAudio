@@ -1,21 +1,5 @@
-/*!
-	@file		AudioConverter.h
-	@framework	AudioToolbox.framework
-	@copyright	(c) 1985-2015 by Apple, Inc., all rights reserved.
-    @abstract   API's to perform audio format conversions.
-    
-	AudioConverters convert between various linear PCM and compressed
-	audio formats. Supported transformations include:
-
-	- PCM float/integer/bit depth conversions
-	- PCM sample rate conversion
-	- PCM interleaving and deinterleaving
-	- encoding PCM to compressed formats
-	- decoding compressed formats to PCM
-
-	A single AudioConverter may perform more than one
-	of the above transformations.
-*/
+// This interop definition was derived from the file AudioConverter.h of the Audio Toolbox Framework.
+// See https://developer.apple.com/documentation/audiotoolbox for more information.
 
 using NAudio.Utils;
 
@@ -119,12 +103,12 @@ internal static class AudioConverterProperties
     /// A simple example for splitting mono input to stereo output (instead of routing
     /// the input to only the first output channel): 
     /// 
-	/// <code>
-	/// // this should be as large as the number of output channels:
-	/// SInt32 channelMap[2] = { 0, 0 };
-	/// AudioConverterSetProperty(theConverter, kAudioConverterChannelMap,
-	/// sizeof(channelMap), channelMap);
-	/// </code>
+    /// <code>
+    /// // this should be as large as the number of output channels:
+    /// SInt32 channelMap[2] = { 0, 0 };
+    /// AudioConverterSetProperty(theConverter, kAudioConverterChannelMap,
+    /// sizeof(channelMap), channelMap);
+    /// </code>
     /// </summary>
     public static readonly AudioConverterPropertyID kAudioConverterChannelMap                           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("chmp");
     /// <summary>
@@ -217,13 +201,13 @@ internal static class AudioConverterProperties
     /// <summary>
     /// A UInt32. 
     /// Set to a value from the <see cref="AudioConverterDitheringAlgorithm"/> enum.
-	/// Zero means no dithering and is the default. (macOS only.)
+    /// Zero means no dithering and is the default. (macOS only.)
     /// </summary>
     [UnsupportedOSPlatform("ios")]
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyDithering					= (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dith");
-	/// <summary>
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyDithering                    = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dith");
+    /// <summary>
     /// A UInt32. Dither is applied at this bit depth.  (macOS only.)
     /// </summary>
     [UnsupportedOSPlatform("ios")]
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyDitherBitDepth				= (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dbit");
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyDitherBitDepth               = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dbit");
 }

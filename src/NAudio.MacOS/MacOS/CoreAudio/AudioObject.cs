@@ -308,7 +308,7 @@ public abstract class AudioObject :
     {
         ThrowOnStatusError(
             address,
-            NativeMethods.AudioObjectSetPropertyData(objectId, address, sizeof(uint), new(&value))
+            NativeMethods.AudioObjectSetPropertyData(objectId, address, sizeof(float), new(&value))
         );
     }
 

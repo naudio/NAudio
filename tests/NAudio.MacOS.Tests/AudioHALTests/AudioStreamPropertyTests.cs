@@ -1,5 +1,6 @@
 
 using System;
+
 using NAudio.MacOS.CoreAudio;
 
 using NUnit.Framework;
@@ -7,6 +8,7 @@ using NUnit.Framework;
 namespace NAudio.MacOS.Tests.AudioHALTests;
 
 [TestFixture]
+[Category("IntegrationTest")]
 public class AudioStreamPropertyTests
 {
     private AudioStream testStream;

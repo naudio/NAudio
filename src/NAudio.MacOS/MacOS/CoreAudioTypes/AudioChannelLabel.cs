@@ -1,9 +1,5 @@
-/*!
-	@file		CoreAudioBaseTypes.h
-	@framework	CoreAudioTypes.framework
-	@copyright	(c) 1985-2021 by Apple, Inc., all rights reserved.
-    @abstract   Definition of types common to the Core Audio APIs.
-*/
+// This interop definition was derived from the file CoreAudioBaseTypes.h of the Core Audio Types Framework.
+// See https://developer.apple.com/documentation/coreaudiotypes for more information.
 
 #pragma warning disable IDE0055 // We want the properties to have a consistent view.
 
@@ -78,18 +74,18 @@ internal enum AudioChannelLabel : uint
     kAudioChannelLabel_CenterTopRear            = 53,
     kAudioChannelLabel_RightTopRear             = 54,
 
-    kAudioChannelLabel_LeftSideSurround			= 55,
-    kAudioChannelLabel_RightSideSurround		= 56,
-    kAudioChannelLabel_LeftBottom				= 57,
-    kAudioChannelLabel_RightBottom				= 58,
-    kAudioChannelLabel_CenterBottom				= 59,
-    kAudioChannelLabel_LeftTopSurround			= 60,
-    kAudioChannelLabel_RightTopSurround			= 61,
-    kAudioChannelLabel_LFE3						= 62,
-    kAudioChannelLabel_LeftBackSurround			= 63,
-    kAudioChannelLabel_RightBackSurround		= 64,
-    kAudioChannelLabel_LeftEdgeOfScreen			= 65,
-    kAudioChannelLabel_RightEdgeOfScreen		= 66,
+    kAudioChannelLabel_LeftSideSurround         = 55,
+    kAudioChannelLabel_RightSideSurround        = 56,
+    kAudioChannelLabel_LeftBottom               = 57,
+    kAudioChannelLabel_RightBottom              = 58,
+    kAudioChannelLabel_CenterBottom             = 59,
+    kAudioChannelLabel_LeftTopSurround          = 60,
+    kAudioChannelLabel_RightTopSurround         = 61,
+    kAudioChannelLabel_LFE3                     = 62,
+    kAudioChannelLabel_LeftBackSurround         = 63,
+    kAudioChannelLabel_RightBackSurround        = 64,
+    kAudioChannelLabel_LeftEdgeOfScreen         = 65,
+    kAudioChannelLabel_RightEdgeOfScreen        = 66,
     
     // first order ambisonic channels
     kAudioChannelLabel_Ambisonic_W              = 200,
@@ -160,7 +156,7 @@ internal enum AudioChannelLabel : uint
     kAudioChannelLabel_HOA_ACN_65024            = (2U << 16) | 65024,    // 254th order uses 65025 channels
 
     // Specific SN3D alias
-    kAudioChannelLabel_HOA_SN3D	                = kAudioChannelLabel_HOA_ACN_0, // Needs to be ORed with the channel index, not HOA order
+    kAudioChannelLabel_HOA_SN3D                 = kAudioChannelLabel_HOA_ACN_0, // Needs to be ORed with the channel index, not HOA order
 
     // HOA N3D
     kAudioChannelLabel_HOA_N3D                  = (3U << 16), // Needs to be ORed with the channel index, not HOA order

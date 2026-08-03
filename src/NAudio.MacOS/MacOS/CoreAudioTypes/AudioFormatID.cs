@@ -1,9 +1,5 @@
-/*!
-	@file		CoreAudioBaseTypes.h
-	@framework	CoreAudioTypes.framework
-	@copyright	(c) 1985-2021 by Apple, Inc., all rights reserved.
-    @abstract   Definition of types common to the Core Audio APIs.
-*/
+// This interop definition was derived from the file CoreAudioBaseTypes.h of the Core Audio Types Framework.
+// See https://developer.apple.com/documentation/coreaudiotypes for more information.
 
 #pragma warning disable IDE0055 // We want the constants to have a consistent view.
 
@@ -116,9 +112,9 @@ internal static class AudioFormatIDs
     /// <summary>The iLBC narrow band speech codec. It has no flags.</summary>
     public static readonly AudioFormatID kAudioFormatiLBC                    = (AudioFormatID)MacUtils.ConstructUIntConstantValueFromString("ilbc");
     /// <summary>DVI/Intel IMA ADPCM - ACM code 17.</summary>
-    public const AudioFormatID kAudioFormatDVIIntelIMA             = (AudioFormatID)0x6D730011;
+    public const AudioFormatID kAudioFormatDVIIntelIMA                       = (AudioFormatID)0x6D730011;
     /// <summary>Microsoft GSM 6.10 - ACM code 49.</summary>
-    public const AudioFormatID kAudioFormatMicrosoftGSM            = (AudioFormatID)0x6D730031;
+    public const AudioFormatID kAudioFormatMicrosoftGSM                      = (AudioFormatID)0x6D730031;
     /// <summary>
     /// This format is defined by AES3-2003, and adopted into MXF and MPEG-2
     /// containers and SDTI transport streams with SMPTE specs 302M-2002 and

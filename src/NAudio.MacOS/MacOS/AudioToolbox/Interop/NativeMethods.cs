@@ -1,3 +1,5 @@
+// This interop definition was derived from the files: AudioConverter.h, AudioFile.h and ExtendedAudioFile.h of the Audio Toolbox Framework.
+// See https://developer.apple.com/documentation/audiotoolbox for more information.
 
 using System;
 using System.Runtime.Versioning;

@@ -1,9 +1,5 @@
-/*!
-	@file		CoreAudioBaseTypes.h
-	@framework	CoreAudioTypes.framework
-	@copyright	(c) 1985-2021 by Apple, Inc., all rights reserved.
-    @abstract   Definition of types common to the Core Audio APIs.
-*/
+// This interop definition was derived from the file CoreAudioBaseTypes.h of the Core Audio Types Framework.
+// See https://developer.apple.com/documentation/coreaudiotypes for more information.
 
 #pragma warning disable IDE0055 // We want the values to have a consistent view.
 
@@ -37,9 +33,9 @@ internal enum AudioChannelBitmap : uint
     kAudioChannelBit_TopBackLeft                = (1U<<15),
     kAudioChannelBit_TopBackCenter              = (1U<<16),
     kAudioChannelBit_TopBackRight               = (1U<<17),
-    kAudioChannelBit_LeftTopFront             	= kAudioChannelBit_VerticalHeightLeft,
-    kAudioChannelBit_CenterTopFront           	= kAudioChannelBit_VerticalHeightCenter,
-    kAudioChannelBit_RightTopFront            	= kAudioChannelBit_VerticalHeightRight,
+    kAudioChannelBit_LeftTopFront               = kAudioChannelBit_VerticalHeightLeft,
+    kAudioChannelBit_CenterTopFront             = kAudioChannelBit_VerticalHeightCenter,
+    kAudioChannelBit_RightTopFront              = kAudioChannelBit_VerticalHeightRight,
     kAudioChannelBit_LeftTopMiddle              = (1U<<21),
     kAudioChannelBit_CenterTopMiddle            = kAudioChannelBit_TopCenterSurround,
     kAudioChannelBit_RightTopMiddle             = (1U<<23),

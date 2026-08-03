@@ -259,41 +259,41 @@ internal enum AudioChannelLayoutTag : uint
     kAudioChannelLayoutTag_DiscreteInOrder          = (147U<<16) | 0,                       // < needs to be ORed with the actual number of channels
     
     // ISO/IEC 23091-3, channels w/orderings
-    kAudioChannelLayoutTag_CICP_1					= kAudioChannelLayoutTag_MPEG_1_0,		// < C
-    kAudioChannelLayoutTag_CICP_2 					= kAudioChannelLayoutTag_MPEG_2_0,		// < L R
-    kAudioChannelLayoutTag_CICP_3 					= kAudioChannelLayoutTag_MPEG_3_0_A,	// < L R C
-    kAudioChannelLayoutTag_CICP_4 					= kAudioChannelLayoutTag_MPEG_4_0_A,	// < L R C Cs
-    kAudioChannelLayoutTag_CICP_5					= kAudioChannelLayoutTag_MPEG_5_0_A,	// < L R C Ls Rs
-    kAudioChannelLayoutTag_CICP_6					= kAudioChannelLayoutTag_MPEG_5_1_A,	// < L R C LFE Ls Rs
-    kAudioChannelLayoutTag_CICP_7					= kAudioChannelLayoutTag_MPEG_7_1_B,	// < L R C LFE Ls Rs Lc Rc
+    kAudioChannelLayoutTag_CICP_1                   = kAudioChannelLayoutTag_MPEG_1_0,      // < C
+    kAudioChannelLayoutTag_CICP_2                   = kAudioChannelLayoutTag_MPEG_2_0,      // < L R
+    kAudioChannelLayoutTag_CICP_3                   = kAudioChannelLayoutTag_MPEG_3_0_A,    // < L R C
+    kAudioChannelLayoutTag_CICP_4                   = kAudioChannelLayoutTag_MPEG_4_0_A,    // < L R C Cs
+    kAudioChannelLayoutTag_CICP_5                   = kAudioChannelLayoutTag_MPEG_5_0_A,    // < L R C Ls Rs
+    kAudioChannelLayoutTag_CICP_6                   = kAudioChannelLayoutTag_MPEG_5_1_A,    // < L R C LFE Ls Rs
+    kAudioChannelLayoutTag_CICP_7                   = kAudioChannelLayoutTag_MPEG_7_1_B,    // < L R C LFE Ls Rs Lc Rc
 
-    kAudioChannelLayoutTag_CICP_9					= kAudioChannelLayoutTag_ITU_2_1,		// < L R Cs
-    kAudioChannelLayoutTag_CICP_10 					= kAudioChannelLayoutTag_ITU_2_2,		// < L R Ls Rs
-    kAudioChannelLayoutTag_CICP_11					= kAudioChannelLayoutTag_MPEG_6_1_A,	// < L R C LFE Ls Rs Cs
-    kAudioChannelLayoutTag_CICP_12 					= kAudioChannelLayoutTag_MPEG_7_1_C,	// < L R C LFE Ls Rs Rls Rrs
-    kAudioChannelLayoutTag_CICP_13 					= (204U<<16) | 24,						// < Lc Rc C LFE2 Rls Rrs L R Cs LFE3 Lss Rss Vhl Vhr Vhc Ts Ltr Rtr Ltm Rtm Ctr Cb Lb Rb
+    kAudioChannelLayoutTag_CICP_9                   = kAudioChannelLayoutTag_ITU_2_1,       // < L R Cs
+    kAudioChannelLayoutTag_CICP_10                  = kAudioChannelLayoutTag_ITU_2_2,       // < L R Ls Rs
+    kAudioChannelLayoutTag_CICP_11                  = kAudioChannelLayoutTag_MPEG_6_1_A,    // < L R C LFE Ls Rs Cs
+    kAudioChannelLayoutTag_CICP_12                  = kAudioChannelLayoutTag_MPEG_7_1_C,    // < L R C LFE Ls Rs Rls Rrs
+    kAudioChannelLayoutTag_CICP_13                  = (204U<<16) | 24,                      // < Lc Rc C LFE2 Rls Rrs L R Cs LFE3 Lss Rss Vhl Vhr Vhc Ts Ltr Rtr Ltm Rtm Ctr Cb Lb Rb
 
-    kAudioChannelLayoutTag_CICP_14 					= (205U<<16) | 8,						// < L R C LFE Ls Rs Vhl Vhr
-    kAudioChannelLayoutTag_CICP_15 					= (206U<<16) | 12,						// < L R C LFE2 Rls Rrs LFE3 Lss Rss Vhl Vhr Ctr
+    kAudioChannelLayoutTag_CICP_14                  = (205U<<16) | 8,                       // < L R C LFE Ls Rs Vhl Vhr
+    kAudioChannelLayoutTag_CICP_15                  = (206U<<16) | 12,                      // < L R C LFE2 Rls Rrs LFE3 Lss Rss Vhl Vhr Ctr
 
-    kAudioChannelLayoutTag_CICP_16 					= (207U<<16) | 10,						// < L R C LFE Ls Rs Vhl Vhr Lts Rts
-    kAudioChannelLayoutTag_CICP_17 					= (208U<<16) | 12,						// < L R C LFE Ls Rs Vhl Vhr Vhc Lts Rts Ts
-    kAudioChannelLayoutTag_CICP_18 					= (209U<<16) | 14,						// < L R C LFE Ls Rs Lbs Rbs Vhl Vhr Vhc Lts Rts Ts
+    kAudioChannelLayoutTag_CICP_16                  = (207U<<16) | 10,                      // < L R C LFE Ls Rs Vhl Vhr Lts Rts
+    kAudioChannelLayoutTag_CICP_17                  = (208U<<16) | 12,                      // < L R C LFE Ls Rs Vhl Vhr Vhc Lts Rts Ts
+    kAudioChannelLayoutTag_CICP_18                  = (209U<<16) | 14,                      // < L R C LFE Ls Rs Lbs Rbs Vhl Vhr Vhc Lts Rts Ts
 
-    kAudioChannelLayoutTag_CICP_19 					= (210U<<16) | 12,						// < L R C LFE Rls Rrs Lss Rss Vhl Vhr Ltr Rtr
-    kAudioChannelLayoutTag_CICP_20 					= (211U<<16) | 14,						// < L R C LFE Rls Rrs Lss Rss Vhl Vhr Ltr Rtr Leos Reos
+    kAudioChannelLayoutTag_CICP_19                  = (210U<<16) | 12,                      // < L R C LFE Rls Rrs Lss Rss Vhl Vhr Ltr Rtr
+    kAudioChannelLayoutTag_CICP_20                  = (211U<<16) | 14,                      // < L R C LFE Rls Rrs Lss Rss Vhl Vhr Ltr Rtr Leos Reos
 
-    kAudioChannelLayoutTag_Ogg_3_0                  = kAudioChannelLayoutTag_AC3_3_0,		// < 3 channels, L C R
-    kAudioChannelLayoutTag_Ogg_4_0                  = kAudioChannelLayoutTag_WAVE_4_0_B,	// < 4 channels, L R Rls Rrs
-    kAudioChannelLayoutTag_Ogg_5_0                  = (212U<<16) | 5,	                    // < 5 channels, L C R Rls Rrs
-    kAudioChannelLayoutTag_Ogg_5_1                  = (213U<<16) | 6,	                    // < 6 channels, L C R Rls Rrs LFE
-    kAudioChannelLayoutTag_Ogg_6_1                  = (214U<<16) | 7,						// < 7 channels, L C R Ls Rs Cs LFE
-    kAudioChannelLayoutTag_Ogg_7_1                  = (215U<<16) | 8,						// < 8 channels, L C R Ls Rs Rls Rrs LFE
+    kAudioChannelLayoutTag_Ogg_3_0                  = kAudioChannelLayoutTag_AC3_3_0,       // < 3 channels, L C R
+    kAudioChannelLayoutTag_Ogg_4_0                  = kAudioChannelLayoutTag_WAVE_4_0_B,    // < 4 channels, L R Rls Rrs
+    kAudioChannelLayoutTag_Ogg_5_0                  = (212U<<16) | 5,                       // < 5 channels, L C R Rls Rrs
+    kAudioChannelLayoutTag_Ogg_5_1                  = (213U<<16) | 6,                       // < 6 channels, L C R Rls Rrs LFE
+    kAudioChannelLayoutTag_Ogg_6_1                  = (214U<<16) | 7,                       // < 7 channels, L C R Ls Rs Cs LFE
+    kAudioChannelLayoutTag_Ogg_7_1                  = (215U<<16) | 8,                       // < 8 channels, L C R Ls Rs Rls Rrs LFE
 
-    kAudioChannelLayoutTag_MPEG_5_0_E               = (216U<<16) | 5,						// < 5 channels, L R Rls Rrs C
-    kAudioChannelLayoutTag_MPEG_5_1_E               = (217U<<16) | 6,						// < 6 channels, L R Rls Rrs C LFE
-    kAudioChannelLayoutTag_MPEG_6_1_B               = (218U<<16) | 7,						// < 7 channels, L R Ls Rs C Cs LFE
-    kAudioChannelLayoutTag_MPEG_7_1_D               = (219U<<16) | 8,						// < 8 channels, L R Rls Rrs Ls Rs C LFE
+    kAudioChannelLayoutTag_MPEG_5_0_E               = (216U<<16) | 5,                       // < 5 channels, L R Rls Rrs C
+    kAudioChannelLayoutTag_MPEG_5_1_E               = (217U<<16) | 6,                       // < 6 channels, L R Rls Rrs C LFE
+    kAudioChannelLayoutTag_MPEG_6_1_B               = (218U<<16) | 7,                       // < 7 channels, L R Ls Rs C Cs LFE
+    kAudioChannelLayoutTag_MPEG_7_1_D               = (219U<<16) | 8,                       // < 8 channels, L R Rls Rrs Ls Rs C LFE
 
     kAudioChannelLayoutTag_BeginReserved            = 0xF0000000,                           // < Channel layout tag values in this range are reserved for internal use
     kAudioChannelLayoutTag_EndReserved              = 0xFFFEFFFF,

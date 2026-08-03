@@ -6,6 +6,7 @@ using NUnit.Framework;
 namespace NAudio.MacOS.Tests.AudioHALTests;
 
 [TestFixture]
+[Category("IntegrationTest")]
 public class CanEnumerateDevices
 {
     [OneTimeSetUp]

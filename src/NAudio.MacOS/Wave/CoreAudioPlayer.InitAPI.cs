@@ -8,6 +8,8 @@ using NAudio.MacOS.CoreAudioTypes;
 
 namespace NAudio.Wave;
 
+// Provides the management and initialization code of the player. 
+// Anything that manages the player and the I/O procedure should be here.
 public partial class CoreAudioPlayer
 {
     private PropertyListenerHandle virtFormatChanged;

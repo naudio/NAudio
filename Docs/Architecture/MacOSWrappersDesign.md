@@ -97,7 +97,7 @@ Probably it is something pertaining to the Apple's Clang compiler.
 
 ## 4. Architecture
 
-Architecture of the code was built in five different directions:
+Architecture of the code was built in six different directions:
 
 1. Provide raw performance on critical audio paths; as such, use `Span` API's for those cases.
 
@@ -108,12 +108,20 @@ do stack allocation for small sizes, to avoid memory leaks as possible.
 3. API's that are complex and not required for normal use with other NAudio counterparts
 live in `NAudio.MacOS` namespace, any wrapper used for NAudio is in `NAudio.Wave` namespace.
 
-4. No macOS-specific special cases must be exported to public API; for example,
-the `AudioStreamBasicDescription` is a different definition compared to `WAVEFORMAT` of Windows,
+4. All interop signatures must be explicit and match bit-perfectly to the original
+native header declaration. Any used structures, type definitions and enumerations 
+must also match the native headers bit-perfectly, if possible and not restricted
+by the runtime's limitations.
+Additionally, full documentation must be provided to these interop signatures 
+so that future contributors that continue to develop the assembly can easily 
+modify it and understand what each signature does.
+
+5. No macOS-specific special cases must be exported to public API; for example,
+the `AudioStreamBasicDescription` is a different definition compared to `WAVEFORMATEX` of Windows,
 and instead internal conversion functions convert between the two data formats as needed,
 so that to comply with the existing NAudio `WaveFormat` class.
 
-5. Do not use any Swift/Objective-C translation support for now;
+6. Do not use any Swift/Objective-C translation support for now;
 We might need in the future such support (loopback recording is one of them), we defer it for now 
 until the current API matures and see later on what we will do.
 
@@ -212,7 +220,7 @@ See the `AudioFileLibraryInformation` class for more information.
 ## 7. For the future...
 
 1. As mentioned above, loopback recording and process audio capture 
-is for now defferred because they require more technical debt and effort
+is for now deferred because they require more technical debt and effort
 to be ported.
 Will wait until .NET releases a fully functional Swift interop interface,
 which it would be probably easier to work with.

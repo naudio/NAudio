@@ -19,27 +19,46 @@ public partial class CoreAudioPlayer
             this.streamsLatency = streamsLatency;
             converter = new(new(wp.Read), MacUtils.ConstructASBDFromWaveFormat(wp.WaveFormat), requiredDesc);
 
-            if (wp.WaveFormat is WaveFormatExtensible ext && ext.ChannelMask != 0)
+            try
             {
-                var l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
+                // If we have a channel mask in the source format, provide it to the converter.
+                if (wp.WaveFormat is WaveFormatExtensible ext && ext.ChannelMask != 0)
+                {
+                    var l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
 
-                converter.AssignChannelLayout(
-                    new(&l),
-                    (uint)sizeof(AudioChannelLayout),
-                    false
-                );
+                    converter.AssignChannelLayout(
+                        new(&l),
+                        (uint)sizeof(AudioChannelLayout),
+                        false
+                    );
+                }
+
+                // If we have a target channel layout, provide it to the converter.
+                if (channelLayoutOut is not null)
+                {
+                    converter.AssignChannelLayout(
+                        channelLayoutOut.DangerousGetHandle(),
+                        channelLayoutOut.Size,
+                        true
+                    );
+                }
+
+                // Special case: If the converter's source is single-channel
+                // and the player requires multi-channel, copy the mono output to all the channels.
+                if (converter.sourceFormat.mChannelsPerFrame == 1U && requiredDesc.mChannelsPerFrame > 1U)
+                {
+                    int[] chMap = new int[requiredDesc.mChannelsPerFrame];
+                    Array.Fill(chMap, 0);
+                    converter.SetChannelMap(chMap);
+                }
+
+                converter.InitializeNativeBuffer();
             }
-
-            if (channelLayoutOut is not null)
+            catch
             {
-                converter.AssignChannelLayout(
-                    channelLayoutOut.DangerousGetHandle(),
-                    channelLayoutOut.Size,
-                    true
-                );
+                converter.Dispose();
+                throw;
             }
-
-            converter.InitializeNativeBuffer();
         }
 
         public uint StreamsLatency => streamsLatency;

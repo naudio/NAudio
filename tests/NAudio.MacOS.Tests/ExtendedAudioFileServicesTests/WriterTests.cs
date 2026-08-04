@@ -35,7 +35,7 @@ public class WriterTests
     {
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
         settings ??= new();
-        settings.OutputFormat = sg.WaveFormat;
+        settings.ProvidingFormat = sg.WaveFormat;
         var path = CreateRandomFileName();
         var wr = ExtendedAudioFileWriter.CreateFromFilePath(path, settings, true);
         WriteAndDisposeWriter(wr, sg);
@@ -46,7 +46,7 @@ public class WriterTests
     {
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
         settings ??= new();
-        settings.OutputFormat = sg.WaveFormat;
+        settings.ProvidingFormat = sg.WaveFormat;
 
         var path = CreateRandomFileName();
 
@@ -80,7 +80,7 @@ public class WriterTests
         }
     }
 
-    private static void WriteAndDisposeWriter(AbstractExtendedFileWriter writer, IWaveProvider provider)
+    private static void WriteAndDisposeWriter(ExtendedAudioFileWriter writer, IWaveProvider provider)
     {
         byte[] buffer = new byte[provider.WaveFormat.ConvertLatencyToByteSize(300)];
 

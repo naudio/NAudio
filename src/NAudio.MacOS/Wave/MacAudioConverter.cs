@@ -103,6 +103,16 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
                 );
             }
 
+            // Special case: If the source is single-channel but we want to resample to more than one channels,
+            // change the channel map to provide the input to all the channels. By default, the resampler
+            // provides the mono data to the first channel only, leaving all the others silent.
+            if (sourceFormat.Channels == 1 && targetFormat.Channels > 1)
+            {
+                int[] chMap = new int[targetFormat.Channels];
+                Array.Fill(chMap, 0);
+                actualConverter.SetChannelMap(chMap);
+            }
+
             // Initialize the native buffer, then we are ready to resample.
             actualConverter.InitializeNativeBuffer();
         }

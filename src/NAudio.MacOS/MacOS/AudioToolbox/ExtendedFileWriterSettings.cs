@@ -22,7 +22,7 @@ public class ExtendedFileWriterSettings
     /// the data are written into, which may be a compressed
     /// format - selected by the writer once initialized.
     /// </summary>
-    public WaveFormat OutputFormat { get; set; }
+    public WaveFormat ProvidingFormat { get; set; }
 
     /// <summary>
     /// For compressed formats, this defines the number of frames

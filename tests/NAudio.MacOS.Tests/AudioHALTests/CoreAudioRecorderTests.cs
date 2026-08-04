@@ -23,7 +23,7 @@ public class CoreAudioRecorderTests
 
         Assert.Throws<InvalidOperationException>(recorder.StartRecording);
 
-        Assert.DoesNotThrow(() => recorder.InitializeRecording());
+        Assert.DoesNotThrow(recorder.InitializeRecording);
 
         int recordedBytes = 0;
 
@@ -48,7 +48,7 @@ public class CoreAudioRecorderTests
 
         Assert.DoesNotThrow(recorder.StopRecording);
 
-        recorder.Dispose();
+        Assert.DoesNotThrow(recorder.Dispose);
     }
 
     [Test]

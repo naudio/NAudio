@@ -133,6 +133,22 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
         );
     }
 
+    public void SetChannelMap(int[] channelMap)
+    {
+        uint size = (uint)(channelMap.Length * sizeof(int));
+        fixed (int* channelMapPointer = channelMap)
+        {
+            AudioConverterException.ThrowIfError(
+                NativeMethods.AudioConverterSetProperty(
+                    audioConverterHandle,
+                    AudioConverterProperties.kAudioConverterChannelMap,
+                    size,
+                    new(channelMapPointer)
+                )
+            );
+        }
+    }
+
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static int ConvertComplexBufferCb(
         nint converter,

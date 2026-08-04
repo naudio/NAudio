@@ -7,6 +7,8 @@ using NAudio.MacOS.CoreAudioTypes;
 
 namespace NAudio.Wave;
 
+// Provides the management and initialization code of the recorder. 
+// Anything that manages the recorder and the I/O procedure should be here.
 public partial class CoreAudioRecorder
 {
     private void OnDeviceWillBeDestroyed(AudioObject _)
@@ -89,6 +91,7 @@ public partial class CoreAudioRecorder
 
         uint totalLatency = 0U;
 
+        // Create the I/O procedure, assign the streams to use, then compute the latency.
         bool[] streamSelection = new bool[streams.Length];
         if (flags.HasFlag(CoreAudioRecorderStateFlags.NonInterleaved))
         {
@@ -106,6 +109,8 @@ public partial class CoreAudioRecorder
         selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
         ioProcedure.StreamLatency = totalLatency;
         ioProcedure.VirtualFormat = virtualFormat;
+        // The latency of the streams may report as zero - 
+        // in such case, use the buffer frame size divided by the sample rate.
         if (totalLatency == 0U)
         {
             ioProcedure.StreamLatency = (uint)(selectedDevice.BufferFrameSize / virtualFormat.mSampleRate);

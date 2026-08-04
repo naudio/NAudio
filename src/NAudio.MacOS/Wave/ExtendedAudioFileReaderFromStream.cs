@@ -159,23 +159,14 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
 
     private void DisposeAudioFileAndGCHandle()
     {
-        try
+        if (handleToAudioFile != IntPtr.Zero)
         {
-            if (handleToAudioFile != IntPtr.Zero)
-            {
-                AudioFileException.ThrowIfError(
-                    NativeMethods.AudioFileClose(handleToAudioFile)
-                );
-                handleToAudioFile = IntPtr.Zero;
-            }
+            AudioFileException.ThrowIfError(
+                NativeMethods.AudioFileClose(handleToAudioFile)
+            );
+            handleToAudioFile = IntPtr.Zero;
         }
-        finally
-        {
-            if (streamGcHandle.IsAllocated)
-            {
-                streamGcHandle.Free();
-            }
-        }
+        if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
     }
 
     /// <inheritdoc />

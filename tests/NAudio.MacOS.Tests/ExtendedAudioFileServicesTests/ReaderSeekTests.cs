@@ -79,7 +79,7 @@ public class ReaderSeekTests
         {
             writer = ExtendedAudioFileWriter.CreateFromFilePath(
                 path,
-                new() { FileType = "audio/aac", OutputFormat = new(44100, 16, 1) },
+                new() { FileType = "audio/aac", ProvidingFormat = new(44100, 16, 1) },
                 true
             );
         }

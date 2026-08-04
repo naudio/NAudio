@@ -143,7 +143,7 @@ public abstract class AbstractExtendedFileWriter : Stream
 
     internal static AudioStreamBasicDescription BuildWriter(ExtendedFileWriterSettings settings, out AudioChannelLayout layout, out AudioFileTypeID fileTypeID)
     {
-        var providingFormat = settings.OutputFormat;
+        var providingFormat = settings.ProvidingFormat;
         AudioStreamBasicDescription fileAsbd = GetBestFormat(settings, out fileTypeID);
         fileAsbd.mSampleRate = providingFormat.SampleRate;
         fileAsbd.mChannelsPerFrame = (uint)providingFormat.Channels;
@@ -224,7 +224,7 @@ public abstract class AbstractExtendedFileWriter : Stream
     /// <param name="buffer">The buffer of audio data to provide to the file writer.</param>
     public unsafe sealed override void Write(ReadOnlySpan<byte> buffer)
     {
-        var outFormat = settings.OutputFormat;
+        var outFormat = settings.ProvidingFormat;
         uint bufferLength = (uint)buffer.Length;
         uint numFramesToWrite = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outFormat);
         if (numFramesToWrite == 0U && bufferLength > 0U)

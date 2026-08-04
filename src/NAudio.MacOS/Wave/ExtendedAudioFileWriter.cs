@@ -11,240 +11,62 @@ using NAudio.MacOS.AudioToolbox.Interop;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides a collection of static methods allowing to create
-/// file writers to encode audio data.
+/// Provides a writer that can create audio files
+/// using the macOS Audio Toolbox framework.
 /// </summary>
-public static class ExtendedAudioFileWriter
+public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
 {
-    private sealed unsafe class FileWriterImpl : AbstractExtendedFileWriter
+    private ExtendedAudioFileWriter(nint hExtFileObject, ExtendedFileWriterSettings settings)
+        : base(hExtFileObject, settings) { }
+
+    // Initializes the writer.
+    private protected void Init() => AssignClientFormat(Settings.ProvidingFormat);
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Usage",
+        "CA2208:Instantiate argument exceptions correctly",
+        Justification = "Common helper method"
+    )]
+    private void AssignClientFormat(WaveFormat format)
     {
-        private IntPtr streamFileID;
-        private GCHandle streamGcHandle;
+        if (format is null) { throw new ArgumentException("OutputFormat property in settings object was not assigned to a valid WaveFormat instance.", "settings"); }
 
-        private FileWriterImpl(nint hExtFileObject, ExtendedFileWriterSettings settings)
-            : base(hExtFileObject, settings)
+        var asbd = MacUtils.ConstructASBDFromWaveFormat(format);
+
+        ExtendedAudioFileException.ThrowIfError(
+            NativeMethods.ExtAudioFileSetProperty(
+                GetExtAudioFileHandle(),
+                ExtendedAudioFileProperties.kExtAudioFileProperty_ClientDataFormat,
+                (uint)sizeof(AudioStreamBasicDescription),
+                new(&asbd)
+            )
+        );
+
+        if (format is WaveFormatExtensible ext && ext.ChannelMask != 0)
         {
-            streamGcHandle = default;
-            streamFileID = IntPtr.Zero;
-            AssignClientFormat(settings.OutputFormat);
-        }
-
-        private FileWriterImpl(nint hExtFileObject, IntPtr streamFileID, ExtendedFileWriterSettings settings, GCHandle streamHandle)
-            : base(hExtFileObject, settings)
-        {
-            try
-            {
-                streamGcHandle = streamHandle;
-                this.streamFileID = streamFileID;
-                AssignClientFormat(settings.OutputFormat);
-            }
-            catch
-            {
-                Dispose();
-                throw;
-            }
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Usage",
-            "CA2208:Instantiate argument exceptions correctly",
-            Justification = "Common helper method"
-        )]
-        private void AssignClientFormat(WaveFormat format)
-        {
-            if (format is null) { throw new ArgumentException("OutputFormat property in settings object was not assigned to a valid WaveFormat instance.", "settings"); }
-
-            var asbd = MacUtils.ConstructASBDFromWaveFormat(format);
-
+            AudioChannelLayout l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
             ExtendedAudioFileException.ThrowIfError(
                 NativeMethods.ExtAudioFileSetProperty(
                     GetExtAudioFileHandle(),
-                    ExtendedAudioFileProperties.kExtAudioFileProperty_ClientDataFormat,
-                    (uint)sizeof(AudioStreamBasicDescription),
-                    new(&asbd)
+                    ExtendedAudioFileProperties.kExtAudioFileProperty_ClientChannelLayout,
+                    (uint)sizeof(AudioChannelLayout),
+                    new(&l)
                 )
             );
-
-            if (format is WaveFormatExtensible ext && ext.ChannelMask != 0)
-            {
-                AudioChannelLayout l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
-                ExtendedAudioFileException.ThrowIfError(
-                    NativeMethods.ExtAudioFileSetProperty(
-                        GetExtAudioFileHandle(),
-                        ExtendedAudioFileProperties.kExtAudioFileProperty_ClientChannelLayout,
-                        (uint)sizeof(AudioChannelLayout),
-                        new(&l)
-                    )
-                );
-            }
-        }
-
-        protected override void DisposeNativeData()
-        {
-            base.DisposeNativeData();
-            try
-            {
-                if (streamFileID != IntPtr.Zero)
-                {
-                    AudioFileException.ThrowIfError(
-                        NativeMethods.AudioFileClose(streamFileID)
-                    );
-                    streamFileID = IntPtr.Zero;
-                }
-            }
-            finally
-            {
-                if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
-            }
-        }
-
-        public static FileWriterImpl FromURL(
-            Uri url,
-            ExtendedFileWriterSettings settings,
-            bool overwriteIfExists
-        )
-        {
-            var asbd = BuildWriter(settings, out var layout, out var ft);
-
-            using MacOS.CoreFoundationApi.CFURL urlNative = MacOS.CoreFoundationApi.CFURL.CreateFromUri(url);
-
-            ExtendedAudioFileException.ThrowIfError(
-                NativeMethods.ExtAudioFileCreateWithURL(
-                    urlNative.NativeObject,
-                    ft,
-                    asbd,
-                    layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
-                    overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
-                    out var outExtAudioFile
-                )
-            );
-
-            try
-            {
-                return new FileWriterImpl(outExtAudioFile, settings);
-            }
-            catch
-            {
-                _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
-                throw;
-            }
-        }
-
-        public static FileWriterImpl FromFile(
-            string filePath,
-            ExtendedFileWriterSettings settings,
-            bool overwriteIfExists
-        )
-        {
-            var asbd = BuildWriter(settings, out var layout, out var ft);
-
-            using MacOS.CoreFoundationApi.CFURL urlNative = MacOS.CoreFoundationApi.CFURL.CreateFromFilePath(filePath, false);
-
-            ExtendedAudioFileException.ThrowIfError(
-                NativeMethods.ExtAudioFileCreateWithURL(
-                    urlNative.NativeObject,
-                    ft,
-                    asbd,
-                    layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
-                    overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
-                    out var outExtAudioFile
-                )
-            );
-
-            try
-            {
-                return new FileWriterImpl(outExtAudioFile, settings);
-            }
-            catch
-            {
-                _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
-                throw;
-            }
-        }
-
-        public static FileWriterImpl FromStream(
-            Stream stream,
-            ExtendedFileWriterSettings settings
-        )
-        {
-            var asbd = BuildWriter(settings, out var layout, out var ft);
-
-            GCHandle handle = GCHandle.Alloc(new AudioFileCallbacks.CallbacksUserData(stream), GCHandleType.Normal);
-
-            IntPtr outAudioFile = IntPtr.Zero, outExtAudioFile = IntPtr.Zero;
-            try
-            {
-                int status = NativeMethods.AudioFileInitializeWithCallbacks(
-                    GCHandle.ToIntPtr(handle),
-                    AudioFileCallbacks.ReadProcedure,
-                    AudioFileCallbacks.WriteProcedure,
-                    AudioFileCallbacks.GetSizeProcedure,
-                    AudioFileCallbacks.SetSizeProcedure,
-                    ft,
-                    asbd,
-                    AudioFileFlags.None,
-                    out outAudioFile
-                );
-                if (status == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
-                {
-                    throw ((AudioFileCallbacks.CallbacksUserData)handle.Target).Exception;
-                }
-                AudioFileException.ThrowIfError(status);
-
-                ExtendedAudioFileException.ThrowIfError(
-                    NativeMethods.ExtAudioFileWrapAudioFileID(
-                        outAudioFile,
-                        MacOS.MacBoolean.True,
-                        out outExtAudioFile
-                    )
-                );
-
-                if (layout.mChannelLayoutTag != 0)
-                {
-                    ExtendedAudioFileException.ThrowIfError(
-                        NativeMethods.ExtAudioFileSetProperty(
-                            outExtAudioFile,
-                            ExtendedAudioFileProperties.kExtAudioFileProperty_FileChannelLayout,
-                            (uint)sizeof(AudioChannelLayout),
-                            new(&layout)
-                        )
-                    );
-                }
-
-                return new FileWriterImpl(
-                    outExtAudioFile,
-                    outAudioFile,
-                    settings,
-                    handle
-                );
-            }
-            catch
-            {
-                if (outExtAudioFile != IntPtr.Zero)
-                {
-                    _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
-                }
-                if (outAudioFile != IntPtr.Zero)
-                {
-                    _ = NativeMethods.AudioFileClose(outAudioFile);
-                }
-                if (handle.IsAllocated) { handle.Free(); }
-                throw;
-            }
         }
     }
 
     /// <summary>
-    /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
+    /// Constructs a new instance of the <see cref="ExtendedAudioFileWriter" />
     /// class, providing the URL where the new produced file will be located to.
     /// </summary>
     /// <param name="url">The URL of the file to write</param>
     /// <param name="settings">Settings for the writer to use.</param>
     /// <param name="overwriteIfExists">If the file is existing, when specified to <see langword="true"/>, it overwrites the file instead of throwing an exception.</param>
-    /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
+    /// <returns>A new instance of the <see cref="ExtendedAudioFileWriter" /> class.</returns>
     /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="url"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
-    public static AbstractExtendedFileWriter CreateFromURL(
+    public static ExtendedAudioFileWriter CreateFromURL(
         Uri url,
         ExtendedFileWriterSettings settings,
         bool overwriteIfExists = false
@@ -255,27 +77,48 @@ public static class ExtendedAudioFileWriter
 
         if (string.IsNullOrWhiteSpace(settings.FileType))
         {
-            throw new ArgumentException("FileType not assigned to a valid MIME type string", nameof(settings));
-        }
-        else if (string.IsNullOrWhiteSpace(settings.FileType))
-        {
-            throw new ArgumentException("FileType not assigned to a valid MIME type string", nameof(settings));
+            throw new ArgumentException("FileType is not assigned to a valid MIME type string", nameof(settings));
         }
 
-        return FileWriterImpl.FromURL(url, settings, overwriteIfExists);
+        var asbd = BuildWriter(settings, out var layout, out var ft);
+
+        using MacOS.CoreFoundationApi.CFURL urlNative = MacOS.CoreFoundationApi.CFURL.CreateFromUri(url);
+
+        ExtendedAudioFileException.ThrowIfError(
+            NativeMethods.ExtAudioFileCreateWithURL(
+                urlNative.NativeObject,
+                ft,
+                asbd,
+                layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
+                overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
+                out var outExtAudioFile
+            )
+        );
+
+        try
+        {
+            var writer = new ExtendedAudioFileWriter(outExtAudioFile, settings);
+            writer.Init();
+            return writer;
+        }
+        catch
+        {
+            _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
+            throw;
+        }
     }
 
     /// <summary>
-    /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
+    /// Constructs a new instance of the <see cref="ExtendedAudioFileWriter" />
     /// class, providing the file path where the new produced file will be located to.
     /// </summary>
     /// <param name="filePath">The path of the file to write</param>
     /// <param name="settings">Settings for the writer to use.</param>
     /// <param name="overwriteIfExists">If the file is existing, when specified to <see langword="true"/>, it overwrites the file instead of throwing an exception.</param>
-    /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
+    /// <returns>A new instance of the <see cref="ExtendedAudioFileWriter" /> class.</returns>
     /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="filePath"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
-    public static AbstractExtendedFileWriter CreateFromFilePath(
+    public static ExtendedAudioFileWriter CreateFromFilePath(
         string filePath,
         ExtendedFileWriterSettings settings,
         bool overwriteIfExists = false
@@ -286,23 +129,44 @@ public static class ExtendedAudioFileWriter
 
         if (string.IsNullOrWhiteSpace(settings.FileType))
         {
-            throw new ArgumentException("FileType not assigned to a valid MIME type string", nameof(settings));
-        }
-        else if (string.IsNullOrWhiteSpace(settings.FileType))
-        {
-            throw new ArgumentException("FileType not assigned to a valid MIME type string", nameof(settings));
+            throw new ArgumentException("FileType is not assigned to a valid MIME type string", nameof(settings));
         }
 
-        return FileWriterImpl.FromFile(filePath, settings, overwriteIfExists);
+        var asbd = BuildWriter(settings, out var layout, out var ft);
+
+        using MacOS.CoreFoundationApi.CFURL urlNative = MacOS.CoreFoundationApi.CFURL.CreateFromFilePath(filePath, false);
+
+        ExtendedAudioFileException.ThrowIfError(
+            NativeMethods.ExtAudioFileCreateWithURL(
+                urlNative.NativeObject,
+                ft,
+                asbd,
+                layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
+                overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
+                out var outExtAudioFile
+            )
+        );
+
+        try
+        {
+            var writer = new ExtendedAudioFileWriter(outExtAudioFile, settings);
+            writer.Init();
+            return writer;
+        }
+        catch
+        {
+            _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
+            throw;
+        }
     }
 
     /// <summary>
-    /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
+    /// Constructs a new instance of the <see cref="ExtendedAudioFileWriter" />
     /// class, providing the data stream where the encoded data will be placed to.
     /// </summary>
     /// <param name="writeableStream">The data stream where to write data to</param>
     /// <param name="settings">Settings for the writer to use.</param>
-    /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
+    /// <returns>A new instance of the <see cref="ExtendedAudioFileWriter" /> class.</returns>
     /// <exception cref="ArgumentException">
     /// The specified settings object does not define the minimal requirements for writing a file. <br /> <br />
     /// 
@@ -318,7 +182,7 @@ public static class ExtendedAudioFileWriter
     /// <see cref="MemoryStream"/> instance to make sure the writer can work with it,
     /// then copy the data written to it to your target stream.
     /// </remarks>
-    public static AbstractExtendedFileWriter CreateFromStream(
+    public static ExtendedAudioFileWriter CreateFromStream(
         Stream writeableStream,
         ExtendedFileWriterSettings settings
     )
@@ -340,9 +204,83 @@ public static class ExtendedAudioFileWriter
         }
         else if (string.IsNullOrWhiteSpace(settings.FileType))
         {
-            throw new ArgumentException("FileType not assigned to a valid MIME type string", nameof(settings));
+            throw new ArgumentException("FileType is not assigned to a valid MIME type string", nameof(settings));
         }
 
-        return FileWriterImpl.FromStream(writeableStream, settings);
+        var asbd = BuildWriter(settings, out var layout, out var ft);
+
+        GCHandle handle = GCHandle.Alloc(new AudioFileCallbacks.CallbacksUserData(writeableStream), GCHandleType.Normal);
+
+        IntPtr outAudioFile = IntPtr.Zero, outExtAudioFile = IntPtr.Zero;
+        try
+        {
+            int status = NativeMethods.AudioFileInitializeWithCallbacks(
+                GCHandle.ToIntPtr(handle),
+                AudioFileCallbacks.ReadProcedure,
+                AudioFileCallbacks.WriteProcedure,
+                AudioFileCallbacks.GetSizeProcedure,
+                AudioFileCallbacks.SetSizeProcedure,
+                ft,
+                asbd,
+                AudioFileFlags.None,
+                out outAudioFile
+            );
+            if (status == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
+            {
+                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target).Exception;
+            }
+            AudioFileException.ThrowIfError(status);
+
+            ExtendedAudioFileException.ThrowIfError(
+                NativeMethods.ExtAudioFileWrapAudioFileID(
+                    outAudioFile,
+                    MacOS.MacBoolean.True,
+                    out outExtAudioFile
+                )
+            );
+
+            if (layout.mChannelLayoutTag != 0)
+            {
+                ExtendedAudioFileException.ThrowIfError(
+                    NativeMethods.ExtAudioFileSetProperty(
+                        outExtAudioFile,
+                        ExtendedAudioFileProperties.kExtAudioFileProperty_FileChannelLayout,
+                        (uint)sizeof(AudioChannelLayout),
+                        new(&layout)
+                    )
+                );
+            }
+        }
+        catch
+        {
+            if (outExtAudioFile != IntPtr.Zero)
+            {
+                _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
+            }
+            if (outAudioFile != IntPtr.Zero)
+            {
+                _ = NativeMethods.AudioFileClose(outAudioFile);
+            }
+            if (handle.IsAllocated) { handle.Free(); }
+            throw;
+        }
+
+        StreamImpl writer = null;
+        try
+        {
+            writer = new StreamImpl(
+                outExtAudioFile,
+                outAudioFile,
+                handle,
+                settings
+            );
+            writer.Init();
+            return writer;
+        }
+        catch
+        {
+            writer?.Dispose();
+            throw;
+        }
     }
 }

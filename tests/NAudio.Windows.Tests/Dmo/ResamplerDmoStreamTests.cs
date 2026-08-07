@@ -168,7 +168,7 @@ public class ResamplerDmoStreamTests
                     do
                     {
                         count = resampler.Read(buffer, 0, bytesToRead);
-                        writer.WriteData(buffer, 0, count);
+                        writer.Write(buffer, 0, count);
                         total += count;
                         //Assert.AreEqual(count, bytesToRead, "Bytes Read");
                     } while (count > 0);

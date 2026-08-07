@@ -436,6 +436,83 @@ chunk model hanging off `WaveFileReader.Chunks` and `WaveFileWriter`, so cue poi
   `AddChunk(IWaveChunkWriter)` are the low-level entry points for arbitrary RIFF chunks
   before or after the data chunk.
 
+## Long-deprecated members removed
+
+These were already `[Obsolete]` throughout NAudio 2, so if you build with warnings visible
+you have been told about them for years. NAudio 3 removes them. Every one has a direct
+replacement on the same class, so the fix is mechanical.
+
+| Removed | Use instead |
+| --- | --- |
+| `WaveFileWriter.WriteData(byte[], int, int)` | `Write(byte[], int, int)` — or the new `Write(ReadOnlySpan<byte>)` |
+| `WaveFileWriter.WriteData(short[], int, int)` | `WriteSamples(short[], int, int)` |
+| `WaveFileReader.TryReadFloat(out float)` | `ReadNextSampleFrame()` |
+| `AcmStream.Convert(int)` | `Convert(int bytesToConvert, out int sourceBytesConverted)` |
+| `WaveFormatConversionStream.SourceToDest(int)` | *(no replacement — see below)* |
+| `WaveFormatConversionStream.DestToSource(int)` | *(no replacement — see below)* |
+| `AsioAudioAvailableEventArgs.GetAsInterleavedSamples()` | `GetAsInterleavedSamples(float[] samples)` |
+
+Both `WaveFileWriter.WriteData` overloads were pure forwarders, so this is a rename and
+nothing more:
+
+```csharp
+// before
+writer.WriteData(buffer, 0, count);
+writer.WriteData(shortSamples, 0, count);
+// after
+writer.Write(buffer, 0, count);
+writer.WriteSamples(shortSamples, 0, count);
+```
+
+**`TryReadFloat` silently dropped channels.** It returned only the first sample of each
+frame, so on stereo it read at half rate and discarded the right channel. `ReadNextSampleFrame`
+returns the whole frame:
+
+```csharp
+// before — mono only, silently wrong on stereo
+while (reader.TryReadFloat(out var sample)) { ... }
+// after
+float[] frame;
+while ((frame = reader.ReadNextSampleFrame()) != null) { /* frame[0], frame[1], ... */ }
+```
+
+**`AcmStream.Convert(int)` threw when the driver didn't consume everything.** It called the
+two-argument overload and raised `MmException` if `sourceBytesConverted != bytesToConvert`,
+turning an ordinary partial conversion into an error. The two-argument version tells you
+how much was consumed so you can carry the remainder:
+
+```csharp
+// after
+int destBytes = stream.Convert(bytesToConvert, out int sourceBytesConverted);
+```
+
+**`SourceToDest` / `DestToSource` on `WaveFormatConversionStream` have no replacement**, which
+is why their obsolete message never named one — by the end they were a block-aligned estimate
+derived from `AverageBytesPerSecond`, not a real ACM query, and were documented as unreliable.
+Use the stream's own `Position` and `Length`, which apply the same estimate internally, or do
+the ratio yourself. Note the identically-named `AcmStream.SourceToDest` / `DestToSource` are
+*not* affected — those are real ACM queries and remain.
+
+**`GetAsInterleavedSamples()` allocated on the audio thread.** It allocated a fresh
+`float[SamplesPerBuffer * channels]` on every ASIO buffer callback. Allocate once and reuse:
+
+```csharp
+// before
+void OnAudioAvailable(object s, AsioAudioAvailableEventArgs e) {
+    var samples = e.GetAsInterleavedSamples();   // allocates every callback
+}
+// after — hoist the buffer out of the callback
+float[] samples = new float[maxSamplesPerBuffer * channels];
+void OnAudioAvailable(object s, AsioAudioAvailableEventArgs e) {
+    int count = e.GetAsInterleavedSamples(samples);
+}
+```
+
+`AsioOut.Volume` was *not* removed despite a similar long-standing `[Obsolete]` notice. It is
+an `IWavePlayer` interface member, so it has to stay on the class; it still returns `1.0f` and
+still throws if you set anything else. ASIO does not expose device volume — adjust gain in
+your signal chain instead (for example with `VolumeSampleProvider`).
+
 ## Other type moves and API changes
 
 - **`AudioMediaSubtypes` moved from the `NAudio.Dmo` namespace to `NAudio.Wave`.** It

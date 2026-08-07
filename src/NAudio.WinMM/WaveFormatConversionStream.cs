@@ -79,16 +79,6 @@ public class WaveFormatConversionStream : WaveStream
         }
     }
 
-    /// <summary>
-    /// Converts source bytes to destination bytes
-    /// </summary>
-    [Obsolete("can be unreliable, use of this method not encouraged")]
-    public int SourceToDest(int source)
-    {
-        return (int)EstimateSourceToDest(source);
-        //return conversionStream.SourceToDest(source);
-    }
-
     private long EstimateSourceToDest(long source)
     {
         var dest = ((source * targetFormat.AverageBytesPerSecond) / sourceStream.WaveFormat.AverageBytesPerSecond);
@@ -102,16 +92,6 @@ public class WaveFormatConversionStream : WaveStream
         source -= (source % sourceStream.WaveFormat.BlockAlign);
         return (int)source;
     }
-    /// <summary>
-    /// Converts destination bytes to source bytes
-    /// </summary>
-    [Obsolete("can be unreliable, use of this method not encouraged")]
-    public int DestToSource(int dest)
-    {
-        return (int)EstimateDestToSource(dest);
-        //return conversionStream.DestToSource(dest);
-    }
-
     /// <summary>
     /// Returns the stream length
     /// </summary>

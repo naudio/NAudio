@@ -178,7 +178,8 @@ idiomatically" over line-by-line transliteration.
 **Licence policy.** NAudio is MIT. Only MIT / BSD / Zlib / public-domain
 sources may be ingested, with attribution preserved in-file (as
 `SmbPitchShifter` / `WdlResampler` already do) and an entry in
-[`THIRD-PARTY-NOTICES.txt`](../../THIRD-PARTY-NOTICES.txt). GPL / LGPL /
+`THIRD-PARTY-NOTICES.txt` (**note: that file has not been added to the repo yet** —
+in-file attribution is currently the only mechanism). GPL / LGPL /
 proprietary code (Rubber Band, SoundTouch, Surge, Vital, TAL, JUCE DSP) is
 **out** and must never be copied from.
 

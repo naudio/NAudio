@@ -219,7 +219,7 @@ Two internal seams on `AsioDevice` make the facade work:
 
 The facade also fixes one historical hazard in legacy AsioOut: auto-stop on end-of-stream used to call `Stop()` from inside the buffer callback (the comment "this can cause hanging issues" sat on it for years). The facade now defers via `ThreadPool.QueueUserWorkItem`, so AutoStop is no longer a deadlock hazard for legacy consumers either.
 
-A reflection-based snapshot test ([AsioOutPublicSurfaceTests.cs](NAudioTests/Asio/AsioOutPublicSurfaceTests.cs)) pins the surface: 3 constructors, 10 instance methods, 14 properties, 3 events, plus `IWavePlayer` implementation, `Volume` `[Obsolete]` attribute, and a defense-in-depth check for any unexpected new public methods. New code should target `AsioDevice`; the migration table in [Docs/AsioMigration.md](Docs/AsioMigration.md) shows side-by-side translations.
+A reflection-based snapshot test ([AsioOutPublicSurfaceTests.cs](../../tests/NAudio.Windows.Tests/Asio/AsioOutPublicSurfaceTests.cs)) pins the surface: 3 constructors, 10 instance methods, 14 properties, 3 events, plus `IWavePlayer` implementation, `Volume` `[Obsolete]` attribute, and a defense-in-depth check for any unexpected new public methods. New code should target `AsioDevice`; the migration table in [Docs/AsioMigration.md](../AsioMigration.md) shows side-by-side translations.
 
 ---
 
@@ -234,7 +234,7 @@ A walk of the GitHub issue tracker and `git log` for `NAudio.Asio` surfaced eigh
 | **F3** | `NullReferenceException` from the buffer-update callback when the source format/native format combination has no convertor | Every `Init*` path validates the native format synchronously and throws `NotSupportedException` with both managed and native types named. Convertor selection happens at config time; the callback is provably non-null once `Init*` succeeds. |
 | **F4** | Driver release leak on partial init failure | `AsioDevice` constructor wraps `AsioDriverExt` construction in try/catch; on failure, calls `DisposeBuffers()` + `ReleaseComAsioDriver()` (best-effort, exceptions swallowed) before rethrowing. |
 | **F5** | Double-initialization of the same instance | State machine enforces `Unconfigured` precondition on every `Init*`; second call throws `InvalidOperationException`. |
-| **F6** | `DriverResetRequest` fired but no supported recovery path | `Reinitialize()` caches the last applied options object on each successful `Init*` and re-applies after `Stop()`. Documented `Stop` → `Reinitialize` → `Start` pattern in [Docs/AsioDriverReset.md](Docs/AsioDriverReset.md). |
+| **F6** | `DriverResetRequest` fired but no supported recovery path | `Reinitialize()` caches the last applied options object on each successful `Init*` and re-applies after `Stop()`. Documented `Stop` → `Reinitialize` → `Start` pattern in [Docs/AsioDriverReset.md](../AsioDriverReset.md). |
 | **F7** | Choppy playback at high channel counts due to per-callback allocation | All per-channel float buffers and conversion staging are pre-allocated at `Init*` time. `AsioProcessBuffers` is `ref struct` to discourage user allocations. Gated by a BenchmarkDotNet job at 2/16 channels × 256/1024 frames × Int32LSB/Float32LSB asserting 0 B/op once warm. |
 | **F8** | Borrowed-buffer lifetime footgun (driver-owned native pointers used after the callback returned) | `AsioProcessBuffers`, `AsioRawInputBuffer`, `AsioRawOutputBuffer` are all `ref struct` (compiler-enforced stack-only). `AsioAudioCapturedEventArgs` is a class but its spans point into library buffers that get invalidated by setting `Valid = false` after the handler returns; accessing properties throws if the event args is used outside its handler. |
 | **F9** | `AsioDriver.GetSamplePosition` declared `out long samplePos` but the underlying `ASIOSamples` is `{uint hi; uint lo}` with `hi` at offset 0 — reading 8 bytes as a little-endian int64 produces `(lo << 32) \| hi`, backwards from the SDK layout. The bug was latent because no NAudio code called `GetSamplePosition` until the timing work landed. | Both the public method and the underlying P/Invoke delegate now take `out Asio64Bit` and the wrapper in `AsioDriverExt.TryGetSamplePosition` reassembles via the existing `Asio64Bit.ToInt64()` helper. The validation test in the console-test menu (records 10 s and checks audio-clock vs host-clock drift in milliseconds) catches any regression — wrong byte order would show drift in seconds-per-second, not milliseconds-per-ten-seconds. |
@@ -256,7 +256,7 @@ A walk of the GitHub issue tracker and `git log` for `NAudio.Asio` surfaced eigh
 - `AsioSampleConvertorTests` — covers the legacy `IWaveProvider` → `AsioSampleType` selection used by the AsioOut facade.
 - `AsioOutPublicSurfaceTests` — reflection-based snapshot of the NAudio 2.x AsioOut public surface.
 
-**Manual / smoke tests** (`NAudioConsoleTest/Asio/Tests/` — see [NAudioConsoleTest/README.md](NAudioConsoleTest/README.md) for the CLI / batch harness):
+**Manual / smoke tests** (`NAudioConsoleTest/Asio/Tests/` — see [NAudioConsoleTest/README.md](../../samples/NAudioConsoleTest/README.md) for the CLI / batch harness):
 
 - Info — `Asio.ListDrivers`, `Asio.ShowCapabilities`.
 - Playback — `Asio.PlayAudioFile`, `Asio.PlayShortTestTone`.
@@ -288,7 +288,7 @@ Reproduces the duplex callback's actual work (input convert → output zero-fill
 - `AsioDriverReset.md` (new) — `Stop` → `Reinitialize` → `Start` recovery, state-machine matrix, error handling.
 - `AsioMigration.md` (new) — when to migrate, what the facade gives you for free, full API translation table, side-by-side examples.
 
-[README.md](README.md) tutorial index links all six articles.
+[README.md](../../README.md) tutorial index links all six articles.
 
 ---
 

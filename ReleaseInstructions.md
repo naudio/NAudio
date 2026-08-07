@@ -10,7 +10,9 @@ Prerequisites: `gh` CLI authenticated, working directory inside the repo, on `ma
 gh workflow run release.yml
 ```
 
-Produces `<VersionPrefix>-preview.<run_number>` — e.g. `3.0.0-preview.5`. Watch in the [Actions tab](https://github.com/naudio/NAudio/actions/workflows/release.yml). On success, all 8 packages (`.nupkg` + `.snupkg`) appear on NuGet within a few minutes.
+Produces `<VersionPrefix>-preview.<run_number>` — e.g. `3.0.0-preview.5`. Watch in the [Actions tab](https://github.com/naudio/NAudio/actions/workflows/release.yml). On success, all 13 packages (`.nupkg` + `.snupkg`) appear on NuGet within a few minutes.
+
+The 13 packed packages are `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`, `NAudio.Dmo`, `NAudio.WinForms`, `NAudio.Vst3`, `NAudio.Alsa`, `NAudio.SoundFile`, `NAudio.Sampler`, `NAudio.Extras` and the `NAudio` meta-package. The list lives in the `Pack` step of [release.yml](.github/workflows/release.yml) — a new package must be added there or it silently won't ship.
 
 ## 2. Named pre-release milestone
 
@@ -47,8 +49,8 @@ git push origin v3.0.0
 The tag push triggers `release.yml`, which:
 
 - Validates the tag matches `<VersionPrefix>` in `Directory.Build.props`.
-- Validates `RELEASE_NOTES.md` has a matching `### 3.0.0` section.
-- Packs all 8 NAudio packages (+ matching `.snupkg` symbol packages).
+- Validates `RELEASE_NOTES.md` has a matching `### 3.0.0` section, and that it fits NuGet's 35,000-character `PackageReleaseNotes` limit.
+- Packs all 13 NAudio packages (+ matching `.snupkg` symbol packages).
 - Pushes everything to NuGet via trusted publishing.
 - Creates a GitHub Release titled `NAudio 3.0.0` with body extracted from the `RELEASE_NOTES.md` section.
 
@@ -72,6 +74,7 @@ GitHub Release + NuGet are the canonical channels. Optionally:
 - **NuGet push fails with auth error:** the trusted-publisher policy on NuGet.org has a 7-day temporarily-active window. After a successful publish it becomes permanent, but if no publish happens for 7 days it goes inactive. Re-activate at NuGet.org → username → Trusted Publishing.
 - **`Tag v3.0.0 does not match VersionPrefix 3.0.0-alpha`** (or similar): you're tagging a commit whose `Directory.Build.props` doesn't have `<VersionPrefix>3.0.0</VersionPrefix>`. Either retag after the pre-flight PR merges, or push a fixup commit and tag that.
 - **`RELEASE_NOTES.md has no '### 3.0.0' section`:** the pre-flight PR didn't rename `### Unreleased`. Push a fix to `main` and delete + re-create the tag.
+- **`Release notes section is N chars, over NuGet's 35,000 limit`:** the notes section is too long to embed as `PackageReleaseNotes`. NuGet.org would otherwise reject the push *after* a successful pack, so the workflow fails fast instead. Trim the section — keep headline features and breaking changes, and let the auto-generated PR list on the GitHub Release carry the per-commit detail.
 
 ## See also
 

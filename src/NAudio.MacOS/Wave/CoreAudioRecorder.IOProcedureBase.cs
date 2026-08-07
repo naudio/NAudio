@@ -1,6 +1,7 @@
 
 using System;
 using System.Threading;
+
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreAudioTypes;
 
@@ -8,6 +9,10 @@ namespace NAudio.Wave;
 
 public partial class CoreAudioRecorder
 {
+    // Provides the base class for the recorder I/O procedure.
+    // It provides the logic required for the recorder 
+    // and provides a solid foundation to work on for peculiarities
+    // of the HAL regarding how the audio data should be retrieved.
     private abstract class RecorderProcedure : CoreAudioIOProcedure
     {
         private Exception exception;
@@ -33,6 +38,9 @@ public partial class CoreAudioRecorder
             }
         }
 
+        // The method that the special I/O procedures do implement.
+        // This implementation must call the OnDataAvailable method at some time,
+        // providing the audio data in an interleaved audio format.
         protected abstract void OnProvideData(uint bufferCount, IntPtr inInputData);
 
         private void TryStopRecording(Exception ex)
@@ -82,7 +90,7 @@ public partial class CoreAudioRecorder
             }
             else
             {
-                return ConstructStampTime(inInputTimeStamp) - ConstructStampTime(inNowStamp);
+                return ConstructStampTime(inNowStamp) - ConstructStampTime(inInputTimeStamp);
             }
         }
 

@@ -16,7 +16,7 @@ namespace NAudio.MacOS.CoreAudio;
 /// AudioObjects all have a set of properties that describe and manipulate their state. 
 /// A property is accessed via an ordered triple. 
 /// The first coordinate is the selector which describes the property. 
-/// The other two ordinates are the scope and element that identify the particular part of the object in which to look for the selector. 
+/// The other two coordinates are the scope and element that identify the particular part of the object in which to look for the selector. 
 /// The AudioObjectPropertyAddress structure encapsulates the property address. 
 /// The value of a property is an untyped block of data whose content depends on the specifics of the selector. 
 /// Some selectors also require the use of a qualifier when querying. 

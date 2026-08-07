@@ -1,6 +1,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 
 using NAudio.Utils;
@@ -14,6 +15,8 @@ namespace NAudio.Wave;
 /// Provides a writer that can create audio files
 /// using the macOS Audio Toolbox framework.
 /// </summary>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.3.1")]
 public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
 {
     private ExtendedAudioFileWriter(nint hExtFileObject, ExtendedFileWriterSettings settings)
@@ -138,7 +141,7 @@ public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
 
         ExtendedAudioFileException.ThrowIfError(
             NativeMethods.ExtAudioFileCreateWithURL(
-                urlNative.NativeObject,
+                urlNative.DangerousGetObject(),
                 ft,
                 asbd,
                 layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),

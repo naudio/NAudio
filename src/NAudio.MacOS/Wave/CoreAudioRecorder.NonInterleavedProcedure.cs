@@ -9,6 +9,10 @@ namespace NAudio.Wave;
 
 public partial class CoreAudioRecorder
 {
+    // A recorder procedure implementation that
+    // is utilized when the HAL enforces that the
+    // audio buffers should provide the data as non-interleaved,
+    // that is, each sample frame is a channel on it's own.
     private sealed class NonInterleavedProcedure : RecorderProcedure
     {
         private uint bytesPerFrame;
@@ -40,12 +44,16 @@ public partial class CoreAudioRecorder
                 buffer = AudioBufferList.GetAudioBufferFromPointer(inInputData, I);
                 if (buffer.mData == IntPtr.Zero) { continue; } // Skip any stream that is not used.
                 // Copy the HAL data to our buffer that we build as an interleaved buffer.
-                for (uint F = 0U, BI = J * targetBufferStride; F < nFramesToGet; F++, BI += targetBufferStride)
+                // F: Number of frames iterated on the current HAL buffer iteration.
+                // BI: The interleaved buffer index. Jumps by the target buffer stride,
+                // and initialized by the number of channels iterated multiplied
+                // by the number of bytes deduced from the bits-per-sample field.
+                for (uint F = 0U, BI = J * bytesPerSampleDerivedFromBits; F < nFramesToGet; F++, BI += targetBufferStride)
                 {
                     Unsafe.CopyBlockUnaligned(
                         ref temporaryBuffer[BI],
                         // Note that this reinterpretation is safe here:
-                        // We are reinterpeting an unmanaged 
+                        // We are reinterpeting an unmanaged
                         // memory block which cannot be moved.
                         ref *((byte*)buffer.mData.ToPointer() + (F * bytesPerFrame)), // Equivalent to: ref Unsafe.Add(ref Unsafe.AsRef<byte>(buffer.mData.ToPointer()), (int)(F * bytesPerFrame))
                         bytesPerSampleDerivedFromBits

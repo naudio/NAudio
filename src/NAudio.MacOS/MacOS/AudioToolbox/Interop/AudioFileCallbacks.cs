@@ -23,13 +23,7 @@ internal static unsafe class AudioFileCallbacks
 
         public Exception Exception => exception;
 
-        public void AssignException(Exception ex)
-        {
-            exception =
-                exception is not null ?
-                    throw new InvalidOperationException("An exception has been already assigned!") :
-                    ex;
-        }
+        public void AssignException(Exception ex) => exception = ex;
     }
 
     public static readonly AudioFile_ReadProc ReadProcedure = &ReadProcImpl;

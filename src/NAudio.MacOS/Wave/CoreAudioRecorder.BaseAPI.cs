@@ -221,8 +221,13 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// <summary>
     /// Call this method once per instance to set up the recorder for recording asynchronously.
     /// </summary>
+    /// <remarks>
+    /// This method can be called multiple times, 
+    /// it is thread-safe and only the first thread that manages 
+    /// to take the lock will perform the initialization task.
+    /// </remarks>
     /// <returns>A new <see cref="ValueTask"/> that represents the code to execute for initializing the recoder.</returns>
-    public ValueTask InitializeRecordingAsync() => new(Task.Run(InitializeRecording));
+    public ValueTask InitializeRecordingAsync() => new(Task.Run(new Action(InitializeRecording)));
 
     /// <summary>
     /// Starts the recording. 
@@ -238,6 +243,8 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             // Prefer to exit cleanly rather than racing the startup.
             if (state != CaptureState.Stopped) { return; }
             state = CaptureState.Starting;
+            // Attach event handlers to the I/O procedure.
+            // This is the DataAvailable event mode.
             ioProcedure.Event += FireDataAvailableEvent;
             ioProcedure.RecordingStopped += OnRecordingStoppedHandlerFromIOProc;
             ioProcedure.Start();
@@ -275,10 +282,17 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// </summary>
     /// <param name="cancellationToken">The token that can be used to manually stop recording (Although it is also possible by calling the <see cref="StopRecording"/> method).</param>
     /// <returns>An enumerable instance returning capture buffers in an asynchronous manner.</returns>
+    /// <exception cref="InvalidOperationException">This recorder instance is already been in use.</exception>
     public async IAsyncEnumerable<CoreAudioCaptureBuffer> CaptureAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
+        ThrowIfInvalid();
+        if (state != CaptureState.Stopped)
+        {
+            throw new InvalidOperationException("The recorder is attempting to initialize, or already recording!");
+        }
+
         state = CaptureState.Starting;
 
         // First, do any initialization if not explicitly done by the user,
@@ -361,8 +375,19 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
 
     /// <summary>
     /// Provides the audio format the HAL uses to capture audio. <br />
-    /// This is the format the audio data are provided in the <see cref="DataAvailable"/>.
+    /// This is the format the audio data are provided in the <see cref="DataAvailable"/> event.
     /// </summary>
+    /// <remarks>
+    /// It is important to note that the capture format may be an instance
+    /// of the <see cref="WaveFormatExtensible"/> class and could report
+    /// a channel mask - however the mask might be unreliable because
+    /// it is deduced by the internal translation API's and the actual 
+    /// channels might be in different order in the audio data than what 
+    /// the <see cref="Speakers"/> enumeration requires; however, the 
+    /// number of channels is a reliable option to work with, 
+    /// so you can use it to only record the channels that you actually need.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">This <see cref="CoreAudioRecorder"/> instance has not yet been initialized.</exception>
     public WaveFormat CaptureFormat
     {
         get
@@ -373,16 +398,10 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     }
 
     /// <summary>
-    /// Gets a value whether the recorder is recording from the initialized device.
+    /// Gets a value whether the recorder is recording from the initialized device. <br />
+    /// Will return <see cref="CaptureState.Stopped"/> once disposed
     /// </summary>
-    public CaptureState CaptureState
-    {
-        get
-        {
-            ThrowIfInvalid();
-            return state;
-        }
-    }
+    public CaptureState CaptureState => state;
 
     /// <inheritdoc />
     public TimeSpan AverageLatency
@@ -420,6 +439,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         {
             if (flags.HasFlag(CoreAudioRecorderStateFlags.Disposed)) { return; }
             if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized) && state == CaptureState.Capturing) { StopRecordingInternal(); }
+            state = CaptureState.Stopping;
             MacUtils.EnsureDisposableObjectsDisposed(
                 ioProcedure,
                 streamsChanged,
@@ -430,6 +450,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         }
         finally
         {
+            state = CaptureState.Stopped;
             Monitor.Exit(lockObject);
         }
     }
@@ -444,7 +465,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// </returns>
     // No special implementation required;
     // just route to the Dispose method implementation and execute it asynchronously.
-    public ValueTask DisposeAsync() => new(Task.Run(Dispose));
+    public ValueTask DisposeAsync() => new(Task.Run(new Action(Dispose)));
 
     #endregion
 

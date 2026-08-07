@@ -1,9 +1,5 @@
-/*!
-	@file		CoreAudioBaseTypes.h
-	@framework	CoreAudioTypes.framework
-	@copyright	(c) 1985-2021 by Apple, Inc., all rights reserved.
-    @abstract   Definition of types common to the Core Audio APIs.
-*/
+// This interop definition was derived from the file CoreAudioBaseTypes.h of the Core Audio Types Framework.
+// See https://developer.apple.com/documentation/coreaudiotypes for more information.
 
 #pragma warning disable IDE0055 // We want the properties to have a consistent view.
 

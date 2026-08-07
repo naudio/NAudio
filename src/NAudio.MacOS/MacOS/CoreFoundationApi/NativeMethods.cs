@@ -1,3 +1,5 @@
+// This interop definition was derived from the files: CFString.h, CFBase.h, CFURL.h, CFArray.h and CFError.h of the Core Foundation Framework.
+// See https://developer.apple.com/documentation/corefoundation for more information.
 
 using System;
 using System.Runtime.InteropServices;

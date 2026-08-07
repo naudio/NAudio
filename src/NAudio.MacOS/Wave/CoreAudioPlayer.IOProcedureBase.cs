@@ -9,6 +9,10 @@ namespace NAudio.Wave;
 
 public partial class CoreAudioPlayer
 {
+    // Provides the base class for the player I/O procedure.
+    // It provides the logic required for the player 
+    // and provides a solid foundation to work on for peculiarities
+    // of the HAL regarding how the audio data should be provided.
     private unsafe abstract class PlayerProcedure : CoreAudioIOProcedure
     {
         private Exception exception;
@@ -48,6 +52,23 @@ public partial class CoreAudioPlayer
             outTimeStamp = *(AudioTimeStamp*)inOutputTime.ToPointer();
         }
 
+        // The actual implementation that reads from a given 
+        // source provider and transfers it's data to the HAL. 
+        // When the return value is true, it indicates that
+        // the source has no more data to read from and the
+        // procedure should stop in the next I/O call.
+        // Why not stopping immediately once returning true?
+        // The HAL calls the data provider periodically
+        // typically by a number of milliseconds. The HAL 
+        // has the right to begin the next I/O cycle 
+        // immediately after this one so that it can have
+        // data ready for consumption by the audio device.
+        // As such, if we stopped immediately, we could
+        // risk losing any data still pending to be
+        // consumed by the audio device.
+        // So, we wait for a full I/O cycle so that to be
+        // ensured that all the provider's data
+        // were provided to the device.
         protected abstract bool ProvideData(uint cBuffers, nint outOutputData, IPlayerSource source);
 
         // Make sure that the dispatch of the stopped event does not cause the HAL I/O

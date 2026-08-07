@@ -147,7 +147,15 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// general disruptive as the user sets this to a desired value.
     /// If you want to modify the gain of the audio provider that 
     /// you use to provide data to the player without modifying this, 
-    /// inject a <see cref="SampleProviders.VolumeSampleProvider"/>.
+    /// inject a <see cref="SampleProviders.VolumeSampleProvider"/>. <br /> <br />
+    /// 
+    /// When retrieveing the value of this property, the value is deduced
+    /// by iterating through the device's volume controls and getting 
+    /// the volume value. It has been observed that in some cases 
+    /// the HAL fails to properly update the properties of the device
+    /// and may return 1 while that is not true.
+    /// However, assigning this property does the intended result
+    /// (of changing the device's volume) without any error(s).
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">
     /// When setting the property: The selected volume is less than 0,

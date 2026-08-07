@@ -1,17 +1,9 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardwareBase.h
+// This interop definition was derived from the file AudioHardwareBase.h of the Audio Toolbox Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+using System.Runtime.InteropServices;
 
 using NAudio.MacOS.CoreAudioTypes;
-using System.Runtime.InteropServices;
 
 namespace NAudio.MacOS.CoreAudio.Interop;
 

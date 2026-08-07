@@ -1,9 +1,5 @@
-/*	
-    This wrapper was created from the CFArray.h header file:
-
-    CFArray.h
-	Copyright (c) 1998-2019, Apple Inc. All rights reserved.
-*/
+// This interop definition was derived from the file CFArray.h of the Core Foundation Framework.
+// See https://developer.apple.com/documentation/corefoundation for more information.
 
 /*!
 	@header CFArray

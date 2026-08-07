@@ -1,16 +1,5 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardware.h
-
-     Contains:   API for communicating with audio hardware.
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the files AudioHardware.h and HostTime.h of the Audio Toolbox Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 #pragma warning disable IDE0055 // We want the native methods to have a consistent view.
 

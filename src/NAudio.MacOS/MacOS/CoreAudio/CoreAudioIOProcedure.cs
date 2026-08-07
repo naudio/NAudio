@@ -66,7 +66,8 @@ public abstract class CoreAudioIOProcedure : SafeHandle
         IntPtr inInputTime,
         IntPtr outOutputData,
         IntPtr inOutputTime,
-        IntPtr inClientData)
+        IntPtr inClientData
+    )
     {
         ((IOProcedureSignature)GCHandle.FromIntPtr(inClientData).Target)
             .Invoke(
@@ -85,20 +86,20 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     /// </summary>
     /// <seealso href="https://developer.apple.com/documentation/coreaudio/audiodeviceioproc?language=objc"/>
     /// <param name="inNow">
-    /// An AudioTimeStamp that indicates the IO cycle started. 
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiotimestamp?language=objc">AudioTimeStamp</see> pointer that indicates the IO cycle started. 
     /// Note that this time includes any scheduling latency that may have been incurred waking the thread on which IO is being done.
     /// </param>
     /// <param name="inInputData">
-    /// An AudioBufferList containing the input data for the current IO cycle.
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiobufferlist?language=objc">AudioBufferList</see> pointer containing the input data for the current IO cycle.
     /// For streams that are disabled, the AudioBuffer’s mData field will be NULL but the mDataByteSize field will still say how much data would have been there if it was enabled. 
     /// Note that the contents of this structure should never be modified.
     /// </param>
     /// <param name="inInputTime">
-    /// An AudioTimeStamp that indicates the time at which the first frame in the data was acquired from the hardware. 
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiotimestamp?language=objc">AudioTimeStamp</see> pointer that indicates the time at which the first frame in the data was acquired from the hardware. 
     /// If the device has no input streams, the time stamp will be zeroed out.
     /// </param>
     /// <param name="outOutputData">
-    /// An AudioBufferList in which the output data for the current IO cycle is to be placed.
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiobufferlist?language=objc">AudioBufferList</see> pointer in which the output data for the current IO cycle is to be placed.
     /// On entry, each AudioBuffer’s mDataByteSize field indicates the maximum amount of data that can be placed in the buffer and the buffer’s memory has been zeroed out. 
     /// For formats where the number of bytes per packet can vary (as with AC-3, for example), the client has to fill out on exit each mDataByteSize field in each AudioBuffer with the amount of data that was put in the buffer. 
     /// Otherwise, the mDataByteSize field should not be changed.
@@ -106,7 +107,7 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     /// Except as noted above, the contents of this structure should not other wise be modified.
     /// </param>
     /// <param name="inOutputTime">
-    /// An AudioTimeStamp that indicates the time at which the first frame in the data will be passed to the hardware. 
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiotimestamp?language=objc">AudioTimeStamp</see> pointer that indicates the time at which the first frame in the data will be passed to the hardware. 
     /// If the device has no output streams, the time stamp will be zeroed out.
     /// </param>
     protected abstract void IOProcedure(
@@ -166,12 +167,35 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     protected sealed override bool ReleaseHandle()
     {
         isRunning = false;
-        bool hasNoError = NativeMethods.AudioDeviceStop(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
-        if (hasNoError)
+        // Note: The below function invocations may 
+        // return bad device error when the device 
+        // is disconnected from the HAL.
+        // Once this happens, the HAL is seem to dispose everything 
+        // associated with the device: It's I/O procedures, 
+        // the property listeners, it's controls and everything
+        // else associated with it. As such, whence disposing
+        // an AudioDevice which was valid at the time of construction
+        // but invalid during the time of disposal, could leak the GC handle.
+        // As such, observe the bad device error and ignore it
+        // when disposing the GC handle. The old check enforced
+        // that these invocations pass, and as such could
+        // genuinely leak the GC handle if/when the audio
+        // device was disconnected from the HAL. 
+        // Note that we do still flag to .NET that there is an error
+        // when osStatus != 0, but we dispose the delegate GC handle 
+        // if there is a bad device error.
+        int osStatus = NativeMethods.AudioDeviceStop(device.objectId, handle);
+        if (osStatus == ErrorConstants.kAudioHardwareNoError)
         {
-            hasNoError = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
+            osStatus = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle);
         }
-        if (hasNoError && delegateGcHandle.IsAllocated) { delegateGcHandle.Free(); }
-        return hasNoError;
+        if (
+            (osStatus == 0 || osStatus == ErrorConstants.kAudioHardwareBadDeviceError)
+            && delegateGcHandle.IsAllocated
+        )
+        {
+            delegateGcHandle.Free();
+        }
+        return osStatus == 0;
     }
 }

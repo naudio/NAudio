@@ -1,9 +1,5 @@
-/*!
-	@file		AudioFile.h
-	@framework	AudioToolbox.framework
-	@copyright	(c) 1985-2015 by Apple, Inc., all rights reserved.
-	@abstract	API's to read and write audio files in the filesystem or in memory.
-*/
+// This interop definition was derived from the file AudioFile.h of the Audio Toolbox Framework.
+// See https://developer.apple.com/documentation/audiotoolbox for more information.
 
 using NAudio.Utils;
 

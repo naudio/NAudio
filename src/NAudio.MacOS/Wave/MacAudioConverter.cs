@@ -8,7 +8,6 @@ using NAudio.Dmo;
 using NAudio.Utils;
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudioTypes;
-using NAudio.MacOS.AudioToolbox.Interop;
 
 namespace NAudio.Wave;
 

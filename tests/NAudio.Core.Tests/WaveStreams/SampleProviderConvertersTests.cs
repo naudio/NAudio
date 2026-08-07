@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using NAudio.Dmo;
 using NAudio.Wave;
 using NUnit.Framework;
 

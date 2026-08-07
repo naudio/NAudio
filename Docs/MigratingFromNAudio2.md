@@ -438,6 +438,26 @@ chunk model hanging off `WaveFileReader.Chunks` and `WaveFileWriter`, so cue poi
 
 ## Other type moves and API changes
 
+- **`AudioMediaSubtypes` moved from the `NAudio.Dmo` namespace to `NAudio.Wave`.** It
+  ships in `NAudio.Core` and always did, despite the DMO-sounding namespace — so
+  cross-platform code had to write `using NAudio.Dmo;` to name the media subtype GUIDs
+  even on Linux, and even without the `NAudio.Dmo` package installed. It now sits in
+  `NAudio.Wave` alongside `WaveFormatExtensible`, its main consumer. If you compared a
+  `WaveFormatExtensible.SubFormat` against `MEDIASUBTYPE_PCM` / `MEDIASUBTYPE_IEEE_FLOAT`,
+  swap the `using`:
+
+  ```csharp
+  // before
+  using NAudio.Dmo;
+  if (fmt.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM) { ... }
+
+  // after — NAudio.Wave, which you almost certainly have already
+  using NAudio.Wave;
+  if (fmt.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM) { ... }
+  ```
+
+  The type, its 70 GUID constants and `GetAudioSubtypeName` are otherwise unchanged. Real
+  DMO code in the `NAudio.Dmo` package is unaffected.
 - `AudioVolumeLevel` moved from `NAudio.Wasapi.CoreAudioApi` to
   `NAudio.CoreAudioApi` (alongside `MMDevice`, `Part`, `DeviceTopology`, …).
 - `CaptureState` moved from `NAudio.CoreAudioApi` to `NAudio.Wave` (it is a

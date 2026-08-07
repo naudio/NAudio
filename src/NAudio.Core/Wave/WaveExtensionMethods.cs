@@ -47,9 +47,9 @@ public static class WaveExtensionMethods
         if (waveFormat is WaveFormatExtraData { Encoding: WaveFormatEncoding.Extensible } extra && extra.ExtraSize >= 22)
         {
             var subFormat = new Guid(extra.ExtraData.AsSpan(6, 16));
-            if (subFormat == NAudio.Dmo.AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT && waveFormat.BitsPerSample == 32)
+            if (subFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT && waveFormat.BitsPerSample == 32)
                 return WaveFormat.CreateIeeeFloatWaveFormat(waveFormat.SampleRate, waveFormat.Channels);
-            if (subFormat == NAudio.Dmo.AudioMediaSubtypes.MEDIASUBTYPE_PCM)
+            if (subFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM)
                 return new WaveFormat(waveFormat.SampleRate, waveFormat.BitsPerSample, waveFormat.Channels);
         }
         return waveFormat;

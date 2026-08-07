@@ -1054,7 +1054,7 @@ See [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) §"Execution 
 **Out of scope:**
 
 - `[TypeForwardedTo]` shims from `NAudio.Wasapi` to `NAudio.Dmo`. Technically possible (the cycle problem doesn't apply once `WasapiOut` stops using `ResamplerDmoStream`), but deliberately omitted — NAudio 3 is a clean break, and forwarders would carry the legacy surface forward for no real upside.
-- The `AudioMediaSubtypes` namespace quirk (`NAudio.Core` and `NAudio.Dmo` now both contribute to namespace `NAudio.Dmo`). Legal, minor smell. Future cleanup candidate but a public-API rename, so out of scope here.
+- ~~The `AudioMediaSubtypes` namespace quirk (`NAudio.Core` and `NAudio.Dmo` now both contribute to namespace `NAudio.Dmo`).~~ **Done before 3.0.0** — moved to `NAudio.Wave`, alongside `WaveFormatExtensible` and matching the file's own directory. `NAudio.Core` no longer contributes to `NAudio.Dmo`. It is a public-API namespace change, so it had to land in the major release or wait for 4.0; recorded in the migration guide.
 
 ---
 

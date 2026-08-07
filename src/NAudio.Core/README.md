@@ -18,8 +18,7 @@ The cross-platform core of [NAudio](https://github.com/naudio/NAudio). Contains 
 
 Reference `NAudio.Core` directly when you want to read, write, or manipulate audio on non-Windows targets, or when you are assembling your own combination of platform packages (`NAudio.Wasapi`, `NAudio.WinMM`, `NAudio.Asio`, …) and don't want the full [NAudio](https://www.nuget.org/packages/NAudio/) meta-package.
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation.
 ## License
 
 MIT.

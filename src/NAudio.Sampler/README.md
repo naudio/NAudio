@@ -23,10 +23,9 @@ dotnet add package NAudio.Sampler
 
 ## Tutorial
 
-For a worked walkthrough see [the NAudio.Sampler tutorial](../Docs/Sampler.md).
+For a worked walkthrough see [the NAudio.Sampler tutorial](https://github.com/naudio/NAudio/blob/main/Docs/Sampler.md).
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
 ## License
 
 MIT.

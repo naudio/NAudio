@@ -20,8 +20,7 @@ Reach for this package when you want to load third-party VST 3 effects (EQ, reve
 dotnet add package NAudio.Vst3
 ```
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
 ## License
 
 MIT. VST is a registered trademark of Steinberg Media Technologies GmbH; this package is an independent host and is not affiliated with or endorsed by Steinberg.

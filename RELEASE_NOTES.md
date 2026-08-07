@@ -103,7 +103,7 @@ affect existing NAudio 2 code are:
 
  * `NAudioDemo` and `NAudioWpfDemo` were substantially reworked against the new APIs, including a rebuilt WASAPI Recorder panel driven by `WasapiRecorderBuilder`, transport/volume/position controls across the playback panels, and a Graphic EQ panel on `NAudio.Effects`
  * The network chat demo is now UDP-only with a bounded jitter buffer and Opus codecs (via `Concentus`, replacing the vendored NSpeex binary), and gained a [tutorial](Docs/NetworkChatDemo.md)
- * The documentation site (tutorials plus a generated API reference) is published to GitHub Pages from `Docs/` and the source XML comments
+ * The documentation site (tutorials plus a generated API reference) is published to GitHub Pages from `Docs/` and the source XML comments. Every package's `projectUrl` and README now point at it; nuget.org still links the GitHub repo via the package's `repository` metadata
 
 ### 2.3.0 (12 Mar 2026)
 

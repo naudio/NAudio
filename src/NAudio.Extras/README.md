@@ -14,8 +14,7 @@ Install `NAudio.Extras` when you want these convenience helpers in addition to t
 
 This package is not required for typical NAudio usage — start with the main [NAudio](https://www.nuget.org/packages/NAudio/) package and add `NAudio.Extras` only if you need one of the helpers it contains.
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for source and documentation.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for source and documentation.
 ## License
 
 MIT.

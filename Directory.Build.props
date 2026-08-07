@@ -10,7 +10,14 @@
          sets its own <Authors>Mark Heath &amp; Contributors</Authors>). -->
     <Authors>Mark Heath</Authors>
     <Copyright>© Mark Heath 2026</Copyright>
-    <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
+    <!-- NuGet has no "documentation URL" field — the nuspec schema has no such
+         element, and setting a PackageDocumentationUrl property is silently a
+         no-op. <projectUrl> is the only clickable metadata link on the package
+         page besides the repository, so it points at the docs site; nuget.org
+         still renders a "Source repository" link to GitHub from the <repository>
+         element that RepositoryUrl + PublishRepositoryUrl emit below. Each
+         package's README (packed via Directory.Build.targets) links both too. -->
+    <PackageProjectUrl>https://naudio.github.io/NAudio/</PackageProjectUrl>
     <PackageTags>C# .NET audio sound</PackageTags>
     <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

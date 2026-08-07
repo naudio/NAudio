@@ -124,8 +124,19 @@ jobs:
             # Strip HTML comments — useful for contributors editing
             # RELEASE_NOTES.md but noisy on the NuGet page / GitHub Release.
             $body = [regex]::Replace($body, '<!--[\s\S]*?-->', '').Trim()
+
+            # NuGet.org caps PackageReleaseNotes at 35,000 characters and
+            # rejects an oversized package at *push* time — i.e. after a
+            # successful pack, part-way through the release, with the tag
+            # already pushed. Fail here instead, before anything is built.
+            $limit = 35000
+            if ($body.Length -gt $limit) {
+              Write-Error "Release notes section '$label' is $($body.Length) chars, over NuGet's $limit-character PackageReleaseNotes limit. Trim RELEASE_NOTES.md — keep headline features and breaking changes, and let the auto-generated PR list on the GitHub Release carry the per-commit detail."
+              exit 1
+            }
+
             $body | Out-File -FilePath release-body.md -Encoding utf8
-            Write-Host "Extracted '$label' ($($body.Length) chars) to release-body.md."
+            Write-Host "Extracted '$label' ($($body.Length) of $limit chars) to release-body.md."
           }
 
       - name: Restore

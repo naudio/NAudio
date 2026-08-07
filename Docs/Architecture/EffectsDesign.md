@@ -176,11 +176,15 @@ voice-comms DSP. Even then, prefer "port as algorithm, reimplement
 idiomatically" over line-by-line transliteration.
 
 **Licence policy.** NAudio is MIT. Only MIT / BSD / Zlib / public-domain
-sources may be ingested, with attribution preserved in-file (as
-`SmbPitchShifter` / `WdlResampler` already do) and an entry in
-[`THIRD-PARTY-NOTICES.txt`](../../THIRD-PARTY-NOTICES.txt). GPL / LGPL /
-proprietary code (Rubber Band, SoundTouch, Surge, Vital, TAL, JUCE DSP) is
-**out** and must never be copied from.
+sources may be ingested, with **attribution preserved in-file** — a header comment
+naming the original author, project and licence, as `SmbPitchShifter` and
+`WdlResampler` already do. That is the whole mechanism: an earlier draft of this
+policy also called for an entry in a central `THIRD-PARTY-NOTICES.txt`, but no such
+file was ever added and it is not required. In-file attribution keeps the notice
+next to the code it applies to, which is where a reader looks and what survives a
+file being moved between packages. Revisit only if a future dependency's licence
+demands a distributed notices file. GPL / LGPL / proprietary code (Rubber Band,
+SoundTouch, Surge, Vital, TAL, JUCE DSP) is **out** and must never be copied from.
 
 ## 6. Deferred / open work
 

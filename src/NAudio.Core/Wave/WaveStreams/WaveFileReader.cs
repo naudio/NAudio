@@ -242,17 +242,4 @@ public class WaveFileReader : WaveStream
         }
         return sampleFrame;
     }
-
-    /// <summary>
-    /// Attempts to read a sample into a float. n.b. only applicable for uncompressed formats
-    /// Will normalise the value read into the range -1.0f to 1.0f if it comes from a PCM encoding
-    /// </summary>
-    /// <returns>False if the end of the WAV data chunk was reached</returns>
-    [Obsolete("Use ReadNextSampleFrame instead (this version does not support stereo properly)")]
-    public bool TryReadFloat(out float sampleValue)
-    {
-        var sf = ReadNextSampleFrame();
-        sampleValue = sf != null ? sf[0] : 0;
-        return sf != null;
-    }
 }

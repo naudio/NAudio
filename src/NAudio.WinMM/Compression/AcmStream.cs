@@ -192,24 +192,6 @@ public class AcmStream : IDisposable
         return streamHeader.Convert(bytesToConvert, out sourceBytesConverted);
     }
 
-    /// <summary>
-    /// Converts the contents of the SourceBuffer into the DestinationBuffer
-    /// </summary>
-    /// <param name="bytesToConvert">The number of bytes in the SourceBuffer
-    /// that need to be converted</param>
-    /// <returns>The number of converted bytes in the DestinationBuffer</returns>
-    [Obsolete("Call the version returning sourceBytesConverted instead")]
-    public int Convert(int bytesToConvert)
-    {
-        int sourceBytesConverted;
-        int destBytes = Convert(bytesToConvert, out sourceBytesConverted);
-        if (sourceBytesConverted != bytesToConvert)
-        {
-            throw new MmException(MmResult.NotSupported, "AcmStreamHeader.Convert didn't convert everything");
-        }
-        return destBytes;
-    }
-
     /* Relevant only for async conversion streams
     public void Reset()
     {

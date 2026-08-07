@@ -1,5 +1,7 @@
 # NAudio.SoundFile
 
+[![Nuget](https://img.shields.io/nuget/v/NAudio.SoundFile)](https://www.nuget.org/packages/NAudio.SoundFile/)
+
 Cross-platform audio file reading and writing for NAudio, backed by
 [libsndfile](https://libsndfile.github.io/libsndfile/).
 
@@ -132,4 +134,12 @@ format).
 
 For a worked walkthrough (reading, encoding, format conversion, streams,
 tags, capability detection) see
-[Cross-platform audio file reading and writing with NAudio.SoundFile](../Docs/CrossPlatformAudioFilesWithSoundFile.md).
+[Cross-platform audio file reading and writing with NAudio.SoundFile](https://github.com/naudio/NAudio/blob/main/Docs/CrossPlatformAudioFilesWithSoundFile.md).
+
+## Documentation
+
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for source, issues and demos.
+
+## License
+
+MIT.

@@ -18,8 +18,7 @@ DMO and DirectSound are legacy Windows audio APIs. Reach for them when you need 
 
 This package was carved out of `NAudio.Wasapi` for NAudio 3 so consumers who only want WASAPI / MediaFoundation don't transitively pull DMO and DirectSound interop.
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
 ## License
 
 MIT.

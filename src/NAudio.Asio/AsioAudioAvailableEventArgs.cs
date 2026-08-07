@@ -117,17 +117,4 @@ public class AsioAudioAvailableEventArgs : EventArgs
     /// Most commonly this will be one of, Int32LSB, Int16LSB, Int24LSB or Float32LSB
     /// </summary>
     public AsioSampleType AsioSampleType { get; private set; }
-
-    /// <summary>
-    /// Gets as interleaved samples, allocating a float array
-    /// </summary>
-    /// <returns>The samples as 32 bit floating point values</returns>
-    [Obsolete("Better performance if you use the overload that takes an array, and reuse the same one")]
-    public float[] GetAsInterleavedSamples()
-    {
-        int channels = InputBuffers.Length;
-        var samples = new float[SamplesPerBuffer * channels];
-        GetAsInterleavedSamples(samples);
-        return samples;
-    }
 }

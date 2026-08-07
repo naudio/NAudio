@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using NAudio.Dmo;
 
 namespace NAudio.Wave;
 

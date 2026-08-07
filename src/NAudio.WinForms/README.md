@@ -19,8 +19,7 @@ A handful of reusable GUI controls useful when building audio apps with WinForms
 
 Install this package only if you are building a Windows Forms application and want ready-made audio controls. For WPF apps, use the `NAudioWpfDemo` project in the NAudio source tree as a reference and roll your own controls — there is no `NAudio.Wpf` package.
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation and demos.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation and demos.
 ## License
 
 MIT.

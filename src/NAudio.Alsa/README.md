@@ -1,5 +1,7 @@
 # NAudio.Alsa
 
+[![Nuget](https://img.shields.io/nuget/v/NAudio.Alsa)](https://www.nuget.org/packages/NAudio.Alsa/)
+
 ALSA playback and capture for NAudio on **Linux**.
 
 This package provides:
@@ -35,7 +37,7 @@ dotnet add package NAudio.Alsa
 `AlsaOut` plays any `IWaveProvider`, so it is format-agnostic — what you
 can play depends on which **decoder** you feed it. `MediaFoundationReader`
 and the bundled `Mp3FileReader` / `AudioFileReader` are Windows-only, but
-the cross-platform [`NAudio.SoundFile`](../NAudio.SoundFile/README.md)
+the cross-platform [`NAudio.SoundFile`](https://github.com/naudio/NAudio/blob/main/src/NAudio.SoundFile/README.md)
 package (libsndfile) decodes the compressed/free codecs on Linux:
 
 | Format | Reader | Status |
@@ -129,3 +131,11 @@ foreach (var d in AlsaDeviceEnumerator.GetPlaybackDevices())
   it drops and re-prepares the stream on resume.
 - A dedicated streaming thread does blocking I/O and recovers from
   xruns; it is always joined before the device handle is closed.
+
+## Documentation
+
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for source, issues and demos.
+
+## License
+
+MIT.

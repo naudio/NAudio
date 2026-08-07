@@ -18,18 +18,18 @@ Per HEAD of `naudio3dev`. Verified line numbers.
 
 | File | Line(s) | Target type | Notes |
 | --- | ---: | --- | --- |
-| [NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs](NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs) | 40 | `Interfaces.IMFActivate` | Enumeration over `IntPtr` array returned from `MFTEnumEx` |
-| [NAudio.Wasapi/MediaFoundation/MfSample.cs](NAudio.Wasapi/MediaFoundation/MfSample.cs) | 96, 116 | `Interfaces.IMFMediaBuffer` | `GetBufferByIndex` and `ConvertToContiguousBuffer` |
-| [NAudio.Wasapi/MediaFoundation/MfActivate.cs](NAudio.Wasapi/MediaFoundation/MfActivate.cs) | 44 | `Interfaces.IMFTransform` | `IMFActivate::ActivateObject` |
-| [NAudio.Wasapi/MediaFoundation/MfTransform.cs](NAudio.Wasapi/MediaFoundation/MfTransform.cs) | 78, 91, 125, 137 | `Interfaces.IMFMediaType` | Input/output media-type getters |
-| [NAudio.Wasapi/MediaFoundation/MfSourceReader.cs](NAudio.Wasapi/MediaFoundation/MfSourceReader.cs) | 50, 62, 112 | `Interfaces.IMFMediaType` × 2, `Interfaces.IMFSample` × 1 | Native / current media type, ReadSample |
-| [NAudio.Wasapi/MediaFoundationResampler.cs](NAudio.Wasapi/MediaFoundationResampler.cs) | 74 | legacy `IMFTransform` | Bridges activated `IUnknown*` onto legacy `MediaFoundationTransform.transform` field type |
+| [NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs) | 40 | `Interfaces.IMFActivate` | Enumeration over `IntPtr` array returned from `MFTEnumEx` |
+| [NAudio.Wasapi/MediaFoundation/MfSample.cs](../../src/NAudio.Wasapi/MediaFoundation/MfSample.cs) | 96, 116 | `Interfaces.IMFMediaBuffer` | `GetBufferByIndex` and `ConvertToContiguousBuffer` |
+| [NAudio.Wasapi/MediaFoundation/MfActivate.cs](../../src/NAudio.Wasapi/MediaFoundation/MfActivate.cs) | 44 | `Interfaces.IMFTransform` | `IMFActivate::ActivateObject` |
+| [NAudio.Wasapi/MediaFoundation/MfTransform.cs](../../src/NAudio.Wasapi/MediaFoundation/MfTransform.cs) | 78, 91, 125, 137 | `Interfaces.IMFMediaType` | Input/output media-type getters |
+| [NAudio.Wasapi/MediaFoundation/MfSourceReader.cs](../../src/NAudio.Wasapi/MediaFoundation/MfSourceReader.cs) | 50, 62, 112 | `Interfaces.IMFMediaType` × 2, `Interfaces.IMFSample` × 1 | Native / current media type, ReadSample |
+| [NAudio.Wasapi/MediaFoundationResampler.cs](../../src/NAudio.Wasapi/MediaFoundationResampler.cs) | 74 | legacy `IMFTransform` | Bridges activated `IUnknown*` onto legacy `MediaFoundationTransform.transform` field type |
 
 Pattern (RCW direction): `(T)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, CreateObjectFlags.UniqueInstance)`. The `Mf*` wrapper classes hold both the RCW *and* an `IntPtr nativePointer` because they expose `NativePointer` for native calls — so the substitution is *not* identical to Phase 2e's `MMDeviceEnumerator.WrapDevicePointer` (which releases the IntPtr immediately). Document this clearly in the bridge-site commit.
 
 ### Category B — Legacy `[ComImport]` typed parameters in `[DllImport]` declarations (~14 parameters across 11 p/invokes)
 
-[NAudio.Wasapi/MediaFoundation/MediaFoundationInterop.cs](NAudio.Wasapi/MediaFoundation/MediaFoundationInterop.cs):
+[NAudio.Wasapi/MediaFoundation/MediaFoundationInterop.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationInterop.cs):
 
 | Line | P/Invoke | Legacy-typed parameters |
 | ---: | --- | --- |
@@ -58,32 +58,37 @@ Replacement pattern (Phase 2e + 6c precedent): `((ComObject)(object)wrapper).Fin
 
 | File | Lines |
 | --- | --- |
-| [NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs](NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs) | 84, 151, 221, 226, 232, 236, 237, 276 |
-| [NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs](NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs) | 84 |
-| [NAudio.Wasapi/MediaFoundation/MediaType.cs](NAudio.Wasapi/MediaFoundation/MediaType.cs) | 179 |
-| [NAudio.Wasapi/MediaFoundationReader.cs](NAudio.Wasapi/MediaFoundationReader.cs) | 106, 291, 292, 371 |
-| [NAudio.Wasapi/MediaFoundationEncoder.cs](NAudio.Wasapi/MediaFoundationEncoder.cs) | 69, 228, 256, 284, 306, 362, 363 |
+| [NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs) | 84, 151, 221, 226, 232, 236, 237, 276 |
+| [NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs) | 84 |
+| [NAudio.Wasapi/MediaFoundation/MediaType.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaType.cs) | 179 |
+| [NAudio.Wasapi/MediaFoundationReader.cs](../../src/NAudio.Wasapi/MediaFoundationReader.cs) | 106, 291, 292, 371 |
+| [NAudio.Wasapi/MediaFoundationEncoder.cs](../../src/NAudio.Wasapi/MediaFoundationEncoder.cs) | 69, 228, 256, 284, 306, 362, 363 |
 
 ### Category D — Field/parameter type cascade (5 files)
 
-[MediaFoundationTransform.transform](NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs#L30) is typed as the legacy `IMFTransform`. Re-typing to `[GeneratedComInterface] IMFTransform` from `Interfaces/` cascades through:
+[MediaFoundationTransform.transform](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs#L30) is typed as the legacy `IMFTransform`. Re-typing to `[GeneratedComInterface] IMFTransform` from `Interfaces/` cascades through:
 
-- [MediaFoundationTransform.cs](NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs) — the `transform` field + every method that calls into it (Read, Reposition, EndStreamAndDrain, ReadFromTransform, ReadFromSource, dispose)
-- [MediaFoundationResampler.cs](NAudio.Wasapi/MediaFoundationResampler.cs) — `CreateTransform` returns `IMFTransform`; the call site at line 65 onward must also project via `ComActivation.ComWrappers`
+- [MediaFoundationTransform.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationTransform.cs) — the `transform` field + every method that calls into it (Read, Reposition, EndStreamAndDrain, ReadFromTransform, ReadFromSource, dispose)
+- [MediaFoundationResampler.cs](../../src/NAudio.Wasapi/MediaFoundationResampler.cs) — `CreateTransform` returns `IMFTransform`; the call site at line 65 onward must also project via `ComActivation.ComWrappers`
 
 In **parallel** (not cascading from `transform` — these files don't reference it), the same legacy types appear as fields/parameters in:
 
-- [MediaFoundationReader.cs](NAudio.Wasapi/MediaFoundationReader.cs) — `IMFSourceReader pReader` field + all `IMFMediaType` / `IMFSample` / `IMFMediaBuffer` locals in the read loop
-- [StreamMediaFoundationReader.cs](NAudio.Wasapi/StreamMediaFoundationReader.cs) — overrides `CreateReader` returning `IMFSourceReader`
-- [MediaFoundationEncoder.cs](NAudio.Wasapi/MediaFoundationEncoder.cs) — `IMFSinkWriter`, `IMFCollection`, `IMFMediaType`, `IMFSample`, `IMFMediaBuffer`, `IMFAttributes` locals
-- [MfActivate.cs](NAudio.Wasapi/MediaFoundation/MfActivate.cs) — already uses `Interfaces.IMFTransform` in the bridge, but `ActivateTransform` returns the wrapper (no change needed there)
-- [MediaFoundationApi.cs](NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs) — every internal factory method returns a legacy interface (`IMFMediaType`, `IMFMediaBuffer`, `IMFSample`, `IMFAttributes`, `IMFByteStream`, `IMFSourceReader`, `IMFSinkWriter`, `IMFCollection`)
+- [MediaFoundationReader.cs](../../src/NAudio.Wasapi/MediaFoundationReader.cs) — `IMFSourceReader pReader` field + all `IMFMediaType` / `IMFSample` / `IMFMediaBuffer` locals in the read loop
+- [StreamMediaFoundationReader.cs](../../src/NAudio.Wasapi/StreamMediaFoundationReader.cs) — overrides `CreateReader` returning `IMFSourceReader`
+- [MediaFoundationEncoder.cs](../../src/NAudio.Wasapi/MediaFoundationEncoder.cs) — `IMFSinkWriter`, `IMFCollection`, `IMFMediaType`, `IMFSample`, `IMFMediaBuffer`, `IMFAttributes` locals
+- [MfActivate.cs](../../src/NAudio.Wasapi/MediaFoundation/MfActivate.cs) — already uses `Interfaces.IMFTransform` in the bridge, but `ActivateTransform` returns the wrapper (no change needed there)
+- [MediaFoundationApi.cs](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs) — every internal factory method returns a legacy interface (`IMFMediaType`, `IMFMediaBuffer`, `IMFSample`, `IMFAttributes`, `IMFByteStream`, `IMFSourceReader`, `IMFSinkWriter`, `IMFCollection`)
 
 These five files plus the cascade origin must change in **one coherent commit** so `dotnet build` is never broken across files. (This is Step 2 of the implementation plan below.)
 
 ### Category E — CCW direction: `ComStream` and the `IStream` boundary (one trap)
 
-[ComStream](NAudio.Wasapi/ComStream.cs) is a managed class implementing `System.Runtime.InteropServices.ComTypes.IStream` and is handed to native MF in two places ([MediaFoundationEncoder.cs:247,301](NAudio.Wasapi/MediaFoundationEncoder.cs#L247), [StreamMediaFoundationReader.cs:29](NAudio.Wasapi/StreamMediaFoundationReader.cs#L29)) via `MediaFoundationApi.CreateByteStream` → `MFCreateMFByteStreamOnStream([In] IStream punkStream, ...)`.
+> Superseded. `ComStream` is no longer in the tree — the byte-stream boundary was rebuilt
+> as [`MfByteStreamFromStream`](../../src/NAudio.Wasapi/MediaFoundation/MFByteStreamFromStream.cs),
+> reached via `MediaFoundationHelpers.CreateByteStream`. The analysis below is kept for the
+> reasoning about the CCW/QI trap, which still applies at that boundary.
+
+`ComStream` is a managed class implementing `System.Runtime.InteropServices.ComTypes.IStream` and is handed to native MF in two places ([MediaFoundationEncoder.cs:247,301](../../src/NAudio.Wasapi/MediaFoundationEncoder.cs#L247), [StreamMediaFoundationReader.cs:29](../../src/NAudio.Wasapi/StreamMediaFoundationReader.cs#L29)) via `MediaFoundationApi.CreateByteStream` → `MFCreateMFByteStreamOnStream([In] IStream punkStream, ...)`.
 
 `ComTypes.IStream` is a `[ComImport]`-style interface that ships with .NET. Under classic COM interop, `BuiltInComInteropSupport` materialises the CCW automatically. Under `BuiltInComInteropSupport=false` — exactly the smoke-test mode that gates the flag flip — this fails.
 
@@ -156,7 +161,7 @@ Legacy `[ComImport]` activation produces apartment-bound RCWs. `Marshal.GetObjec
 
 ### H10. `out object` and `[MarshalAs(UnmanagedType.IUnknown)] object` don't transparently project under source-gen. (Audit finding)
 
-[MediaFoundationEncoder.cs:65](NAudio.Wasapi/MediaFoundationEncoder.cs#L65) (`availableTypes.GetElement(n, out object mediaTypeObject)`) and [MediaFoundationInterop.cs:73](NAudio.Wasapi/MediaFoundation/MediaFoundationInterop.cs#L73) (`MFCreateMFByteStreamOnStreamEx([MarshalAs(UnmanagedType.IUnknown)] object punkStream, ...)`) round-trip COM identity through `object`. Classic RCW handles this transparently; source-gen does not.
+[MediaFoundationEncoder.cs:65](../../src/NAudio.Wasapi/MediaFoundationEncoder.cs#L65) (`availableTypes.GetElement(n, out object mediaTypeObject)`) and [MediaFoundationInterop.cs:73](../../src/NAudio.Wasapi/MediaFoundation/MediaFoundationInterop.cs#L73) (`MFCreateMFByteStreamOnStreamEx([MarshalAs(UnmanagedType.IUnknown)] object punkStream, ...)`) round-trip COM identity through `object`. Classic RCW handles this transparently; source-gen does not.
 
 For `IMFCollection.GetElement`, change the modern partial to `out IntPtr` and project explicitly. For `MFCreateMFByteStreamOnStreamEx`, the only known caller is unused (we use the `IStream`-typed `MFCreateMFByteStreamOnStream` instead) — verify and consider deletion.
 
@@ -211,7 +216,7 @@ End: zero `Marshal.GetObjectForIUnknown` calls in `NAudio.Wasapi/MediaFoundation
 
 - Declare local internal `[GeneratedComInterface] IStream` (or import an existing source-gen one if available).
 - Decorate `ComStream` with `[GeneratedComClass] partial`.
-- Apply Phase 2f QI-for-IID helper at [MediaFoundationEncoder.cs:247,301](NAudio.Wasapi/MediaFoundationEncoder.cs#L247) and [StreamMediaFoundationReader.cs:29](NAudio.Wasapi/StreamMediaFoundationReader.cs#L29).
+- Apply Phase 2f QI-for-IID helper at [MediaFoundationEncoder.cs:247,301](../../src/NAudio.Wasapi/MediaFoundationEncoder.cs#L247) and [StreamMediaFoundationReader.cs:29](../../src/NAudio.Wasapi/StreamMediaFoundationReader.cs#L29).
 - Refactor `MediaFoundationApi.CreateByteStream` to take an `IntPtr` (already-QI'd IStream pointer) rather than the managed object directly. Or keep it accepting a `ComStream` and do the QI internally.
 
 End: NAudioTests green. Manual smoke: encode-to-stream and read-from-stream paths in NAudioDemo.
@@ -229,7 +234,7 @@ End: zero `[ComImport]` declarations in `NAudio.Wasapi/MediaFoundation/`. `dotne
 
 ### Step 7. Smoke test extension + flag flip
 
-- Add a third section to [NAudioAotSmokeTest/Program.cs](NAudioAotSmokeTest/Program.cs): `MediaFoundationApi.Startup()`, `new MediaFoundationReader(<small test asset>)`, read 1 second of samples, run them through a `MediaFoundationResampler` (e.g. 44100 → 48000), `MediaFoundationApi.Shutdown()`. Use one of the existing audio assets from NAudioTests (e.g. `NAudioTests/Resources/*.mp3` or `*.wav`). The asset must be embedded or copied alongside the smoke .exe.
+- Add a third section to [NAudioAotSmokeTest/Program.cs](../../tests/NAudioAotSmokeTest/Program.cs): `MediaFoundationApi.Startup()`, `new MediaFoundationReader(<small test asset>)`, read 1 second of samples, run them through a `MediaFoundationResampler` (e.g. 44100 → 48000), `MediaFoundationApi.Shutdown()`. Use one of the existing audio assets from NAudioTests (e.g. `NAudioTests/Resources/*.mp3` or `*.wav`). The asset must be embedded or copied alongside the smoke .exe.
 - `<IsAotCompatible>true</IsAotCompatible>` on `NAudio.Wasapi.csproj`. (Drop the deferral comment.)
 - Verify:
   - `dotnet build NAudio.slnx -c Release` — zero IL2026/IL3050 against `NAudio.Wasapi` *and* `NAudio` (`NAudioAotSmokeTest` has `TreatWarningsAsErrors=true`).
@@ -251,7 +256,7 @@ End: `<IsAotCompatible>` honestly on. Phase 2e′ closes.
 ## Out of scope (still deferred — same as before Phase 2e′)
 
 - AOT story for sister assemblies (`NAudio.Core`, `NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`). Core/WinMM/Midi probably small audits each; ASIO is multi-phase like WASAPI was. Plan as separate phases.
-- Process-loopback capture activation (the only real-world consumer of `AudioClient.ActivateAsync` and therefore the only path that exercises `IActivateAudioInterfaceCompletionHandler`). Currently throws `NotImplementedException` in [WasapiRecorder.cs:91-94](NAudio.Wasapi/Wave/WasapiRecorder.cs#L91-L94).
+- Process-loopback capture activation (the only real-world consumer of `AudioClient.ActivateAsync` and therefore the only path that exercises `IActivateAudioInterfaceCompletionHandler`). Currently throws `NotImplementedException` in [WasapiRecorder.cs:91-94](../../src/NAudio.Wasapi/WasapiRecorder.cs#L91-L94).
 
 ---
 

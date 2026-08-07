@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- During docs generation (DocsBuild=true) collapse to the net9.0 surface so
-         DocFX's metadata step can load this project: it is pulled in transitively by
-         NAudio.Extras, and DocFX cannot read a multi-targeted project. The Windows
-         backends are documented directly from their own projects, so nothing is lost. -->
+    <!-- During docs generation (DocsBuild=true) collapse to a single TFM: DocFX
+         cannot read a multi-targeted project, and this one is pulled in both directly
+         (it owns AudioFileReader and Mp3FileReader) and transitively via NAudio.Extras.
+         Collapse to the *Windows* leg rather than net9.0, because that is the superset:
+         Mp3FileReader only exists under WINDOWS, and AudioFileReader's Media Foundation
+         fallback is similarly gated, so documenting the net9.0 leg would silently drop
+         them. The Windows backends themselves are documented from their own projects. -->
     <TargetFrameworks Condition=" '$(DocsBuild)' != 'true' ">net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
-    <TargetFramework Condition=" '$(DocsBuild)' == 'true' ">net9.0</TargetFramework>
+    <TargetFramework Condition=" '$(DocsBuild)' == 'true' ">net9.0-windows10.0.19041.0</TargetFramework>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>NAudio is an open source .NET audio library — playback and recording, file readers and writers, MIDI, DSP and effects, with platform-specific backends auto-selected by target framework.</Description>

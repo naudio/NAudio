@@ -201,10 +201,10 @@ Specific exception types for common failure modes:
 - All four managed implementor classes decorated with `[GeneratedComClass]` and made `partial`: `AudioEndpointVolumeCallback`, `AudioSessionEventsCallback` (public), `AudioSessionNotification`, `ActivateAudioInterfaceCompletionHandler` (which also implements `IAgileObject`, so the CCW now exposes both vtables).
 - All nine `Marshal.GetComInterfaceForObject` sites in `CoreAudioApi/` migrated to `ComActivation.ComWrappers.GetOrCreateComInterfaceForObject` followed by `Marshal.QueryInterface` for the specific callback IID before the pointer is handed to native. Each call site is funnelled through a `Query<X>Interface` helper (`AudioEndpointVolume.QueryCallbackInterface`, `AudioSessionControl.QueryEventsInterface`, `AudioSessionManager.QueryNotificationInterface`, `MMDeviceEnumerator.QueryNotificationClientInterface`) and wrapped in `try/finally` so the CCW IUnknown ref is released even if Register/Unregister throws. Sites covered: `AudioEndpointVolume.cs` (register + Dispose), `AudioSessionControl.cs` (Dispose, RegisterEventClient, UnRegisterEventClient), `AudioSessionManager.cs` (RefreshSessions + UnregisterNotifications), `MMDeviceEnumerator.cs` (RegisterEndpointNotificationCallback + UnregisterEndpointNotificationCallback).
 - `ActivateAudioInterfaceAsync` P/Invoke refactored from `[DllImport]` (with typed COM interface argument and `PreserveSig=false`) to `[LibraryImport]` with raw `IntPtr` and `int` HRESULT return. The single caller (`AudioClient.ActivateAsync`) `Marshal.QueryInterface`s the CCW for `IID_IActivateAudioInterfaceCompletionHandler` before passing the pointer to native.
-- **CCW QI-for-IID rule, generalised.** ComWrappers CCWs return distinct `IntPtr`s per interface — *including* a separate IUnknown vtable for single-interface `[GeneratedComClass]` types. The Phase 2e hazard note that originally read as "multi-vtable CCWs need QI" was misread as "only multi-interface CCWs need QI"; the original Phase 2f migration shipped without QI on the single-interface callbacks and access-violated on the WASAPI worker the first time `IAudioEndpointVolumeCallback.OnNotify` fired (master volume slider in NAudioDemo, repro'd standalone with `Tools/CallbackRepro`). The fix above + the clarified hazard wording in `CoreAudioActivationModernization.md` close that.
+- **CCW QI-for-IID rule, generalised.** ComWrappers CCWs return distinct `IntPtr`s per interface — *including* a separate IUnknown vtable for single-interface `[GeneratedComClass]` types. The Phase 2e hazard note that originally read as "multi-vtable CCWs need QI" was misread as "only multi-interface CCWs need QI"; the original Phase 2f migration shipped without QI on the single-interface callbacks and access-violated on the WASAPI worker the first time `IAudioEndpointVolumeCallback.OnNotify` fired (master volume slider in NAudioDemo, repro'd standalone with a `Tools/CallbackRepro` scratch console, since removed). The fix above + the clarified hazard wording in `CoreAudioActivationModernization.md` close that.
 - **Verification:**
   - NAudioTests: 1179 / 14 skipped / 0 failed.
-  - `Tools/CallbackRepro` console smoke: 50 master-volume changes drive 42 callbacks cleanly, no AV.
+  - `Tools/CallbackRepro` scratch console smoke (local only, not in the repo): 50 master-volume changes drive 42 callbacks cleanly, no AV.
   - `dotnet publish -p:PublishTrimmed=true -p:BuiltInComInteropSupport=false` against NAudioAotSmokeTest: runs end-to-end, zero IL2026/IL3050 against `NAudio.Wasapi`.
   - **`PublishAot=true` + `BuiltInComInteropSupport=false` against NAudioAotSmokeTest** (RCW + CCW directions): 7 endpoints enumerated with full property reads (VT_LPWSTR / VT_UI4 / VT_BLOB), `IMMNotificationClient` registers HR=0, four master-volume changes drove four `OnVolumeNotification` callbacks, clean exit. Strongest signal Phase 2f can have under genuine NativeAOT whole-program analysis.
   - Manual smoke in NAudioDemo Volume Mixer panel: master fader, mute, session faders all work without crashing. New session panels appear live via `IAudioSessionNotification.OnSessionCreated`.
@@ -216,7 +216,7 @@ Specific exception types for common failure modes:
 - `NAudioDemo` Recording and WASAPI playback panels now self-refresh their device combos when devices are added/removed/state-changed/default-changed, via `Utils/DeviceChangeNotifier`. Selection is preserved by ID across refreshes. This exercises `IMMNotificationClient` during normal demo use.
 - `NAudioDemo` Volume Mixer now subscribes to `AudioSessionManager.OnSessionCreated` and adds new session panels live, with a `Debug.WriteLine` breadcrumb. Closes the long-standing "TODO: Sessions create and dispose events are not handled".
 - `NAudioConsoleTest` WASAPI menu adds two callback-direction modes: "Watch device notifications" (logs `IMMNotificationClient` events for headless / AOT-publish smoke) and "Stress endpoint volume callbacks" (50-set master-volume bash; this is the test that actually surfaced the QI-for-IID bug when run as a standalone repro).
-- `NAudioAotSmokeTest` (promoted from a local-only `Tools/AotSmoke` sandbox into a tracked solution project — built as part of `NAudio.slnx` so the trim/AOT analyzer runs on every CI build, with `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` so a future `IL2026`/`IL3050` regression in `NAudio.Wasapi` or `NAudio.Core` fails the PR build). Exercises both directions of the source-generated COM bridging: RCW (property reads via `IPropertyStore`/`PropVariant`) and CCW (`IMMNotificationClient` registration + `IAudioEndpointVolumeCallback` dispatch under `PublishAot=true`). The runtime smoke (publish + run) is a manual local validation step because CI agents typically lack a real audio device — see `NAudioAotSmokeTest/README.md`.
+- `NAudioAotSmokeTest` (promoted from a local-only `Tools/AotSmoke` sandbox into a tracked solution project — built as part of `NAudio.slnx` so the trim/AOT analyzer runs on every CI build, with `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` so a future `IL2026`/`IL3050` regression in `NAudio.Wasapi` or `NAudio.Core` fails the PR build). Exercises both directions of the source-generated COM bridging: RCW (property reads via `IPropertyStore`/`PropVariant`) and CCW (`IMMNotificationClient` registration + `IAudioEndpointVolumeCallback` dispatch under `PublishAot=true`). The runtime smoke (publish + run) is a manual local validation step because CI agents typically lack a real audio device — see `tests/NAudioAotSmokeTest/README.md`.
 
 **Breaking changes:**
 
@@ -303,7 +303,9 @@ Branch `naudio3dev-directsound-migration`. Closes [GitHub issue #1191](https://g
 - AOT story for the remaining sister assemblies (`NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`). The `AcmDriver` port to `NativeLibrary` lands incidentally; the broader MMSYS surface audit is its own phase.
 - Full `PublishAot=true` validation from a VS Developer Command Prompt (same proxy argument as Phase 2e′ — trimmed-only run is a strong signal for the same dispatch shape).
 
-#### Phase 2h: Mp3FileReader lazy table-of-contents ([Tools/prompts/phase-2h-mp3filereader-lazy-toc.md](Tools/prompts/phase-2h-mp3filereader-lazy-toc.md))
+#### Phase 2h: Mp3FileReader lazy table-of-contents
+
+*(Originally written against a `Tools/prompts/phase-2h-mp3filereader-lazy-toc.md` working note. `Tools/` was a local scratch directory and is no longer in the repo, so the link has been removed — the summary below is the record.)*
 
 Branch `naudio3dev`. Closes [GitHub issue #1119](https://github.com/naudio/NAudio/issues/1119) — opening a multi-hour MP3 over a network share blocked for seconds because the constructor walked every frame in the file to build the table-of-contents (TOC). Now the TOC is built opportunistically: seeded with the first frame at construction, extended as `Read` consumes frames or as `Position` is set forward past the scanned tail. Total length is reported from the Xing/Info `Frames` field when present (free, exact for any encoder that wrote one), or estimated from the first frame's bitrate (exact for CBR, approximate for headerless VBR), with a new opt-in `EnsureExactLengthAsync` for the rare consumer who needs an exact duration on a headerless VBR file without playing it.
 
@@ -430,7 +432,7 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] `MeteringSampleProvider`, `NotifyingSampleProvider`, `PanningSampleProvider`, `OffsetSampleProvider`
 - [x] `MultiplexingSampleProvider`, `ConcatenatingSampleProvider`, `AdsrSampleProvider`, `SmbPitchShiftingSampleProvider`
 - [x] `SignalGenerator`, `WdlResamplingSampleProvider`, `SampleChannel`
-- [x] `SimpleCompressorEffect` (renamed from `SimpleCompressorStream`)
+- [x] `SimpleCompressorEffect` (renamed from `SimpleCompressorStream`) — *superseded: both were later removed in favour of `NAudio.Effects`' `CompressorEffect`; neither name ships in 3.0.0*
 
 **PCM-to-sample converters (`ISampleProvider`, via `SampleProviderConverterBase`):**
 - [x] `Pcm8BitToSampleProvider`, `Pcm16BitToSampleProvider`, `Pcm24BitToSampleProvider`, `Pcm32BitToSampleProvider`
@@ -978,14 +980,18 @@ w.WriteInfoMetadata(info);               // AfterData
 
 **Header flow:** the writer defers emitting the `data` chunk header until the first `Write`/`WriteSample`/`AddChunk(AfterData)` call. At that point any buffered BeforeData chunks are flushed in order, the `fact` chunk is emitted (if applicable), and the `data` header is written. Attempts to add a BeforeData chunk after audio has started throw `InvalidOperationException`. At close, the data chunk is padded to word alignment, then AfterData chunks and any buffered cues are appended, and header sizes are fixed up.
 
-**RF64 promotion — DONE.** `WaveFileWriter(stream, format, enableRf64: true)` reserves a 28-byte `JUNK` placeholder immediately after the RIFF/WAVE header (per EBU Tech 3306 — `ds64` must be the first chunk after `RIFF`). At close, if the data chunk exceeds 4 GB the writer overwrites `RIFF`→`RF64`, the placeholder `JUNK`→`ds64`, and sets the 32-bit RIFF and data sizes to `0xFFFFFFFF` with the real 64-bit sizes in `ds64`. Small files on an RF64-enabled writer stay as normal RIFF (with a harmless 36-byte `JUNK` chunk). Files written with `enableRf64: false` still throw `ArgumentException` if the audio would exceed 4 GB. A test-only constructor overload (hidden with `[EditorBrowsable(Never)]`) lets tests exercise promotion against a lowered threshold without having to write 4 GB of audio.
+**RF64 promotion — DONE.** `new WaveFileWriter(stream, format, new WaveFileWriterOptions { EnableRf64 = true })` reserves a 28-byte `JUNK` placeholder immediately after the RIFF/WAVE header (per EBU Tech 3306 — `ds64` must be the first chunk after `RIFF`). At close, if the data chunk exceeds 4 GB the writer overwrites `RIFF`→`RF64`, the placeholder `JUNK`→`ds64`, and sets the 32-bit RIFF and data sizes to `0xFFFFFFFF` with the real 64-bit sizes in `ds64`. Small files on an RF64-enabled writer stay as normal RIFF (with a harmless 36-byte `JUNK` chunk). Writers left at the default `EnableRf64 = false` still throw `ArgumentException` if the audio would exceed 4 GB. `WaveFileWriterOptions.Rf64PromotionThreshold` lets tests exercise promotion against a lowered threshold without having to write 4 GB of audio.
+
+> This shipped first as an `enableRf64` constructor flag; it was later folded into
+> `WaveFileWriterOptions` (see the "WAV chunk API changes" table below), which is the
+> form that ships in 3.0.0. The options object is the only public spelling.
 
 **Classes retired in this pass:**
 
 | Class | Replacement |
 | ----- | ----------- |
 | `CueWaveFileWriter` | `new WaveFileWriter(...)` + `AddCue(position, label)` or `WriteCueList(cueList)` |
-| `BwfWriter` | `new WaveFileWriter(..., enableRf64: true)` + `WriteBroadcastExtension(bext)` |
+| `BwfWriter` | `new WaveFileWriter(..., new WaveFileWriterOptions { EnableRf64 = true })` + `WriteBroadcastExtension(bext)` |
 | `BextChunkInfo` | `BroadcastExtension` (the read-side DTO — now used on both sides, supports v1 and v2) |
 
 The `WaveFileBuilder` test helper was shrunk to just the generic `Build(format, audio, params Chunk[])` primitive for edge-case/malformed-file tests; all happy-path chunk tests now round-trip through the real `WaveFileWriter`, giving reader/writer symmetry coverage in a single assertion.
@@ -1048,13 +1054,21 @@ See [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) §"Execution 
 **Out of scope:**
 
 - `[TypeForwardedTo]` shims from `NAudio.Wasapi` to `NAudio.Dmo`. Technically possible (the cycle problem doesn't apply once `WasapiOut` stops using `ResamplerDmoStream`), but deliberately omitted — NAudio 3 is a clean break, and forwarders would carry the legacy surface forward for no real upside.
-- The `AudioMediaSubtypes` namespace quirk (`NAudio.Core` and `NAudio.Dmo` now both contribute to namespace `NAudio.Dmo`). Legal, minor smell. Future cleanup candidate but a public-API rename, so out of scope here.
+- ~~The `AudioMediaSubtypes` namespace quirk (`NAudio.Core` and `NAudio.Dmo` now both contribute to namespace `NAudio.Dmo`).~~ **Done before 3.0.0** — moved to `NAudio.Wave`, alongside `WaveFormatExtensible` and matching the file's own directory. `NAudio.Core` no longer contributes to `NAudio.Dmo`. It is a public-API namespace change, so it had to land in the major release or wait for 4.0; recorded in the migration guide.
 
 ---
 
 ## Breaking Changes from 2.x
 
-These will need to be documented in the migration guide:
+The user-facing version of this material now lives in
+[`Docs/MigratingFromNAudio2.md`](../MigratingFromNAudio2.md), which is what consumers are
+pointed at from the README, the release notes and the docs site. **Keep the two in sync:**
+if you change a row here, check whether the migration guide needs the same edit.
+
+The tables below are the working record — they include internal-only moves and interop
+detail that the public guide deliberately omits. They are also written pass-by-pass, so a
+later phase can supersede an earlier row; where that has happened the row has been
+reconciled against the shipping 3.0.0 API rather than left as written.
 
 ### Platform requirements
 | Change | Migration |
@@ -1113,13 +1127,13 @@ Second-round split. Source code is unchanged — namespaces preserved across all
 | `Init(IWavePlayer, ISampleProvider, bool convertTo16Bit)` extension removed | Use `Init(IWavePlayer, ISampleProvider)` (always IEEE float) or convert to 16-bit upstream via `SampleToWaveProvider16` |
 | `WaveProvider32` abstract method changed to `Read(Span<float>)` | Custom subclasses must update their override signature |
 | `WaveProvider16` abstract method changed to `Read(Span<short>)` | Custom subclasses must update their override signature |
-| `SimpleCompressorStream` renamed to `SimpleCompressorEffect` | Update class name references; now implements `ISampleProvider` and takes `ISampleProvider` in constructor |
+| `SimpleCompressorStream` removed | It was first renamed to `SimpleCompressorEffect` (see *Phase 6*), then dropped altogether along with the internal ChunkWare DSP when `NAudio.Effects` landed. Neither type ships in 3.0.0 — use `CompressorEffect`, or the wider dynamics suite (`LimiterEffect`, `GateEffect`, `MultibandCompressorEffect`) |
 
 ### Media Foundation API changes
 
 | Change | Migration |
 | ------ | --------- |
-| All MF COM interfaces (`IMFSourceReader`, `IMFSinkWriter`, etc.) are `internal` | Use wrapper classes (`MfSourceReader`, `MfSinkWriter`, etc.) |
+| All MF COM interfaces (`IMFSourceReader`, `IMFSinkWriter`, etc.) are `internal` | The low-level `Mf*` wrappers around them (`MfSourceReader`, `MfSinkWriter`, `MfTransform`, `MfSample`, `MfMediaBuffer`, `MfMediaType`) are **also `internal`** — only `MfActivate` stays public. Use the high-level API: `MediaFoundationReader`, `StreamMediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationResampler`, `MediaFoundationTransform`, `MediaFoundationApi`, `MediaType` |
 | `MediaFoundationInterop` is `internal` | Use `MediaFoundationApi` methods instead |
 | `MediaType.MediaFoundationObject` is `internal` | Use `MediaType` properties (`SampleRate`, `SubType`, etc.) |
 | `MediaType(IMFMediaType)` constructor is `internal` | Use `MediaType()` or `MediaType(WaveFormat)` |
@@ -1135,6 +1149,12 @@ Second-round split. Source code is unchanged — namespaces preserved across all
 
 ### WinMM API changes
 
+> **Naming, first:** in 3.0.0 the plain names belong to the event-callback classes.
+> `WaveOutEvent` was renamed to `WaveOut` and `WaveInEvent` to `WaveIn` (both old names
+> survive as `[Obsolete]` subclasses), while NAudio 2's window-callback `WaveOut` / `WaveIn`
+> became `WaveOutWindow` / `WaveInWindow` in `NAudio.WinForms`. Rows below use the 3.0.0
+> names — migrate *to* `WaveOut` / `WaveIn`, not to the obsolete `*Event` aliases.
+
 | Change | Migration |
 | ------ | --------- |
 | `WaveOut` class removed (NAudio.WinForms) | Default: use `WaveOut` (NAudio.WinMM) — event-callback, same `IWavePlayer` interface. If you relied on callbacks arriving on the UI thread (i.e. used `WaveCallbackInfo.NewWindow` / `ExistingWindow`), use `WaveOutWindow` (NAudio.WinForms) — same behaviour under the hood, two constructors (parameterless = owns a hidden window, `IntPtr` = subclasses your window). Function callback mode (`FunctionCallback`) is gone for good — it was never reliable |
@@ -1142,14 +1162,14 @@ Second-round split. Source code is unchanged — namespaces preserved across all
 | `WaveCallbackInfo` class removed | The old three-way strategy (`FunctionCallback` / `NewWindow` / `ExistingWindow`) is replaced by picking a class: `WaveOut`/`WaveIn` for event callbacks (no UI thread needed), `WaveOutWindow`/`WaveInWindow` for window callbacks. Function callback mode is permanently gone |
 | `WaveWindow` / `WaveWindowNative` classes removed | Not exposed anymore — the window message pump is an internal detail of `WaveOutWindow`/`WaveInWindow` (both host types live in NAudio.WinForms but are `internal`) |
 | `WaveCallbackStrategy` enum removed | Not needed — strategy is encoded in the chosen class and constructor |
-| `WaveOut.DeviceCount` / `WaveOut.GetCapabilities()` | Use `WaveOutEvent.DeviceCount` / `WaveOutEvent.GetCapabilities()` |
-| `WaveIn.DeviceCount` / `WaveIn.GetCapabilities()` | Use `WaveInEvent.DeviceCount` / `WaveInEvent.GetCapabilities()` |
-| `WaveInterop` is `internal` | Use `WaveOutEvent`/`WaveInEvent`, not raw P/Invoke |
+| `WaveOut.DeviceCount` / `WaveOut.GetCapabilities()` (NAudio.WinForms) | Use the statics on `WaveOut` in **NAudio.WinMM** — same names, different assembly |
+| `WaveIn.DeviceCount` / `WaveIn.GetCapabilities()` (NAudio.WinForms) | Use the statics on `WaveIn` in **NAudio.WinMM** — same names, different assembly |
+| `WaveInterop` is `internal` | Use `WaveOut`/`WaveIn`, not raw P/Invoke |
 | `WaveHeader`, `WaveHeaderFlags`, `MmTime` are `internal` | These interop types were never intended for direct use |
-| `WaveOutBuffer`, `WaveInBuffer` are `internal` | Buffer management is an implementation detail of `WaveOutEvent`/`WaveInEvent` |
-| `WaveOutUtils` is `internal` | Use `WaveOutEvent.Volume` / `WaveOutEvent.GetPosition()` |
-| `WaveInEvent` default format changed from 8000/16/mono to 44100/16/stereo | Set `WaveFormat` explicitly if you need the old default |
-| `WaveOutEvent.DesiredLatency` replaced by `BufferMilliseconds` | `BufferMilliseconds` specifies the size of each individual buffer (default 100ms). Old `DesiredLatency` was the total across all buffers, which was confusing with `NumberOfBuffers > 1` |
+| `WaveOutBuffer`, `WaveInBuffer` are `internal` | Buffer management is an implementation detail of `WaveOut`/`WaveIn` |
+| `WaveOutUtils` is `internal` | Use `WaveOut.Volume` / `WaveOut.GetPosition()` |
+| `WaveIn`'s default record format changed from 8000/16/mono to 44100/16/stereo | Set `WaveFormat` explicitly if you need the old default |
+| `WaveOut.DesiredLatency` replaced by `BufferMilliseconds` | `BufferMilliseconds` specifies the size of each individual buffer (default 100ms). Old `DesiredLatency` was the total across all buffers, which was confusing with `NumberOfBuffers > 1`. No obsolete shim — this is a compile break |
 | `WaveOutEvent` renamed to `WaveOut` | `WaveOutEvent` still exists as an obsolete subclass for migration — update to `WaveOut` |
 | `WaveInEvent` renamed to `WaveIn` | `WaveInEvent` still exists as an obsolete subclass for migration — update to `WaveIn` |
 
@@ -1166,7 +1186,7 @@ Second-round split. Source code is unchanged — namespaces preserved across all
 | New: `BroadcastExtension` + `BextInterpreter` | Unified read/write DTO for BWF `bext` (replaces the old write-only `BextChunkInfo`) |
 | New: `InfoMetadata` + `InfoListInterpreter` | Read and write `LIST/INFO` metadata (artist, title, copyright, etc.) via a single type |
 | `CueWaveFileWriter` removed | `new WaveFileWriter(path, format)` + `AddCue(position, label)` — or `WriteCueList(cueList)` extension for callers that already have a populated `CueList` |
-| `BwfWriter` removed | `new WaveFileWriter(path, format, enableRf64: true)` + `WriteBroadcastExtension(bext)` extension. RF64 promotion now belongs to `WaveFileWriter` rather than being tied to BWF |
+| `BwfWriter` removed | `new WaveFileWriter(path, format, new WaveFileWriterOptions { EnableRf64 = true })` + `WriteBroadcastExtension(bext)` extension. RF64 promotion now belongs to `WaveFileWriter` rather than being tied to BWF |
 | `BextChunkInfo` removed | `BroadcastExtension` — same fields, plus v2 loudness support and a `ToChunkData()` serialiser. `OriginationDateTime` replaced by separate `OriginationDate`/`OriginationTime` strings (helpers `BroadcastExtension.FormatOriginationDate(DateTime)` / `FormatOriginationTime(DateTime)` match the BWF `yyyy-MM-dd` / `HH:mm:ss` form) |
 | New: `WaveFileWriter.AddChunk(string, byte[], ChunkPosition)` | Low-level entry point for adding arbitrary RIFF chunks before or after the data chunk |
 | New: `WaveFileWriter.AddChunk(IWaveChunkWriter)` | Interface-based entry point (symmetric with `IWaveChunkInterpreter<T>` on the read side) |
@@ -1182,9 +1202,7 @@ Second-round split. Source code is unchanged — namespaces preserved across all
 
 | Change | Migration |
 | ------ | --------- |
-| `DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA` renamed | Use `DmoInputStatusFlags.AcceptData` |
-| `DmoEnumFlags.DMO_ENUMF_INCLUDE_KEYED` renamed | Use `DmoEnumFlags.IncludeKeyed` |
-| `MediaParamCurveType.MP_CURVE_*` members renamed | Use PascalCase: `Jump`, `Linear`, `Square`, `InverseSquare`, `Sine` |
+| `DmoInputStatusFlags`, `DmoEnumFlags` and `MediaParamCurveType` are `internal` | Not a source-level migration any more — these interop enums were renamed to PascalCase in an earlier pass (see *Phase 11*) and then made `internal`, so they are no longer part of the public surface. Go through `DmoEnumerator`, `MediaObject` / `MediaObjectInPlace` and the `DmoEffectWaveProvider` wrappers |
 | `MediaBuffer` finalizer removed | Ensure `Dispose()` is called |
 | `MediaObject` errors throw `MediaFoundationException` | Existing `catch (COMException)` still works |
 | `WindowsMediaMp3Decoder` "DO NOT USE" label removed | Class is now properly documented; use `DmoMp3FrameDecompressor` for high-level MP3 decoding |

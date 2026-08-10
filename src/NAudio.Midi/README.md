@@ -16,8 +16,7 @@ MIDI support for [NAudio](https://github.com/naudio/NAudio). Dual-targets `net9.
 
 Sending or receiving live MIDI through the legacy winmm-backed `MidiIn` / `MidiOut` uses the Windows Multimedia API and lives in the [NAudio.WinMM](https://www.nuget.org/packages/NAudio.WinMM/) package. (The WinRT-backed `WinRTMidiIn` / `WinRTMidiOut` above are the modern alternative and ship here.)
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials on working with MIDI files and events.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials on working with MIDI files and events.
 ## License
 
 MIT.

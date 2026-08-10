@@ -18,8 +18,7 @@ For DMO effects (echo, chorus, reverb, etc.), the DMO MP3 decoder, the DMO resam
 
 Use this package whenever you want modern Windows audio APIs: low-latency playback, loopback capture of the system mixer, per-application volume, or codec support via Media Foundation. The package is being actively modernized to use `GeneratedComInterface` and source-generated COM interop.
 
-See the [NAudio GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
-
+See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutorials and the full API reference, or the [GitHub repository](https://github.com/naudio/NAudio) for full documentation and tutorials.
 ## License
 
 MIT.

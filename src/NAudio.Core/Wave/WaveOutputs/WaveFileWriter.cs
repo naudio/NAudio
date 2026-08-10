@@ -373,18 +373,6 @@ public class WaveFileWriter : Stream
     /// <param name="data">the buffer containing the wave data</param>
     /// <param name="offset">the offset from which to start writing</param>
     /// <param name="count">the number of bytes to write</param>
-    [Obsolete("Use Write instead")]
-    public void WriteData(byte[] data, int offset, int count)
-    {
-        Write(data, offset, count);
-    }
-
-    /// <summary>
-    /// Appends bytes to the WaveFile (assumes they are already in the correct format)
-    /// </summary>
-    /// <param name="data">the buffer containing the wave data</param>
-    /// <param name="offset">the offset from which to start writing</param>
-    /// <param name="count">the number of bytes to write</param>
     public override void Write(byte[] data, int offset, int count)
     {
         ThrowIfDisposed();
@@ -473,18 +461,6 @@ public class WaveFileWriter : Stream
         {
             WriteSample(samples[offset + n]);
         }
-    }
-
-    /// <summary>
-    /// Writes 16 bit samples to the Wave file
-    /// </summary>
-    /// <param name="samples">The buffer containing the 16 bit samples</param>
-    /// <param name="offset">The offset from which to start writing</param>
-    /// <param name="count">The number of 16 bit samples to write</param>
-    [Obsolete("Use WriteSamples instead")]
-    public void WriteData(short[] samples, int offset, int count)
-    {
-        WriteSamples(samples, offset, count);
     }
 
     /// <summary>

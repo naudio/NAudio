@@ -19,8 +19,8 @@
 | 8. Branch flip + protection | ✅ done | `master` → `release/2.x` and `naudio3dev` → `main`. `main` is default. Ruleset "Protected branches" on default + `release/*` (require PR, require `build` status check, require linear history, block force-push, block deletion). Cleanup PR #1272 followed up workflow files and doc/README links. |
 | 9. First public preview + retire Azure Pipelines | ✅ done | `3.0.0-preview.2` shipped to NuGet via the new flow. PR #1274 deleted `azure-pipelines.yml` and `publish.ps1`, dropped `<GeneratePackageOnBuild>` from all 8 NAudio packages, refreshed badges and READMEs, and consolidated duplicated csproj boilerplate into `Directory.Build.props` and `Directory.Build.targets`. Contributor announcement and stale-PR triage remain as non-blocking manual steps (see §"Communication"). Azure DevOps cleanup is in §"Retiring Azure DevOps". |
 | 10. SourceLink + symbol packages + deterministic CI | ✅ done | PR #1275 merged. `.NET 8+` SDK SourceLink activated via `<PublishRepositoryUrl>` (no PackageReference needed). `.snupkg` symbol packages produced via `<IncludeSymbols>` + `<SymbolPackageFormat>snupkg`; pushed alongside the `.nupkg` by `dotnet nuget push`. `<ContinuousIntegrationBuild>` gated on `GITHUB_ACTIONS=true` for reproducible CI binaries. `3.0.0-preview.3` shipped with all three active. |
-| 11. Embed `PackageReleaseNotes` in the nupkg | ⏳ in progress | The release workflow now extracts the appropriate `RELEASE_NOTES.md` section (`### Unreleased` for previews, `### <version>` for finals) into a file before pack runs, then passes the file path via `-p:PackageReleaseNotesFile=...`. A small MSBuild target in `Directory.Build.targets` reads the file and sets `<PackageReleaseNotes>` so NuGet displays the content on the package page. The same file is reused for the GitHub Release body on finals. |
-| 12. First final 3.0.0 release | future | |
+| 11. Embed `PackageReleaseNotes` in the nupkg | ✅ done | The release workflow extracts the appropriate `RELEASE_NOTES.md` section (`### Unreleased` for previews, `### <version>` for finals) into a file before pack runs, then passes the file path via `-p:PackageReleaseNotesFile=...`. A small MSBuild target in `Directory.Build.targets` reads the file and sets `<PackageReleaseNotes>` so NuGet displays the content on the package page. The same file is reused for the GitHub Release body on finals. The extract step also enforces NuGet's 35,000-character limit, so an oversized section fails the run before pack rather than at push. |
+| 12. First final 3.0.0 release | ⏳ in progress | Pre-flight underway: `docfx.json` extended to cover `NAudio.Sampler` and the `NAudio` meta-package (`AudioFileReader` / `Mp3FileReader` were missing from the API reference), `README.md` and the meta-package NuGet README rewritten for the NAudio 3 shape, `Docs/MigratingFromNAudio2.md` completed against the breaking-change tables in [MODERNIZATION.md](MODERNIZATION.md), and `RELEASE_NOTES.md` trimmed to headline features + breaking changes. `AudioMediaSubtypes` moved out of the `NAudio.Dmo` namespace into `NAudio.Wave`, and seven members that had been `[Obsolete]` since NAudio 2 were removed (`AsioOut.Volume` kept — it is an `IWavePlayer` interface member). `EffectsDesign.md`'s licence policy was amended to settle on in-file attribution as the sole mechanism, dropping its reference to a central `THIRD-PARTY-NOTICES.txt` that was never added. Pre-flight is complete; next step is [ReleaseInstructions.md](../../ReleaseInstructions.md) §3 — bump `<VersionPrefix>`, rename `### Unreleased`, tag. |
 
 ### Findings carried forward from Phase 0
 
@@ -212,7 +212,7 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Exit criterion:** a valid pre-release exists on NuGet.org and installs cleanly into a test project.
 
-### Phase 8 — Branch flip and protection ⏳
+### Phase 8 — Branch flip and protection ✅
 
 > **Note on order:** in practice this phase ran *before* Phase 7. The Phase 7 smoke test requires `workflow_dispatch` to be visible in the GitHub UI, which only happens for workflows on the default branch. The rename to `main` was therefore prerequisite, not subsequent.
 
@@ -230,7 +230,7 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Exit criterion:** `main` is the default; both protected branches block direct pushes; CI is required on every PR; the cleanup PR has merged so workflow files reflect the new branch names.
 
-### Phase 9 — Cut a real preview and retire the old flow ⏳
+### Phase 9 — Cut a real preview and retire the old flow ✅
 
 40. Cut `3.0.0-preview.1` via the release workflow. This is the first preview that ships from `main`. *(Done as a side-effect of Phase 7's smoke test — actually shipped as `preview.2` because `preview.1` was burned on the glob-expansion bug.)*
 41. Announce the preview on the project's usual channels. *(Pending manual step; see Communication below.)*
@@ -252,13 +252,15 @@ Branch-rename auto-banner only mentions the `naudio3dev → main` step, which mo
 
 This is a manual step that does not block Phase 9's cleanup PR.
 
-### Phase 10 — First final release (separate, not part of this rollout)
+### Phase 12 — First final release (separate, not part of this rollout)
 
 When the time comes for `3.0.0` proper:
 
-45. Confirm `RELEASE_NOTES.md` has a curated `### 3.0.0 (date)` section.
-46. Update `<VersionPrefix>` to `3.0.0` (no suffix needed — handled by the workflow).
-47. Push tag `v3.0.0`. The release workflow does the rest.
+47. Confirm `RELEASE_NOTES.md` has a curated `### 3.0.0 (date)` section that fits NuGet's 35,000-character limit.
+48. Update `<VersionPrefix>` to `3.0.0` (no suffix needed — handled by the workflow).
+49. Push tag `v3.0.0`. The release workflow does the rest.
+
+The operational checklist for this lives in [ReleaseInstructions.md](../../ReleaseInstructions.md) §3; the numbered steps here exist only to keep the phase sequence complete.
 
 ## Retiring Azure DevOps
 

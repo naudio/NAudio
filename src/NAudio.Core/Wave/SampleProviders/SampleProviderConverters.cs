@@ -1,5 +1,4 @@
 using System;
-using NAudio.Dmo;
 
 namespace NAudio.Wave.SampleProviders;
 

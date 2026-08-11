@@ -48,6 +48,11 @@ public partial class CoreAudioPlayer
                 return;
             }
 
+            // The below pointers are always non-null; 
+            // This happens because we initialize the procedure 
+            // with at least one stream. inNow is always valid.
+            // If we have enabled at least one out stream 
+            // (which we do so), inOutputTime is always valid.
             nowStamp = *(AudioTimeStamp*)inNow.ToPointer();
             outTimeStamp = *(AudioTimeStamp*)inOutputTime.ToPointer();
         }
@@ -77,7 +82,7 @@ public partial class CoreAudioPlayer
         {
             // We can now remove the flag as the Stop call was executed.
             shouldStopInNextCall = false;
-            new Thread(new ThreadStart(EventInvoker)).Start();
+            ThreadPool.UnsafeQueueUserWorkItem(static state => state.EventInvoker(), this, false);
         }
 
         private void EventInvoker() => PlaybackStopped?.Invoke(null, new(exception));

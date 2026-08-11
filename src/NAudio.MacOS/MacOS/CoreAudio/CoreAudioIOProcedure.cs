@@ -69,6 +69,9 @@ public abstract class CoreAudioIOProcedure : SafeHandle
         IntPtr inClientData
     )
     {
+        // DO NOT TRY TO HANDLE ANY EXCEPTION HERE!!!!
+        // Doing so incurs additional runtime cost creating the .try layer
+        // and detecting exception(s). Be as fast as possible.
         ((IOProcedureSignature)GCHandle.FromIntPtr(inClientData).Target)
             .Invoke(
                 inNow,
@@ -84,6 +87,12 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     /// Provides the method that is called automatically by the HAL IO thread as needed. <br />
     /// Data can be retrieved from this, as well as providing data to this.
     /// </summary>
+    /// <remarks>
+    /// Note that this method must not throw at any circumstance;
+    /// if it does so, it will fail fast the process, so try
+    /// to catch any exceptions thrown during any exceptional call 
+    /// and relay them to your own user code instead.
+    /// </remarks>
     /// <seealso href="https://developer.apple.com/documentation/coreaudio/audiodeviceioproc?language=objc"/>
     /// <param name="inNow">
     /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiotimestamp?language=objc">AudioTimeStamp</see> pointer that indicates the IO cycle started. 

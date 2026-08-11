@@ -1,7 +1,6 @@
 
 using System;
 
-using NAudio.Dmo;
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreAudioTypes;
@@ -28,7 +27,7 @@ public partial class CoreAudioPlayer
         {
             // Now, dispatch the playback stopped event with the event args containing
             // a Core Audio exception saying the device is no longer available.
-            FirePlaybackStopped(null, new(
+            FirePlaybackStopped(new(
                 new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError)
             ));
         }
@@ -68,7 +67,7 @@ public partial class CoreAudioPlayer
         }
         catch (Exception ex)
         {
-            FirePlaybackStopped(this, new(ex));
+            FirePlaybackStopped(new(ex));
         }
     }
 
@@ -92,10 +91,23 @@ public partial class CoreAudioPlayer
         }
     }
 
+    // Tests whether an ASBD coming from HAL matches the given WaveFormat.
+    // This tests only the encodings and the common fields - sample rate,
+    // bit rate, block align and number of channels.
+    private bool ProviderFormatMatchesPlayerFormat(AudioStreamBasicDescription desc, WaveFormat providerFormat)
+    {
+        return ProviderFormatEncodingMatchesPlayerFormat(desc, providerFormat) &&
+            desc.mSampleRate == providerFormat.SampleRate &&
+            desc.mBitsPerChannel == providerFormat.BitsPerSample &&
+            desc.mBytesPerFrame == providerFormat.BlockAlign &&
+            desc.mChannelsPerFrame == providerFormat.Channels
+        ;
+    }
+
     // Performs the actual initialization of the player.
     private void Initialize()
     {
-        // Clear the player's interleaved flag.
+        // Clear the player's non-interleaved flag.
         flags &= ~CoreAudioPlayerStateFlags.NonInterleaved;
         // Get the streams.
         AudioStream[] streams = selectedDevice.GetStreams(AudioObjectPropertyScopeConstants.Output);
@@ -123,23 +135,13 @@ public partial class CoreAudioPlayer
                 (asbdToUse.mChannelsPerFrame == 1U && streams.Length > 1)
             )
             {
-                // We have non-interleaved case, we will need the resampler anyway.
-                requiresResampler = true;
-                // Modify the channel count so that the resampler
-                // can correctly return non-interleaved samples
-                asbdToUse.mChannelsPerFrame = (uint)streams.Length;
-                // Add the non-interleaved flag if we detected the non-interleaved case
-                // by seeing the number of streams.
-                asbdToUse.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
+                // We are in non-interleaved case.
+                // Add the non-interleaved flag.
                 flags |= CoreAudioPlayerStateFlags.NonInterleaved;
                 break;
             }
             else if (
-                asbdToUse.mSampleRate == providerFormat.SampleRate &&
-                asbdToUse.mBitsPerChannel == providerFormat.BitsPerSample &&
-                asbdToUse.mBytesPerFrame == providerFormat.BlockAlign &&
-                asbdToUse.mChannelsPerFrame == providerFormat.Channels &&
-                ProviderFormatEncodingMatchesPlayerFormat(asbdToUse, providerFormat)
+                ProviderFormatMatchesPlayerFormat(asbdToUse, providerFormat)
             )
             {
                 selectedStream = I;
@@ -154,31 +156,53 @@ public partial class CoreAudioPlayer
         {
             // Non-interleaved case.
             // In this case, we require all the virtual formats to be the same.
-            // If not the same, the resampler will NOT produce correct results,
-            // and that's an issue. If the user wants to use that device,
-            // he should apply the same virtual format in all the streams and 
-            // retry.
+            // If not the same, the deinterleaving algorithm will NOT produce 
+            // correct results, and that's an issue. If the user wants to
+            // use that device, he should apply the same virtual format 
+            // in all the streams and retry.
+            //
+            // During this enumeration, we also build the channel count.
+            uint channelCount = 0U;
             foreach (var s in streams)
             {
                 var streamAsbd = s.VirtualFormatNative;
+                channelCount += streamAsbd.mChannelsPerFrame;
                 if (
                     asbdToUse.mSampleRate != streamAsbd.mSampleRate ||
                     asbdToUse.mBitsPerChannel != streamAsbd.mBitsPerChannel ||
-                    asbdToUse.mFormatFlags != streamAsbd.mFormatFlags
+                    asbdToUse.mFormatFlags != streamAsbd.mFormatFlags ||
+                    asbdToUse.mChannelsPerFrame != streamAsbd.mChannelsPerFrame ||
+                    asbdToUse.mBytesPerFrame != streamAsbd.mBytesPerFrame
                 )
                 {
                     throw new InvalidOperationException("Non-interleaved audio device with different audio formats is not supported");
                 }
             }
+            // Compute the number of bytes required for each channel.
+            uint perChannelBytes = asbdToUse.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved)
+                ? asbdToUse.mBytesPerFrame
+                : asbdToUse.mBytesPerFrame / channelCount;
+            var newAsbd = new AudioStreamBasicDescription()
+            {
+                mBitsPerChannel = asbdToUse.mBitsPerChannel,
+                mChannelsPerFrame = channelCount,
+                mFormatFlags = asbdToUse.mFormatFlags & ~AudioFormatFlags.kAudioFormatFlagIsNonInterleaved,
+                mFramesPerPacket = 1U,
+                mFormatID = AudioFormatIDs.kAudioFormatLinearPCM,
+                mSampleRate = asbdToUse.mSampleRate
+            };
+            newAsbd.mBytesPerFrame = newAsbd.mBytesPerPacket = perChannelBytes * channelCount;
+            asbdToUse = newAsbd;
+            // If the formats still not match (which will typically be the case), we need the resampler.
+            requiresResampler = !ProviderFormatMatchesPlayerFormat(asbdToUse, providerFormat);
         }
         else if (asbdToUse.mFormatID == 0 || selectedStream < 0)
         {
             // A stream was not specified.
             // This means that we are interleaved case with resampler.
             // We will pick the first stream, as a result.
-            selectedStream = 0;
             requiresResampler = true;
-            asbdToUse = streams[0].VirtualFormatNative;
+            asbdToUse = streams[selectedStream = 0].VirtualFormatNative;
         }
 
         if (!requiresResampler)
@@ -188,6 +212,8 @@ public partial class CoreAudioPlayer
             _ = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output, out requiresResampler, out _);
         }
 
+        // Configure the player source. If we need the resampler,
+        // we inject the resampler and pass the provider through it.
         if (requiresResampler)
         {
             using var clh = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output);

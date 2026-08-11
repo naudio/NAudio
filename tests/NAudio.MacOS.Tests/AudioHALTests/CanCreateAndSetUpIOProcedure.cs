@@ -64,6 +64,7 @@ public class CanCreateAndSetUpIOProcedure
         }
         Assert.DoesNotThrow(() => dev.SetStreamUsage(p, AudioObjectPropertyScopeConstants.Output, enabledStreams));
         Assert.DoesNotThrow(p.Start);
+        System.Threading.Thread.Sleep(4000);
         Assert.DoesNotThrow(p.Stop);
         Assert.DoesNotThrow(p.Dispose);
     }

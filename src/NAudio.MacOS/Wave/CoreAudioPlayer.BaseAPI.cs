@@ -39,6 +39,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// </summary>
     private readonly AudioDevice selectedDevice;
     private PropertyListenerHandle streamsChanged;
+    private readonly SynchronizationContext syncContext;
     private readonly PropertyListenerHandle deviceWillGoAway;
 
     /// <summary>
@@ -64,6 +65,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         selectedSource = null;
         originalProvider = null;
         selectedDevice = device;
+        syncContext = SynchronizationContext.Current;
         deviceWillGoAway = device.ConstructIsAliveChangedEvent();
         deviceWillGoAway.Event += OnDeviceWillBeDestroyed;
     }
@@ -72,9 +74,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
     // Provides required data and methods
     // for directly interacting with Core Audio
-    // I/O procedures. 
-    // This provides the wave provider's data directly,
-    // or when on deinterleaved cases, the resampler.
+    // I/O procedures.
     private interface IPlayerSource : IDisposable
     {
         // Reads from the source.
@@ -100,8 +100,46 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         NonInterleaved = 1 << 3
     }
 
+    /// <summary>
+    /// Provides the data required to invoke the
+    /// playback stopped event from SynchronizationContext.
+    /// </summary>
+    /// <param name="Player">The player to pass to the handler as the 'sender'</param>
+    /// <param name="Handler">The handler to invoke.</param>
+    /// <param name="Args">The StoppedEventArgs that describe the playback state.</param>
+    private record SyncContextStoppedEventData(
+        CoreAudioPlayer Player,
+        EventHandler<StoppedEventArgs> Handler,
+        StoppedEventArgs Args
+    )
+    {
+        private void PostEvent() => Handler.Invoke(Player, Args);
+
+        public static void UnwrapContextAndDispatch(object state)
+            => ((SyncContextStoppedEventData)state).PostEvent();
+    }
+
+    private void FirePlaybackStopped(StoppedEventArgs e) => FirePlaybackStopped(null, e);
+
     // Fires the PlaybackStopped event.
-    private void FirePlaybackStopped(object sender, StoppedEventArgs e) => PlaybackStopped?.Invoke(this, e);
+    // If required, the SynchronizationContext is unwrapped
+    // and the event dispatch happens on the context instead.
+    private void FirePlaybackStopped(object sender, StoppedEventArgs e)
+    {
+        var handler = PlaybackStopped;
+        if (handler is null) { return; }
+        if (syncContext is null)
+        {
+            handler.Invoke(this, e);
+        }
+        else
+        {
+            syncContext.Post(
+                new(SyncContextStoppedEventData.UnwrapContextAndDispatch),
+                new SyncContextStoppedEventData(this, handler, e)
+            );
+        }
+    }
 
     // After full initialization of the procedure, 
     // implementers must call this to finalize initialization
@@ -330,13 +368,17 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// this is true due to it's I/O procedure model, where
     /// the HAL calls each procedure as required. As such,
     /// no special pause functionality exists, so this
-    /// method hardwires to the <see cref="Stop"/>
+    /// method hardwires to the <see cref="Stop()"/>
     /// method.
     /// Also, there is not a <see cref="PlaybackState.Paused"/>
     /// state, instead only playing or stopped can be returned from
     /// the <see cref="PlaybackState"/> property.
     /// </remarks>
-    public void Pause() => Stop();
+    public void Pause()
+    {
+        ThrowIfInvalidOrDisposed();
+        ioProcedure.Stop();
+    }
 
     /// <inheritdoc />
     public void Play()
@@ -350,6 +392,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     {
         ThrowIfInvalidOrDisposed();
         ioProcedure.Stop();
+        FirePlaybackStopped(new());
     }
 
     /// <summary>
@@ -374,10 +417,10 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
             streamsChanged = null;
             selectedSource = null;
             virtFormatChanged = null;
-            flags |= CoreAudioPlayerStateFlags.Disposed;
         }
         finally
         {
+            flags |= CoreAudioPlayerStateFlags.Disposed;
             Monitor.Exit(lockObject);
         }
     }

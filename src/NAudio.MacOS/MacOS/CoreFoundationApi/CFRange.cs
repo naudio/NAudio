@@ -1,11 +1,14 @@
 // This interop definition was derived from the file CFBase.h of the Core Foundation Framework.
 // See https://developer.apple.com/documentation/corefoundation for more information.
 
+using System.Runtime.InteropServices;
+
 namespace NAudio.MacOS.CoreFoundationApi;
 
 /// <summary>
 /// A structure representing a range of sequential items in a container, such as characters in a buffer or elements in a collection.
 /// </summary>
+[StructLayout(LayoutKind.Sequential)]
 public readonly struct CFRange
 {
     /// <summary>

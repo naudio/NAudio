@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 
-using NAudio.Dmo;
 using NAudio.Wave;
 
 using NAudio.MacOS.AudioToolbox;

@@ -1,14 +1,5 @@
-/*==================================================================================================
-     File:       CoreAudio/AudioHardware.h
-
-     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
-
-     Bugs?:      For bug reports, consult the following page on
-                 the World Wide Web:
-
-                     http://developer.apple.com/bugreporter/
-
-==================================================================================================*/
+// This interop definition was derived from the file AudioHardware.h of the Audio Toolbox Framework.
+// See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
 using NAudio.MacOS.CoreAudio.Interop;

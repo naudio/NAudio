@@ -1,7 +1,6 @@
 
 using System;
 
-using NAudio.Dmo;
 using NAudio.Wave;
 using NAudio.Utils;
 

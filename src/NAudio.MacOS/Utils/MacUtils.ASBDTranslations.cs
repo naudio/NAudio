@@ -1,7 +1,6 @@
 
 using System;
 
-using NAudio.Dmo;
 using NAudio.Wave;
 using NAudio.MacOS.CoreAudioTypes;
 
@@ -71,20 +70,24 @@ internal partial class MacUtils
         else if (description.mFormatID == AudioFormatIDs.kAudioFormatLinearPCM)
         {
             bool IeeeFloat = description.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsFloat);
-            if (
-                !IeeeFloat &&
-                !description.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsSignedInteger)
-            )
+            if (!(
+                IeeeFloat ||
+                description.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsSignedInteger)
+            ))
             {
                 throw new NotSupportedException("Unsigned integer formats are not supported by NAudio.");
             }
-            int blkAlign = (int)description.mBytesPerFrame;
-            int totalSampleBits = (blkAlign / channels) * 8;
-            if (totalSampleBits != description.mBitsPerChannel || channelMaskIfNeeded != Speakers.None)
+            int perChannelBytes =
+                description.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved)
+                ? (int)description.mBytesPerFrame
+                : (int)description.mBytesPerFrame / channels;
+            int containerBits = perChannelBytes * 8;
+            int blkAlign = perChannelBytes * channels;
+            if (containerBits != description.mBitsPerChannel || channelMaskIfNeeded != Speakers.None)
             {
                 return new WaveFormatExtensible(
                     sampleRate,
-                    totalSampleBits,
+                    containerBits,
                     channels,
                     IeeeFloat,
                     (int)description.mBitsPerChannel,

@@ -22,6 +22,9 @@ namespace NAudio.MacOS.AudioToolbox;
 // that do change audio formats.
 // 2. Check whether this does not leak any native objects, we are doing a lot of unsafe things in
 // here - so this needs a verification.
+// 3. We cannot apply non-interleaved formats to the converter today;
+// probably not needed because we handle such cases (currently only the HAL needs it)
+// but still is something that would be useful in the future.
 internal unsafe sealed class LowLevelAudioConverter : IDisposable
 {
     // Allocate a single function pointer for all convert complex buffer calls - 
@@ -160,13 +163,11 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
     {
         var wrapper = (LowLevelAudioConverter)GCHandle.FromIntPtr(inUserData).Target;
 
-        AudioBufferList.SetNumberOfBuffersFromPointer(ioData, 1U);
         AudioBuffer buffer = new(
             new(wrapper.nativeBuffer),
             wrapper.nativeBufferSize,
             wrapper.sourceFormat.mChannelsPerFrame
         );
-        AudioBufferList.SetAudioBufferFromPointer(ioData, 0U, buffer);
 
         uint bytesRead = 0U;
         Span<byte> currentSpan = buffer.GetSpan();
@@ -203,7 +204,11 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
             bytesRead += (uint)dataRead;
         }
 
-        *ioNumberDataPackets = bytesRead / wrapper.sourceFormat.mBytesPerFrame;
+        buffer.mDataByteSize = bytesRead;
+        AudioBufferList.SetNumberOfBuffersFromPointer(ioData, 1U);
+        AudioBufferList.SetAudioBufferFromPointer(ioData, 0U, buffer);
+        var bytesPerFrame = wrapper.sourceFormat.mBytesPerFrame;
+        *ioNumberDataPackets = bytesPerFrame == 0U ? 0U : bytesRead / bytesPerFrame;
 
         return 0;
     }
@@ -215,30 +220,32 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
         uint bufferLength = (uint)buffer.Length;
         if (requiresFillComplexBuffer)
         {
+            int osStatus;
             uint readPackets = bufferLength / outputFormat.mBytesPerFrame;
             fixed (byte* pPlaceDataTo = buffer)
             {
                 var list = AudioBufferList.FromSingleBuffer(new(pPlaceDataTo), bufferLength, outputFormat.mChannelsPerFrame);
-                AudioConverterException.ThrowIfError(
-                    NativeMethods.AudioConverterFillComplexBuffer(
-                        audioConverterHandle,
-                        procedureInstance,
-                        GCHandle.ToIntPtr(selfGcHandle),
-                        ref readPackets,
-                        ref list,
-                        IntPtr.Zero
-                    )
+                osStatus = NativeMethods.AudioConverterFillComplexBuffer(
+                    audioConverterHandle,
+                    procedureInstance,
+                    GCHandle.ToIntPtr(selfGcHandle),
+                    ref readPackets,
+                    ref list,
+                    IntPtr.Zero
                 );
             }
 
-            if (exceptionOnFillComplexBufferCb is null)
+            // Always clear the exception to avoid spurious throws among Read calls.
+            var localException = exceptionOnFillComplexBufferCb;
+            exceptionOnFillComplexBufferCb = null;
+            AudioConverterException.ThrowIfError(osStatus);
+
+            if (localException is null)
             {
                 return (int)(readPackets * outputFormat.mBytesPerFrame);
             }
             else
             {
-                var localException = exceptionOnFillComplexBufferCb;
-                exceptionOnFillComplexBufferCb = null;
                 throw localException;
             }
         }

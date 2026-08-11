@@ -1,6 +1,5 @@
 
 using System;
-using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -98,6 +97,10 @@ internal abstract class AbstractCoreFoundationObject
         }
     }
 
+    /*
+    mdcdi1315: Keeping the below two methods commented for now -
+    if CoreMIDI support needs it, we will uncomment them as required.
+
     /// <summary>
     /// Adds a reference to the reference count of this Core Foundation object.
     /// </summary>
@@ -138,6 +141,8 @@ internal abstract class AbstractCoreFoundationObject
             Monitor.Exit(this);
         }
     }
+
+    */
 
     /// <summary>
     /// Determines whether two Core Foundation objects are considered equal.

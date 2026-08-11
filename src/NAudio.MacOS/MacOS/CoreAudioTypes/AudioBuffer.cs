@@ -11,21 +11,21 @@ namespace NAudio.MacOS.CoreAudioTypes;
 /// A structure to hold a buffer of audio data.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal readonly struct AudioBuffer
+internal struct AudioBuffer
 {
     /// <summary>
     /// The number of interleaved channels in the buffer.
     /// </summary>
-    public readonly UInt32 mNumberChannels;
+    public UInt32 mNumberChannels;
     /// <summary>
     /// The number of bytes in the buffer pointed at by mData.
     /// </summary>
-    public readonly UInt32 mDataByteSize;
+    public UInt32 mDataByteSize;
     /// <summary>
     /// A pointer to the buffer of audio data.
     /// </summary>
     [AllowNull]
-    public readonly IntPtr mData;
+    public IntPtr mData;
 
     public AudioBuffer(IntPtr data, uint dataSize, uint numberOfChannels)
     {

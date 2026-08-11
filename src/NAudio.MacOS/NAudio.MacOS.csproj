@@ -5,9 +5,7 @@
 
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Authors>Mark Heath &amp; mdcdi1315 (N.A.)</Authors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Copyright>© Mark Heath &amp; mdcdi1315 (N.A.) 2026</Copyright>
     <Description>macOS playback and recording support types for the NAudio audio library.</Description>
   </PropertyGroup>
 

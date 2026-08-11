@@ -4,7 +4,6 @@ using System.Threading;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 
-using NAudio.Dmo;
 using NAudio.Utils;
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudioTypes;

@@ -22,7 +22,7 @@ public partial class CoreAudioRecorder
 
         public NonInterleavedProcedure(AudioDevice dev) : base(dev) { }
 
-        protected unsafe override void OnProvideData(uint bufferCount, nint inInputData)
+        protected override unsafe void OnProvideData(uint bufferCount, nint inInputData)
         {
             AudioBuffer buffer;
             // Find out the number of frames that the HAL gives to us.
@@ -31,14 +31,13 @@ public partial class CoreAudioRecorder
             {
                 buffer = AudioBufferList.GetAudioBufferFromPointer(inInputData, I);
                 if (buffer.mData == IntPtr.Zero) { continue; }
+                // Compute number of frames to get from the HAL buffer.
                 nFramesToGet = buffer.mDataByteSize / bytesPerFrame;
                 break;
             }
             // If we need to enlarge our temporary buffer, we do so.
-            if (temporaryBuffer.LongLength < targetBufferStride * nFramesToGet)
-            {
-                temporaryBuffer = new byte[targetBufferStride * nFramesToGet];
-            }
+            ResizeBufferIfRequired(nFramesToGet);
+
             for (uint I = 0U, J = 0U; I < bufferCount; I++)
             {
                 buffer = AudioBufferList.GetAudioBufferFromPointer(inInputData, I);
@@ -64,6 +63,15 @@ public partial class CoreAudioRecorder
             OnDataAvailable(temporaryBuffer.AsSpan(0, (int)(nFramesToGet * targetBufferStride)));
         }
 
+        private void ResizeBufferIfRequired(uint numberOfSamplesToEnsure)
+        {
+            var byteCount = targetBufferStride * numberOfSamplesToEnsure;
+            if (temporaryBuffer is null || byteCount > temporaryBuffer.LongLength)
+            {
+                temporaryBuffer = new byte[byteCount];
+            }
+        }
+
         public override AudioStreamBasicDescription VirtualFormat
         {
             set
@@ -71,7 +79,9 @@ public partial class CoreAudioRecorder
                 bytesPerFrame = value.mBytesPerFrame;
                 bytesPerSampleDerivedFromBits = value.mBitsPerChannel / 8U;
                 targetBufferStride = value.mChannelsPerFrame * bytesPerSampleDerivedFromBits;
-                temporaryBuffer = new byte[targetBufferStride * 15U];
+                // Allocate 15 samples for each channel.
+                // We will increase the size of this buffer if so required.
+                ResizeBufferIfRequired(15U);
                 base.VirtualFormat = value;
             }
         }

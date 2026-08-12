@@ -49,7 +49,8 @@ public partial class CoreAudioRecorder
             {
                 Stop();
                 exception = ex;
-                new Thread(new ThreadStart(InvokeStoppedEvent)).Start();
+                // Try putting the playback stopped event into the .NET thread pool to avoid thread allocations.
+                _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.InvokeStoppedEvent(), this, false);
             }
             catch { }
         }

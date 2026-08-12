@@ -7,7 +7,7 @@ namespace NAudio.MacOS.AudioToolbox;
 /// Provides several options that control over how an
 /// extended file writer instance should be initialized.
 /// </summary>
-public class ExtendedFileWriterSettings
+public class ExtendedAudioFileWriterSettings
 {
     /// <summary>
     /// Gets/sets the MIME type of the file to produce. <br />

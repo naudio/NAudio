@@ -17,15 +17,15 @@ namespace NAudio.MacOS.AudioToolbox;
 /// currently initialized internally and cannot be extended. <br />
 /// If you want to use this class, see the methods on the <see cref="ExtendedAudioFileWriter"/> class.
 /// </summary>
-public abstract class AbstractExtendedFileWriter : Stream
+public abstract class ExtendedAudioFileServicesWriter : Stream
 {
     private long length;
     private bool disposed;
     private IntPtr extFileObject;
     private readonly object lockObject;
-    private readonly ExtendedFileWriterSettings settings;
+    private readonly ExtendedAudioFileWriterSettings settings;
 
-    private protected AbstractExtendedFileWriter(IntPtr hExtFileObject, ExtendedFileWriterSettings settings)
+    private protected ExtendedAudioFileServicesWriter(IntPtr hExtFileObject, ExtendedAudioFileWriterSettings settings)
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         length = 0L;
@@ -123,7 +123,7 @@ public abstract class AbstractExtendedFileWriter : Stream
         }
     }
 
-    private static AudioStreamBasicDescription GetBestFormat(ExtendedFileWriterSettings settings, out AudioFileTypeID fileTypeID)
+    private static AudioStreamBasicDescription GetBestFormat(ExtendedAudioFileWriterSettings settings, out AudioFileTypeID fileTypeID)
     {
         AudioFileTypeAndFormatID ffid = new();
         foreach (var id in AudioFileLibraryInformation.GetFileTypeIDsForMimeType(settings.FileType))
@@ -141,7 +141,7 @@ public abstract class AbstractExtendedFileWriter : Stream
         throw new InvalidOperationException("Could not find a suitable audio format for the specified MIME type: " + settings.FileType);
     }
 
-    internal static AudioStreamBasicDescription BuildWriter(ExtendedFileWriterSettings settings, out AudioChannelLayout layout, out AudioFileTypeID fileTypeID)
+    internal static AudioStreamBasicDescription BuildWriter(ExtendedAudioFileWriterSettings settings, out AudioChannelLayout layout, out AudioFileTypeID fileTypeID)
     {
         var providingFormat = settings.ProvidingFormat;
         AudioStreamBasicDescription fileAsbd = GetBestFormat(settings, out fileTypeID);
@@ -183,7 +183,7 @@ public abstract class AbstractExtendedFileWriter : Stream
     /// Gets the currently defined settings object for this extended file writer instance.
     /// </summary>
     [NotNull]
-    public ExtendedFileWriterSettings Settings => settings;
+    public ExtendedAudioFileWriterSettings Settings => settings;
 
     /// <inheritdoc />
     public sealed override bool CanRead => false;

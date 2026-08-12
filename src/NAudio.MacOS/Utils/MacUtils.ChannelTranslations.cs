@@ -142,6 +142,35 @@ internal partial class MacUtils
         }
     }
 
+    /*
+        Several useful channel mappings in tags that are useful to know when porting tags:
+        
+        L -> Speakers.FrontLeft
+        R -> Speakers.FrontRight
+        C -> Speakers.FrontCenter
+        LFE -> Speakers.LowFrequency
+
+        Ls -> Speakers.BackLeft
+        Rs -> Speakers.BackRight
+
+        Rls -> Speakers.SideLeft
+        Rrs -> Speakers.SideRight
+        Lsd -> Speakers.SideLeft (left surround direct)
+        Rsd -> Speakers.SideRight (right surround direct)
+
+        Cs -> Speakers.BackCenter
+        Lc -> Speakers.FrontLeftOfCenter
+        Rc -> Speakers.FrontRightOfCenter
+
+        Lts -> Speakers.TopBackLeft
+        Ts -> Speakers.TopBackCenter
+        Rts -> Speakers.TopBackRight
+
+        Vhl -> Speakers.TopFrontLeft
+        Vhc -> Speakers.TopFrontCenter
+        Vhr -> Speakers.TopFrontRight
+    */
+
     public static Speakers ConstructSpeakersValue(IntPtr layout, out bool needsTranslation, out bool needsExtensible)
     {
         // mdcdi1315: This method tries at the best effort to decode the AudioChannelLayout and 
@@ -163,14 +192,6 @@ internal partial class MacUtils
         // of the whole image. We of course translate to it when the 
         // translation WaveFormatExtensible -> macOS API's is happening,
         // but the reverse is even harder.
-        // TODOs:
-        // 1. Not all tags are defined today. Define them all and do flag translation as needed.
-        // 2. There are many tags that are duplicate of others and each one needs to be found out,
-        // to avoid repeating if statements. This has already have a lot of them, let's not
-        // make it worse if possible.
-        // 3. Several channels in tags are misleading; for example, how does "rear left surround" 
-        // translate to Speakers enum, and most important, if there is a 1-1 mapping for it, we should use 
-        // that, or we must manufacture it.
         needsExtensible = false;
         needsTranslation = false;
         AudioChannelLayoutTag tag = AudioChannelLayout.GetAudioChannelLayoutTag(layout);
@@ -194,218 +215,375 @@ internal partial class MacUtils
         }
         else if (
             tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Stereo ||
-            tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_StereoHeadphones
+            tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_StereoHeadphones ||
+            tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Binaural
         )
         {
             return Speakers.Stereo;
         }
         else
         {
-            // All of the below formats are complex; WaveFormatExtensible needs to get in.
+            // IMPORTANT: Keep this as clean as possible.
+            // Add any tag to it's corresponding region based on
+            // the number of channels it provides.
+            // If the tag's channel count does not match any of the
+            // below provided regions, add it to the if block before the
+            // 3-channel region.
+            // IMPORTANT: Any new added tag here should have a corresponding
+            // test case in ChannelConversionTests.VerifyThatTagValidlyDecodes test. 
+
+            // All of the below channel layouts are complex; WaveFormatExtensible needs to get in.
             needsExtensible = true;
-            if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Quadraphonic)
+
+            if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_1_0_1) // < C LFE
             {
-                return Speakers.Quad;
+                return Speakers.FrontCenter | Speakers.LowFrequency;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Pentagonal)
-            {
-                needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.SideLeft | Speakers.SideRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Hexagonal)
-            {
-                needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
-                Speakers.SideLeft | Speakers.SideRight | Speakers.BackCenter;
-            }
+
+            #region 3 channels
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_A ||
-                // Same thing, but in different order.
-                (needsTranslation = tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_B)
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_A || // <  L R C
+                (needsTranslation =
+                    // Same thing, but in different order.
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_B || // <  C L R
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0 // < L C R
+                )
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter;
             }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_ITU_2_1) // <  L R Cs
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackCenter;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_4) // < L R LFE
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency;
+            }
+            #endregion
+
+            #region 4 channels
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_4_0_A ||
-                (needsTranslation =
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Quadraphonic || // < L R Ls Rs  -- 90 degree speaker separation
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_ITU_2_2 // <  L R Ls Rs
+            )
+            {
+                return Speakers.Quad;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_4_0_B) // < 4 channels, L R Rls Rrs
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_4_0_A || // <  L R C Cs
+                (needsTranslation = (
                     // Same thing, but in different orders.
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_4_0_B ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_4_0_C
-                )
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_4_0_B || // <  C L R Cs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_4_0_C || // < L R Cs C
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1 // < L C R Cs
+                ))
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackCenter;
             }
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_A ||
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_5 || // < L R LFE Cs
+                (needsTranslation =
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_2_1_1 // < L R Cs LFE
+                )
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.BackCenter;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_10 || // < L R C LFE
                 (needsTranslation = (
                     // Same thing, but in different orders.
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_B ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_C ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_D
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0_1 || // < L C R LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_3_1 // < C L R LFE
                 ))
             )
             {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackLeft | Speakers.BackRight;
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.LowFrequency;
             }
+            #endregion
+
+            #region 5 channels
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_A ||
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_A || // <  L R C Ls Rs
                 (needsTranslation = (
                     // Same thing, but in different orders.
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_B ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_C ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_D
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_B || // <  L C R Ls Rs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_C || // <  L C R Ls Rs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_D || // <  C L R Ls Rs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Pentagonal // < L R Ls Rs C  -- 72 degree speaker separation
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.BackLeft | Speakers.BackRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_5_0_B || // < 5 channels, L R C Rls Rrs
+                (needsTranslation = (
+                    // Same thing, but in different orders.
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Ogg_5_0 || // < 5 channels, L C R Rls Rrs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_E // < 5 channels, L R Rls Rrs C
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.SideLeft | Speakers.SideRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_6 || // < L R LFE Ls Rs
+                (needsTranslation = (
+                    // Same thing, but in different orders.
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_18 // < L R Ls Rs LFE
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency |
+                Speakers.BackLeft | Speakers.BackRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_11 || // < L R C LFE Cs
+                (needsTranslation = (
+                    // Same thing, but in different orders.
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1 || // < L C R Cs LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_4_1 // < C L R Cs LFE
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.BackCenter;
+            }
+            #endregion
+
+            #region 6 channels
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_0_A) // < Lc Rc L R Ls Rs
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeftOfCenter | Speakers.FrontRightOfCenter | Speakers.FrontLeft |
+                Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_0_B) // < C L R Rls Rrs Ts
+            {
+                needsTranslation = true;
+                return Speakers.FrontCenter | Speakers.FrontLeft | Speakers.FrontRight |
+                Speakers.SideLeft | Speakers.SideRight | Speakers.TopBackCenter;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_0_C) // < C Cs L R Rls Rrs
+            {
+                needsTranslation = true;
+                return Speakers.FrontCenter | Speakers.BackCenter | Speakers.FrontLeft |
+                Speakers.FrontRight | Speakers.SideLeft | Speakers.SideRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Hexagonal || // < L R Ls Rs C Cs  -- 60 degree speaker separation
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_6_0 || // < L R Ls Rs C Cs
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AAC_6_0 || // < C L R Ls Rs Cs
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC_6_0_A || // < L C R Ls Rs Cs
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_6_0_B // < L R Ls Rs Cs C
+            )
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.BackCenter;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_5_1_B || // < 6 channels, L R C LFE Rls Rrs
+                (needsTranslation = (
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Ogg_5_1 || // < 6 channels, L C R Rls Rrs LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_E // < 6 channels, L R Rls Rrs C LFE
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.SideLeft | Speakers.SideRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_A || // <  L R C LFE Ls Rs
+                (needsTranslation = (
+                    // Same thing, but in different orders.
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_B || // <  L R Ls Rs C LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_C || // <  L C R Ls Rs LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_D // <  C L R Ls Rs LFE
                 ))
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency
                 | Speakers.FrontCenter | Speakers.BackLeft | Speakers.BackRight;
             }
+            #endregion
+
+            #region 7 channels
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_6_1_A
-            )
-            {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency
-                | Speakers.FrontCenter | Speakers.BackLeft | Speakers.BackRight
-                | Speakers.BackCenter;
-            }
-            else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_A ||
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_6_1 || // < 7 channels, L R C LFE Cs Ls Rs
                 (needsTranslation = (
-                    // Same thing, but in different orders.
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_B ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_C ||
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Emagic_Default_7_1
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Ogg_6_1 || // < 7 channels, L C R Ls Rs Cs LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_6_1_B // < 7 channels, L R Ls Rs C Cs LFE
                 ))
             )
             {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency
-                | Speakers.FrontCenter | Speakers.BackLeft | Speakers.BackRight
-                // mdcdi1315: TODO: Find whether these two below are correct.
-                | Speakers.FrontLeftOfCenter | Speakers.FrontRightOfCenter;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_ITU_2_1)
-            {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackCenter;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_ITU_2_2)
-            {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_4)
-            {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_5)
-            {
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.BackCenter;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_6)
-            {
-                return Speakers.FrontLeft | Speakers.FrontRight
-                | Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight;
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.BackCenter | Speakers.SideLeft |
+                Speakers.SideRight;
             }
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_10 ||
-                (needsTranslation = tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0_1)
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0 || // < L R Ls Rs C Rls Rrs
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AAC_7_0 || // < C L R Ls Rs Rls Rrs
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC_7_0_A // < L C R Ls Rs Rls Rrs
             )
             {
                 needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.FrontCenter;
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.SideLeft | Speakers.SideRight | Speakers.BackLeft | Speakers.BackRight;
             }
             else if (
-                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_11 ||
-                (needsTranslation = tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1)
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0_Front || // < L R Ls Rs C Lc Rc
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_7_0 // < Lc C Rc L R Ls Rs
             )
-            {
-                needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.FrontCenter | Speakers.BackCenter;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_18)
-            {
-                needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_6_0)
-            {
-                needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
-                Speakers.BackRight | Speakers.FrontCenter | Speakers.BackCenter;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0)
-            {
-                needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
-                Speakers.BackRight | Speakers.FrontCenter
-                // mdcdi1315: TODO: Find whether these two below are correct.
-                | Speakers.TopBackLeft | Speakers.TopBackRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0_Front)
             {
                 needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
                 Speakers.BackRight | Speakers.FrontCenter | Speakers.FrontLeftOfCenter |
                 Speakers.FrontRightOfCenter;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_1_0_1)
-            {
-                return Speakers.FrontCenter | Speakers.LowFrequency;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0)
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_1_A) // < Lc Rc L R Ls Rs LFE
             {
                 needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter;
+                return Speakers.FrontLeftOfCenter | Speakers.FrontRightOfCenter | Speakers.FrontLeft |
+                Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight |
+                Speakers.LowFrequency;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1)
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_1_B) // < C L R Rls Rrs Ts LFE
             {
                 needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackCenter;
+                return Speakers.FrontCenter | Speakers.FrontLeft | Speakers.FrontRight |
+                Speakers.SideLeft | Speakers.SideRight | Speakers.TopBackCenter |
+                Speakers.LowFrequency;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_2_1_1)
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_1_C) // < C Cs L R Rls Rrs LFE
             {
                 needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackCenter | Speakers.LowFrequency;
+                return Speakers.FrontCenter | Speakers.BackCenter | Speakers.FrontLeft |
+                Speakers.FrontRight | Speakers.SideLeft | Speakers.SideRight |
+                Speakers.LowFrequency;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1)
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_6_1_A || // <  L R C LFE Ls Rs Cs
+                (needsTranslation = (
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_6_1_A || // < L C R Ls Rs LFE Cs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AAC_6_1 || // < C L R Ls Rs Cs Lfe
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_1_D || // < C L R Ls Rs LFE Cs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_6_1_B || // < L R Ls Rs Cs C LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_6_1_D // < L C R Ls Cs Rs LFE
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight | Speakers.BackCenter;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_6_1_C) // < L C R Ls Rs LFE Vhc
             {
                 needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackCenter | Speakers.LowFrequency;
+                return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
+                Speakers.SideLeft | Speakers.SideRight | Speakers.LowFrequency |
+                Speakers.TopFrontCenter;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_4_0_B)
-            {
-                // mdcdi1315: TODO: The layout describes the last two channels as:
-                // "rear left surround"
-                // "rear right surround"
-                // Check whether the provided constants for them below are correct.
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_5_0_B)
-            {
-                // mdcdi1315: TODO: The layout describes the last two channels as:
-                // "rear left surround"
-                // "rear right surround"
-                // Check whether the provided constants for them below are correct.
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackLeft | Speakers.BackRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_5_1_B)
-            {
-                // mdcdi1315: TODO: The layout describes the last two channels as:
-                // "rear left surround"
-                // "rear right surround"
-                // Check whether the provided constants for them below are correct.
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight;
-            }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_6_1)
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_6_1_B) // < L C R Ls Rs LFE Ts
             {
                 needsTranslation = true;
-                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.LowFrequency | Speakers.BackCenter | Speakers.BackLeft | Speakers.BackRight;
+                return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
+                Speakers.SideLeft | Speakers.SideRight | Speakers.LowFrequency |
+                Speakers.TopBackCenter;
             }
-            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_7_1)
+            #endregion
+
+            #region 8 channels
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_8_0_A) // < Lc Rc L R Ls Rs Rls Rrs
             {
                 needsTranslation = true;
+                return Speakers.FrontLeftOfCenter | Speakers.FrontRightOfCenter | Speakers.FrontLeft |
+                Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight |
+                Speakers.SideLeft | Speakers.SideRight;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_8_0_B) // < Lc C Rc L R Ls Cs Rs
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeftOfCenter | Speakers.FrontCenter | Speakers.FrontRightOfCenter |
+                Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
+                Speakers.BackCenter | Speakers.BackRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_A || // <  L R C LFE Ls Rs Lc Rc
+                (needsTranslation = (
+                    // Same thing, but in different orders.
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_B || // <  C Lc Rc L R Ls Rs LFE  
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Emagic_Default_7_1 || // <  L R Ls Rs C LFE Lc Rc
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_B || // < L C R Ls Rs LFE Lc Rc
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_7_1 // < Lc C Rc L R Ls Rs LFE
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight |
+                Speakers.FrontLeftOfCenter | Speakers.FrontRightOfCenter;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_7_1 || // < 8 channels, L R C LFE Rls Rrs Ls Rs
+                (needsTranslation = (
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_C || // <  L R C LFE Ls Rs Rls Rrs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_A || // < L C R Ls Rs LFE Rls Rrs
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_7_1_B || // < L R Ls Rs Rls Rrs C LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_D // < 8 channels, L R Rls Rrs Ls Rs C LFE
+                ))
+            )
+            {
                 return Speakers.Surround71;
             }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_C) // < L C R Ls Rs LFE Lsd Rsd
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.LowFrequency |
+                Speakers.SideLeft | Speakers.SideRight;
+            }
+            else if (
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_CICP_14 || // < L R C LFE Ls Rs Vhl Vhr
+                (needsTranslation = (
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_E // < L C R Ls Rs LFE Vhl Vhr
+                ))
+            )
+            {
+                return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight |
+                Speakers.TopFrontLeft | Speakers.TopFrontRight;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_F) // < L C R Ls Rs LFE Cs Ts
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.LowFrequency |
+                Speakers.BackCenter | Speakers.TopBackCenter;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_G) // < L C R Ls Rs LFE Cs Vhc
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.LowFrequency |
+                Speakers.BackCenter | Speakers.TopFrontCenter;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_H) // < L C R Ls Rs LFE Ts Vhc
+            {
+                needsTranslation = true;
+                return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.LowFrequency |
+                Speakers.TopBackCenter | Speakers.TopFrontCenter;
+            }
+            #endregion
+
             else
             {
                 throw new ArgumentException("Could not decompose the specified channel layout tag: " + tag);

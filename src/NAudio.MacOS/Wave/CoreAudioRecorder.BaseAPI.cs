@@ -380,7 +380,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// If capture is already running on this instance, capture will be stopped. <br />
     /// If you want to restart recording, explicitly call the <see cref="StartRecording"/> method.
     /// </remarks>
-    public event CaptureFormatChangedHandler CaptureFormatChanged;
+    public event CoreAudioCaptureFormatChangedHandler CaptureFormatChanged;
 
     /// <summary>
     /// Provides an event that is fired when the recording has been stopped.

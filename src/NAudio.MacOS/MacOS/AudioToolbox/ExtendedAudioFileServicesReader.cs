@@ -12,21 +12,21 @@ using NAudio.MacOS.AudioToolbox.Interop;
 namespace NAudio.MacOS.AudioToolbox;
 
 /// <summary>
-/// Provides the base class for extended file readers. <br />
+/// Provides the base class for extended audio file services readers. <br />
 /// Not meant to be extended by external code. <br />
 /// Instead, use the dedicated subclasses of this class, 
 /// located at the <see cref="NAudio.Wave"/> namespace.
 /// </summary>
-public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
+public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
 {
     private bool disposed;
     private IntPtr extFileHandle;
     private WaveFormat targetFormat;
     private readonly object lockObject;
     private AudioStreamBasicDescription sourceAsbd;
-    private readonly ExtendedFileReaderSettings settings;
+    private readonly ExtendedAudioFileReaderSettings settings;
 
-    private protected AbstractExtendedFileReader([AllowNull] ExtendedFileReaderSettings settings)
+    private protected ExtendedAudioFileServicesReader([AllowNull] ExtendedAudioFileReaderSettings settings)
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         disposed = false;
@@ -220,12 +220,11 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     protected abstract IntPtr InitializeReader();
 
     /// <summary>
-    /// Gets the settings object provided to this instance by the 
-    /// <see cref="AbstractExtendedFileReader(ExtendedFileReaderSettings)"/>
-    /// constructor.
+    /// Gets the settings object provided to this instance
+    /// during construction.
     /// </summary>
     [MaybeNull]
-    public ExtendedFileReaderSettings Settings => settings;
+    public ExtendedAudioFileReaderSettings Settings => settings;
 
     /// <inheritdoc />
     public sealed override bool CanRead => !disposed;
@@ -240,6 +239,12 @@ public abstract class AbstractExtendedFileReader : WaveStream, IDisposable
     public sealed override WaveFormat WaveFormat => targetFormat;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Note that this method is not thread-safe; 
+    /// You can read from a different thread from where the reader
+    /// was created from, but you must ensure that this
+    /// call is only performed by one specific thread.
+    /// </remarks>
     public sealed unsafe override int Read(Span<byte> buffer)
     {
         uint bufferLength = (uint)buffer.Length;

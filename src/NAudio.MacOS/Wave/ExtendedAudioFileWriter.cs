@@ -17,9 +17,9 @@ namespace NAudio.Wave;
 /// </summary>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.3.1")]
-public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
+public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesWriter
 {
-    private ExtendedAudioFileWriter(nint hExtFileObject, ExtendedFileWriterSettings settings)
+    private ExtendedAudioFileWriter(nint hExtFileObject, ExtendedAudioFileWriterSettings settings)
         : base(hExtFileObject, settings) { }
 
     // Initializes the writer.
@@ -71,7 +71,7 @@ public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
     /// <exception cref="ArgumentNullException"><paramref name="url"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     public static ExtendedAudioFileWriter CreateFromURL(
         Uri url,
-        ExtendedFileWriterSettings settings,
+        ExtendedAudioFileWriterSettings settings,
         bool overwriteIfExists = false
     )
     {
@@ -123,7 +123,7 @@ public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
     /// <exception cref="ArgumentNullException"><paramref name="filePath"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     public static ExtendedAudioFileWriter CreateFromFilePath(
         string filePath,
-        ExtendedFileWriterSettings settings,
+        ExtendedAudioFileWriterSettings settings,
         bool overwriteIfExists = false
     )
     {
@@ -187,7 +187,7 @@ public unsafe partial class ExtendedAudioFileWriter : AbstractExtendedFileWriter
     /// </remarks>
     public static ExtendedAudioFileWriter CreateFromStream(
         Stream writeableStream,
-        ExtendedFileWriterSettings settings
+        ExtendedAudioFileWriterSettings settings
     )
     {
         ArgumentNullException.ThrowIfNull(settings);

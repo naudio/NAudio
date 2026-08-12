@@ -212,6 +212,13 @@ public partial class CoreAudioPlayer
             _ = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output, out requiresResampler, out _);
         }
 
+        // The latency of the streams may report as zero - 
+        // in such case, use the buffer frame size divided by the sample rate.
+        if (reportedLatency == 0U)
+        {
+            reportedLatency = (uint)(selectedDevice.BufferFrameSize / asbdToUse.mSampleRate);
+        }
+
         // Configure the player source. If we need the resampler,
         // we inject the resampler and pass the provider through it.
         if (requiresResampler)

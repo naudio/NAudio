@@ -7,7 +7,7 @@ namespace NAudio.MacOS.AudioToolbox;
 /// Provides several options that control over how an
 /// extended file reader instance should be initialized.
 /// </summary>
-public class ExtendedFileReaderSettings
+public class ExtendedAudioFileReaderSettings
 {
     /// <summary>
     /// When set to <see langword="true"/>, instructs the reader to provide 32-bit IEEE floating-point samples,

@@ -16,12 +16,11 @@ public partial class CoreAudioPlayer
         private uint bufferStride;
         private uint channelCount;
         private uint bytesPerFrame;
-        private bool bufferSizeChecked;
         private byte[] interleavedBuffer;
 
         public NonInterleavedProcedure(AudioDevice dev) : base(dev) { }
 
-        protected unsafe override bool ProvideData(uint cBuffers, nint outOutputData, IPlayerSource source)
+        protected override unsafe bool ProvideData(uint cBuffers, nint outOutputData, IPlayerSource source)
         {
             AudioBuffer buffer;
             uint framesToFill = 0U;
@@ -35,15 +34,17 @@ public partial class CoreAudioPlayer
                 }
                 // Compute number of frames to put into the HAL buffer.
                 framesToFill = buffer.mDataByteSize / bytesPerFrame;
-                // Resize the buffer if required, if this is the first stream for this invocation.
-                ResizeBufferIfRequired(framesToFill);
-                // Read from the source into our temporary interleaved buffer.
-                uint read = ReadFromProvider(source, framesToFill);
-                if (read == 0U) { bufferSizeChecked = false; return true; }
-                // Reassign frames to fill to bound it by the number of read frames.
-                framesToFill = Math.Min(framesToFill, read / bufferStride);
                 break;
             }
+            // Resize the buffer if required.
+            ResizeBufferIfRequired(framesToFill);
+            // Read from the source into our temporary interleaved buffer.
+            uint read = ReadFromProvider(source, framesToFill);
+            if (read == 0U) { return true; }
+            // Reassign frames to fill to bound it by the number of read frames.
+            framesToFill = Math.Min(framesToFill, read / bufferStride);
+
+            // Now place non-interleaved data into the player's buffers.
             for (uint I = 0U, J = 0U; I < cBuffers; I++)
             {
                 buffer = AudioBufferList.GetAudioBufferFromPointer(outOutputData, I);
@@ -66,7 +67,6 @@ public partial class CoreAudioPlayer
                 }
                 J++;
             }
-            bufferSizeChecked = false;
             return false;
         }
 
@@ -90,13 +90,11 @@ public partial class CoreAudioPlayer
 
         private void ResizeBufferIfRequired(uint numberOfSamplesToEnsure)
         {
-            if (bufferSizeChecked) { return; }
             var byteCount = bufferStride * numberOfSamplesToEnsure;
             if (interleavedBuffer is null || byteCount > interleavedBuffer.LongLength)
             {
                 interleavedBuffer = new byte[byteCount];
             }
-            bufferSizeChecked = true;
         }
 
         public override IPlayerSource Source
@@ -110,7 +108,6 @@ public partial class CoreAudioPlayer
                 // Allocate 15 samples for each channel.
                 // We will increase the size of this buffer if so required.
                 ResizeBufferIfRequired(15U);
-                bufferSizeChecked = false;
                 base.Source = value;
             }
         }

@@ -82,7 +82,8 @@ public partial class CoreAudioPlayer
         {
             // We can now remove the flag as the Stop call was executed.
             shouldStopInNextCall = false;
-            ThreadPool.UnsafeQueueUserWorkItem(static state => state.EventInvoker(), this, false);
+            // Try putting the playback stopped event into the .NET thread pool to avoid thread allocations.
+            _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.EventInvoker(), this, false);
         }
 
         private void EventInvoker() => PlaybackStopped?.Invoke(null, new(exception));

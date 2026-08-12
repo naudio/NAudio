@@ -23,7 +23,7 @@ public class ReaderTests
         return path;
     }
 
-    private static void CreateFilePathReader(ExtendedFileReaderSettings settings = null)
+    private static void CreateFilePathReader(ExtendedAudioFileReaderSettings settings = null)
     {
         ReaderCommon(ExtendedAudioFileReaderFromURL.CreateFromFile(GetFilePathFromEnv(), settings));
     }
@@ -71,7 +71,7 @@ public class ReaderTests
     [Test]
     public void CanReadARandomFile_StreamCallbacks_DefaultSettingsWithNameSpecified() => CreateStreamBasedReader(null, true);
 
-    private static void ReaderCommon(AbstractExtendedFileReader reader)
+    private static void ReaderCommon(ExtendedAudioFileServicesReader reader)
     {
         // You cannot write to a reader
         Assert.IsFalse(reader.CanWrite);

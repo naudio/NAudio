@@ -50,7 +50,9 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
     /// <summary>
     /// Initializes a new Core Audio player instance that renders audio
-    /// to the specified Core Audio <see cref="AudioDevice"/> instance.
+    /// to the specified Core Audio <see cref="AudioDevice"/> instance. <br />
+    /// If a syncrhonization context is assigned for the thread where this instance
+    /// is created to, it is used during playback stopped events.
     /// </summary>
     /// <param name="device">The audio device where the audio will be rendered to</param>
     /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>

@@ -31,7 +31,7 @@ public class WriterTests
     [Test]
     public void WriteAACByStreamCallbacks() => UseWriterWithStream(new() { FileType = "audio/aac" });
 
-    private static void UseURLWriter(ExtendedFileWriterSettings settings)
+    private static void UseURLWriter(ExtendedAudioFileWriterSettings settings)
     {
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
         settings ??= new();
@@ -42,7 +42,7 @@ public class WriterTests
         TryDeleteTheCreatedFile(path);
     }
 
-    private static void UseWriterWithStream(ExtendedFileWriterSettings settings)
+    private static void UseWriterWithStream(ExtendedAudioFileWriterSettings settings)
     {
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
         settings ??= new();

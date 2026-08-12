@@ -20,7 +20,7 @@ namespace NAudio.Wave;
 /// </summary>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.3.1")]
-public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileReader
+public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileServicesReader
 {
     private GCHandle streamGcHandle;
     private IntPtr handleToAudioFile;
@@ -30,7 +30,7 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
     /// to <see cref="ExtendedAudioFileReaderFromStream"/>
     /// instances.
     /// </summary>
-    public sealed class ExtendedAudioFileReaderFromStreamSettings : ExtendedFileReaderSettings
+    public sealed class ExtendedAudioFileReaderFromStreamSettings : ExtendedAudioFileReaderSettings
     {
         /// <summary>
         /// Gets/sets the MIME type of the provided data stream.
@@ -76,7 +76,7 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
     }
 
     /// <inheritdoc />
-    protected unsafe override nint InitializeReader()
+    protected override unsafe nint InitializeReader()
     {
         // Try to query all the file type ID's for the specified
         // MIME type or file name.

@@ -74,7 +74,7 @@ public class ReaderSeekTests
     private static string CreateAacFileForSeekTest()
     {
         var path = Path.Combine(Path.GetTempPath(), $"naudio_extfilereader_seek_{Guid.NewGuid():N}.aac");
-        AbstractExtendedFileWriter writer = null;
+        ExtendedAudioFileServicesWriter writer = null;
         try
         {
             writer = ExtendedAudioFileWriter.CreateFromFilePath(

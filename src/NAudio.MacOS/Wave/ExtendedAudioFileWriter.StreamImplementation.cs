@@ -14,7 +14,7 @@ public partial class ExtendedAudioFileWriter
         private IntPtr streamFileID;
         private GCHandle streamGcHandle;
 
-        public StreamImpl(nint hExtFileObject, IntPtr audioFileId, GCHandle streamHandle, ExtendedFileWriterSettings settings) : base(hExtFileObject, settings)
+        public StreamImpl(nint hExtFileObject, IntPtr audioFileId, GCHandle streamHandle, ExtendedAudioFileWriterSettings settings) : base(hExtFileObject, settings)
         {
             this.streamFileID = audioFileId;
             this.streamGcHandle = streamHandle;

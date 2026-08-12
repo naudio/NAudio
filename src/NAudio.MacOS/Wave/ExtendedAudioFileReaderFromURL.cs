@@ -14,7 +14,7 @@ namespace NAudio.Wave;
 /// </summary>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.3.1")]
-public sealed class ExtendedAudioFileReaderFromURL : AbstractExtendedFileReader
+public sealed class ExtendedAudioFileReaderFromURL : ExtendedAudioFileServicesReader
 {
     private readonly object url;
 
@@ -24,9 +24,9 @@ public sealed class ExtendedAudioFileReaderFromURL : AbstractExtendedFileReader
     /// </summary>
     /// <param name="URL">The URL to the audio file to initialize from.</param>
     /// <param name="settings">Behavioral settings to apply to the reader.</param>
-    public ExtendedAudioFileReaderFromURL(Uri URL, ExtendedFileReaderSettings settings = null) : this(URLObject: URL, settings) { }
+    public ExtendedAudioFileReaderFromURL(Uri URL, ExtendedAudioFileReaderSettings settings = null) : this(URLObject: URL, settings) { }
 
-    private ExtendedAudioFileReaderFromURL(object URLObject, ExtendedFileReaderSettings settings = null)
+    private ExtendedAudioFileReaderFromURL(object URLObject, ExtendedAudioFileReaderSettings settings = null)
         : base(settings)
     {
         ArgumentNullException.ThrowIfNull(URLObject);
@@ -40,7 +40,7 @@ public sealed class ExtendedAudioFileReaderFromURL : AbstractExtendedFileReader
     /// </summary>
     /// <param name="filePath">The file path to the audio file to initialize from.</param>
     /// <param name="settings">Behavioral settings to apply to the reader.</param>
-    public static ExtendedAudioFileReaderFromURL CreateFromFile(string filePath, ExtendedFileReaderSettings settings = null)
+    public static ExtendedAudioFileReaderFromURL CreateFromFile(string filePath, ExtendedAudioFileReaderSettings settings = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         return new ExtendedAudioFileReaderFromURL(URLObject: filePath, settings);

@@ -33,7 +33,7 @@ public partial class CoreAudioPlayer
                     continue;
                 }
                 // Compute number of frames to put into the HAL buffer.
-                framesToFill = buffer.mDataByteSize / bytesPerFrame;
+                framesToFill = (buffer.mDataByteSize / bytesPerFrame) / buffer.mNumberChannels;
                 break;
             }
             // Resize the buffer if required.
@@ -53,19 +53,22 @@ public partial class CoreAudioPlayer
                     // Unused stream, move to the next one
                     continue;
                 }
-                // Pass the data to the current HAL buffer.
-                for (uint K = 0U, BI = J * bytesPerFrame; K < framesToFill; K++, BI += bufferStride)
+                uint bufferChannelCount = buffer.mNumberChannels;
+                for (uint nch = 0U; nch < bufferChannelCount; nch++, J++)
                 {
-                    Unsafe.CopyBlockUnaligned(
-                        // Note that this reinterpretation is safe here:
-                        // We are reinterpeting an unmanaged 
-                        // memory block which cannot be moved.
-                        ref *((byte*)buffer.mData.ToPointer() + (K * bytesPerFrame)), // Equivalent to: ref Unsafe.Add(ref Unsafe.AsRef<byte>(buffer.mData.ToPointer()), (int)(K * bytesPerFrame))
-                        ref interleavedBuffer[BI],
-                        bytesPerFrame
-                    );
+                    // Pass the data to the current HAL buffer.
+                    for (uint K = 0U, BI = J * bytesPerFrame; K < framesToFill; K++, BI += bufferStride)
+                    {
+                        Unsafe.CopyBlockUnaligned(
+                            // Note that this reinterpretation is safe here:
+                            // We are reinterpeting an unmanaged 
+                            // memory block which cannot be moved.
+                            ref *((byte*)buffer.mData.ToPointer() + (K * bytesPerFrame * bufferChannelCount)), // Equivalent to: ref Unsafe.Add(ref Unsafe.AsRef<byte>(buffer.mData.ToPointer()), (int)(K * bytesPerFrame * buffer.mNumberChannels)))
+                            ref interleavedBuffer[BI],
+                            bytesPerFrame
+                        );
+                    }
                 }
-                J++;
             }
             return false;
         }

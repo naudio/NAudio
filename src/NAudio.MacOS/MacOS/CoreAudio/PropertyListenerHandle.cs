@@ -34,6 +34,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
 
     private int handlerId;
     private bool disposed;
+    private readonly object lockObject;
     private readonly AudioObject audioObject;
     private readonly AudioObjectPropertyAddress address;
     private readonly AudioObjectPropertyListenerProc listener;
@@ -43,6 +44,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
         handlerId = 0;
         disposed = false;
         audioObject = obj;
+        lockObject = new();
         this.address = address;
         // The reason why we need a new listener address for this is
         // because this is a property listener and if it was a single
@@ -154,7 +156,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
     /// </remarks>
     public void Dispose()
     {
-        Monitor.Enter(this);
+        Monitor.Enter(lockObject);
         try
         {
             if (!disposed)
@@ -165,7 +167,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
         }
         finally
         {
-            Monitor.Exit(this);
+            Monitor.Exit(lockObject);
         }
     }
 }

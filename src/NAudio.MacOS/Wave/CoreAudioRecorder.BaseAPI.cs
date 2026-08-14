@@ -199,7 +199,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         try
         {
             if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized)) { return; }
-            Initialize();
+            Initialize(true);
             // The below exception is thrown if the we forget to
             // call the OnInitializationComplete method inside Initialize().
             if (!flags.HasFlag(CoreAudioRecorderStateFlags.Initialized))
@@ -389,7 +389,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
 
     /// <summary>
     /// Provides the audio format the HAL uses to capture audio. <br />
-    /// This is the format the audio data are provided in the <see cref="DataAvailable"/> event.
+    /// This is the format of the audio data that are provided during the dispatch of the <see cref="DataAvailable"/> event.
     /// </summary>
     /// <exception cref="InvalidOperationException">This <see cref="CoreAudioRecorder"/> instance has not yet been initialized.</exception>
     public WaveFormat CaptureFormat

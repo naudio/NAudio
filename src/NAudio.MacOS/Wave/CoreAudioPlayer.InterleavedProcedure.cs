@@ -10,10 +10,7 @@ public partial class CoreAudioPlayer
 {
     private sealed class InterleavedProcedure : PlayerProcedure
     {
-        public InterleavedProcedure(AudioDevice dev)
-            : base(dev)
-        {
-        }
+        public InterleavedProcedure(AudioDevice dev) : base(dev) { }
 
         protected override bool ProvideData(uint cBuffers, nint outOutputData, IPlayerSource source)
         {

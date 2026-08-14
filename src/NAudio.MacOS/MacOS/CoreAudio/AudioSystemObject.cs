@@ -291,7 +291,7 @@ public sealed class AudioSystemObject : AudioObject
     /// A <see cref="bool"/> where <see langword="true"/> means that this process wants the HAL to automatically take
     /// hog mode and <see langword="false"/> means that the HAL should not automatically take hog mode on
     /// behalf of the process. Processes that only ever use the default device are
-    /// the sort of that should set this property's value to 0.
+    /// the sort of that should set this property's value to <see langword="false"/>.
     /// </summary>
     /// <remarks>
     /// This property corresponds to Shared/Exclusive mode on WASAPI on Windows. 

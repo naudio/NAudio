@@ -45,9 +45,10 @@ public partial class CoreAudioRecorder
         if (oldState) { ioProcedure.Start(); }
     }
 
-    private void Initialize()
+    private void Initialize(bool isInit = false)
     {
-        MacUtils.EnsureDisposableObjectsDisposed(ioProcedure, virtualFormatChanged, streamsChanged);
+        flags &= ~CoreAudioRecorderStateFlags.NonInterleaved;
+        MacUtils.EnsureDisposableObjectsDisposed(virtualFormatChanged, streamsChanged);
 
         int selectedIndex = -1;
         var streams = selectedDevice.GetStreams(AudioObjectPropertyScopeConstants.Input);
@@ -68,12 +69,6 @@ public partial class CoreAudioRecorder
             )
             {
                 // We have non-interleaved case.
-                // Modify the channel count so that the special procedure
-                // can correctly transform the non-interleaved samples
-                virtualFormat.mChannelsPerFrame = (uint)streams.Length;
-                // Add the non-interleaved flag if we detected the non-interleaved case
-                // by seeing the number of streams.
-                virtualFormat.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
                 flags |= CoreAudioRecorderStateFlags.NonInterleaved;
                 break;
             }
@@ -95,15 +90,31 @@ public partial class CoreAudioRecorder
         bool[] streamSelection = new bool[streams.Length];
         if (flags.HasFlag(CoreAudioRecorderStateFlags.NonInterleaved))
         {
-            foreach (var s in streams) { totalLatency += s.Latency; }
+            uint channelCount = 0U;
+            foreach (var s in streams)
+            {
+                channelCount += s.VirtualFormatNative.mChannelsPerFrame;
+                totalLatency += s.Latency;
+            }
+            virtualFormat.mChannelsPerFrame = channelCount;
             Array.Fill(streamSelection, true);
-            ioProcedure = new NonInterleavedProcedure(selectedDevice);
+            bool oldIsInterleaved = ioProcedure is InterleavedProcedure;
+            if (isInit || oldIsInterleaved)
+            {
+                if (oldIsInterleaved) { ioProcedure?.Dispose(); }
+                ioProcedure = new NonInterleavedProcedure(selectedDevice);
+            }
         }
         else
         {
             for (int I = 0; I < streams.Length; I++) { streamSelection[I] = I == selectedIndex; }
             totalLatency = streams[selectedIndex].Latency;
-            ioProcedure = new InterleavedProcedure(selectedDevice);
+            bool oldIsNonInterleaved = ioProcedure is NonInterleavedProcedure;
+            if (isInit || oldIsNonInterleaved)
+            {
+                if (oldIsNonInterleaved) { ioProcedure?.Dispose(); }
+                ioProcedure = new InterleavedProcedure(selectedDevice);
+            }
         }
 
         selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, streamSelection);

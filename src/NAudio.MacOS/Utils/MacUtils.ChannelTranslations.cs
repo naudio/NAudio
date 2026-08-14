@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 using NAudio.Wave;
@@ -56,7 +57,7 @@ internal partial class MacUtils
             case AudioChannelLabel.kAudioChannelLabel_TopBackCenter:
                 return Speakers.TopBackCenter;
             default:
-                throw new ArgumentException("Cannot decode value" + label + " into a valid Speakers value");
+                throw new ArgumentException("Cannot decode value " + label + " into a valid Speakers value");
         }
     }
 
@@ -82,26 +83,30 @@ internal partial class MacUtils
 
     private static Speakers DecodeSpeakersFromChannelDescriptions(IntPtr layout, out bool needsTranslation, out bool needsExtensible)
     {
-        // Translate the descriptions into a managed speakers array, 
-        // and test the array in common layouts.
+        // Translate the descriptions into a list, 
+        // and test the list in common layouts.
         // If a common layout is found and matches, it is returned;
-        // otherwise the Speakers value is built from the speakers array and returned.
+        // otherwise the Speakers value is built from the speakers list and returned.
         uint nDescriptions = AudioChannelLayout.GetNumberOfChannelDescriptions(layout);
-        Speakers[] speakers = new Speakers[nDescriptions];
+        List<Speakers> speakers = new((int)nDescriptions);
         for (uint I = 0; I < nDescriptions; I++)
         {
-            speakers[I] = DecodeAudioChannelLabel(
-                AudioChannelLayout.GetChannelDescription(layout, I).mChannelLabel
-            );
+            var desc = AudioChannelLayout.GetChannelDescription(layout, I);
+            // Avoid unknown/unused channel labels.
+            if (
+                desc.mChannelLabel == AudioChannelLabel.kAudioChannelLabel_Unused ||
+                desc.mChannelLabel == AudioChannelLabel.kAudioChannelLabel_Unknown
+            ) { continue; }
+            speakers.Add(DecodeAudioChannelLabel(desc.mChannelLabel));
         }
-        if (speakers.Length == 0)
+        if (speakers.Count == 0)
         {
             // We do not need any translation, or the extensible wave format.
             needsTranslation = false;
             needsExtensible = false;
             return Speakers.None;
         }
-        else if (speakers.Length == 1)
+        else if (speakers.Count == 1)
         {
             // It is a single speaker, resolve to 
             // mono, whatever the channel description is.
@@ -120,7 +125,7 @@ internal partial class MacUtils
             // match the Speakers enum layout semantics.
             // If not, the needsTranslation parameter is set to true.
             Speakers tempSpeaker;
-            int length = speakers.Length - 1;
+            int length = speakers.Count - 1;
             for (int I = 0; I < length; I++)
             {
                 // For the returned speakers value to not need channel layout translation,
@@ -243,11 +248,11 @@ internal partial class MacUtils
             #region 3 channels
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_A || // <  L R C
-                (needsTranslation =
+                (needsTranslation = (
                     // Same thing, but in different order.
                     tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_B || // <  C L R
                     tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0 // < L C R
-                )
+                ))
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter;

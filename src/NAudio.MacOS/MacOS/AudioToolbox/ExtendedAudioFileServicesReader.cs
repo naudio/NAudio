@@ -245,7 +245,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
     /// was created from, but you must ensure that this
     /// call is only performed by one specific thread.
     /// </remarks>
-    public sealed unsafe override int Read(Span<byte> buffer)
+    public sealed override unsafe int Read(Span<byte> buffer)
     {
         uint bufferLength = (uint)buffer.Length;
         uint numFramesToRead = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, targetFormat);
@@ -287,9 +287,20 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
     public sealed override long Position
     {
-        // Note that because we use AverageBytesPerSecond to do the calculation,
-        // the returned value will always be in a BlockAlign multiple.
-        get => (long)((PositionInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
+        get
+        {
+            long position = (long)((PositionInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
+            // The reader provides to us the position in sample frames of the file format,
+            // not on the format that we resample. Although the above calculation is accurate,
+            // if the file's sample rate is fractional, this fails because the number of
+            // frames returned by the API is always integer-bound. The simple fix is to 
+            // assume that the position is accurate by definition, so if a non-block
+            // aligned value is given to us by the above calculation, we assume that 
+            // the fractional part is an entire frame that was given to us, so we add a frame.
+            long drift = position % targetFormat.BlockAlign;
+            if (drift > 0L) { position += targetFormat.BlockAlign - drift; }
+            return position;
+        }
         set
         {
             // We could validate the value against the Length property,
@@ -301,13 +312,14 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
             }
             else
             {
-                // Ensure that the position is in a BlockAlign multiple.
-                value -= (value % targetFormat.BlockAlign);
-                // Calculate the new position: divide the input value by AverageBytesPerSecond 
-                // of the target format to get a value in seconds, then multiply by the file's 
-                // sample rate to get the actual position to seek to, expressed in the 
+                // Calculate the new position: divide the input value by AverageBytesPerSecond
+                // of the target format to get a value in seconds, then multiply by the file's
+                // sample rate to get the actual position to seek to, expressed in the
                 // file's sample frames.
-                long newPos = (long)((value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate);
+                double newPosDouble = (value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate;
+                long newPos = (long)newPosDouble;
+                // Ensure that the file's position is in a BlockAlign multiple.
+                if (newPos != newPosDouble) { newPos++; }
                 long length = LengthInFrames;
                 // Because the above calculation is just an estimated value,
                 // that means that newPos could be much larger than length.
@@ -328,7 +340,17 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
     /// the <see cref="LengthInFrames"/> property.
     /// </remarks>
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
-    public sealed override long Length => (long)((LengthInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
+    public sealed override long Length
+    {
+        get
+        {
+            long length = (long)((LengthInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
+            // See Position's getter comment for why the below is done.
+            long drift = length % targetFormat.BlockAlign;
+            if (drift > 0L) { length += targetFormat.BlockAlign - drift; }
+            return length;
+        }
+    }
 
     /// <summary>
     /// Gets/sets the position of this extended file reader, expressed in number of sample frames of the file format. <br />

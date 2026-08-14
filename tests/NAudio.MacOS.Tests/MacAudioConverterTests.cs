@@ -158,6 +158,7 @@ public class MacAudioConverterTests
     [TestCase(44100, 16000)]
     [TestCase(96000, 22050)]
     [TestCase(22050, 96000)]
+    [TestCase(44100, 44100)]
     public void ReadResamplesAndPreservesFrequency(int inputRate, int outputRate)
     {
         const double frequency = 1000;

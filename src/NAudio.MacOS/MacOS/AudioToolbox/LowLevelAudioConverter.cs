@@ -23,19 +23,22 @@ namespace NAudio.MacOS.AudioToolbox;
 // 2. Check whether this does not leak any native objects, we are doing a lot of unsafe things in
 // here - so this needs a verification.
 // 3. We cannot apply non-interleaved formats to the converter today;
-// probably not needed because we handle such cases (currently only the HAL needs it)
+// probably not needed because we manually handle such cases (currently only the audio HAL needs it)
 // but still is something that would be useful in the future.
 internal unsafe sealed class LowLevelAudioConverter : IDisposable
 {
     // Allocate a single function pointer for all convert complex buffer calls - 
-    // the same things are done to all the audio converter wrapper objects.
+    // the same things are done to all the audio converter wrapper objects, what
+    // it changes for each invocation of the callback is for which 
+    // LowLevelAudioConverter we are referring to, which is handled by the passed
+    // in GCHandle value.
     private static readonly AudioConverterComplexInputDataProc procedureInstance = &ConvertComplexBufferCb;
 
+    private bool disposed;
     private byte* nativeBuffer;
     private GCHandle selfGcHandle;
     private uint nativeBufferSize;
     private readonly IntPtr audioConverterHandle;
-    private bool disposed, requiresFillComplexBuffer;
     private Exception exceptionOnFillComplexBufferCb;
     private readonly ProviderReadDelegate readDelegate;
     public readonly AudioStreamBasicDescription sourceFormat;
@@ -58,7 +61,6 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
         this.outputFormat = outputFormat;
 
         disposed = false;
-        requiresFillComplexBuffer = false;
 
         // Construct the converter - provide the source and output formats to it.
 
@@ -73,52 +75,25 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
 
     public void InitializeNativeBuffer()
     {
-        // We need to change the conversion function we use
-        // when no sample rate conversion is used.
-        if (sourceFormat.mSampleRate == outputFormat.mSampleRate)
-        {
-            // Query the input minimum buffer size, and use that as the native intermediate buffer.
-            fixed (uint* nativeBufferSizePointer = &nativeBufferSize)
-            {
-                uint size = sizeof(uint);
-                AudioConverterException.ThrowIfError(
-                    NativeMethods.AudioConverterGetProperty(
-                        audioConverterHandle,
-                        AudioConverterProperties.kAudioConverterPropertyMinimumInputBufferSize,
-                        ref size,
-                        new(nativeBufferSizePointer)
-                    )
-                );
-            }
-            nativeBuffer = (byte*)NativeMemory.Alloc(nativeBufferSize);
+        nativeBufferSize = sourceFormat.ConvertLatencyToByteSize(100);
+        nativeBuffer = (byte*)NativeMemory.Alloc(nativeBufferSize);
 
-            selfGcHandle = default;
-            requiresFillComplexBuffer = false;
+        // Now allocate the GC handle. Allocating this earlier could
+        // leak this handle. So, do whatever setup we intend to do first,
+        // then we can initialize this safely. The only case for this to throw
+        // is if we are out of memory, which may terminate the process,
+        // so we might be safe. However, it is useful to verify that in the future,
+        // because there are also recoverable out of memory situations, if the runtime
+        // somehow manages to free memory.
+        try
+        {
+            selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
         }
-        else
+        catch
         {
-            nativeBufferSize = sourceFormat.ConvertLatencyToByteSize(100);
-            nativeBuffer = (byte*)NativeMemory.Alloc(nativeBufferSize);
-
-            requiresFillComplexBuffer = true;
-
-            // Now allocate the GC handle. Allocating this earlier could
-            // leak this handle. So, do whatever setup we intend to do first,
-            // then we can initialize this safely. The only case for this to throw
-            // is if we are out of memory, which may terminate the process,
-            // so we might be safe. However, it is useful to verify that in the future,
-            // because there are also recoverable out of memory situations, if the runtime
-            // somehow manages to free memory.
-            try
-            {
-                selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
-            }
-            catch
-            {
-                // Free the native buffer we allocated above.
-                NativeMemory.Free(nativeBuffer);
-                throw;
-            }
+            // Free the native buffer we allocated above.
+            NativeMemory.Free(nativeBuffer);
+            throw;
         }
     }
 
@@ -163,14 +138,8 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
     {
         var wrapper = (LowLevelAudioConverter)GCHandle.FromIntPtr(inUserData).Target;
 
-        AudioBuffer buffer = new(
-            new(wrapper.nativeBuffer),
-            wrapper.nativeBufferSize,
-            wrapper.sourceFormat.mChannelsPerFrame
-        );
-
         uint bytesRead = 0U;
-        Span<byte> currentSpan = buffer.GetSpan();
+        Span<byte> currentSpan = new(wrapper.nativeBuffer, (int)wrapper.nativeBufferSize);
         while (currentSpan.Length > 0)
         {
             int dataRead;
@@ -204,9 +173,16 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
             bytesRead += (uint)dataRead;
         }
 
-        buffer.mDataByteSize = bytesRead;
+        // Probably assigning the number of buffers in ioData is not required,
+        // because the ioData pointer is owned by the converter object which we
+        // do not have authority upon. Anyway, it is useful to assign it to a valid
+        // value if the converter object is misbehaving.
         AudioBufferList.SetNumberOfBuffersFromPointer(ioData, 1U);
-        AudioBufferList.SetAudioBufferFromPointer(ioData, 0U, buffer);
+        AudioBufferList.SetAudioBufferFromPointer(ioData, 0U, new(
+            new(wrapper.nativeBuffer),
+            bytesRead,
+            wrapper.sourceFormat.mChannelsPerFrame
+        ));
         var bytesPerFrame = wrapper.sourceFormat.mBytesPerFrame;
         *ioNumberDataPackets = bytesPerFrame == 0U ? 0U : bytesRead / bytesPerFrame;
 
@@ -217,54 +193,41 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
 
     public int Read(Span<byte> buffer)
     {
+        int osStatus;
         uint bufferLength = (uint)buffer.Length;
-        if (requiresFillComplexBuffer)
+        // packets: Holds the number of sample frames
+        // that the provided buffer can accept.
+        // Once the AudioConverterFillComplexBuffer function
+        // executes successfully, the variable holds the number
+        // of bytes that were actually placed into 'buffer',
+        // retrieved through the first buffer's data byte size field.
+        uint packets = bufferLength / outputFormat.mBytesPerFrame;
+        fixed (byte* pPlaceDataTo = buffer)
         {
-            int osStatus;
-            uint readPackets = bufferLength / outputFormat.mBytesPerFrame;
-            fixed (byte* pPlaceDataTo = buffer)
-            {
-                var list = AudioBufferList.FromSingleBuffer(new(pPlaceDataTo), bufferLength, outputFormat.mChannelsPerFrame);
-                osStatus = NativeMethods.AudioConverterFillComplexBuffer(
-                    audioConverterHandle,
-                    procedureInstance,
-                    GCHandle.ToIntPtr(selfGcHandle),
-                    ref readPackets,
-                    ref list,
-                    IntPtr.Zero
-                );
-            }
+            var list = AudioBufferList.FromSingleBuffer(new(pPlaceDataTo), bufferLength, outputFormat.mChannelsPerFrame);
+            osStatus = NativeMethods.AudioConverterFillComplexBuffer(
+                audioConverterHandle,
+                procedureInstance,
+                GCHandle.ToIntPtr(selfGcHandle),
+                ref packets,
+                ref list,
+                IntPtr.Zero
+            );
+            packets = list.mBuffers.mDataByteSize;
+        }
 
-            // Always clear the exception to avoid spurious throws among Read calls.
-            var localException = exceptionOnFillComplexBufferCb;
-            exceptionOnFillComplexBufferCb = null;
-            AudioConverterException.ThrowIfError(osStatus);
+        // Always clear the exception to avoid spurious throws among Read calls.
+        var localException = exceptionOnFillComplexBufferCb;
+        exceptionOnFillComplexBufferCb = null;
+        AudioConverterException.ThrowIfError(osStatus);
 
-            if (localException is null)
-            {
-                return (int)(readPackets * outputFormat.mBytesPerFrame);
-            }
-            else
-            {
-                throw localException;
-            }
+        if (localException is null)
+        {
+            return (int)packets;
         }
         else
         {
-            int readBytes = readDelegate.Invoke(new Span<byte>(nativeBuffer, (int)nativeBufferSize));
-            fixed (byte* pDstBuffer = buffer)
-            {
-                AudioConverterException.ThrowIfError(
-                    NativeMethods.AudioConverterConvertBuffer(
-                        audioConverterHandle,
-                        (uint)readBytes,
-                        new(nativeBuffer),
-                        ref bufferLength,
-                        new(pDstBuffer)
-                    )
-                );
-            }
-            return (int)bufferLength;
+            throw localException;
         }
     }
 

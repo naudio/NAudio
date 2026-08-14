@@ -295,8 +295,8 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
             // if the file's sample rate is fractional, this fails because the number of
             // frames returned by the API is always integer-bound. The simple fix is to 
             // assume that the position is accurate by definition, so if a non-block
-            // aligned value is given to us by the above calculation, we assume that 
-            // the fractional part is an entire frame that was given to us, so we add a frame.
+            // aligned value is given to us by the above calculation, we assume that
+            // there is an additional frame that was given to us, so we add a frame.
             long drift = position % targetFormat.BlockAlign;
             if (drift > 0L) { position += targetFormat.BlockAlign - drift; }
             return position;

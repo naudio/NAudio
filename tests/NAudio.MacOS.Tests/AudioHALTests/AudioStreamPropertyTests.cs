@@ -35,7 +35,8 @@ public class AudioStreamPropertyTests
     public void StreamIsOutput()
     {
         Assert.That(
-            testStream.Direction == AudioStreamDirection.Output,
+            testStream.Direction,
+            Is.EqualTo(AudioStreamDirection.Output),
             "The stream should be an output stream"
         );
     }

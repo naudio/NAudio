@@ -48,7 +48,7 @@ public class ReaderTests
     }
 
     [OneTimeSetUp]
-    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 3, 1);
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 4);
 
     [Test]
     public void CanReadARandomFile_DefaultSettings() => CreateFilePathReader();

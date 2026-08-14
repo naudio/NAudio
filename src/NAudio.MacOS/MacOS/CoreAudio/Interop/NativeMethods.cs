@@ -1,4 +1,4 @@
-// This interop definition was derived from the files AudioHardware.h and HostTime.h of the Audio Toolbox Framework.
+// This interop definition was derived from the files AudioHardware.h and HostTime.h of the Core Audio Framework.
 // See https://developer.apple.com/documentation/coreaudio for more information.
 
 #pragma warning disable IDE0055 // We want the native methods to have a consistent view.

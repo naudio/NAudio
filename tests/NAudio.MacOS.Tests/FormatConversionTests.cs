@@ -48,22 +48,46 @@ public class FormatConversionTests
 
         Assert.DoesNotThrow(() => asbd = MacUtils.ConstructASBDFromWaveFormat(srcFormat));
 
-        Assert.AreEqual(asbd.mSampleRate, srcFormat.SampleRate);
+        Assert.That(
+            asbd.mSampleRate,
+            Is.EqualTo((double)srcFormat.SampleRate),
+            "Constructed sample rate must match with the source format!"
+        );
 
-        Assert.AreEqual(asbd.mBytesPerFrame, srcFormat.BlockAlign);
+        Assert.That(
+            asbd.mBytesPerFrame,
+            Is.EqualTo((uint)srcFormat.BlockAlign),
+            "Constructed block align must match with the source format!"
+        );
 
-        Assert.AreEqual(asbd.mChannelsPerFrame, srcFormat.Channels);
+        Assert.That(
+            asbd.mChannelsPerFrame,
+            Is.EqualTo((uint)srcFormat.Channels),
+            "Constructed # of channels must match with the source format!"
+        );
 
-        Assert.AreEqual(asbd.mFramesPerPacket, 1U);
+        Assert.That(
+            asbd.mFramesPerPacket,
+            Is.EqualTo(1U),
+            "Constructed # of frames per packet must be the value 1!"
+        );
 
         if (specifyIeeeFloat)
         {
-            Assert.That(asbd.mFormatFlags.HasFlag(CoreAudioTypes.AudioFormatFlags.kAudioFormatFlagIsFloat));
+            Assert.That(
+                asbd.mFormatFlags.HasFlag(CoreAudioTypes.AudioFormatFlags.kAudioFormatFlagIsFloat),
+                Is.True,
+                "Expected the target format to be IEEE float while it wasn't!"
+            );
         }
 
         if (srcFormat is WaveFormatExtensible ext)
         {
-            Assert.AreEqual(ext.ValidBitsPerSample, asbd.mBitsPerChannel);
+            Assert.That(
+                (uint)ext.ValidBitsPerSample,
+                Is.EqualTo(asbd.mBitsPerChannel),
+                "Constructed bits per sample must match with the source format!"
+            );
             Assert.That(specifyIeeeFloat ?
                 ext.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT :
                 ext.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM
@@ -71,7 +95,11 @@ public class FormatConversionTests
         }
         else
         {
-            Assert.AreEqual(srcFormat.BitsPerSample, asbd.mBitsPerChannel);
+            Assert.That(
+                (uint)srcFormat.BitsPerSample,
+                Is.EqualTo(asbd.mBitsPerChannel),
+                "Constructed bits per sample must match with the source format!"
+            );
             Assert.That(specifyIeeeFloat ?
                 srcFormat.Encoding == WaveFormatEncoding.IeeeFloat :
                 srcFormat.Encoding == WaveFormatEncoding.Pcm
@@ -102,7 +130,11 @@ public class FormatConversionTests
             !BitConverter.IsLittleEndian
         );
 
-        Assert.AreEqual(asbd.mFramesPerPacket, 1U);
+        Assert.That(
+            asbd.mFramesPerPacket,
+            Is.EqualTo(1U),
+            "Constructed # of frames per packet must be the value 1!"
+        );
 
         WaveFormat outFormat = null;
 
@@ -110,26 +142,49 @@ public class FormatConversionTests
 
         Assert.NotNull(outFormat);
 
-        Assert.AreEqual(asbd.mSampleRate, outFormat.SampleRate);
+        Assert.That(
+            asbd.mSampleRate,
+            Is.EqualTo((double)outFormat.SampleRate),
+            "Constructed sample rate must match with the source format!"
+        );
 
-        Assert.AreEqual(asbd.mBytesPerFrame, outFormat.BlockAlign);
+        Assert.That(
+            asbd.mBytesPerFrame,
+            Is.EqualTo((uint)outFormat.BlockAlign),
+            "Constructed block align must match with the source format!"
+        );
 
-        Assert.AreEqual(asbd.mChannelsPerFrame, outFormat.Channels);
+        Assert.That(
+            asbd.mChannelsPerFrame,
+            Is.EqualTo((uint)outFormat.Channels),
+            "Constructed # of channels must match with the source format!"
+        );
 
         if (specifyIeeeFloat)
         {
             if (validBitsPerSample == bitRate)
             {
                 Assert.That(
-                    outFormat.Encoding == WaveFormatEncoding.IeeeFloat
+                    outFormat.Encoding,
+                    Is.EqualTo(WaveFormatEncoding.IeeeFloat),
+                    "The wave format encoding was not IeeeFloat!"
                 );
-                Assert.AreEqual(asbd.mBitsPerChannel, outFormat.BitsPerSample);
+                Assert.That(
+                    (uint)outFormat.BitsPerSample,
+                    Is.EqualTo(asbd.mBitsPerChannel),
+                    "Constructed bits per sample must match with the source format!"
+                );
             }
             else
             {
                 Assert.That(
-                    outFormat.Encoding == WaveFormatEncoding.Extensible &&
-                    ((WaveFormatExtensible)outFormat).SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT
+                    outFormat.Encoding,
+                    Is.EqualTo(WaveFormatEncoding.Extensible),
+                    "The wave format encoding was not Extensible!"
+                );
+                Assert.That(
+                    ((WaveFormatExtensible)outFormat).SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT,
+                    "The wave format sub-format was not IeeeFloat!"
                 );
                 Assert.AreEqual(asbd.mBitsPerChannel, ((WaveFormatExtensible)outFormat).ValidBitsPerSample);
             }
@@ -149,7 +204,11 @@ public class FormatConversionTests
                     outFormat.Encoding == WaveFormatEncoding.Extensible &&
                     ((WaveFormatExtensible)outFormat).SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM
                 );
-                Assert.AreEqual(asbd.mBitsPerChannel, ((WaveFormatExtensible)outFormat).ValidBitsPerSample);
+                Assert.That(
+                    (uint)((WaveFormatExtensible)outFormat).ValidBitsPerSample,
+                    Is.EqualTo(asbd.mBitsPerChannel),
+                    "Constructed bits per sample must match with the source format!"
+                );
             }
         }
     }

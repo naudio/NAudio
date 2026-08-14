@@ -40,7 +40,11 @@ public class ChannelConversionTests
             "The channel layout tag was not an audio channel bitmap!"
         );
 
-        Assert.AreEqual((Speakers)l.mChannelBitmap, valueToTest);
+        Assert.That(
+            (Speakers)l.mChannelBitmap,
+            Is.EqualTo(valueToTest),
+            "Channel bitmaps must match!"
+        );
     }
 
     [Test]
@@ -64,9 +68,9 @@ public class ChannelConversionTests
             mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Right
         });
 
-        Assert.AreEqual(
+        Assert.That(
             MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible),
-            Speakers.Stereo,
+            Is.EqualTo(Speakers.Stereo),
             "Layouts do not match!"
         );
 
@@ -98,9 +102,9 @@ public class ChannelConversionTests
             mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Right
         });
 
-        Assert.AreEqual(
+        Assert.That(
             MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible),
-            Speakers.Stereo,
+            Is.EqualTo(Speakers.Stereo),
             "Layouts do not match!"
         );
 
@@ -126,9 +130,9 @@ public class ChannelConversionTests
             mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Mono
         });
 
-        Assert.AreEqual(
+        Assert.That(
             MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible),
-            Speakers.Mono,
+            Is.EqualTo(Speakers.Mono),
             "Layouts do not match!"
         );
 
@@ -172,9 +176,9 @@ public class ChannelConversionTests
             mChannelLabel = AudioChannelLabel.kAudioChannelLabel_RightSurround
         });
 
-        Assert.AreEqual(
+        Assert.That(
             MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible),
-            Speakers.Quad,
+            Is.EqualTo(Speakers.Quad),
             "Layouts do not match!"
         );
 
@@ -182,6 +186,52 @@ public class ChannelConversionTests
 
         // This requires an extensible format.
         Assert.IsTrue(needsExtensible, "A quad layout like the one specified should require a WaveFormatExtensible!");
+
+        Assert.DoesNotThrow(handle.Dispose);
+    }
+
+    [Test]
+    public unsafe void VerifyThatEvenWithInconsistentChannelDescriptionsSucceeds()
+    {
+        var handle = ChannelLayoutHandle.Allocate((uint)(sizeof(AudioChannelLayout) + (3 * sizeof(AudioChannelDescription))));
+
+        var layout = handle.DangerousGetHandle();
+
+        AudioChannelLayout.SetNumberOfChannelDescriptions(layout, 4U);
+
+        AudioChannelLayout.SetChannelDescription(layout, 0U, new AudioChannelDescription()
+        {
+            mChannelFlags = AudioChannelFlags.kAudioChannelFlags_AllOff,
+            mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Unknown
+        });
+
+        AudioChannelLayout.SetChannelDescription(layout, 1U, new AudioChannelDescription()
+        {
+            mChannelFlags = AudioChannelFlags.kAudioChannelFlags_AllOff,
+            mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Unused
+        });
+
+        AudioChannelLayout.SetChannelDescription(layout, 2U, new AudioChannelDescription()
+        {
+            mChannelFlags = AudioChannelFlags.kAudioChannelFlags_AllOff,
+            mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Unused
+        });
+
+        AudioChannelLayout.SetChannelDescription(layout, 3U, new AudioChannelDescription()
+        {
+            mChannelFlags = AudioChannelFlags.kAudioChannelFlags_AllOff,
+            mChannelLabel = AudioChannelLabel.kAudioChannelLabel_Unknown
+        });
+
+        Assert.That(
+            MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible),
+            Is.EqualTo(Speakers.None),
+            "Layouts do not match!"
+        );
+
+        Assert.IsFalse(needsTranslation, "A layout like the one specified should not need translation!");
+
+        Assert.IsFalse(needsExtensible, "A layout like the one specified should not require a WaveFormatExtensible!");
 
         Assert.DoesNotThrow(handle.Dispose);
     }

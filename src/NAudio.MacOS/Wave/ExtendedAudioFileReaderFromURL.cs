@@ -12,8 +12,8 @@ namespace NAudio.Wave;
 /// The reader does the best effort to decode to PCM - as such, all the audio
 /// file data that you will recieve will not ever be compressed formats.
 /// </summary>
-[SupportedOSPlatform("ios2.0")]
-[SupportedOSPlatform("macos10.3.1")]
+[SupportedOSPlatform("ios2.1")]
+[SupportedOSPlatform("macos10.4")]
 public sealed class ExtendedAudioFileReaderFromURL : ExtendedAudioFileServicesReader
 {
     private readonly object url;

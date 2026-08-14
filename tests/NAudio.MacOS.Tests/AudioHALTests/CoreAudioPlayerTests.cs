@@ -44,7 +44,6 @@ public class CoreAudioPlayerTests
     public void CanPlayThreeSecondSignal(int sampleRate, int channels, bool useIeeeFloat)
     {
         var sg = new SignalGenerator(sampleRate, channels);
-        sg.Frequency = 100;
         sg.Type = SignalGeneratorType.White;
         sg.Gain = 0.7;
 

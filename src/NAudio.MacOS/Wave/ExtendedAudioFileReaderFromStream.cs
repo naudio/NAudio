@@ -18,8 +18,8 @@ namespace NAudio.Wave;
 /// it requires to set up either a MIME type or a file extension to
 /// be able to better recognize the data stream.
 /// </summary>
-[SupportedOSPlatform("ios2.0")]
-[SupportedOSPlatform("macos10.3.1")]
+[SupportedOSPlatform("ios2.1")]
+[SupportedOSPlatform("macos10.4")]
 public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileServicesReader
 {
     private GCHandle streamGcHandle;

@@ -17,7 +17,7 @@ public class WriterTests
     private static string CreateRandomFileName() => Path.Join(Environment.CurrentDirectory, Path.GetRandomFileName());
 
     [OneTimeSetUp]
-    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 3, 1);
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 4);
 
     [Test]
     public void WriteAAC() => UseURLWriter(new() { FileType = "audio/aac" });

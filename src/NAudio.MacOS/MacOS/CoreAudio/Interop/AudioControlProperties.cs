@@ -1,4 +1,4 @@
-// This interop definition was derived from the file AudioHardwareBase.h of the Audio Toolbox Framework.
+// This interop definition was derived from the file AudioHardwareBase.h of the Core Audio Framework.
 // See https://developer.apple.com/documentation/coreaudio for more information.
 
 #pragma warning disable IDE0055 // We want the properties to have a consistent view.

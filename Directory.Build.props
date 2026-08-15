@@ -3,7 +3,7 @@
     <!-- Lockstep version for all NAudio NuGet packages. CI overrides
          <VersionSuffix> on pre-release builds (e.g. preview.NN). Sample/tool
          apps with their own <Version> in the csproj override this. -->
-    <VersionPrefix>3.0.0</VersionPrefix>
+    <VersionPrefix>3.0.1</VersionPrefix>
 
     <!-- Common NuGet package metadata. Per-package csprojs override
          individual properties when needed (e.g. the NAudio meta-package

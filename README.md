@@ -1,4 +1,4 @@
-# NAudio
+﻿# NAudio
 
 [![GitHub](https://img.shields.io/github/license/naudio/NAudio)](https://github.com/naudio/NAudio/blob/main/LICENSE) [![Nuget](https://img.shields.io/nuget/v/NAudio)](https://www.nuget.org/packages/NAudio/) [![Build](https://github.com/naudio/NAudio/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/naudio/NAudio/actions/workflows/build.yml)
 
@@ -8,15 +8,7 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
 
 📖 **[Documentation site](https://naudio.github.io/NAudio/)** — tutorials and the full API reference.
 
-## NAudio 3 pre-release
-
-NAudio 3 is now available as a pre-release on NuGet:
-
-```sh
-dotnet add package NAudio --prerelease
-```
-
-NAudio 2 remains the stable channel and will receive critical bug fixes if necessary.
+## NAudio 3
 
 NAudio 3 is a major release. The headlines:
 
@@ -27,8 +19,6 @@ NAudio 3 is a major release. The headlines:
 * **Modernised WASAPI and ASIO** — the new `WasapiPlayer` / `WasapiRecorder` and `AsioDevice` APIs.
 
 Upgrading from NAudio 2? Start with **[Migrating from NAudio 2 to NAudio 3](Docs/MigratingFromNAudio2.md)**. The full list of changes is in [RELEASE_NOTES.md](RELEASE_NOTES.md).
-
-**For existing contributors:** the default branch has moved from `master` to `main` to make room for NAudio 3 development. NAudio 2 maintenance now lives on `release/2.x` (formerly `master`). Open PRs that targeted `master` have been automatically retargeted to `release/2.x` — if your change is intended for NAudio 3, it will need to be rebased against `main` and update the PR target.
 
 ## Packages
 
@@ -98,7 +88,7 @@ NAudio comes with several demo applications, which are the quickest way to see h
   * WaveIn
   * ASIO
   * ALSA on Linux
-* Host VST 3 effects and instruments (preview)
+* Host VST 3 effects and instruments
 * Play SoundFont (`.sf2`) and SFZ instruments with the built-in software sampler
 * Work with soundcards
   * Enumerate devices
@@ -219,7 +209,7 @@ To be successful developing applications that process digital audio, there are s
 
 [Audio Programming with NAudio](http://pluralsight.com/training/Courses/TableOfContents/audio-programming-naudio) is a follow-on course which contains seven hours of training material covering all the major features of NAudio. It is highly recommended that you take this course if you intend to create an application with NAudio.
 
-Please note that these courses were recorded against NAudio 1.x and 2.x. The concepts all still apply, but some of the class names have changed — see [Migrating from NAudio 2 to NAudio 3](Docs/MigratingFromNAudio2.md).
+Please note that these courses were recorded against earlier versions of NAudio. The concepts all still apply, but some of the class names have changed — see [Migrating from NAudio 2 to NAudio 3](Docs/MigratingFromNAudio2.md).
 
 ## FAQ
 
@@ -233,7 +223,7 @@ NAudio was created because the Framework Class Library that shipped with .NET 1.
 
 **Does NAudio work on Linux and macOS?**
 
-Partly, and much more so in NAudio 3. `NAudio.Core`, `NAudio.Midi`, `NAudio.Effects`, `NAudio.Sampler` and `NAudio.SoundFile` are fully cross-platform, so signal chains, file I/O, DSP, effects and MIDI all work anywhere .NET runs. For output and capture, Linux has `NAudio.Alsa`; the WASAPI, WinMM, ASIO, DMO and WinForms packages remain Windows-only, and there is no macOS (CoreAudio) backend yet.
+Partly, and much more so in NAudio 3. `NAudio.Core`, `NAudio.Midi`, `NAudio.Effects`, `NAudio.Sampler` and `NAudio.SoundFile` are fully cross-platform, so signal chains, file I/O, DSP, effects and MIDI all work anywhere .NET runs. For output and capture, Linux has `NAudio.Alsa`; the WASAPI, WinMM, ASIO, DMO and WinForms packages remain Windows-only, and there is no macOS (CoreAudio) backend yet (although there is a work-in-progress implementation).
 
 **Which .NET versions are supported?**
 
@@ -259,7 +249,8 @@ Finally, I am occasionally able to offer paid support for situations where you n
 
 I welcome contributions to NAudio and have accepted many patches, but if you want your code to be included, please familiarise yourself with the following guidelines:
 
-* Your submission must be your own work, and able to be released under the MIT license.
+* Your submission must be your own work, and able to be released under the MIT license. 
+* You may use AI-assisted code generation, but ensure that your code is original and not copied from other sources. Note that I may choose to rewrite contributions rather than merge pull requests, so consider raising a feature request rather than a pull request first.
 * You will need to make sure your code conforms to the layout and naming conventions used elsewhere in NAudio.
 * Remember that there are many existing users of NAudio. A patch that changes the public interface is not likely to be accepted.
 * Try to write "clean code" - avoid long functions and long classes. Try to add a new feature by creating a new class rather than putting loads of extra code inside an existing one.

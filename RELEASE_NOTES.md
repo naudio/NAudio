@@ -1,4 +1,4 @@
-### Unreleased
+﻿### Unreleased
 
 <!--
 Bullets land here as PRs merge. The maintainer renames this section to
@@ -12,6 +12,8 @@ PR list on the GitHub Release. The release workflow embeds this section as
 the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
+
+### 3.0.0 (15 Aug 2026)
 
 NAudio 3 is a major release. The single `NAudio` assembly is now split into
 focused, independently usable packages; the minimum target framework moves to
@@ -38,12 +40,12 @@ providers to the new `Span<T>` `Read` signature.
 Each new subsystem has its own tutorial or README; only the headline is listed here.
 
  * **Audio effects** — a cross-platform `NAudio.Effects` framework: `IAudioEffect` / `EffectSampleProvider` / `EffectChain` with click-free bypass, dry/wet mix and an optional parameter model, plus a broad effect set (EQ and filtering, dynamics, saturation/lo-fi, delay and modulation, reverb including FFT convolution, pitch shifting, and voice-comms AGC/noise suppression). See [Docs/AudioEffects.md](Docs/AudioEffects.md)
- * **Software sampler** — new `NAudio.Sampler` package: polyphonic, cross-platform playback of SoundFont (`.sf2`) and SFZ instruments and single-sample instruments, rendered as an `ISampleProvider` (SF2 modulator engine, DAHDSR envelopes, LFOs, modulated filters, reverb/chorus sends, voice stealing, choke groups). See [Docs/Sampler.md](Docs/Sampler.md)
- * **VST 3 hosting (preview)** — new `NAudio.Vst3` package (Windows-only): discover, load and host VST 3 effects and instruments, with parameters, state and `.vstpreset` presets, native editor windows, program lists/units, latency compensation, and live/offline MIDI-file playback through the shared MIDI pipeline. See the `NAudio.Vst3` README and `Docs/Architecture/Vst3Hosting.md`. VST is a registered trademark of Steinberg Media Technologies GmbH
- * **Cross-platform audio files** — new `NAudio.SoundFile` package: read and write WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 via a system libsndfile on Windows, Linux and macOS (the first cross-platform FLAC/Vorbis/Opus *encoder* in NAudio). See [Docs/CrossPlatformAudioFilesWithSoundFile.md](Docs/CrossPlatformAudioFilesWithSoundFile.md) (#1289)
- * **Linux audio** — new `NAudio.Alsa` package: `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) plus `AlsaDeviceEnumerator`, backed by `libasound`. See [Docs/PlayAudioFileLinuxAlsa.md](Docs/PlayAudioFileLinuxAlsa.md) and [Docs/RecordAudioFileLinuxAlsa.md](Docs/RecordAudioFileLinuxAlsa.md) (#1182)
  * **Modern WASAPI** — high-level `WasapiPlayer` / `WasapiRecorder`, built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`: `IAudioClient3` low latency, MMCSS thread priority, `IAsyncDisposable`, zero-copy buffers, per-process loopback capture, automatic stream routing that follows the default endpoint (#942), acoustic-echo-cancellation reference control (#1223), communications mode, raw mode (#476), and resample-free bit-depth/channel adaptation in exclusive and low-latency modes. See [Docs/WasapiPlayer.md](Docs/WasapiPlayer.md) and [Docs/WasapiRecorder.md](Docs/WasapiRecorder.md)
  * **Modern ASIO** — a new `AsioDevice` replacing `AsioOut`: explicit playback/recording/duplex modes, non-contiguous channels, per-channel `Span<float>` callbacks, driver-reset recovery and per-buffer timing. `AsioOut` is preserved as a facade. See [Docs/AsioMigration.md](Docs/AsioMigration.md)
+ * **Cross-platform audio files** — new `NAudio.SoundFile` package: read and write WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 via a system libsndfile on Windows, Linux and macOS (the first cross-platform FLAC/Vorbis/Opus *encoder* in NAudio). See [Docs/CrossPlatformAudioFilesWithSoundFile.md](Docs/CrossPlatformAudioFilesWithSoundFile.md) (#1289)
+ * **Linux audio** — new `NAudio.Alsa` package: `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) plus `AlsaDeviceEnumerator`, backed by `libasound`. See [Docs/PlayAudioFileLinuxAlsa.md](Docs/PlayAudioFileLinuxAlsa.md) and [Docs/RecordAudioFileLinuxAlsa.md](Docs/RecordAudioFileLinuxAlsa.md) (#1182)
+ * **VST 3 hosting** — new `NAudio.Vst3` package (Windows-only): discover, load and host VST 3 effects and instruments, with parameters, state and `.vstpreset` presets, native editor windows, program lists/units, latency compensation, and live/offline MIDI-file playback through the shared MIDI pipeline. See the `NAudio.Vst3` README and `Docs/Architecture/Vst3Hosting.md`. VST is a registered trademark of Steinberg Media Technologies GmbH
+ * **Software sampler** — new `NAudio.Sampler` package: polyphonic, cross-platform playback of SoundFont (`.sf2`) and SFZ instruments and single-sample instruments, rendered as an `ISampleProvider` (SF2 modulator engine, DAHDSR envelopes, LFOs, modulated filters, reverb/chorus sends, voice stealing, choke groups). See [Docs/Sampler.md](Docs/Sampler.md)
  * **Event-based device notifications** — `MMDeviceEnumerator.CreateNotificationClient()` returns an `MMDeviceNotificationClient` exposing `DeviceStateChanged`, `DeviceAdded`, `DeviceRemoved`, `DefaultDeviceChanged` and `PropertyValueChanged` as ordinary events, so callers no longer implement a COM interface or manage CCW lifetime (#1395)
  * **MIDI** — `NAudio.Midi`'s portable leg is now cross-platform; new WinRT `WinRTMidiIn` / `WinRTMidiOut` and backend-agnostic `IMidiInput` / `IMidiOutput`; and a new `IMidiInstrument` seam (`MidiFileSequence` / `SequencedMidiPlayer` / `OfflineMidiRenderer` / `LiveMidiInstrument`) giving an end-to-end MIDI-file → audio pipeline that drives the sampler or a hosted VST 3 instrument. `MidiFile` also reads RIFF-RMID (`.rmi`) files (#1236) and `MidiFile.Export` gains a `Stream` overload, thanks to @MaKiPL (#499)
  * **Sequencing** — a portable `NAudio.Sequencing` namespace in `NAudio.Core` (tempo and time-signature maps, transport, `EventTimeline`, swing, and a sample-accurate per-buffer dispatcher) underpinning MIDI-file playback and the sampler. See `Docs/Architecture/Sequencing.md`

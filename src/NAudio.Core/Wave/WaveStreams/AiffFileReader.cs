@@ -107,8 +107,13 @@ public class AiffFileReader : WaveStream
             {
                 uint offset = ConvertInt(br.ReadBytes(4));
                 uint blockSize = ConvertInt(br.ReadBytes(4));
+                // The offset field is a run of pad bytes sitting between the SSND header and
+                // the first sample frame (used to block-align the sound data), so it counts
+                // against the chunk length as well as advancing the start. A file declaring a
+                // bigger offset than the chunk holds has no readable sound data at all.
+                long soundDataLength = (long)nextChunk.ChunkLength - 8 - offset;
                 dataChunkPosition = nextChunk.ChunkStart + 16 + offset;
-                dataChunkLength = (int)nextChunk.ChunkLength - 8;
+                dataChunkLength = soundDataLength > 0 ? (int)Math.Min(soundDataLength, int.MaxValue) : 0;
                 br.BaseStream.Position += (nextChunk.ChunkLength - 8);
             }
             else
@@ -237,8 +242,13 @@ public class AiffFileReader : WaveStream
             }
 
             // Read big-endian source bytes into the caller's span, then swap in place.
+            // A single Read on the source may legitimately return fewer bytes than asked for
+            // (network, deflate and crypto streams all do this), so keep asking until the
+            // buffer is full or the source runs out - the byte-swap loops below step a whole
+            // sample at a time and would run off the end of a partial frame.
             var dest = buffer.Slice(0, count);
-            int length = waveStream.Read(dest);
+            int length = waveStream.ReadAtLeast(dest, count, throwOnEndOfStream: false);
+            length -= length % waveFormat.BlockAlign;
             var read = dest.Slice(0, length);
 
             int bytesPerSample = WaveFormat.BitsPerSample / 8;

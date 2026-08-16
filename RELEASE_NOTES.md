@@ -13,6 +13,9 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+- Fixed `AiffFileReader` reporting too long a `Length` and throwing `IndexOutOfRangeException` when the SSND chunk declares a non-zero offset (#1405)
+- Fixed `AiffFileReader.Read` throwing `IndexOutOfRangeException` when the source stream returns fewer bytes than requested (#1405)
+
 ### 3.0.0 (15 Aug 2026)
 
 NAudio 3 is a major release. The single `NAudio` assembly is now split into

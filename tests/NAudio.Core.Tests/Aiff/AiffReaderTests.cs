@@ -92,6 +92,85 @@ public class AiffReaderTests
         });
     }
 
+    // Regression: fuzz-found AIFF whose SSND chunk declares a non-zero offset. The offset
+    // advanced the start of the sound data but was not deducted from its length, so the
+    // reader believed there were `offset` more bytes than the file held and the byte-swap
+    // loop in Read ran off the end of the final partial frame. See issue #1405.
+    [Test]
+    [Category("UnitTest")]
+    public void AiffWithNonZeroSsndOffsetDoesNotReadPastSoundData()
+    {
+        // 16-bit mono, 901 bytes of sound data preceded by 101 bytes of declared pad.
+        // The SSND chunk holds 1002 bytes beyond its offset/blockSize fields, of which
+        // only 901 are sound data - and 901 is not a whole number of 2-byte frames.
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 16, soundData: new byte[901], ssndOffset: 101);
+
+        using var reader = new AiffFileReader(new MemoryStream(aiff));
+        Assert.That(reader.Length, Is.EqualTo(901));
+
+        var buffer = new byte[4096];
+        int total = 0;
+        Assert.DoesNotThrow(() =>
+        {
+            int read;
+            while ((read = reader.Read(buffer, 0, buffer.Length)) > 0) total += read;
+        });
+        // only whole frames are returned, so the odd trailing byte is dropped
+        Assert.That(total, Is.EqualTo(900));
+    }
+
+    // The pad bytes described by the SSND offset field are not sample data, so the reader
+    // must start at the first sample frame rather than at the start of the chunk payload.
+    [Test]
+    [Category("UnitTest")]
+    public void AiffWithNonZeroSsndOffsetSkipsPadBytes()
+    {
+        // Big-endian 16-bit samples; the pad written by BuildAiff is all zeroes, so reading
+        // from the wrong place would show up as zeroed samples.
+        byte[] soundData = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 };
+        byte[] expected = { 0x22, 0x11, 0x44, 0x33, 0x66, 0x55, 0x88, 0x77 };
+
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 16, soundData, ssndOffset: 6);
+
+        using var reader = new AiffFileReader(new MemoryStream(aiff));
+        Assert.That(reader.Length, Is.EqualTo(soundData.Length));
+
+        var actual = new byte[soundData.Length];
+        Assert.That(reader.Read(actual, 0, actual.Length), Is.EqualTo(expected.Length));
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+
+    // Regression: a Stream may legitimately return fewer bytes than requested, which left
+    // Read byte-swapping a partial sample frame. See issue #1405.
+    [Test]
+    [Category("UnitTest")]
+    public void ReadHandlesShortReadsFromSourceStream()
+    {
+        var soundData = new byte[512];
+        for (int i = 0; i < soundData.Length; i++) soundData[i] = (byte)(i + 1);
+
+        var expected = new byte[soundData.Length];
+        for (int i = 0; i < soundData.Length; i += 2)
+        {
+            expected[i] = soundData[i + 1];
+            expected[i + 1] = soundData[i];
+        }
+
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 16, soundData);
+
+        // 3 bytes at a time, so most reads end mid-frame
+        using var reader = new AiffFileReader(new ShortReadStream(aiff, 3));
+        var actual = new byte[soundData.Length];
+        int total = 0, read;
+        while (total < actual.Length && (read = reader.Read(actual, total, actual.Length - total)) > 0)
+        {
+            total += read;
+        }
+
+        Assert.That(total, Is.EqualTo(soundData.Length));
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+
     // Regression: AIFF stores 8-bit PCM as signed two's-complement (unlike WAV's unsigned
     // 8-bit), so the reader must convert it for the shared unsigned 8-bit sample converter.
     // The on-disk bytes and expected float values below are from the issue report. See #1178.
@@ -124,9 +203,48 @@ public class AiffReaderTests
         }
     }
 
+    // A seekable stream that never satisfies a read in full, the way network, deflate and
+    // crypto streams behave.
+    private sealed class ShortReadStream : Stream
+    {
+        private readonly MemoryStream inner;
+        private readonly int maxBytesPerRead;
+
+        public ShortReadStream(byte[] data, int maxBytesPerRead)
+        {
+            inner = new MemoryStream(data);
+            this.maxBytesPerRead = maxBytesPerRead;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => inner.Position = value;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+            => inner.Read(buffer, offset, Math.Min(count, maxBytesPerRead));
+
+        public override int Read(Span<byte> buffer)
+            => inner.Read(buffer.Slice(0, Math.Min(buffer.Length, maxBytesPerRead)));
+
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
     // Builds a minimal uncompressed AIFF (FORM/COMM/SSND) with the supplied sound data
-    // placed verbatim, so a test can control the exact on-disk bytes.
-    private static byte[] BuildAiff(int sampleRate, short channels, short bitsPerSample, byte[] soundData)
+    // placed verbatim, so a test can control the exact on-disk bytes. ssndOffset writes that
+    // many pad bytes between the SSND header and the first sample frame, and declares them
+    // in the chunk's offset field.
+    private static byte[] BuildAiff(int sampleRate, short channels, short bitsPerSample, byte[] soundData,
+        int ssndOffset = 0)
     {
         int numSampleFrames = soundData.Length / (channels * (bitsPerSample / 8));
         using var ms = new MemoryStream();
@@ -140,14 +258,15 @@ public class AiffReaderTests
         }
 
         const int commSize = 18;                 // channels(2) + frames(4) + sampleSize(2) + rate(10)
-        int ssndSize = 8 + soundData.Length;     // offset(4) + blockSize(4) + data
+        int ssndSize = 8 + ssndOffset + soundData.Length;   // offset(4) + blockSize(4) + pad + data
         int formSize = 4 + (8 + commSize) + (8 + ssndSize);
 
         Tag("FORM"); WriteBE32(formSize); Tag("AIFF");
         Tag("COMM"); WriteBE32(commSize);
         WriteBE16(channels); WriteBE32(numSampleFrames); WriteBE16(bitsPerSample);
         bw.Write(IEEE.ConvertToIeeeExtended(sampleRate));   // 10-byte 80-bit extended
-        Tag("SSND"); WriteBE32(ssndSize); WriteBE32(0); WriteBE32(0);
+        Tag("SSND"); WriteBE32(ssndSize); WriteBE32(ssndOffset); WriteBE32(0);
+        bw.Write(new byte[ssndOffset]);
         bw.Write(soundData);
         bw.Flush();
 

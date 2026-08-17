@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+- Sample and tool apps now roll forward onto newer .NET runtimes, so running them no longer requires the .NET 9 runtime to be installed
+
 ### 3.0.0 (15 Aug 2026)
 
 NAudio 3 is a major release. The single `NAudio` assembly is now split into

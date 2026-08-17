@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Fixed the `NAudio` and `NAudio.Extras` meta-packages resolving their portable `net9.0` asset on projects targeting a plain `netX.0-windows` TFM (the WinForms/WPF template default), which silently dropped the entire Windows stack — no `WaveOut`, WASAPI, Media Foundation, ASIO, DMO or WinForms types, and `AudioFileReader` throwing "MP3 file reading requires the NAudio.Wasapi package". Both packages now also ship a plain `net9.0-windows` leg (#1407)
+
 ### 3.0.0 (15 Aug 2026)
 
 NAudio 3 is a major release. The single `NAudio` assembly is now split into

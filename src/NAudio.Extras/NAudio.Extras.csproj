@@ -8,7 +8,11 @@
          matching NAudio.csproj: it is the superset (the Windows-gated AudioPlaybackEngine
          only exists there), and because this project references NAudio, the two must
          collapse to the same leg or the reference won't resolve. -->
-    <TargetFrameworks Condition=" '$(DocsBuild)' != 'true' ">net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- Mirrors NAudio.csproj's three legs: a plain `net9.0-windows` leg so that
+         consumers on the template-default `netX.0-windows` (TargetPlatformVersion 7.0)
+         resolve a Windows asset instead of silently falling back to the portable one.
+         See the rationale note in NAudio.csproj (#1407). -->
+    <TargetFrameworks Condition=" '$(DocsBuild)' != 'true' ">net9.0;net9.0-windows;net9.0-windows10.0.19041.0</TargetFrameworks>
     <TargetFramework Condition=" '$(DocsBuild)' == 'true' ">net9.0-windows10.0.19041.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Optional extras (extra demo/sample providers and helpers) for the NAudio audio library.</Description>
@@ -25,7 +29,10 @@
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio\NAudio.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0-windows10.0.19041.0')) ">
+  <!-- Gate on the platform, not on the 19041 floor: NAudio.Wasapi is plain net9.0 and
+       needs no minimum Windows version, so the plain net9.0-windows leg must get it too.
+       Testing IsTargetFrameworkCompatible against 19041 would drop it from that leg. -->
+  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
 

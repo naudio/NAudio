@@ -14,6 +14,7 @@ limit and fails the release build if exceeded.
 -->
 
  * Fixed the `NAudio` and `NAudio.Extras` meta-packages resolving their portable `net9.0` asset on projects targeting a plain `netX.0-windows` TFM (the WinForms/WPF template default), which silently dropped the entire Windows stack — no `WaveOut`, WASAPI, Media Foundation, ASIO, DMO or WinForms types, and `AudioFileReader` throwing "MP3 file reading requires the NAudio.Wasapi package". Both packages now also ship a plain `net9.0-windows` leg (#1407)
+ * **Breaking:** `AudioFileReader` now throws `NotSupportedException` instead of `InvalidOperationException` when the cross-platform build is asked for a format it cannot read, and the messages simply state that rather than suggesting an `NAudio.Wasapi` install that could never have helped (#1407)
 
 ### 3.0.0 (15 Aug 2026)
 

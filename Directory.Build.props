@@ -5,6 +5,15 @@
          apps with their own <Version> in the csproj override this. -->
     <VersionPrefix>3.0.1</VersionPrefix>
 
+    <!-- The sample/tool apps target net9.0 so they still build on the .NET 9
+         SDK, but the default roll-forward policy (Minor) refuses to cross a
+         major version — so with only the .NET 10 SDK installed they fail to
+         launch with "You must install .NET 9.0". LatestMajor lets the host
+         run them on the newest installed runtime instead. This only feeds
+         runtimeconfig.json generation, which class libraries don't emit, so
+         it's inert for the NAudio packages themselves. -->
+    <RollForward>LatestMajor</RollForward>
+
     <!-- Common NuGet package metadata. Per-package csprojs override
          individual properties when needed (e.g. the NAudio meta-package
          sets its own <Authors>Mark Heath &amp; Contributors</Authors>). -->

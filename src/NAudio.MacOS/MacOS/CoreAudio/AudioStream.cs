@@ -77,11 +77,20 @@ public sealed class AudioStream : AudioObject
     // Queries the virtual format as the original ASBD.
     // Required for accessing the original format for the 
     // player/recorder wrappers.
-    internal CoreAudioTypes.AudioStreamBasicDescription VirtualFormatNative => GetAudioStreamBasicDescriptionValue(
-        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-            AudioStreamProperties.kAudioStreamPropertyVirtualFormat
-        )
-    );
+    internal CoreAudioTypes.AudioStreamBasicDescription VirtualFormatNative
+    {
+        get => GetAudioStreamBasicDescriptionValue(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioStreamProperties.kAudioStreamPropertyVirtualFormat
+            )
+        );
+        set => SetAudioStreamBasicDescriptionValue(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioStreamProperties.kAudioStreamPropertyVirtualFormat
+            ),
+            value
+        );
+    }
 
     /// <summary>
     /// Provides the way for creating an event handle when the contents 

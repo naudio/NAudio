@@ -46,14 +46,14 @@ public sealed class RangedWaveFormat
     public WaveFormat Format => baseFormat;
 
     /// <summary>
-    /// The minimum inclusive bound of the acceptable sample range in application-provided formats.
+    /// The minimum inclusive bound of the acceptable sample rate range in application-provided formats.
     /// </summary>
-    public double AcceptableSampleRangeMin => rangeMin;
+    public double AcceptableSampleRateRangeMin => rangeMin;
 
     /// <summary>
-    /// The maximum inclusive bound of the acceptable sample range in application-provided formats.
+    /// The maximum inclusive bound of the acceptable sample rate range in application-provided formats.
     /// </summary>
-    public double AcceptableSampleRangeMax => rangeMax;
+    public double AcceptableSampleRateRangeMax => rangeMax;
 
     /// <summary>
     /// Tests whether the specified audio format can be used instead.

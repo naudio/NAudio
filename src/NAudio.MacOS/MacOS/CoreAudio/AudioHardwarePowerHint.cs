@@ -1,8 +1,6 @@
 // This interop definition was derived from the file AudioHardware.h of the Core Audio Framework.
 // See https://developer.apple.com/documentation/coreaudio for more information.
 
-#pragma warning disable IDE0055 // We want the properties to have a consistent view.
-
 namespace NAudio.MacOS.CoreAudio;
 
 /// <summary>
@@ -26,7 +24,7 @@ public enum AudioHardwarePowerHint : uint
     /// power. The info.plist value is "None" or the "AudioHardwarePowerHint" entry
     /// can be omitted entirely.
     /// </summary>
-    None             = 0,
+    None = 0,
     /// <summary>
     /// The system will choose to save power even at the expense of latency. The
     /// info.plist value is "Favor Saving Power"

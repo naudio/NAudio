@@ -25,6 +25,15 @@ public class ExtendedAudioFileWriterSettings
     public WaveFormat ProvidingFormat { get; set; }
 
     /// <summary>
+    /// Set to <see langword="true"/> to instruct the 
+    /// writer, if possible, to specify the output file
+    /// as IEEE floating-point samples. Typically
+    /// is only used for uncompressed formats,
+    /// and it is not meaningful when using a compressed format.
+    /// </summary>
+    public bool EmitIEEEFloatSamples { get; set; } = false;
+
+    /// <summary>
     /// For compressed formats, this defines the number of frames
     /// that each compressed packet will have. By default it is set to 1024.
     /// </summary>

@@ -74,9 +74,9 @@ public class ChannelConversionTests
             "Layouts do not match!"
         );
 
-        Assert.IsFalse(needsTranslation, "A stereo layout like the one specified should not need translation!");
+        Assert.That(needsTranslation, Is.False, "A stereo layout like the one specified should not need translation!");
 
-        Assert.IsFalse(needsExtensible, "A stereo layout like the one specified should not need a WaveFormatExtensible!");
+        Assert.That(needsExtensible, Is.False, "A stereo layout like the one specified should not need a WaveFormatExtensible!");
 
         Assert.DoesNotThrow(handle.Dispose);
     }
@@ -108,9 +108,9 @@ public class ChannelConversionTests
             "Layouts do not match!"
         );
 
-        Assert.IsFalse(needsTranslation, "A stereo layout like the one specified should not need translation!");
+        Assert.That(needsTranslation, Is.False, "A stereo layout like the one specified should not need translation!");
 
-        Assert.IsFalse(needsExtensible, "A stereo layout like the one specified should not need a WaveFormatExtensible!");
+        Assert.That(needsExtensible, Is.False, "A stereo layout like the one specified should not need a WaveFormatExtensible!");
 
         Assert.DoesNotThrow(handle.Dispose);
     }
@@ -136,9 +136,9 @@ public class ChannelConversionTests
             "Layouts do not match!"
         );
 
-        Assert.IsFalse(needsTranslation, "A mono layout like the one specified should not need translation!");
+        Assert.That(needsTranslation, Is.False, "A mono layout like the one specified should not need translation!");
 
-        Assert.IsFalse(needsExtensible, "A mono layout like the one specified should not need a WaveFormatExtensible!");
+        Assert.That(needsExtensible, Is.False, "A mono layout like the one specified should not need a WaveFormatExtensible!");
 
         Assert.DoesNotThrow(handle.Dispose);
     }
@@ -182,10 +182,10 @@ public class ChannelConversionTests
             "Layouts do not match!"
         );
 
-        Assert.IsFalse(needsTranslation, "A quad layout like the one specified should not need translation!");
+        Assert.That(needsTranslation, Is.False, "A quad layout like the one specified should not need translation!");
 
         // This requires an extensible format.
-        Assert.IsTrue(needsExtensible, "A quad layout like the one specified should require a WaveFormatExtensible!");
+        Assert.That(needsExtensible, Is.True, "A quad layout like the one specified should require a WaveFormatExtensible!");
 
         Assert.DoesNotThrow(handle.Dispose);
     }
@@ -229,9 +229,9 @@ public class ChannelConversionTests
             "Layouts do not match!"
         );
 
-        Assert.IsFalse(needsTranslation, "A layout like the one specified should not need translation!");
+        Assert.That(needsTranslation, Is.False, "A layout like the one specified should not need translation!");
 
-        Assert.IsFalse(needsExtensible, "A layout like the one specified should not require a WaveFormatExtensible!");
+        Assert.That(needsExtensible, Is.False, "A layout like the one specified should not require a WaveFormatExtensible!");
 
         Assert.DoesNotThrow(handle.Dispose);
     }

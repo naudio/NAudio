@@ -32,8 +32,6 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
     )]
     private void AssignClientFormat(WaveFormat format)
     {
-        if (format is null) { throw new ArgumentException("OutputFormat property in settings object was not assigned to a valid WaveFormat instance.", "settings"); }
-
         var asbd = MacUtils.ConstructASBDFromWaveFormat(format);
 
         ExtendedAudioFileException.ThrowIfError(

@@ -1,5 +1,6 @@
 
 using System;
+using System.Diagnostics;
 
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
@@ -105,8 +106,12 @@ public partial class CoreAudioPlayer
     }
 
     // Performs the actual initialization of the player.
-    private void Initialize()
+    private void Initialize(bool isInit = false)
     {
+        // Initial variables
+        int selectedStream = -1;
+        bool requiresResampler = false;
+        var providerFormat = originalProvider.WaveFormat;
         // Clear the player's non-interleaved flag.
         flags &= ~CoreAudioPlayerStateFlags.NonInterleaved;
         // Get the streams.
@@ -115,11 +120,8 @@ public partial class CoreAudioPlayer
         {
             throw new InvalidOperationException("Could not find any stream to render to");
         }
-        // Find & select a stream that has the best format for the provided format.
-        var providerFormat = originalProvider.WaveFormat;
 
-        int selectedStream = -1;
-        bool requiresResampler = false;
+        // Find & select a stream that has the best format for the provided format.
         AudioStreamBasicDescription asbdToUse = default;
 
         for (int I = 0; I < streams.Length; I++)
@@ -148,6 +150,21 @@ public partial class CoreAudioPlayer
                 break;
             }
         }
+
+        /*
+        // mdcdi1315: This is for exclusive mode support, but it seems that does not work
+        // in the way we expect to, so probably this is not needed.
+
+        // If Exclusive mode is applied to the device,
+        // we can try specifying the format of the provider directly.
+        if (selectedDevice.HogMode && TryConstructingExclusiveModeStream(streams, providerFormat))
+        {
+            // We do not need the resampler; HAL is working for us now.
+            selectedStream = 0;
+            requiresResampler = false;
+            System.Console.WriteLine("We have assigned our own audio format to HAL.");
+        }
+        */
 
         uint reportedLatency = 0U;
         foreach (var s in streams) { reportedLatency += s.Latency; }
@@ -240,20 +257,30 @@ public partial class CoreAudioPlayer
 
         try
         {
-            // Release any previously allocated I/O procedure.
-            ioProcedure?.Dispose();
+            // Release any previously allocated I/O procedure, if so required.
+            if (isInit) { ioProcedure?.Dispose(); }
             // Now, enable only the stream(s) we need.
             bool[] enabledStreams = new bool[streams.Length];
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.NonInterleaved))
             {
                 // Non-interleaved case
-                ioProcedure = new NonInterleavedProcedure(selectedDevice);
+                if (isInit || ioProcedure is InterleavedProcedure)
+                {
+                    ioProcedure?.Dispose();
+                    ioProcedure = null;
+                    ioProcedure = new NonInterleavedProcedure(selectedDevice);
+                }
                 Array.Fill(enabledStreams, true);
             }
             else
             {
                 // Interleaved case
-                ioProcedure = new InterleavedProcedure(selectedDevice);
+                if (isInit || ioProcedure is NonInterleavedProcedure)
+                {
+                    ioProcedure?.Dispose();
+                    ioProcedure = null;
+                    ioProcedure = new InterleavedProcedure(selectedDevice);
+                }
                 for (int I = 0; I < streams.Length; I++)
                 {
                     enabledStreams[I] = I == selectedStream;
@@ -276,5 +303,108 @@ public partial class CoreAudioPlayer
             MacUtils.EnsureDisposableObjectsDisposed(ioProcedure, virtFormatChanged, selectedSource);
             throw;
         }
+    }
+
+    // Constructs appropriate stream descriptions for initializing
+    // an audio device into the exclusive mode, where we can specify
+    // any PCM format of our liking.
+    // Probably this does not work, because the HAL does whatever it wants with
+    // the streams, even if so setting to exclusive mode and then doing all of this 
+    // does not assign the format we want to use.
+    private bool TryConstructingExclusiveModeStream(AudioStream[] streams, WaveFormat providerFormat)
+    {
+        bool isIeeeFloat;
+        uint validBitsPerSample;
+        if (providerFormat is WaveFormatExtensible ex)
+        {
+            isIeeeFloat = ex.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
+            validBitsPerSample = (uint)ex.ValidBitsPerSample;
+        }
+        else
+        {
+            isIeeeFloat = providerFormat.Encoding == WaveFormatEncoding.IeeeFloat;
+            validBitsPerSample = (uint)providerFormat.BitsPerSample;
+        }
+        if (HasStateFlagFast(CoreAudioPlayerStateFlags.NonInterleaved))
+        {
+            uint channelCount = 0U;
+            AudioStreamBasicDescription tempAsbd, ccAsbd;
+            foreach (var s in streams)
+            {
+                tempAsbd = s.VirtualFormatNative;
+                channelCount += tempAsbd.mChannelsPerFrame;
+                ccAsbd = new();
+                ccAsbd.mBytesPerPacket = 1U;
+                ccAsbd.mBitsPerChannel = validBitsPerSample;
+                ccAsbd.mSampleRate = providerFormat.SampleRate;
+                ccAsbd.mChannelsPerFrame = tempAsbd.mChannelsPerFrame;
+                ccAsbd.mFormatID = AudioFormatIDs.kAudioFormatLinearPCM;
+                ccAsbd.mFormatFlags = AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
+                ccAsbd.mFramesPerPacket = ccAsbd.mBytesPerFrame = (uint)(providerFormat.BitsPerSample / 8);
+                if (isIeeeFloat)
+                {
+                    ccAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsFloat;
+                }
+                else
+                {
+                    ccAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsSignedInteger;
+                }
+                if (!BitConverter.IsLittleEndian) { ccAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsBigEndian; }
+                try
+                {
+                    s.VirtualFormatNative = ccAsbd;
+                }
+                catch (CoreAudioException e)
+                {
+                    // If an assignment fails, we cannot define our own format;
+                    // try with the resampler instead.
+                    // System.Console.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
+                    Debug.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
+                    return false;
+                }
+            }
+            if (channelCount != providerFormat.Channels)
+            {
+                throw new InvalidOperationException("Attempted to initialize exclusive mode on a device not matching with the provider's channel count.");
+            }
+        }
+        else
+        {
+            // Pick the first stream and modify it for our needs.
+            var ctAsbd = new AudioStreamBasicDescription();
+            ctAsbd.mBytesPerPacket = 1U;
+            ctAsbd.mBitsPerChannel = validBitsPerSample;
+            ctAsbd.mSampleRate = providerFormat.SampleRate;
+            ctAsbd.mFormatID = AudioFormatIDs.kAudioFormatLinearPCM;
+            ctAsbd.mChannelsPerFrame = (uint)providerFormat.Channels;
+            ctAsbd.mFramesPerPacket = ctAsbd.mBytesPerFrame = (uint)(providerFormat.BitsPerSample / 8) * ctAsbd.mChannelsPerFrame;
+            if (providerFormat.Channels != streams[0].VirtualFormatNative.mChannelsPerFrame)
+            {
+                // System.Console.WriteLine("[CoreAudioPlayerInit]: # of Channels do not match");
+                return false;
+            }
+            else if (isIeeeFloat)
+            {
+                ctAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsFloat;
+            }
+            else
+            {
+                ctAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsSignedInteger;
+            }
+            if (!BitConverter.IsLittleEndian) { ctAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsBigEndian; }
+            try
+            {
+                streams[0].VirtualFormatNative = ctAsbd;
+            }
+            catch (CoreAudioException e)
+            {
+                // System.Console.WriteLine("[CoreAudioPlayerInit/INTERLEAVED]: Cannot construct exclusive mode player: " + e);
+                Debug.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
+                return false;
+            }
+        }
+
+        // System.Console.WriteLine("[CoreAudioPlayerInit]: Hog mode assignment succeeded");
+        return true;
     }
 }

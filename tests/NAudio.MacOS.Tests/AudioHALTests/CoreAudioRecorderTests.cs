@@ -44,7 +44,7 @@ public class CoreAudioRecorderTests
 
         Thread.Sleep(2000);
 
-        Assert.Greater(recordedBytes, 0);
+        Assert.That(recordedBytes, Is.GreaterThan(0));
 
         Assert.DoesNotThrow(recorder.StopRecording);
 
@@ -136,7 +136,7 @@ public class CoreAudioRecorderTests
             }
         });
 
-        Assert.Greater(recordedBytes, 0);
+        Assert.That(recordedBytes, Is.GreaterThan(0));
 
         Assert.DoesNotThrow(recorder.StopRecording);
 

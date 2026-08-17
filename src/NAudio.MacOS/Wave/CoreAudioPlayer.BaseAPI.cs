@@ -325,7 +325,10 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         var streamFormat = OutputWaveFormat;
         try
         {
-            return (long)(CoreAudioFunctions.GetCurrentDeviceTime(selectedDevice, streamFormat) * streamFormat.AverageBytesPerSecond);
+            long position = (long)(CoreAudioFunctions.GetCurrentDeviceTime(selectedDevice, streamFormat) * streamFormat.AverageBytesPerSecond);
+            long drift = position % streamFormat.BlockAlign;
+            if (drift > 0L) { position += streamFormat.BlockAlign - drift; }
+            return position;
         }
         catch (InvalidOperationException) // Device not running
         {
@@ -350,7 +353,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
                 throw new InvalidOperationException("This instance has already been initialized before.");
             }
             originalProvider = waveProvider;
-            Initialize();
+            Initialize(true);
             // The below exception is thrown if the we forget to
             // call the OnInitializationComplete method inside Initialize().
             if (!HasStateFlagFast(CoreAudioPlayerStateFlags.Initialized))

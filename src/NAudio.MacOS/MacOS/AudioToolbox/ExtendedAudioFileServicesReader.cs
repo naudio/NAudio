@@ -318,7 +318,8 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
                 // file's sample frames.
                 double newPosDouble = (value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate;
                 long newPos = (long)newPosDouble;
-                // Ensure that the file's position is in a BlockAlign multiple.
+                // If we have a fractional frame position, 
+                // assume that is a whole frame, so add one frame.
                 if (newPos != newPosDouble) { newPos++; }
                 long length = LengthInFrames;
                 // Because the above calculation is just an estimated value,

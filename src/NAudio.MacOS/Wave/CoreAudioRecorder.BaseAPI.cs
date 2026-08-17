@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
@@ -14,7 +15,7 @@ namespace NAudio.Wave;
 
 /// <summary>
 /// Provides a class for capturing audio from a specified audio device using the 
-/// macOS HAL API for accessing the captured data.
+/// macOS audio HAL API for accessing the captured data.
 /// </summary>
 /// <seealso cref="MacOS.CoreAudio"/>
 [SupportedOSPlatform("ios2.0")]
@@ -185,6 +186,12 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     #endregion
 
     #region Public API
+
+    /// <summary>
+    /// Gets the selected audio device where the recorder retrieves data from.
+    /// </summary>
+    [NotNull]
+    public AudioDevice Device => selectedDevice;
 
     /// <summary>Call this method once per instance to set up the recorder for recording.</summary>
     /// <remarks>

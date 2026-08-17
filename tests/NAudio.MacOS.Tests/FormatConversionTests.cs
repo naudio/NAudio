@@ -170,8 +170,8 @@ public class FormatConversionTests
                     "The wave format encoding was not IeeeFloat!"
                 );
                 Assert.That(
-                    (uint)outFormat.BitsPerSample,
-                    Is.EqualTo(asbd.mBitsPerChannel),
+                    asbd.mBitsPerChannel,
+                    Is.EqualTo((uint)outFormat.BitsPerSample),
                     "Constructed bits per sample must match with the source format!"
                 );
             }
@@ -183,10 +183,15 @@ public class FormatConversionTests
                     "The wave format encoding was not Extensible!"
                 );
                 Assert.That(
-                    ((WaveFormatExtensible)outFormat).SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT,
+                    ((WaveFormatExtensible)outFormat).SubFormat,
+                    Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT),
                     "The wave format sub-format was not IeeeFloat!"
                 );
-                Assert.AreEqual(asbd.mBitsPerChannel, ((WaveFormatExtensible)outFormat).ValidBitsPerSample);
+                Assert.That(
+                    asbd.mBitsPerChannel,
+                    Is.EqualTo((uint)((WaveFormatExtensible)outFormat).ValidBitsPerSample),
+                    "The number of valid bits per sample must match with the source format!"
+                );
             }
         }
         else
@@ -196,18 +201,28 @@ public class FormatConversionTests
                 Assert.That(
                     outFormat.Encoding == WaveFormatEncoding.Pcm
                 );
-                Assert.AreEqual(asbd.mBitsPerChannel, outFormat.BitsPerSample);
+                Assert.That(
+                    asbd.mBitsPerChannel,
+                    Is.EqualTo((uint)outFormat.BitsPerSample),
+                    "Constructed bits per sample must match with the source format!"
+                );
             }
             else
             {
                 Assert.That(
-                    outFormat.Encoding == WaveFormatEncoding.Extensible &&
-                    ((WaveFormatExtensible)outFormat).SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM
+                    outFormat.Encoding,
+                    Is.EqualTo(WaveFormatEncoding.Extensible),
+                    "The wave format encoding was not Extensible!"
                 );
                 Assert.That(
-                    (uint)((WaveFormatExtensible)outFormat).ValidBitsPerSample,
-                    Is.EqualTo(asbd.mBitsPerChannel),
-                    "Constructed bits per sample must match with the source format!"
+                    ((WaveFormatExtensible)outFormat).SubFormat,
+                    Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_PCM),
+                    "The wave format sub-format was not PCM!"
+                );
+                Assert.That(
+                    asbd.mBitsPerChannel,
+                    Is.EqualTo((uint)((WaveFormatExtensible)outFormat).ValidBitsPerSample),
+                    "Constructed valid bits per sample must match with the source format!"
                 );
             }
         }

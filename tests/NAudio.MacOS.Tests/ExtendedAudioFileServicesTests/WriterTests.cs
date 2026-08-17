@@ -14,7 +14,7 @@ namespace NAudio.MacOS.Tests.ExtendedAudioFileServicesTests;
 [TestFixture]
 public class WriterTests
 {
-    private static string CreateRandomFileName() => Path.Join(Environment.CurrentDirectory, Path.GetRandomFileName());
+    private static string CreateRandomFileName() => Path.Join(TestContext.CurrentContext.WorkDirectory, Path.GetRandomFileName());
 
     [OneTimeSetUp]
     public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 4);
@@ -103,7 +103,7 @@ public class WriterTests
         Assert.DoesNotThrow(writer.Dispose);
 
         // We can't write after the writer object is disposed of
-        Assert.IsFalse(writer.CanWrite);
+        Assert.That(writer.CanWrite, Is.False);
 
         // This should throw once the writer object is disposed of
         Assert.Throws<ObjectDisposedException>(() => _ = writer.Position);

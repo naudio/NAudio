@@ -1,6 +1,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -79,6 +80,38 @@ internal static partial class MacUtils
             // If deemed necessary in the future however, this should be changed.
             return Unsafe.ReadUnaligned<uint>(ref dest.GetPinnableReference());
         }
+    }
+
+    /// <summary>
+    /// From a previously constructed constant value 
+    /// (that is retrieved from <see cref="ConstructUIntConstantValueFromString"/>),
+    /// it returns the original string provided to it.
+    /// </summary>
+    /// <param name="value">The <see cref="uint"/> constant value to convert.</param>
+    /// <returns>The string representing the provided <paramref name="value"/>.</returns>
+    public static string GetCharCodeFromUIntConstantValue(uint value)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            value = BinaryPrimitives.ReverseEndianness(value);
+        }
+        unsafe { return new((sbyte*)&value, 0, sizeof(uint)); }
+    }
+
+    /// <summary>
+    /// From a previously constructed constant value 
+    /// (that is retrieved from <see cref="ConstructUIntConstantValueFromString"/>),
+    /// it returns the original string provided to it.
+    /// </summary>
+    /// <param name="value">The <see cref="uint"/> constant value to convert.</param>
+    /// <returns>The string representing the provided <paramref name="value"/>.</returns>
+    public static string GetCharCodeFromIntConstantValue(int value)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            value = BinaryPrimitives.ReverseEndianness(value);
+        }
+        unsafe { return new((sbyte*)&value, 0, sizeof(int)); }
     }
 
     private static double ConvertFramesToSeconds(SMPTETimeType type, short frames) => frames / (type switch

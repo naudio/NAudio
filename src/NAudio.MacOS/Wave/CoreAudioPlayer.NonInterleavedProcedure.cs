@@ -11,12 +11,12 @@ public partial class CoreAudioPlayer
 {
     private sealed class NonInterleavedProcedure : PlayerProcedure
     {
-        // bufferStride: Number of bytes to skip in order 
-        // to access the next sample of the same channel.
-        private uint bufferStride;
-        private uint channelCount;
         private uint bytesPerFrame;
         private byte[] interleavedBuffer;
+        // interleavedBufferStride: Number of bytes to skip in order 
+        // to access the next sample of the same channel in the
+        // interleaved buffer.
+        private uint interleavedBufferStride;
 
         public NonInterleavedProcedure(AudioDevice dev) : base(dev) { }
 
@@ -42,7 +42,7 @@ public partial class CoreAudioPlayer
             uint read = ReadFromProvider(source, framesToFill);
             if (read == 0U) { return true; }
             // Reassign frames to fill to bound it by the number of read frames.
-            framesToFill = Math.Min(framesToFill, read / bufferStride);
+            framesToFill = Math.Min(framesToFill, read / interleavedBufferStride);
 
             // Now place non-interleaved data into the player's buffers.
             for (uint I = 0U, J = 0U; I < cBuffers; I++)
@@ -53,17 +53,30 @@ public partial class CoreAudioPlayer
                     // Unused stream, move to the next one
                     continue;
                 }
+                // The HAL buffer rep for a single frame is the below on non-interleaved audio:
+                //
+                // |----|----|----|----|
+                // |CH 0|CH 1|CH 2|CH n|
+                // |----|----|----|----|
+                // |---sampleStride----| // The size of the sample in bytes is sampleStride = bytesPerFrame * bufferChannelCount.
+                //
+                // To go to the next channel, a jump by bytesPerFrame bytes is required.
+                // To go to first channel of the next sample, a jump by bytesPerFrame * bufferChannelCount is required.
+                // So, accessing a sample at e.g. channel 2 in the fifth frame would require this formula:
+                // 5 * bytesPerFrame * bufferChannelCount + (2 * bytesPerFrame)
                 uint bufferChannelCount = buffer.mNumberChannels;
+                uint sampleStride = bytesPerFrame * bufferChannelCount;
                 for (uint nch = 0U; nch < bufferChannelCount; nch++, J++)
                 {
                     // Pass the data to the current HAL buffer.
-                    for (uint K = 0U, BI = J * bytesPerFrame; K < framesToFill; K++, BI += bufferStride)
+                    uint channelIndex = nch * bytesPerFrame;
+                    for (uint K = 0U, BI = J * bytesPerFrame; K < framesToFill; K++, BI += interleavedBufferStride)
                     {
                         Unsafe.CopyBlockUnaligned(
                             // Note that this reinterpretation is safe here:
                             // We are reinterpeting an unmanaged 
                             // memory block which cannot be moved.
-                            ref *((byte*)buffer.mData.ToPointer() + (K * bytesPerFrame * bufferChannelCount)), // Equivalent to: ref Unsafe.Add(ref Unsafe.AsRef<byte>(buffer.mData.ToPointer()), (int)(K * bytesPerFrame * buffer.mNumberChannels)))
+                            ref *((byte*)buffer.mData.ToPointer() + (K * sampleStride + channelIndex)), // Equivalent to: ref Unsafe.Add(ref Unsafe.AsRef<byte>(buffer.mData.ToPointer()), (int)(K * channelStride + channelIndex))
                             ref interleavedBuffer[BI],
                             bytesPerFrame
                         );
@@ -79,7 +92,7 @@ public partial class CoreAudioPlayer
         {
             int read;
             uint totallyRead = 0U;
-            Span<byte> bufferTarget = interleavedBuffer.AsSpan(0, (int)(framesToFill * bufferStride));
+            Span<byte> bufferTarget = interleavedBuffer.AsSpan(0, (int)(framesToFill * interleavedBufferStride));
             // Make sure to fill the entire intermediate buffer, if possible.
             while (bufferTarget.Length > 0)
             {
@@ -93,7 +106,7 @@ public partial class CoreAudioPlayer
 
         private void ResizeBufferIfRequired(uint numberOfSamplesToEnsure)
         {
-            var byteCount = bufferStride * numberOfSamplesToEnsure;
+            var byteCount = interleavedBufferStride * numberOfSamplesToEnsure;
             if (interleavedBuffer is null || byteCount > interleavedBuffer.LongLength)
             {
                 interleavedBuffer = new byte[byteCount];
@@ -105,9 +118,10 @@ public partial class CoreAudioPlayer
             set
             {
                 var asbd = value.ReinterpretedFormat;
-                bufferStride = asbd.mBytesPerFrame;
-                channelCount = asbd.mChannelsPerFrame;
-                bytesPerFrame = bufferStride / channelCount;
+                // We will always receieve a format that is interleaved -
+                // so no need to check for the non-interleaved flag.
+                interleavedBufferStride = asbd.mBytesPerFrame;
+                bytesPerFrame = interleavedBufferStride / asbd.mChannelsPerFrame;
                 // Allocate 15 samples for each channel.
                 // We will increase the size of this buffer if so required.
                 ResizeBufferIfRequired(15U);

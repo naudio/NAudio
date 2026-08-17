@@ -103,7 +103,7 @@ public class MacAudioConverterTests
             totalRead += br;
         } while (br > 0);
 
-        Assert.Greater(totalRead, 0);
+        Assert.That(totalRead, Is.GreaterThan(0));
 
         Assert.DoesNotThrow(cnv.Dispose);
 

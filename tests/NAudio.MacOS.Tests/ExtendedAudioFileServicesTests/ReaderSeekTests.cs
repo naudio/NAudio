@@ -73,7 +73,10 @@ public class ReaderSeekTests
     // converting from PCM to MP3 frames. Instead, we use AAC, which is also lossy.
     private static string CreateAacFileForSeekTest()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"naudio_extfilereader_seek_{Guid.NewGuid():N}.aac");
+        var path = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            $"naudio_extfilereader_seek_{Guid.NewGuid():N}.aac"
+        );
         ExtendedAudioFileServicesWriter writer = null;
         try
         {
@@ -179,7 +182,10 @@ public class ReaderSeekTests
 
     private static string CreateTempSineWav(int seconds)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"naudio_extfilereader_seek_{Guid.NewGuid():N}.wav");
+        var path = Path.Combine(
+            TestContext.CurrentContext.WorkDirectory,
+            $"naudio_extfilereader_seek_{Guid.NewGuid():N}.wav"
+        );
         var signal = new SignalGenerator(44100, 1)
         {
             Type = SignalGeneratorType.Sin,

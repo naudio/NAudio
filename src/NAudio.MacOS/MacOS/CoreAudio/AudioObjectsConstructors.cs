@@ -44,8 +44,10 @@ internal static class AudioObjectsConstructors
         uint returnValue;
         uint size = sizeof(uint);
         var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-                    baseClass ? AudioObjectProperties.kAudioObjectPropertyBaseClass : AudioObjectProperties.kAudioObjectPropertyClass
-                );
+            baseClass ?
+                AudioObjectProperties.kAudioObjectPropertyBaseClass :
+                AudioObjectProperties.kAudioObjectPropertyClass
+        );
         ThrowOnStatusError(
             address,
             NativeMethods.AudioObjectGetPropertyData(id, address, ref size, new(&returnValue))

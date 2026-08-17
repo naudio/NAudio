@@ -22,7 +22,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
     // the registrations in a thread-safe manner, which we first add the mapping
     // and then the doing the native call to define the handler.
     // By defining the handler as a managed object as the type of the value
-    // in the mappings dictionary, we avoid completely using the GC handle API
+    // in the mappings dictionary, we completely avoid using the GC handle API
     // and instead the client data parameter recieves the allocated handler ID
     // that is used in the below dictionary object to get the handler.
     // We can in fact do this because even on 32-bit platforms an IntPtr is an int value,

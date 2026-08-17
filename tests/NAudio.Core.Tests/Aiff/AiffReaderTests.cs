@@ -140,6 +140,31 @@ public class AiffReaderTests
         Assert.That(actual, Is.EqualTo(expected));
     }
 
+    // The AIFF spec declares ckSize as a signed 32-bit long, so sound data cannot legally
+    // exceed 2GB. NAudio reads the field as unsigned, so a non-conformant writer can declare
+    // more than int.MaxValue bytes - reject that rather than silently truncating it.
+    [Test]
+    [Category("UnitTest")]
+    public void AiffWithSsndLengthBeyond2GbThrowsFormatException()
+    {
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 16, soundData: new byte[16]);
+
+        // Overwrite the SSND chunk's ckSize with 0x90000000 (~2.4GB). Layout up to it:
+        // FORM hdr + form type (12) + COMM hdr + COMM body (8 + 18) + "SSND" (4) = 42.
+        const int ssndSizeField = 12 + 8 + 18 + 4;
+        Assert.That(Encoding.ASCII.GetString(aiff, ssndSizeField - 4, 4), Is.EqualTo("SSND"));
+        aiff[ssndSizeField + 0] = 0x90;
+        aiff[ssndSizeField + 1] = 0x00;
+        aiff[ssndSizeField + 2] = 0x00;
+        aiff[ssndSizeField + 3] = 0x00;
+
+        // The chunk has to appear to fit inside the stream to get as far as the length check,
+        // so present the header over a stream claiming to be 3GB long.
+        var stream = new SparseStream(aiff, 3L * 1024 * 1024 * 1024);
+        var ex = Assert.Throws<FormatException>(() => { using var _ = new AiffFileReader(stream); });
+        Assert.That(ex.Message, Does.Contain("2GB"));
+    }
+
     // Regression: a Stream may legitimately return fewer bytes than requested, which left
     // Read byte-swapping a partial sample frame. See issue #1405.
     [Test]
@@ -201,6 +226,56 @@ public class AiffReaderTests
         {
             Assert.That(actual[i], Is.EqualTo(expected[i]).Within(1e-6f), $"sample {i}");
         }
+    }
+
+    // Serves a small header and reports a much larger Length, so a test can present an
+    // oversized chunk without allocating gigabytes. Everything past the header reads as zero.
+    private sealed class SparseStream : Stream
+    {
+        private readonly byte[] header;
+
+        public SparseStream(byte[] header, long length)
+        {
+            this.header = header;
+            Length = length;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length { get; }
+        public override long Position { get; set; }
+
+        public override int Read(byte[] buffer, int offset, int count)
+            => Read(buffer.AsSpan(offset, count));
+
+        public override int Read(Span<byte> buffer)
+        {
+            int count = (int)Math.Min(buffer.Length, Length - Position);
+            if (count <= 0) return 0;
+            for (int i = 0; i < count; i++)
+            {
+                long at = Position + i;
+                buffer[i] = at < header.Length ? header[at] : (byte)0;
+            }
+            Position += count;
+            return count;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            Position = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => Position + offset,
+                _ => Length + offset
+            };
+            return Position;
+        }
+
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     // A seekable stream that never satisfies a read in full, the way network, deflate and

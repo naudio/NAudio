@@ -112,8 +112,15 @@ public class AiffFileReader : WaveStream
                 // against the chunk length as well as advancing the start. A file declaring a
                 // bigger offset than the chunk holds has no readable sound data at all.
                 long soundDataLength = (long)nextChunk.ChunkLength - 8 - offset;
+                if (soundDataLength > int.MaxValue)
+                {
+                    // ckSize is a signed 32-bit long in the AIFF spec, so sound data cannot
+                    // legally exceed 2GB - a larger value means the size field is garbage.
+                    throw new FormatException(
+                        $"Invalid AIFF file - SSND sound data length {soundDataLength} exceeds the 2GB AIFF limit.");
+                }
                 dataChunkPosition = nextChunk.ChunkStart + 16 + offset;
-                dataChunkLength = soundDataLength > 0 ? (int)Math.Min(soundDataLength, int.MaxValue) : 0;
+                dataChunkLength = soundDataLength > 0 ? (int)soundDataLength : 0;
                 br.BaseStream.Position += (nextChunk.ChunkLength - 8);
             }
             else
@@ -234,7 +241,7 @@ public class AiffFileReader : WaveStream
             // sometimes there is more junk at the end of the file past the data chunk
             if (Position + count > dataChunkLength)
             {
-                count = dataChunkLength - (int)Position;
+                count = (int)(dataChunkLength - Position);
                 // dataChunkLength itself may not be a whole number of blocks
                 // (truncated/malformed SSND); the byte-swap loops below assume
                 // complete samples, so round down to the nearest block.

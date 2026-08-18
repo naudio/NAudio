@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Runtime.Versioning;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -18,6 +19,8 @@ namespace NAudio.MacOS.AudioToolbox;
 /// currently initialized internally and cannot be extended. <br />
 /// If you want to use this class, see the methods on the <see cref="ExtendedAudioFileWriter"/> class.
 /// </summary>
+[SupportedOSPlatform("ios2.1")]
+[SupportedOSPlatform("macos10.4")]
 public abstract class ExtendedAudioFileServicesWriter : Stream
 {
     private long length;
@@ -376,6 +379,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     /// <param name="buffer">The buffer of audio data to provide to the file writer.</param>
     public unsafe sealed override void Write(ReadOnlySpan<byte> buffer)
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         var outFormat = settings.ProvidingFormat;
         uint bufferLength = (uint)buffer.Length;
         uint numFramesToWrite = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outFormat);

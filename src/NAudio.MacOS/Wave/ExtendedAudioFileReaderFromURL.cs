@@ -13,7 +13,7 @@ namespace NAudio.Wave;
 /// file data that you will recieve will not ever be compressed formats.
 /// </summary>
 [SupportedOSPlatform("ios2.1")]
-[SupportedOSPlatform("macos10.4")]
+[SupportedOSPlatform("macos10.5")]
 public sealed class ExtendedAudioFileReaderFromURL : ExtendedAudioFileServicesReader
 {
     private readonly object url;

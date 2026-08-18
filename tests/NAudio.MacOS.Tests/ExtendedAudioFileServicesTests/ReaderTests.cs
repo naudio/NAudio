@@ -48,7 +48,7 @@ public class ReaderTests
     }
 
     [OneTimeSetUp]
-    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 4);
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
 
     [Test]
     public void CanReadARandomFile_DefaultSettings() => CreateFilePathReader();
@@ -74,7 +74,7 @@ public class ReaderTests
     private static void ReaderCommon(ExtendedAudioFileServicesReader reader)
     {
         // You cannot write to a reader
-        Assert.IsFalse(reader.CanWrite);
+        Assert.That(reader.CanWrite, Is.False);
 
         var settings = reader.Settings;
 
@@ -188,7 +188,7 @@ public class ReaderTests
         read = reader.Read(buffer);
 
         // The call should succeed, provided that we give a valid audio file that has a length of several minutes.
-        Assert.Greater(read, 0);
+        Assert.That(read, Is.GreaterThan(0));
 
         // Make a buffer less than BlockAlign to verify that it throws when the buffer is not at least a full sample frame.
         buffer = new byte[reader.WaveFormat.BlockAlign - 1];
@@ -199,9 +199,9 @@ public class ReaderTests
         Assert.DoesNotThrow(reader.Dispose);
 
         // You cannot read/seek from a disposed reader
-        Assert.IsFalse(reader.CanRead);
+        Assert.That(reader.CanRead, Is.False);
 
-        Assert.IsFalse(reader.CanSeek);
+        Assert.That(reader.CanSeek, Is.False);
 
         // All of the below calls must throw ObjectDisposedException.
         Assert.Throws<ObjectDisposedException>(() => _ = reader.PositionInFrames);

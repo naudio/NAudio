@@ -7,7 +7,7 @@ using NUnit.Framework;
 
 namespace NAudio.MacOS.Tests;
 
-// Tests that verify the four char conversion algorithms reliability.
+// Tests that verify the four char code conversion algorithms reliability.
 // In both cases, the constants that are used and converted are known
 // constants as well as their four char code counterparts (from which
 // they are constructed from). These conversions are used in

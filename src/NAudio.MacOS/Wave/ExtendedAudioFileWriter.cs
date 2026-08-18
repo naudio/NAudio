@@ -67,6 +67,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
     /// <returns>A new instance of the <see cref="ExtendedAudioFileWriter" /> class.</returns>
     /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="url"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
+    [SupportedOSPlatform("macos10.5")]
     public static ExtendedAudioFileWriter CreateFromURL(
         Uri url,
         ExtendedAudioFileWriterSettings settings,
@@ -119,6 +120,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
     /// <returns>A new instance of the <see cref="ExtendedAudioFileWriter" /> class.</returns>
     /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="filePath"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
+    [SupportedOSPlatform("macos10.5")]
     public static ExtendedAudioFileWriter CreateFromFilePath(
         string filePath,
         ExtendedAudioFileWriterSettings settings,

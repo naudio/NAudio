@@ -104,7 +104,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
     /// <summary>
     /// Provides the data required to invoke the
-    /// playback stopped event from SynchronizationContext.
+    /// playback stopped event from a SynchronizationContext.
     /// </summary>
     /// <param name="Player">The player to pass to the handler as the 'sender'</param>
     /// <param name="Handler">The handler to invoke.</param>
@@ -262,10 +262,10 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
     /// <inheritdoc />
     /// <remarks>
-    /// Note that this property can only 
-    /// return <see cref="PlaybackState.Stopped"/> or 
+    /// Note that this property can only
+    /// return <see cref="PlaybackState.Stopped"/> or
     /// <see cref="PlaybackState.Playing"/> states;
-    /// See remarks section in <see cref="Pause"/> 
+    /// See remarks section in <see cref="Pause"/>
     /// to get an explanation why this happens.
     /// </remarks>
     public PlaybackState PlaybackState => ioProcedure is null ?
@@ -404,12 +404,26 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// Disposes this <see cref="CoreAudioPlayer"/> instance. <br />
     /// Thread-safe.
     /// </summary>
+    /// <remarks>
+    /// Note that this method will probably throw when the device
+    /// used to initialize the player is gone; so, expect to catch
+    /// <see cref="AggregateException"/> for this particular case.
+    /// </remarks>
+    /// <exception cref="AggregateException">One or more native objects were failed to be disposed of.</exception>
     public void Dispose()
     {
         Monitor.Enter(lockObject);
         try
         {
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.Disposed)) { return; }
+            // It has to be noted that if the player is destroyed after
+            // the device was removed, there is no need to dispatch
+            // a playback stopped event.
+            if ((!HasStateFlagFast(CoreAudioPlayerStateFlags.Invalidated)) && ioProcedure is not null && ioProcedure.IsRunning)
+            {
+                FirePlaybackStopped(new());
+            }
+            // Dispose of any objects we can dispose of
             MacUtils.EnsureDisposableObjectsDisposed(
                 deviceWillGoAway,
                 ioProcedure,

@@ -7,7 +7,8 @@ using NAudio.MacOS.AudioToolbox.Interop;
 namespace NAudio.MacOS.AudioToolbox;
 
 /// <summary>
-/// Provides the base exception type for exceptions originating from the usage of the 
+/// Provides the exception type for errors
+/// originating from the usage of the
 /// Extended Audio File Services API.
 /// </summary>
 public class ExtendedAudioFileException : AudioFileException

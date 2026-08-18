@@ -7,7 +7,9 @@ using NAudio.MacOS.AudioToolbox.Interop;
 namespace NAudio.MacOS.AudioToolbox;
 
 /// <summary>
-/// Provides the exception related to audio converter wrapper errors.
+/// Provides the exception type for errors
+/// originating from the usage of the
+/// Audio Converter Services API.
 /// </summary>
 public sealed class AudioConverterException : AudioToolboxException
 {

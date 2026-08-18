@@ -458,6 +458,12 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// Disposes this <see cref="CoreAudioRecorder"/> instance. <br />
     /// Thread-safe.
     /// </summary>
+    /// <remarks>
+    /// Note that this method will probably throw when the device
+    /// used to initialize the recorder is gone; so, expect to catch
+    /// <see cref="AggregateException"/> for this particular case.
+    /// </remarks>
+    /// <exception cref="AggregateException">One or more native objects were failed to be disposed of.</exception>
     public void Dispose()
     {
         Monitor.Enter(lockObject);
@@ -472,6 +478,10 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
                 virtualFormatChanged,
                 deviceWasRemoved
             );
+
+            ioProcedure = null;
+            streamsChanged = null;
+            virtualFormatChanged = null;
         }
         finally
         {

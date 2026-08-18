@@ -2,6 +2,7 @@
 using System;
 using System.Numerics;
 using System.Threading;
+using System.Runtime.Versioning;
 using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
@@ -17,6 +18,8 @@ namespace NAudio.MacOS.AudioToolbox;
 /// Instead, use the dedicated subclasses of this class, 
 /// located at the <see cref="NAudio.Wave"/> namespace.
 /// </summary>
+[SupportedOSPlatform("ios2.1")]
+[SupportedOSPlatform("macos10.4")]
 public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
 {
     private bool disposed;
@@ -247,6 +250,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
     /// </remarks>
     public sealed override unsafe int Read(Span<byte> buffer)
     {
+        ObjectDisposedException.ThrowIf(disposed, this);
         uint bufferLength = (uint)buffer.Length;
         uint numFramesToRead = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, targetFormat);
         if (numFramesToRead == 0U && bufferLength > 0U)
@@ -346,7 +350,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
         get
         {
             long length = (long)((LengthInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
-            // See Position's getter comment for why the below is done.
+            // See Position's getter comment for the reason why the below is required.
             long drift = length % targetFormat.BlockAlign;
             if (drift > 0L) { length += targetFormat.BlockAlign - drift; }
             return length;

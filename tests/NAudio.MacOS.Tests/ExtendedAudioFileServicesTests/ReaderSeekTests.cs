@@ -20,7 +20,7 @@ namespace NAudio.MacOS.Tests.ExtendedAudioFileServicesTests;
 public class ReaderSeekTests
 {
     [OneTimeSetUp]
-    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 4);
+    public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
 
     /// <summary>
     /// For a lossless source (PCM WAV) the bytes returned after a seek must be identical to the bytes

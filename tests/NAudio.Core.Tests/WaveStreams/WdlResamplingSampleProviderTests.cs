@@ -236,6 +236,226 @@ public class WdlResamplingSampleProviderTests
             Assert.That(float.IsNaN(outBuf[i]) || float.IsInfinity(outBuf[i]), Is.False);
     }
 
+    // --- Under-fed source (issue #1412) -------------------------------------------------------
+    // WdlResamplingSampleProvider is output-driven: ResamplePrepare asks for however much input the
+    // requested output needs, and a pull-based source (a BufferedWaveProvider fed by a capture
+    // callback, say) routinely has less than that. ResampleOut then pads with zeros, produces the
+    // output it can, and trims the padding-derived samples off the count. These tests pin that the
+    // padding is not also charged against the caller's next read.
+
+    [TestCase(160)]
+    [TestCase(161)]
+    [TestCase(192)]
+    [TestCase(320)]
+    [TestCase(2048)]
+    public void OverRequestingFromAnUnderfedSourceStillReturnsAllAvailableOutput(int framesRequested)
+    {
+        // Reported repro: 48 kHz mono float in, 16 kHz out, 480 input frames (10 ms) handed over
+        // per round, which is exactly 160 output frames. Every request size must keep yielding 160
+        // -- before the fix, anything above 160 decayed and >= ~2x collapsed to 0 permanently.
+        const int from = 48000;
+        const int to = 16000;
+        const int inputFramesPerRound = 480;
+        const int expectedPerRound = 160;
+        const int rounds = 6;
+
+        var source = new ChunkedSampleProvider(GenerateSine(from, 1, 1, 1000, 0.5), from, 1, inputFramesPerRound);
+        var resampler = new WdlResamplingSampleProvider(source, to);
+        var buffer = new float[framesRequested];
+
+        for (int round = 0; round < rounds; round++)
+        {
+            source.ReleaseChunk();
+            int read = resampler.Read(buffer);
+            Assert.That(read, Is.EqualTo(expectedPerRound),
+                $"round {round}: asked for {framesRequested} frames with {expectedPerRound} available");
+        }
+    }
+
+    [TestCase(48000, 16000, 1)]
+    [TestCase(44100, 16000, 1)]
+    [TestCase(44100, 48000, 1)]
+    [TestCase(22050, 44100, 1)]
+    [TestCase(8000, 48000, 1)]
+    [TestCase(44100, 44100, 1)]
+    [TestCase(48000, 44100, 2)]
+    [TestCase(96000, 8000, 2)]
+    public void UnderfedSourceDoesNotLoseSamplesOverManyReads(int from, int to, int channels)
+    {
+        // Same shape as above but generalised: 10 ms of input released per round while the caller
+        // always asks for far more than that. Total output must track total input by the rate
+        // ratio; any per-call leakage compounds and shows up here.
+        const int rounds = 200;
+        int chunkFrames = from / 100;
+        var input = GenerateSine(from, channels, 3, 1000, 0.5);
+        var source = new ChunkedSampleProvider(input, from, channels, chunkFrames);
+        var resampler = new WdlResamplingSampleProvider(source, to);
+        var buffer = new float[8192 * channels];
+
+        int totalSamples = 0;
+        for (int round = 0; round < rounds; round++)
+        {
+            source.ReleaseChunk();
+            totalSamples += resampler.Read(buffer);
+        }
+
+        int inFrames = Math.Min(rounds * chunkFrames, input.Length / channels);
+        int expected = (int)((long)inFrames * to / from);
+        Assert.That(totalSamples / channels, Is.EqualTo(expected).Within(2),
+            $"{from} -> {to} ({channels}ch): expected ~{expected} output frames, got {totalSamples / channels}");
+    }
+
+    [TestCase(48000, 16000, 1)]
+    [TestCase(48000, 24000, 2)]
+    [TestCase(44100, 44100, 1)]
+    public void ChunkedOverRequestedReadsMatchAWellFedRead(int from, int to, int channels)
+    {
+        // Restoring the sample count is not enough on its own: the fractional source position has
+        // to stay aligned too, or the output drifts in phase at every short read. At integer rate
+        // ratios a starved chunked read should be sample-for-sample identical to reading the same
+        // signal from a source that can always fill the request.
+        var input = GenerateSine(from, channels, 1, 1000, 0.5);
+
+        var wellFed = ReadAll(new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, channels), to), 4096 * channels);
+
+        int chunkFrames = from / 100;
+        var source = new ChunkedSampleProvider(input, from, channels, chunkFrames);
+        var starved = new WdlResamplingSampleProvider(source, to);
+        var accumulated = new System.Collections.Generic.List<float>();
+        var buffer = new float[8192 * channels];
+        for (int round = 0; round < 120; round++)
+        {
+            source.ReleaseChunk();
+            int read = starved.Read(buffer);
+            for (int i = 0; i < read; i++) accumulated.Add(buffer[i]);
+        }
+
+        Assert.That(accumulated.Count, Is.EqualTo(wellFed.Length),
+            $"{from} -> {to}: starved read produced {accumulated.Count} samples, well-fed produced {wellFed.Length}");
+        for (int i = 0; i < wellFed.Length; i++)
+            Assert.That(accumulated[i], Is.EqualTo(wellFed[i]).Within(1e-6f),
+                $"{from} -> {to}: sample {i} differs between starved and well-fed reads");
+    }
+
+    [TestCase(48000, 16000)]
+    [TestCase(44100, 48000)]
+    public void SincModeUnderfedSourceDoesNotLoseSamples(int from, int to)
+    {
+        // The flush path behaves differently in sinc mode: m_sincsize widens the zero padding and
+        // outlatadj shifts the trim point, so cover it separately from the interpolating modes.
+        var resampler = new WdlResampler();
+        resampler.SetMode(false, 0, true, 64, 32);
+        resampler.SetFeedMode(false);
+        resampler.SetRates(from, to);
+
+        var input = GenerateSine(from, 1, 2, 1000, 0.5);
+        var outBuf = new float[4096];
+        int chunkFrames = from / 100;
+        int inPos = 0;
+        int totalOut = 0;
+
+        for (int round = 0; round < 150 && inPos < input.Length; round++)
+        {
+            int needed = resampler.ResamplePrepare(outBuf.Length, 1, out Span<float> inSpan);
+            int give = Math.Min(Math.Min(needed, chunkFrames), input.Length - inPos);
+            input.AsSpan(inPos, give).CopyTo(inSpan);
+            inPos += give;
+            totalOut += resampler.ResampleOut(outBuf, give, outBuf.Length, 1);
+        }
+
+        int expected = (int)((long)inPos * to / from);
+        Assert.That(totalOut, Is.EqualTo(expected).Within(2),
+            $"sinc {from} -> {to}: consumed {inPos} input frames, expected ~{expected} output frames, got {totalOut}");
+    }
+
+    [TestCase(48000, 44100)]
+    [TestCase(44100, 48000)]
+    [TestCase(48000, 16000)]
+    public void FeedModeWithFewerSamplesThanPreparedDoesNotDrift(int from, int to)
+    {
+        // ResampleOut is documented as accepting fewer samples than ResamplePrepare returned ("it
+        // will be flushed to produce all remaining valid samples"), which drives the same padding
+        // path in input-driven mode. Supply short feeds deliberately and check the totals.
+        var resampler = new WdlResampler();
+        resampler.SetMode(true, 2, false);
+        resampler.SetFilterParms();
+        resampler.SetFeedMode(true);
+        resampler.SetRates(from, to);
+
+        var input = GenerateSine(from, 1, 2, 440, 0.5);
+        var outBuf = new float[to * 4];
+        var rng = new Random(7);
+        int totalIn = 0;
+        int totalOut = 0;
+
+        while (totalIn < input.Length)
+        {
+            int prepared = Math.Min(rng.Next(64, 512), input.Length - totalIn);
+            int supplied = Math.Max(1, prepared - rng.Next(0, 32));
+            resampler.ResamplePrepare(prepared, 1, out Span<float> inSpan);
+            input.AsSpan(totalIn, supplied).CopyTo(inSpan);
+            totalOut += resampler.ResampleOut(outBuf.AsSpan(totalOut), supplied, outBuf.Length - totalOut, 1);
+            totalIn += supplied;
+        }
+
+        int expected = (int)((long)totalIn * to / from);
+        Assert.That(totalOut, Is.EqualTo(expected).Within(2),
+            $"feed mode {from} -> {to}: supplied {totalIn} input frames, expected ~{expected} output frames, got {totalOut}");
+    }
+
+    [Test]
+    public void ResamplePrepareWithoutResampleOutIsSafe()
+    {
+        // Documented on ResamplePrepare: "it is safe to call ResamplePrepare without calling
+        // ResampleOut (the next call of ResamplePrepare will function as normal)".
+        const int from = 48000;
+        const int to = 16000;
+
+        var resampler = new WdlResampler();
+        resampler.SetMode(true, 2, false);
+        resampler.SetFilterParms();
+        resampler.SetFeedMode(false);
+        resampler.SetRates(from, to);
+
+        var input = GenerateSine(from, 1, 1, 1000, 0.5);
+        var outBuf = new float[1024];
+
+        for (int i = 0; i < 3; i++)
+            resampler.ResamplePrepare(outBuf.Length, 1, out _);
+
+        int needed = resampler.ResamplePrepare(outBuf.Length, 1, out Span<float> inSpan);
+        int give = Math.Min(needed, input.Length);
+        input.AsSpan(0, give).CopyTo(inSpan);
+        int produced = resampler.ResampleOut(outBuf, give, outBuf.Length, 1);
+
+        Assert.That(produced, Is.EqualTo(outBuf.Length).Within(2),
+            "abandoned ResamplePrepare calls should not affect the next full cycle");
+    }
+
+    [Test]
+    public void ResetRestoresStartOfStreamBehaviour()
+    {
+        // Reset is the documented way to reuse a resampler for a new stream; after it, the same
+        // input must give the same output as a freshly constructed instance.
+        const int from = 48000;
+        const int to = 44100;
+        var input = GenerateSine(from, 1, 1, 1000, 0.5);
+
+        var first = new WdlResampler();
+        first.SetMode(true, 2, false);
+        first.SetFilterParms();
+        first.SetFeedMode(false);
+        first.SetRates(from, to);
+
+        var reference = RunOutputDriven(first, input, 1024);
+        first.Reset();
+        var afterReset = RunOutputDriven(first, input, 1024);
+
+        Assert.That(afterReset.Length, Is.EqualTo(reference.Length), "output length changed after Reset");
+        for (int i = 0; i < reference.Length; i++)
+            Assert.That(afterReset[i], Is.EqualTo(reference[i]).Within(1e-6f), $"sample {i} differs after Reset");
+    }
+
     [Test]
     public void GetCurrentLatencyReportsSubSamplePrecision()
     {
@@ -380,6 +600,23 @@ public class WdlResamplingSampleProviderTests
         return buf;
     }
 
+    private static float[] RunOutputDriven(WdlResampler resampler, float[] input, int outFrames)
+    {
+        var output = new System.Collections.Generic.List<float>();
+        var outBuf = new float[outFrames];
+        int inPos = 0;
+        while (inPos < input.Length)
+        {
+            int needed = resampler.ResamplePrepare(outFrames, 1, out Span<float> inSpan);
+            int give = Math.Min(needed, input.Length - inPos);
+            input.AsSpan(inPos, give).CopyTo(inSpan);
+            inPos += give;
+            int produced = resampler.ResampleOut(outBuf, give, outFrames, 1);
+            for (int i = 0; i < produced; i++) output.Add(outBuf[i]);
+        }
+        return output.ToArray();
+    }
+
     private static float[] ReadAll(ISampleProvider source, int chunkSize)
     {
         var output = new System.Collections.Generic.List<float>();
@@ -434,6 +671,40 @@ public class WdlResamplingSampleProviderTests
         var trimmed = new float[outPos];
         Array.Copy(output, trimmed, outPos);
         return trimmed;
+    }
+
+    /// <summary>
+    /// A source that only ever hands out the frames explicitly released to it, simulating a
+    /// pull-based capture pipeline where the resampler routinely asks for more than has arrived.
+    /// </summary>
+    private sealed class ChunkedSampleProvider : ISampleProvider
+    {
+        private readonly float[] data;
+        private readonly int chunkFrames;
+        private int pos;
+        private int releasedFrames;
+
+        public ChunkedSampleProvider(float[] data, int sampleRate, int channels, int chunkFrames)
+        {
+            this.data = data;
+            this.chunkFrames = chunkFrames;
+            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
+        }
+
+        public WaveFormat WaveFormat { get; }
+
+        public void ReleaseChunk() => releasedFrames += chunkFrames;
+
+        public int Read(Span<float> buffer)
+        {
+            int limit = Math.Min(data.Length, releasedFrames * WaveFormat.Channels);
+            int take = Math.Min(buffer.Length, limit - pos);
+            if (take <= 0) return 0;
+            take -= take % WaveFormat.Channels;
+            data.AsSpan(pos, take).CopyTo(buffer);
+            pos += take;
+            return take;
+        }
     }
 
     private sealed class ArraySampleProvider : ISampleProvider

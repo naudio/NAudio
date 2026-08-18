@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Fixed `WdlResamplingSampleProvider` losing samples, and eventually returning 0 permanently, when asked for more output than the source could supply — a 3.0.0 regression that broke the common pattern of reading generously from a `BufferedWaveProvider`-backed capture chain. `WdlResampler.ResampleOut` also no longer drifts in input-driven (feed) mode when handed fewer samples than `ResamplePrepare` requested (#1412)
+
 ### 3.0.1 (18 Aug 2026)
 
 A patch release. The headline fix is packaging: the `NAudio` and `NAudio.Extras`

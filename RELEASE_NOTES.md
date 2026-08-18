@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * **macOS support** - A new wrappers library (is in pre-release stage for NAudio 3) is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
+
 ### 3.0.1 (18 Aug 2026)
 
 A patch release. The headline fix is packaging: the `NAudio` and `NAudio.Extras`
@@ -25,7 +27,6 @@ targeting `netX.0-windows` get the full Windows stack again.
  * Sample and tool apps now roll forward onto newer .NET runtimes, so running them no longer requires the .NET 9 runtime to be installed (#1408)
  * Fixed `AiffFileReader` reporting too long a `Length` and throwing `IndexOutOfRangeException` when the SSND chunk declares a non-zero offset (#1405)
  * Fixed `AiffFileReader.Read` throwing `IndexOutOfRangeException` when the source stream returns fewer bytes than requested (#1405)
- * **macOS support** - A new wrappers library (is in pre-release stage for NAudio 3) is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
 
 ### 3.0.0 (15 Aug 2026)
 

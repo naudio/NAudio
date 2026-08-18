@@ -19,6 +19,7 @@ limit and fails the release build if exceeded.
  * Projects on a plain `netX.0-windows` TFM may now see `CA1416` warnings when calling WASAPI process-loopback capture. The warning is correct — those callers do need an `OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041)` guard — and was previously hidden because the only Windows asset available already implied that floor (#1407)
  * Fixed `AiffFileReader` reporting too long a `Length` and throwing `IndexOutOfRangeException` when the SSND chunk declares a non-zero offset (#1405)
  * Fixed `AiffFileReader.Read` throwing `IndexOutOfRangeException` when the source stream returns fewer bytes than requested (#1405)
+ * **macOS support** - A new wrappers library (is in pre-release stage for NAudio 3) is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
 
 ### 3.0.0 (15 Aug 2026)
 
@@ -63,7 +64,6 @@ Each new subsystem has its own tutorial or README; only the headline is listed h
  * **Sample providers and DSP** — new `ChannelMixerSampleProvider` with ready-made `ChannelMixMatrix` routings, thanks to @antiduh (#982); a new `FftProcessor`; `Span<T>` overloads across the codec/DSP surface; reusable building blocks (`EnvelopeFollower`, `DelayLine`, `Lfo`, `Oversampler`, `LinkwitzRileyCrossover`, `PartitionedConvolver`, …); plus improvements to `SmbPitchShiftingSampleProvider` (#922), `AdsrSampleProvider` (#671) and `FadeInOutSampleProvider` (#1136)
  * **WaveFormatExtensible** — new constructors for SubFormat, valid-bits-per-sample and channel mask, readable `ValidBitsPerSample` / `ChannelMask`, and a `[Flags] Speakers` enum for building channel masks (#1325)
  * **WASAPI sessions and devices** — `AudioSessionControl.SetDuckingPreference(bool)` (#760); `WasapiPlayer` / `WasapiRecorder` expose `DeviceId` and `DeviceFriendlyName` for the active endpoint (#681)
- * **macOS support** - A new wrappers library (is in pre-release stage for NAudio 3) is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
 
 #### Breaking changes
 

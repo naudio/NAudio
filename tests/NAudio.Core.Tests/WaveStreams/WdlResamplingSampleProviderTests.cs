@@ -194,15 +194,19 @@ public class WdlResamplingSampleProviderTests
             $"In-band sine in sinc mode lost too much amplitude: in={inRms:F4} out={outRms:F4}");
     }
 
-    [Test]
-    public void FeedModeWithSmallInputChunksProducesExpectedOutput()
+    [TestCase(48000, 44100, 1)]
+    [TestCase(48000, 44100, 2)]
+    [TestCase(48000, 44100, 3)]
+    [TestCase(44100, 48000, 2)]
+    public void FeedModeWithSmallInputChunksProducesExpectedOutput(int from, int to, int channels)
     {
         // Exercises the 2016 feed-mode accounting fix. In feed (input-driven) mode we hand
         // ResamplePrepare an input count and ResampleOut produces however many output samples that
         // input maps to. Without the clamp on isrcpos, m_fracpos drifts and output count is wrong.
-        const int from = 48000;
-        const int to = 44100;
-        const int totalInputSamples = from * 2; // 2 seconds
+        // Run at several channel counts: ResampleOut has separate 1-channel, 2-channel and general
+        // interpolation loops, and every buffer index around the accounting is scaled by nch.
+        const int seconds = 2;
+        int totalInputFrames = from * seconds;
 
         var resampler = new WdlResampler();
         resampler.SetMode(true, 2, false);
@@ -210,29 +214,31 @@ public class WdlResamplingSampleProviderTests
         resampler.SetFeedMode(true); // input-driven
         resampler.SetRates(from, to);
 
-        var input = GenerateSine(from, channels: 1, seconds: 2, frequency: 440, gain: 0.5);
-        var outBuf = new float[to * 4];
-        int totalOut = 0;
-        int totalIn = 0;
+        var input = GenerateSine(from, channels, seconds, frequency: 440, gain: 0.5);
+        var outBuf = new float[to * 4 * channels];
+        int outCapacityFrames = outBuf.Length / channels;
+        int totalOutFrames = 0;
+        int totalInFrames = 0;
         var rng = new Random(42);
 
-        while (totalIn < totalInputSamples)
+        while (totalInFrames < totalInputFrames)
         {
-            int chunk = Math.Min(rng.Next(1, 257), totalInputSamples - totalIn);
-            int needed = resampler.ResamplePrepare(chunk, 1, out Span<float> inSpan);
+            int chunk = Math.Min(rng.Next(1, 257), totalInputFrames - totalInFrames);
+            int needed = resampler.ResamplePrepare(chunk, channels, out Span<float> inSpan);
             Assert.That(needed, Is.EqualTo(chunk),
                 $"In feed mode ResamplePrepare must return the input count we supplied (got {needed}, expected {chunk})");
-            input.AsSpan(totalIn, chunk).CopyTo(inSpan);
-            int produced = resampler.ResampleOut(outBuf.AsSpan(totalOut), chunk, outBuf.Length - totalOut, 1);
-            totalOut += produced;
-            totalIn += chunk;
+            input.AsSpan(totalInFrames * channels, chunk * channels).CopyTo(inSpan);
+            int produced = resampler.ResampleOut(outBuf.AsSpan(totalOutFrames * channels), chunk,
+                outCapacityFrames - totalOutFrames, channels);
+            totalOutFrames += produced;
+            totalInFrames += chunk;
         }
 
-        int expected = (int)((double)totalInputSamples * to / from);
+        int expected = (int)((double)totalInputFrames * to / from);
         // Feed-mode count should be near-exact, not drifting.
-        Assert.That(totalOut, Is.EqualTo(expected).Within(2),
-            $"feed-mode output count drift: expected ~{expected}, got {totalOut}");
-        for (int i = 0; i < totalOut; i++)
+        Assert.That(totalOutFrames, Is.EqualTo(expected).Within(2),
+            $"feed-mode output frame count drift at {channels}ch: expected ~{expected}, got {totalOutFrames}");
+        for (int i = 0; i < totalOutFrames * channels; i++)
             Assert.That(float.IsNaN(outBuf[i]) || float.IsInfinity(outBuf[i]), Is.False);
     }
 
@@ -368,10 +374,13 @@ public class WdlResamplingSampleProviderTests
             $"sinc {from} -> {to}: consumed {inPos} input frames, expected ~{expected} output frames, got {totalOut}");
     }
 
-    [TestCase(48000, 44100)]
-    [TestCase(44100, 48000)]
-    [TestCase(48000, 16000)]
-    public void FeedModeWithFewerSamplesThanPreparedDoesNotDrift(int from, int to)
+    [TestCase(48000, 44100, 1)]
+    [TestCase(44100, 48000, 1)]
+    [TestCase(48000, 16000, 1)]
+    [TestCase(48000, 44100, 2)]
+    [TestCase(48000, 16000, 2)]
+    [TestCase(44100, 48000, 3)]
+    public void FeedModeWithFewerSamplesThanPreparedDoesNotDrift(int from, int to, int channels)
     {
         // ResampleOut is documented as accepting fewer samples than ResamplePrepare returned ("it
         // will be flushed to produce all remaining valid samples"), which drives the same padding
@@ -382,25 +391,30 @@ public class WdlResamplingSampleProviderTests
         resampler.SetFeedMode(true);
         resampler.SetRates(from, to);
 
-        var input = GenerateSine(from, 1, 2, 440, 0.5);
-        var outBuf = new float[to * 4];
+        const int seconds = 2;
+        int totalInputFrames = from * seconds;
+        var input = GenerateSine(from, channels, seconds, 440, 0.5);
+        var outBuf = new float[to * 4 * channels];
+        int outCapacityFrames = outBuf.Length / channels;
         var rng = new Random(7);
-        int totalIn = 0;
-        int totalOut = 0;
+        int totalInFrames = 0;
+        int totalOutFrames = 0;
 
-        while (totalIn < input.Length)
+        while (totalInFrames < totalInputFrames)
         {
-            int prepared = Math.Min(rng.Next(64, 512), input.Length - totalIn);
+            int prepared = Math.Min(rng.Next(64, 512), totalInputFrames - totalInFrames);
             int supplied = Math.Max(1, prepared - rng.Next(0, 32));
-            resampler.ResamplePrepare(prepared, 1, out Span<float> inSpan);
-            input.AsSpan(totalIn, supplied).CopyTo(inSpan);
-            totalOut += resampler.ResampleOut(outBuf.AsSpan(totalOut), supplied, outBuf.Length - totalOut, 1);
-            totalIn += supplied;
+            resampler.ResamplePrepare(prepared, channels, out Span<float> inSpan);
+            input.AsSpan(totalInFrames * channels, supplied * channels).CopyTo(inSpan);
+            totalOutFrames += resampler.ResampleOut(outBuf.AsSpan(totalOutFrames * channels), supplied,
+                outCapacityFrames - totalOutFrames, channels);
+            totalInFrames += supplied;
         }
 
-        int expected = (int)((long)totalIn * to / from);
-        Assert.That(totalOut, Is.EqualTo(expected).Within(2),
-            $"feed mode {from} -> {to}: supplied {totalIn} input frames, expected ~{expected} output frames, got {totalOut}");
+        int expected = (int)((long)totalInFrames * to / from);
+        Assert.That(totalOutFrames, Is.EqualTo(expected).Within(2),
+            $"feed mode {from} -> {to} ({channels}ch): supplied {totalInFrames} input frames, " +
+            $"expected ~{expected} output frames, got {totalOutFrames}");
     }
 
     [Test]
@@ -540,6 +554,39 @@ public class WdlResamplingSampleProviderTests
         AssertTailDc(three, 3, new[] { 0.1f, 0.2f, 0.3f });
     }
 
+    [Test]
+    public void FeedModeChannelCountChangeMidStreamKeepsChannelsAligned()
+    {
+        // Same reinterleave check as above, but input-driven. Feed mode takes a different route
+        // through ResamplePrepare (sreq is the supplied input count rather than one derived from
+        // the output request), so the buffered frames left between calls — the ones the
+        // reinterleave has to repack — are sized differently.
+        const int from = 8000;
+        const int to = 48000; // upsample so a few input frames stay buffered between calls
+
+        var resampler = new WdlResampler();
+        resampler.SetMode(false, 0, false); // point sampling
+        resampler.SetFeedMode(true);
+        resampler.SetRates(from, to);
+
+        // Phase 1: stereo, L = +0.5 DC, R = -0.5 DC. Leaves a few stereo frames buffered.
+        PumpDcFeedMode(resampler, nch: 2, dc: new[] { 0.5f, -0.5f }, cycles: 6, inFramesPerCycle: 64, outFramesPerCycle: 256);
+
+        // Phase 2: switch to mono (decreasing) — the buffered right channel must not leak out.
+        var mono = PumpDcFeedMode(resampler, nch: 1, dc: new[] { 0.25f }, cycles: 16, inFramesPerCycle: 64, outFramesPerCycle: 256);
+        foreach (var v in mono)
+        {
+            Assert.That(float.IsFinite(v), Is.True, "non-finite mono output");
+            Assert.That(v, Is.GreaterThanOrEqualTo(0.2f),
+                $"mono output dipped to {v}: the buffered right channel (-0.5) leaked through a missing reinterleave");
+        }
+        AssertTailDc(mono, 1, new[] { 0.25f });
+
+        // Phase 3: switch to 3 channels (increasing).
+        var three = PumpDcFeedMode(resampler, nch: 3, dc: new[] { 0.1f, 0.2f, 0.3f }, cycles: 16, inFramesPerCycle: 64, outFramesPerCycle: 256);
+        AssertTailDc(three, 3, new[] { 0.1f, 0.2f, 0.3f });
+    }
+
     // ---- helpers ----
 
     private static float[] PumpDc(WdlResampler resampler, int nch, float[] dc, int cycles, int outFramesPerCycle)
@@ -552,6 +599,27 @@ public class WdlResamplingSampleProviderTests
                 for (int ch = 0; ch < nch; ch++)
                     inSpan[f * nch + ch] = dc[ch];
             var outBuf = new float[outFramesPerCycle * nch];
+            int produced = resampler.ResampleOut(outBuf, needed, outFramesPerCycle, nch);
+            for (int i = 0; i < produced * nch; i++) outAll.Add(outBuf[i]);
+        }
+        return outAll.ToArray();
+    }
+
+    private static float[] PumpDcFeedMode(WdlResampler resampler, int nch, float[] dc, int cycles,
+        int inFramesPerCycle, int outFramesPerCycle)
+    {
+        var outAll = new System.Collections.Generic.List<float>();
+        // outFramesPerCycle is deliberately less than the supplied input maps to, so input stays
+        // buffered between calls — the frames a channel-count change has to reinterleave.
+        var outBuf = new float[outFramesPerCycle * nch];
+        for (int c = 0; c < cycles; c++)
+        {
+            int needed = resampler.ResamplePrepare(inFramesPerCycle, nch, out Span<float> inSpan);
+            Assert.That(needed, Is.EqualTo(inFramesPerCycle),
+                $"feed mode should hand back the supplied input count (got {needed})");
+            for (int f = 0; f < needed; f++)
+                for (int ch = 0; ch < nch; ch++)
+                    inSpan[f * nch + ch] = dc[ch];
             int produced = resampler.ResampleOut(outBuf, needed, outFramesPerCycle, nch);
             for (int i = 0; i < produced * nch; i++) outAll.Add(outBuf[i]);
         }

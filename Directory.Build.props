@@ -3,7 +3,7 @@
     <!-- Lockstep version for all NAudio NuGet packages. CI overrides
          <VersionSuffix> on pre-release builds (e.g. preview.NN). Sample/tool
          apps with their own <Version> in the csproj override this. -->
-    <VersionPrefix>3.0.1</VersionPrefix>
+    <VersionPrefix>3.0.2</VersionPrefix>
 
     <!-- The sample/tool apps target net9.0 so they still build on the .NET 9
          SDK, but the default roll-forward policy (Minor) refuses to cross a

@@ -23,14 +23,18 @@ public partial class ExtendedAudioFileWriter
         protected override void DisposeNativeData()
         {
             base.DisposeNativeData();
+            // Stash the error code until the actual native call
+            // is performed; as such, streamFileID is cleared
+            // unconditionally and the GC handle is destroyed,
+            // even if AudioFileClose reports failure.
+            int audioFileCallStatus = 0;
             if (streamFileID != IntPtr.Zero)
             {
-                AudioFileException.ThrowIfError(
-                    NativeMethods.AudioFileClose(streamFileID)
-                );
+                audioFileCallStatus = NativeMethods.AudioFileClose(streamFileID);
                 streamFileID = IntPtr.Zero;
             }
             if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
+            AudioFileException.ThrowIfError(audioFileCallStatus);
         }
     }
 }

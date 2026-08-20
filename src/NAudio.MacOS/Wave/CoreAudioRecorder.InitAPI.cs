@@ -1,5 +1,6 @@
 
 using System;
+using System.Threading;
 
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
@@ -31,7 +32,24 @@ public partial class CoreAudioRecorder
     {
         // Stop recording if is running. 
         // The user will restart the recording if so he needs.
-        if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized)) { StopRecording(); }
+        if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized))
+        {
+            // We take the lock to ensure that we can safely call
+            // the StopRecordingInternal method - and we also
+            // execute it only when not in stopped condition.
+            Monitor.Enter(lockObject);
+            try
+            {
+                if (state != CaptureState.Stopped)
+                {
+                    StopRecordingInternal();
+                }
+            }
+            finally
+            {
+                Monitor.Exit(lockObject);
+            }
+        }
         Initialize();
         CaptureFormatChanged?.Invoke(this);
     }
@@ -39,7 +57,21 @@ public partial class CoreAudioRecorder
     private void OnStreamsChanged(AudioObject _)
     {
         bool oldState = ioProcedure.IsRunning;
-        ioProcedure.Stop();
+        // We take the lock to ensure that we can safely call
+        // the StopRecordingInternal method - and we also
+        // execute it only when not in stopped condition.
+        Monitor.Enter(lockObject);
+        try
+        {
+            if (state != CaptureState.Stopped)
+            {
+                StopRecordingInternal();
+            }
+        }
+        finally
+        {
+            Monitor.Exit(lockObject);
+        }
         state = CaptureState.Stopped;
         Initialize();
         if (oldState) { ioProcedure.Start(); }
@@ -84,8 +116,6 @@ public partial class CoreAudioRecorder
             throw new InvalidOperationException("The specified device does not provide any streams to perform capture on!");
         }
 
-        uint totalLatency = 0U;
-
         // Create the I/O procedure, assign the streams to use, then compute the latency.
         bool[] streamSelection = new bool[streams.Length];
         if (flags.HasFlag(CoreAudioRecorderStateFlags.NonInterleaved))
@@ -99,8 +129,29 @@ public partial class CoreAudioRecorder
             uint channelCount = 0U;
             foreach (var s in streams)
             {
-                channelCount += s.VirtualFormatNative.mChannelsPerFrame;
-                totalLatency += s.Latency;
+                var streamAsbd = s.VirtualFormatNative;
+                channelCount += streamAsbd.mChannelsPerFrame;
+                if (
+                    virtualFormat.mSampleRate != streamAsbd.mSampleRate ||
+                    virtualFormat.mBitsPerChannel != streamAsbd.mBitsPerChannel ||
+                    virtualFormat.mFormatFlags != streamAsbd.mFormatFlags ||
+                    virtualFormat.mChannelsPerFrame != streamAsbd.mChannelsPerFrame ||
+                    virtualFormat.mBytesPerFrame != streamAsbd.mBytesPerFrame
+                )
+                {
+                    throw new InvalidOperationException("Non-interleaved audio device with different audio formats is not supported");
+                }
+            }
+            // There might be cases that drivers do not report the non-interleaved flag
+            // even if they expect the client to provide the data as non-interleaved.
+            // To fix this, the below if statement is required.
+            if (!virtualFormat.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved))
+            {
+                // mBytesPerFrame will report the container size
+                // of one channel in bytes, so we just multiply
+                // by the number of channels.
+                virtualFormat.mBytesPerFrame *= channelCount;
+                virtualFormat.mBytesPerPacket = virtualFormat.mBytesPerFrame;
             }
             virtualFormat.mChannelsPerFrame = channelCount;
             Array.Fill(streamSelection, true);
@@ -114,18 +165,11 @@ public partial class CoreAudioRecorder
                 ioProcedure = new InterleavedProcedure(selectedDevice);
             }
             for (int I = 0; I < streams.Length; I++) { streamSelection[I] = I == selectedIndex; }
-            totalLatency = streams[selectedIndex].Latency;
         }
 
         selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
-        ioProcedure.StreamLatency = totalLatency;
+        ioProcedure.StreamLatency = selectedDevice.BufferFrameSize;
         ioProcedure.VirtualFormat = virtualFormat;
-        // The latency of the streams may report as zero - 
-        // in such case, use the buffer frame size divided by the sample rate.
-        if (totalLatency == 0U)
-        {
-            ioProcedure.StreamLatency = (uint)(selectedDevice.BufferFrameSize / virtualFormat.mSampleRate);
-        }
         virtualFormatChanged = streams[selectedIndex].ConstructVirtualFormatChangedEvent();
         virtualFormatChanged.Event += OnVirtualFormatChanged;
         try

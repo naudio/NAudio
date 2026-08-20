@@ -166,9 +166,6 @@ public partial class CoreAudioPlayer
         }
         */
 
-        uint reportedLatency = 0U;
-        foreach (var s in streams) { reportedLatency += s.Latency; }
-
         if (HasStateFlagFast(CoreAudioPlayerStateFlags.NonInterleaved))
         {
             // Non-interleaved case.
@@ -196,9 +193,7 @@ public partial class CoreAudioPlayer
                 }
             }
             // Compute the number of bytes required for each channel.
-            uint perChannelBytes = asbdToUse.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved)
-                ? asbdToUse.mBytesPerFrame
-                : asbdToUse.mBytesPerFrame / channelCount;
+            uint perChannelBytes = asbdToUse.mBytesPerFrame / asbdToUse.mChannelsPerFrame;
             var newAsbd = new AudioStreamBasicDescription()
             {
                 mBitsPerChannel = asbdToUse.mBitsPerChannel,
@@ -229,25 +224,37 @@ public partial class CoreAudioPlayer
             _ = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output, out requiresResampler, out _);
         }
 
-        // The latency of the streams may report as zero - 
-        // in such case, use the buffer frame size divided by the sample rate.
-        if (reportedLatency == 0U)
-        {
-            reportedLatency = (uint)(selectedDevice.BufferFrameSize / asbdToUse.mSampleRate);
-        }
+        uint reportedLatency = selectedDevice.BufferFrameSize;
 
         // Configure the player source. If we need the resampler,
         // we inject the resampler and pass the provider through it.
         if (requiresResampler)
         {
-            using var clh = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output);
-            // Configure the resampler as appropriate.
-            selectedSource = new ResamplerSource(
-                originalProvider,
-                asbdToUse,
-                clh,
-                reportedLatency
-            );
+            ChannelLayoutHandle handle = null;
+            // Attempt to get from the HAL the expected channel layout.
+            try
+            {
+                handle = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output);
+            }
+            catch (CoreAudioPropertyNotFoundException)
+            {
+                // No preferred channel layout reported by the device
+                handle = null;
+            }
+            try
+            {
+                // Configure the resampler as appropriate.
+                selectedSource = new ResamplerSource(
+                    originalProvider,
+                    asbdToUse,
+                    handle, // we can pass null here!
+                    reportedLatency
+                );
+            }
+            finally
+            {
+                handle?.Dispose();
+            }
         }
         else
         {
@@ -266,9 +273,16 @@ public partial class CoreAudioPlayer
                 // Non-interleaved case
                 if (isInit || ioProcedure is InterleavedProcedure)
                 {
-                    ioProcedure?.Dispose();
-                    ioProcedure = null;
+                    // Make sure that any state that is referenced
+                    // to the procedure gets cleaned up.
+                    if (ioProcedure is not null)
+                    {
+                        ioProcedure.PlaybackStopped -= FirePlaybackStopped;
+                        ioProcedure.Dispose();
+                        ioProcedure = null;
+                    }
                     ioProcedure = new NonInterleavedProcedure(selectedDevice);
+                    ioProcedure.PlaybackStopped += FirePlaybackStopped;
                 }
                 Array.Fill(enabledStreams, true);
             }
@@ -277,9 +291,16 @@ public partial class CoreAudioPlayer
                 // Interleaved case
                 if (isInit || ioProcedure is NonInterleavedProcedure)
                 {
-                    ioProcedure?.Dispose();
-                    ioProcedure = null;
+                    // Make sure that any state that is referenced
+                    // to the procedure gets cleaned up.
+                    if (ioProcedure is not null)
+                    {
+                        ioProcedure.PlaybackStopped -= FirePlaybackStopped;
+                        ioProcedure.Dispose();
+                        ioProcedure = null;
+                    }
                     ioProcedure = new InterleavedProcedure(selectedDevice);
+                    ioProcedure.PlaybackStopped += FirePlaybackStopped;
                 }
                 for (int I = 0; I < streams.Length; I++)
                 {
@@ -287,7 +308,6 @@ public partial class CoreAudioPlayer
                 }
             }
             ioProcedure.Source = selectedSource;
-            ioProcedure.PlaybackStopped += FirePlaybackStopped;
             selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Output, enabledStreams);
 
             virtFormatChanged?.Dispose();
@@ -313,6 +333,7 @@ public partial class CoreAudioPlayer
     // does not assign the format we want to use.
     private bool TryConstructingExclusiveModeStream(AudioStream[] streams, WaveFormat providerFormat)
     {
+        // Get valid bits per sample and IEEE float sample usage
         bool isIeeeFloat;
         uint validBitsPerSample;
         if (providerFormat is WaveFormatExtensible ex)
@@ -329,18 +350,22 @@ public partial class CoreAudioPlayer
         {
             uint channelCount = 0U;
             AudioStreamBasicDescription tempAsbd, ccAsbd;
-            foreach (var s in streams)
+            // Get the current ASBD structures comprising the streams.
+            var originalDescriptions = new AudioStreamBasicDescription[streams.Length];
+            // Holds the ASBD structures we require.
+            var requiredDescriptions = new AudioStreamBasicDescription[streams.Length];
+            for (int I = 0; I < streams.Length; I++)
             {
-                tempAsbd = s.VirtualFormatNative;
+                tempAsbd = originalDescriptions[I] = streams[I].VirtualFormatNative;
                 channelCount += tempAsbd.mChannelsPerFrame;
                 ccAsbd = new();
-                ccAsbd.mBytesPerPacket = 1U;
+                ccAsbd.mFramesPerPacket = 1U;
                 ccAsbd.mBitsPerChannel = validBitsPerSample;
                 ccAsbd.mSampleRate = providerFormat.SampleRate;
                 ccAsbd.mChannelsPerFrame = tempAsbd.mChannelsPerFrame;
                 ccAsbd.mFormatID = AudioFormatIDs.kAudioFormatLinearPCM;
                 ccAsbd.mFormatFlags = AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
-                ccAsbd.mFramesPerPacket = ccAsbd.mBytesPerFrame = (uint)(providerFormat.BitsPerSample / 8);
+                ccAsbd.mBytesPerPacket = ccAsbd.mBytesPerFrame = (uint)(providerFormat.BitsPerSample / 8);
                 if (isIeeeFloat)
                 {
                     ccAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsFloat;
@@ -350,35 +375,57 @@ public partial class CoreAudioPlayer
                     ccAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsSignedInteger;
                 }
                 if (!BitConverter.IsLittleEndian) { ccAsbd.mFormatFlags |= AudioFormatFlags.kAudioFormatFlagIsBigEndian; }
-                try
-                {
-                    s.VirtualFormatNative = ccAsbd;
-                }
-                catch (CoreAudioException e)
-                {
-                    // If an assignment fails, we cannot define our own format;
-                    // try with the resampler instead.
-                    // System.Console.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
-                    Debug.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
-                    return false;
-                }
+                requiredDescriptions[I] = ccAsbd;
             }
             if (channelCount != providerFormat.Channels)
             {
                 throw new InvalidOperationException("Attempted to initialize exclusive mode on a device not matching with the provider's channel count.");
+            }
+            else
+            {
+                // Apply all the virtual formats.
+                for (int I = 0; I < streams.Length; I++)
+                {
+                    try
+                    {
+                        streams[I].VirtualFormatNative = requiredDescriptions[I];
+                    }
+                    catch (CoreAudioException e)
+                    {
+                        // If an assignment fails, we cannot define our own format;
+                        // try with the resampler instead.
+                        // System.Console.WriteLine("[CoreAudioPlayerInit/NON_INTERLEAVED]: Cannot construct exclusive mode player: " + e);
+                        Debug.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
+                        // Revert all the applied formats (revert even those that were not modified yet)
+                        for (int J = 0; J < streams.Length; J++)
+                        {
+                            try
+                            {
+                                streams[J].VirtualFormatNative = originalDescriptions[J];
+                            }
+                            catch (CoreAudioException e2)
+                            {
+                                Debug.WriteLine($"[CoreAudioPlayerInit]: Cannot revert virtual format on stream index {J}: {e2}");
+                            }
+                        }
+                        return false;
+                    }
+                }
             }
         }
         else
         {
             // Pick the first stream and modify it for our needs.
             var ctAsbd = new AudioStreamBasicDescription();
-            ctAsbd.mBytesPerPacket = 1U;
+            // Get the current virtual format to apply if the virtual format assignment fails.
+            var currentVf = streams[0].VirtualFormatNative;
+            ctAsbd.mFramesPerPacket = 1U;
             ctAsbd.mBitsPerChannel = validBitsPerSample;
             ctAsbd.mSampleRate = providerFormat.SampleRate;
             ctAsbd.mFormatID = AudioFormatIDs.kAudioFormatLinearPCM;
             ctAsbd.mChannelsPerFrame = (uint)providerFormat.Channels;
-            ctAsbd.mFramesPerPacket = ctAsbd.mBytesPerFrame = (uint)(providerFormat.BitsPerSample / 8) * ctAsbd.mChannelsPerFrame;
-            if (providerFormat.Channels != streams[0].VirtualFormatNative.mChannelsPerFrame)
+            ctAsbd.mBytesPerPacket = ctAsbd.mBytesPerFrame = (uint)(providerFormat.BitsPerSample / 8) * ctAsbd.mChannelsPerFrame;
+            if (providerFormat.Channels != currentVf.mChannelsPerFrame)
             {
                 // System.Console.WriteLine("[CoreAudioPlayerInit]: # of Channels do not match");
                 return false;
@@ -400,6 +447,18 @@ public partial class CoreAudioPlayer
             {
                 // System.Console.WriteLine("[CoreAudioPlayerInit/INTERLEAVED]: Cannot construct exclusive mode player: " + e);
                 Debug.WriteLine("[CoreAudioPlayerInit]: Cannot construct exclusive mode player: " + e);
+                // Make sure that the virtual format is reverted
+                // (although that HAL does not modify the current 
+                // format unless it succeeds setting the virtual
+                // format)
+                try
+                {
+                    streams[0].VirtualFormatNative = currentVf;
+                }
+                catch (CoreAudioException e2)
+                {
+                    Debug.WriteLine("[CoreAudioPlayerInit]: Cannot revert virtual format: " + e2);
+                }
                 return false;
             }
         }

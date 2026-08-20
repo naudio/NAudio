@@ -180,6 +180,62 @@ support in the .NET runtime, which is currently a bit hacky. Probably
 deferring until Swift support is fully brought into the runtime,
 which will be later .NET 12 or so as it seems.
 
+5. Non-interleaved support.
+A handful of macOS devices (notably professional ones)
+do require to provide (or when recording, to retrieve) 
+all the audio data as non-interleaved audio, which each
+sample frame is an individual channel of the audio data.
+However, in NAudio all the audio data are provided
+interleaved, where each sample frame contains the samples
+for all the channels of an audio stream.
+
+Currently, the `CoreAudioPlayer` class appropriately
+de-interleaves from a given provider if so required
+(`CoreAudio` does also support interleaved cases), and
+the `CoreAudioRecorder` class does interleave the samples,
+if non-interleaved.
+
+#### A look at the buffers
+
+This section describes how the buffers are projected in both non-interleaved
+and interleaved audio, for future reference.
+
+Let's assume an audio stream with a sample rate of 44100 Hz,
+16 bits per sample, and 8 channels, PCM.
+
+A non-interleaved buffer would look like:
+
+~~~
+
+| chStride  |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| Channel 0 | Channel 1 | Channel 2 | Channel 3 | Channel 4 | Channel 5 | Channel 6 | Channel 7 |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+|                                   <--sampleStride-->                                          |
+
+~~~
+
+- `chStride`: Number of bytes required to jump by one channel, this corresponds to the `BlockAlign` value.
+- `sampleStride`: Number of bytes required to jump to the next sample, can be found by `sampleStride * nChannels`.
+
+An interleaved buffer would look like:
+
+~~~
+
+|----------------------------------|
+| Channels(0-7)                    |
+|----------------------------------|
+|       <--sampleStride-->         |
+
+~~~
+
+- `sampleStride`: Number of bytes required to jump to the next sample, this corresponds to the `BlockAlign` value.
+
+So, we can quickly realize the difference here: 
+
+- `sampleStride` in non-interleaved audio is corresponding to a sample frame of a **single** channel.
+
+While, the `sampleStride` in interleaved audio is corresponding to a sample frame of **ALL** the channels of the stream.
 
 ## 6. Audio Toolbox
 

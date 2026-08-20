@@ -79,8 +79,7 @@ public class ReaderTests
         var settings = reader.Settings;
 
         System.Console.WriteLine("Total time: {0}", reader.TotalTime);
-        System.Console.WriteLine("Total # of avg.bytes: {0}", reader.Length);
-        System.Console.WriteLine("Total # of samples: {0}", reader.LengthInFrames);
+        System.Console.WriteLine("Total # of bytes: {0}", reader.Length);
 
         WaveFormat outF = null;
         Assert.DoesNotThrow(() => outF = reader.WaveFormat);
@@ -176,13 +175,13 @@ public class ReaderTests
         System.Console.WriteLine("Read bytes: {0}", readBytes);
 
         // We can have a file with zero samples, so check that first.
-        if (reader.LengthInFrames > 0L)
+        if (reader.Length > 0L)
         {
-            Assert.Greater(readBytes, 0L);
+            Assert.That(readBytes, Is.GreaterThan(0L));
         }
 
         // Test whether the stream can be sought.
-        Assert.DoesNotThrow(() => reader.PositionInFrames = 0L);
+        Assert.DoesNotThrow(() => reader.Position = 0L);
 
         // Now, attempt to read again.
         read = reader.Read(buffer);
@@ -204,15 +203,9 @@ public class ReaderTests
         Assert.That(reader.CanSeek, Is.False);
 
         // All of the below calls must throw ObjectDisposedException.
-        Assert.Throws<ObjectDisposedException>(() => _ = reader.PositionInFrames);
-
         Assert.Throws<ObjectDisposedException>(() => _ = reader.Position);
 
-        Assert.Throws<ObjectDisposedException>(() => _ = reader.LengthInFrames);
-
         Assert.Throws<ObjectDisposedException>(() => _ = reader.Length);
-
-        Assert.Throws<ObjectDisposedException>(() => reader.PositionInFrames = 0L);
 
         Assert.Throws<ObjectDisposedException>(() => reader.Position = 0L);
     }

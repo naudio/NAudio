@@ -148,7 +148,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         ) / ioProcedure.VirtualFormat.mSampleRate;
     }
 
-    private void StopRecordingInternal()
+    private void StopRecordingInternal(bool dispatchRecordingStopped = false)
     {
         try
         {
@@ -159,7 +159,12 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
                 ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
             }
             ioProcedure.Stop();
-            OnRecodingStopped(ex: null);
+            if (dispatchRecordingStopped)
+            {
+                // Dispatch the recording stopped event if appropriate
+                // or an exception has been caught by the below catch handler.
+                OnRecodingStopped(ex: null);
+            }
         }
         catch (Exception ex)
         {
@@ -285,7 +290,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         {
             // Prefer to exit cleanly rather than racing the stop.
             if (state == CaptureState.Stopped) { return; }
-            StopRecordingInternal();
+            StopRecordingInternal(true);
         }
         finally
         {

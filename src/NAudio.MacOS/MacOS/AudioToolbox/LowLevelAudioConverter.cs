@@ -140,37 +140,36 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
 
         uint bytesRead = 0U;
         Span<byte> currentSpan = new(wrapper.nativeBuffer, (int)wrapper.nativeBufferSize);
-        while (currentSpan.Length > 0)
+        int dataRead;
+        try
         {
-            int dataRead;
-            try
+            while (currentSpan.Length > 0)
             {
-                dataRead = wrapper.readDelegate.Invoke(currentSpan);
+                if ((dataRead = wrapper.readDelegate.Invoke(currentSpan)) == 0)
+                {
+                    // Exit the loop - do not fill any additional data.
+                    // This will force assigning the number of packets
+                    // that we did actually read from the stream, 
+                    // which if it is zero, it will assign zero,
+                    // and that will flag our converter that we 
+                    // do not have any further data to process.
+                    break;
+                }
+                else
+                {
+                    // Continue attempting filling the span.
+                    currentSpan = currentSpan.Slice(dataRead);
+                }
+                bytesRead += (uint)dataRead;
             }
-            catch (Exception ex)
-            {
-                // We can't throw wave provider errors here - capture the exception to throw it back to the Read call.
-                dataRead = 0;
-                wrapper.exceptionOnFillComplexBufferCb = ex;
-                break;
-            }
-            if (dataRead == 0)
-            {
-                // Exit the loop - do not fill any additional data.
-                // This will force assigning the number of packets
-                // that we did actually read from the stream, 
-                // which if it is zero, it will assign zero,
-                // and that will flag our converter that we 
-                // do not have any further data to process.
-                break;
-            }
-            else
-            {
-                // Continue attempting filling the span.
-                currentSpan = currentSpan.Slice(dataRead);
-            }
-
-            bytesRead += (uint)dataRead;
+        }
+        catch (Exception ex)
+        {
+            // We can't throw wave provider errors here - capture the exception to throw it back to the Read call.
+            // However, provide any data back to the converter, if previous provider calls were successful.
+            // The corrupted data (if any such data) bytes were not actually appended in bytesRead variable,
+            // so, these last bytes are not 'visible' to the converter object.
+            wrapper.exceptionOnFillComplexBufferCb = ex;
         }
 
         // Probably assigning the number of buffers in ioData is not required,

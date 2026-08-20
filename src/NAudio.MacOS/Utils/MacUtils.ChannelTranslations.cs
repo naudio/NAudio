@@ -28,8 +28,10 @@ internal partial class MacUtils
             case AudioChannelLabel.kAudioChannelLabel_LFEScreen:
                 return Speakers.LowFrequency;
             case AudioChannelLabel.kAudioChannelLabel_LeftSurround:
+            case AudioChannelLabel.kAudioChannelLabel_RearSurroundLeft:
                 return Speakers.BackLeft;
             case AudioChannelLabel.kAudioChannelLabel_RightSurround:
+            case AudioChannelLabel.kAudioChannelLabel_RearSurroundRight:
                 return Speakers.BackRight;
             case AudioChannelLabel.kAudioChannelLabel_LeftCenter:
                 return Speakers.FrontLeftOfCenter;
@@ -57,7 +59,7 @@ internal partial class MacUtils
             case AudioChannelLabel.kAudioChannelLabel_TopBackCenter:
                 return Speakers.TopBackCenter;
             default:
-                throw new ArgumentException("Cannot decode value " + label + " into a valid Speakers value");
+                throw new ArgumentException($"Cannot decode value {label} into a valid Speakers value");
         }
     }
 
@@ -138,6 +140,12 @@ internal partial class MacUtils
             }
             // The last speaker value won't be appended by the loop; do that now.
             builtSpeakersValue |= speakers[length];
+            if ((uint)speakers.Count != nDescriptions)
+            {
+                // We need channel translation, if we
+                // have unused channels that need to be severed.
+                needsTranslation = true;
+            }
             if (builtSpeakersValue == Speakers.Stereo)
             {
                 // We resolved to a stereo layout, so we do not need WaveFormatExtensible.
@@ -155,11 +163,16 @@ internal partial class MacUtils
         C -> Speakers.FrontCenter
         LFE -> Speakers.LowFrequency
 
-        Ls -> Speakers.BackLeft
-        Rs -> Speakers.BackRight
+        // NOTE: A single surround pair ALWAYS maps to Back;
+        // when both 'Ls/Rs' AND 'Rls/Rrs' are present,
+        // 'Ls/Rs' are Side and 'Rls/Rrs' are Back.
 
-        Rls -> Speakers.SideLeft
-        Rrs -> Speakers.SideRight
+        Ls -> Speakers.BackLeft (Speakers.SideLeft, IF Rls IS DEFINED TOO)
+        Rs -> Speakers.BackRight (Speakers.SideRight, IF Rrs IS DEFINED TOO)
+
+        Rls -> Speakers.BackLeft
+        Rrs -> Speakers.BackRight
+
         Lsd -> Speakers.SideLeft (left surround direct)
         Rsd -> Speakers.SideRight (right surround direct)
 
@@ -204,7 +217,12 @@ internal partial class MacUtils
             tag, AudioChannelLayoutTag.kAudioChannelLayoutTag_UseChannelBitmap
         ))
         {
-            var sp = (Speakers)AudioChannelLayout.GetAudioChannelBitmap(layout);
+            var acb = AudioChannelLayout.GetAudioChannelBitmap(layout);
+            if (acb > AudioChannelBitmap.kAudioChannelBit_TopBackRight)
+            {
+                throw new ArgumentException("Channel layouts that define more than 17 channels in the bitmap mode are not supported.");
+            }
+            var sp = (Speakers)acb;
             needsExtensible = sp != Speakers.None && sp != Speakers.Mono && sp != Speakers.Stereo;
             return sp;
         }
@@ -225,6 +243,23 @@ internal partial class MacUtils
         )
         {
             return Speakers.Stereo;
+        }
+        // Unknown and DiscreteInOrder can't be decoded,
+        // but they both report a channel count - so we can
+        // assume that their layouts are known (assumed as black boxes), but
+        // we can safely assume None, but with requiring translation of course.
+        else if (
+            MatchAudioChannelLayoutTagByConstantValueIgnoringSpeakerCount(
+                tag, AudioChannelLayoutTag.kAudioChannelLayoutTag_DiscreteInOrder
+            )
+            ||
+            MatchAudioChannelLayoutTagByConstantValueIgnoringSpeakerCount(
+                tag, AudioChannelLayoutTag.kAudioChannelLayoutTag_Unknown
+            )
+        )
+        {
+            needsTranslation = true;
+            return Speakers.None;
         }
         else
         {
@@ -338,7 +373,7 @@ internal partial class MacUtils
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
-                Speakers.SideLeft | Speakers.SideRight;
+                Speakers.BackLeft | Speakers.BackRight;
             }
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_6 || // < L R LFE Ls Rs
@@ -376,13 +411,13 @@ internal partial class MacUtils
             {
                 needsTranslation = true;
                 return Speakers.FrontCenter | Speakers.FrontLeft | Speakers.FrontRight |
-                Speakers.SideLeft | Speakers.SideRight | Speakers.TopBackCenter;
+                Speakers.BackLeft | Speakers.BackRight | Speakers.TopBackCenter;
             }
             else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_0_C) // < C Cs L R Rls Rrs
             {
                 needsTranslation = true;
                 return Speakers.FrontCenter | Speakers.BackCenter | Speakers.FrontLeft |
-                Speakers.FrontRight | Speakers.SideLeft | Speakers.SideRight;
+                Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight;
             }
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Hexagonal || // < L R Ls Rs C Cs  -- 60 degree speaker separation
@@ -405,7 +440,7 @@ internal partial class MacUtils
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
-                Speakers.LowFrequency | Speakers.SideLeft | Speakers.SideRight;
+                Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight;
             }
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_A || // <  L R C LFE Ls Rs
@@ -425,15 +460,14 @@ internal partial class MacUtils
             #region 7 channels
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_6_1 || // < 7 channels, L R C LFE Cs Ls Rs
-                (needsTranslation = (
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Ogg_6_1 || // < 7 channels, L C R Ls Rs Cs LFE
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_6_1_B // < 7 channels, L R Ls Rs C Cs LFE
-                ))
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Ogg_6_1 || // < 7 channels, L C R Ls Rs Cs LFE
+                tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_6_1_B // < 7 channels, L R Ls Rs C Cs LFE
             )
             {
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
-                Speakers.LowFrequency | Speakers.BackCenter | Speakers.SideLeft |
-                Speakers.SideRight;
+                Speakers.LowFrequency | Speakers.BackCenter | Speakers.BackLeft |
+                Speakers.BackRight;
             }
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0 || // < L R Ls Rs C Rls Rrs
@@ -466,14 +500,14 @@ internal partial class MacUtils
             {
                 needsTranslation = true;
                 return Speakers.FrontCenter | Speakers.FrontLeft | Speakers.FrontRight |
-                Speakers.SideLeft | Speakers.SideRight | Speakers.TopBackCenter |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.TopBackCenter |
                 Speakers.LowFrequency;
             }
             else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_DTS_6_1_C) // < C Cs L R Rls Rrs LFE
             {
                 needsTranslation = true;
                 return Speakers.FrontCenter | Speakers.BackCenter | Speakers.FrontLeft |
-                Speakers.FrontRight | Speakers.SideLeft | Speakers.SideRight |
+                Speakers.FrontRight | Speakers.BackLeft | Speakers.BackRight |
                 Speakers.LowFrequency;
             }
             else if (
@@ -494,14 +528,14 @@ internal partial class MacUtils
             {
                 needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
-                Speakers.SideLeft | Speakers.SideRight | Speakers.LowFrequency |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.LowFrequency |
                 Speakers.TopFrontCenter;
             }
             else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_6_1_B) // < L C R Ls Rs LFE Ts
             {
                 needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontCenter | Speakers.FrontRight |
-                Speakers.SideLeft | Speakers.SideRight | Speakers.LowFrequency |
+                Speakers.BackLeft | Speakers.BackRight | Speakers.LowFrequency |
                 Speakers.TopBackCenter;
             }
             #endregion
@@ -542,7 +576,9 @@ internal partial class MacUtils
                     tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_C || // <  L R C LFE Ls Rs Rls Rrs
                     tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_A || // < L C R Ls Rs LFE Rls Rrs
                     tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_7_1_B || // < L R Ls Rs Rls Rrs C LFE
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_D // < 8 channels, L R Rls Rrs Ls Rs C LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_D || // < 8 channels, L R Rls Rrs Ls Rs C LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_Ogg_7_1 || // < 8 channels, L C R Ls Rs Rls Rrs LFE
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AAC_7_1_B // < C L R Ls Rs Rls Rrs LFE
                 ))
             )
             {
@@ -558,13 +594,21 @@ internal partial class MacUtils
             else if (
                 tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_CICP_14 || // < L R C LFE Ls Rs Vhl Vhr
                 (needsTranslation = (
-                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_E // < L C R Ls Rs LFE Vhl Vhr
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_E || // < L C R Ls Rs LFE Vhl Vhr
+                    tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AAC_7_1_C // < C L R Ls Rs LFE Vhl Vhr
                 ))
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
                 Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight |
                 Speakers.TopFrontLeft | Speakers.TopFrontRight;
+            }
+            else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_AAC_Octagonal) // < C L R Ls Rs Rls Rrs Cs
+            {
+                needsTranslation = true;
+                return Speakers.FrontCenter | Speakers.FrontLeft | Speakers.FrontRight |
+                Speakers.SideLeft | Speakers.SideRight | Speakers.BackLeft |
+                Speakers.BackRight | Speakers.BackCenter;
             }
             else if (tag == AudioChannelLayoutTag.kAudioChannelLayoutTag_EAC3_7_1_F) // < L C R Ls Rs LFE Cs Ts
             {

@@ -159,14 +159,18 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
 
     private void DisposeAudioFileAndGCHandle()
     {
+        // Stash the error code until all dispose code has been
+        // cleanly executed; as such, handleToAudioFile is cleared
+        // unconditionally and the GC handle is destroyed,
+        // even if AudioFileClose reports failure.
+        int audioFileCallStatus = 0;
         if (handleToAudioFile != IntPtr.Zero)
         {
-            AudioFileException.ThrowIfError(
-                NativeMethods.AudioFileClose(handleToAudioFile)
-            );
+            audioFileCallStatus = NativeMethods.AudioFileClose(handleToAudioFile);
             handleToAudioFile = IntPtr.Zero;
         }
         if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
+        AudioFileException.ThrowIfError(audioFileCallStatus);
     }
 
     /// <inheritdoc />

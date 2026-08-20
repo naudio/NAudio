@@ -76,24 +76,20 @@ public partial class CoreAudioPlayer
         // were provided to the device.
         protected abstract bool ProvideData(uint cBuffers, nint outOutputData, IPlayerSource source);
 
-        // Make sure that the dispatch of the stopped event does not cause the HAL I/O
-        // thread to be processor-overloaded.
-        private void InvokeStoppedEvent()
-        {
-            // We can now remove the flag as the Stop call was executed.
-            shouldStopInNextCall = false;
-            // Try putting the playback stopped event into the .NET thread pool to avoid thread allocations.
-            _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.EventInvoker(), this, false);
-        }
-
         private void EventInvoker() => PlaybackStopped?.Invoke(null, new(exception));
 
         private void StopCode()
         {
             try
             {
+                // We can now remove the flag as the Stop call will be executed.
+                shouldStopInNextCall = false;
                 Stop();
-                InvokeStoppedEvent();
+                // Make sure that the dispatch of the stopped event does not
+                // cause the HAL I/O thread to be processor-overloaded.
+                // So, try putting the playback stopped event into the .NET
+                // thread pool to avoid thread allocations.
+                _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.EventInvoker(), this, false);
             }
             catch { }
         }

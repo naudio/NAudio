@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
 using NAudio.MacOS.CoreAudio.Interop;
+using System.Diagnostics;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -69,17 +70,21 @@ public abstract class CoreAudioIOProcedure : SafeHandle
         IntPtr inClientData
     )
     {
-        // DO NOT TRY TO HANDLE ANY EXCEPTION HERE!!!!
-        // Doing so incurs additional runtime cost creating the .try layer
-        // and detecting exception(s). Be as fast as possible.
-        ((IOProcedureSignature)GCHandle.FromIntPtr(inClientData).Target)
-            .Invoke(
-                inNow,
-                inInputData,
-                inInputTime,
-                outOutputData,
-                inOutputTime
-            );
+        try
+        {
+            ((IOProcedureSignature)GCHandle.FromIntPtr(inClientData).Target)
+                .Invoke(
+                    inNow,
+                    inInputData,
+                    inInputTime,
+                    outOutputData,
+                    inOutputTime
+                );
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine("[CoreAudioIOProcedure]: I/O Procedure call threw an exception: " + e);
+        }
         return 0;
     }
 

@@ -45,10 +45,12 @@ public partial class CoreAudioRecorder
 
         private void TryStopRecording(Exception ex)
         {
+            // Make sure to store any found exception (and remove any previous one)
+            exception = ex;
             try
             {
+                // Attempt to stop the recording.
                 Stop();
-                exception = ex;
                 // Try putting the playback stopped event into the .NET thread pool to avoid thread allocations.
                 _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.InvokeStoppedEvent(), this, false);
             }

@@ -20,9 +20,10 @@ namespace NAudio.MacOS.AudioToolbox;
 /// </summary>
 [SupportedOSPlatform("ios2.1")]
 [SupportedOSPlatform("macos10.4")]
-public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
+public abstract class ExtendedAudioFileServicesReader : WaveStream
 {
     private bool disposed;
+    private long clientReadBytes;
     private IntPtr extFileHandle;
     private WaveFormat targetFormat;
     private readonly object lockObject;
@@ -35,6 +36,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
         disposed = false;
         lockObject = new();
         targetFormat = null;
+        clientReadBytes = 0L;
         this.settings = settings;
     }
 
@@ -241,7 +243,15 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
     /// <inheritdoc />
     public sealed override WaveFormat WaveFormat => targetFormat;
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Reads audio data and places them to the specified <paramref name="buffer"/>.
+    /// </summary>
+    /// <param name="buffer">
+    /// A region of memory. 
+    /// When this method returns, the contents of this region are 
+    /// replaced by the bytes read from the current reader.
+    /// </param>
+    /// <returns><inheritdoc /></returns>
     /// <remarks>
     /// Note that this method is not thread-safe; 
     /// You can read from a different thread from where the reader
@@ -274,36 +284,25 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
                 )
             );
         }
-        return (int)MacUtils.GetNumberOfBytesFromPacketsAndFormat(numFramesToRead, targetFormat);
+        int readBytes = (int)MacUtils.GetNumberOfBytesFromPacketsAndFormat(numFramesToRead, targetFormat);
+        // Even if readBytes is zero, we will just add zero, which won't modify the clientReadBytes value.
+        clientReadBytes += readBytes;
+        return readBytes;
     }
 
     /// <inheritdoc />
     public sealed override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
 
     /// <summary>
-    /// Gets an estimated position, in bytes, of this extended file reader.
+    /// Gets the position, in bytes, of this extended audio file reader.
     /// </summary>
-    /// <remarks>
-    /// This is a pure estimated value based on what it will be returned 
-    /// by the resampler end of the file reader; for accurate positioning, use
-    /// the <see cref="PositionInFrames"/> property.
-    /// </remarks>
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
     public sealed override long Position
     {
         get
         {
-            long position = (long)((PositionInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
-            // The reader provides to us the position in sample frames of the file format,
-            // not on the format that we resample. Although the above calculation is accurate,
-            // if the file's sample rate is fractional, this fails because the number of
-            // frames returned by the API is always integer-bound. The simple fix is to 
-            // assume that the position is accurate by definition, so if a non-block
-            // aligned value is given to us by the above calculation, we assume that
-            // there is an additional frame that was given to us, so we add a frame.
-            long drift = position % targetFormat.BlockAlign;
-            if (drift > 0L) { position += targetFormat.BlockAlign - drift; }
-            return position;
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return clientReadBytes;
         }
         set
         {
@@ -316,15 +315,13 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
             }
             else
             {
+                // Make sure that the input position is in a BlockAlign multiple.
+                value -= (value % targetFormat.BlockAlign);
                 // Calculate the new position: divide the input value by AverageBytesPerSecond
                 // of the target format to get a value in seconds, then multiply by the file's
                 // sample rate to get the actual position to seek to, expressed in the
                 // file's sample frames.
-                double newPosDouble = (value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate;
-                long newPos = (long)newPosDouble;
-                // If we have a fractional frame position, 
-                // assume that is a whole frame, so add one frame.
-                if (newPos != newPosDouble) { newPos++; }
+                long newPos = (long)((value / (double)targetFormat.AverageBytesPerSecond) * sourceAsbd.mSampleRate);
                 long length = LengthInFrames;
                 // Because the above calculation is just an estimated value,
                 // that means that newPos could be much larger than length.
@@ -332,77 +329,53 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream, IDisposable
                 // range exception is thrown.
                 if (newPos > length) { newPos = length; }
                 PositionInFrames = newPos;
+                // Make sure that we set this value after seeking succeeded.
+                clientReadBytes = value;
             }
         }
     }
 
     /// <summary>
-    /// Gets an estimated length, in bytes, of this extended file reader.
+    /// Gets the length, in bytes, of this extended audio file reader.
     /// </summary>
-    /// <remarks>
-    /// This is a pure estimated value based on what it will be returned 
-    /// by the resampler end of the file reader; for accurate length, use
-    /// the <see cref="LengthInFrames"/> property.
-    /// </remarks>
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
     public sealed override long Length
     {
         get
         {
+            ObjectDisposedException.ThrowIf(disposed, this);
             long length = (long)((LengthInFrames / sourceAsbd.mSampleRate) * targetFormat.AverageBytesPerSecond);
-            // See Position's getter comment for the reason why the below is required.
+            // The reader provides to us the length in sample frames of the file format,
+            // not on the format that we resample. Although the above calculation is accurate,
+            // if the file's sample rate is fractional, this fails because the number of
+            // frames returned by the API is always integer-bound. The simple fix is to 
+            // assume that the length is accurate by definition, so if a non-block
+            // aligned value is given to us by the above calculation, we assume that
+            // there is an additional frame that was given to us, so we add a frame.
             long drift = length % targetFormat.BlockAlign;
             if (drift > 0L) { length += targetFormat.BlockAlign - drift; }
             return length;
         }
     }
 
-    /// <summary>
-    /// Gets/sets the position of this extended file reader, expressed in number of sample frames of the file format. <br />
-    /// You can query the exact total number of sample frames that the opened file contains by querying
-    /// the value of the <see cref="LengthInFrames"/> property.
-    /// </summary>
-    /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">While setting the property: The specified position exceeds the length of the opened file, or is less than zero.</exception>
-    public long PositionInFrames
+    private long PositionInFrames
     {
         get
         {
-            ObjectDisposedException.ThrowIf(disposed, this);
             ExtendedAudioFileException.ThrowIfError(
                 NativeMethods.ExtAudioFileTell(extFileHandle, out var frameOffset)
             );
             return frameOffset;
         }
-        set
-        {
-            ObjectDisposedException.ThrowIf(disposed, this);
-            if (value < 0L)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "New position cannot be less than zero.");
-            }
-            else if (value > LengthInFrames)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "New position cannot be more than the file's sample frame length.");
-            }
-            else
-            {
-                ExtendedAudioFileException.ThrowIfError(
-                    NativeMethods.ExtAudioFileSeek(extFileHandle, value)
-                );
-            }
-        }
+        set => ExtendedAudioFileException.ThrowIfError(
+            NativeMethods.ExtAudioFileSeek(extFileHandle, value)
+        );
     }
 
-    /// <summary>
-    /// Gets the length of this extended file reader, expressed in number of sample frames of the file format.
-    /// </summary>
-    /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
-    public unsafe long LengthInFrames
+    private unsafe long LengthInFrames
     {
         get
         {
-            ObjectDisposedException.ThrowIf(disposed, this);
             long value;
             uint size = sizeof(long);
             ExtendedAudioFileException.ThrowIfError(

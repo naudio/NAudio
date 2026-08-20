@@ -416,6 +416,8 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         try
         {
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.Disposed)) { return; }
+            // Make sure that no other threads modify the disposal state.
+            flags |= CoreAudioPlayerStateFlags.Disposed;
             // It has to be noted that if the player is destroyed after
             // the device was removed, there is no need to dispatch
             // a playback stopped event.
@@ -439,7 +441,6 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         }
         finally
         {
-            flags |= CoreAudioPlayerStateFlags.Disposed;
             Monitor.Exit(lockObject);
         }
     }

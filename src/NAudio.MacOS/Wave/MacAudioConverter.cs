@@ -151,6 +151,8 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// <summary>
     /// Gets/sets the quality of the audio converter.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The native converter object has been disposed of.</exception>
+    /// <exception cref="AudioConverterException">This property is not supported for this audio converter object.</exception>
     public AudioConverterQuality Quality
     {
         get
@@ -168,6 +170,8 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// <summary>
     /// Gets/sets the algorithm to use for resampling data.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The native converter object has been disposed of.</exception>
+    /// <exception cref="AudioConverterException">This property is not supported for this audio converter object.</exception>
     public AudioConverterSampleRateComplexity Complexity
     {
         get
@@ -187,6 +191,8 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// The constant <see cref="AudioConverterDitheringAlgorithm.None"/> can be used to disable dithering. <br />
     /// This is only supported in macOS.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The native converter object has been disposed of.</exception>
+    /// <exception cref="AudioConverterException">This property is not supported for this audio converter object.</exception>
     [UnsupportedOSPlatform("ios")]
     public AudioConverterDitheringAlgorithm Dithering
     {
@@ -206,6 +212,8 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// The pre-specified dithering algorithm is applied to the bit length denoted by the value of this property. <br />
     /// This is only supported in macOS.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The native converter object has been disposed of.</exception>
+    /// <exception cref="AudioConverterException">This property is not supported for this audio converter object.</exception>
     [UnsupportedOSPlatform("ios")]
     public uint DitheringBitLength
     {
@@ -225,6 +233,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// Resets the buffer state of the audio converter object,
     /// if there is reported a discontinuity in the source provider.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The native converter object has been disposed of.</exception>
     public void Reset()
     {
         ObjectDisposedException.ThrowIf(actualConverter.IsDisposed, this);

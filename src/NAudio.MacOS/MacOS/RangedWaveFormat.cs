@@ -2,10 +2,11 @@
 using System;
 using System.Runtime.Versioning;
 
+using NAudio.Wave;
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio.Interop;
 
-namespace NAudio.Wave;
+namespace NAudio.MacOS;
 
 /// <summary>
 /// Provides information about a <see cref="WaveFormat"/> and it's acceptable sample rate range. <br />

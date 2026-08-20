@@ -465,12 +465,25 @@ public class WdlResampler
             double adj = (srcpos - m_samples_in_rsinbuf + outlatadj) / drspos;
             if (adj > 0)
             {
-                ret -= (int)(adj + 0.5);
-                if (ret < 0) ret = 0;
+                // NAudio deviates from upstream WDL here. Upstream drops the discarded output
+                // samples but leaves srcpos where the padded run left it, so the overshoot past
+                // the real input is carried into m_fracpos by the isrcpos clamp below. That
+                // overshoot was consumption of the zero padding, not of real input, so carrying
+                // it forward makes the next call skip input that has not been supplied yet: the
+                // resampler loses samples on every short read and eventually returns 0 forever
+                // (see issue #1412). Rewinding srcpos alongside ret keeps the fractional source
+                // position aligned with the samples actually delivered.
+                int trimmed = (int)(adj + 0.5);
+                if (trimmed > ret) trimmed = ret;
+                ret -= trimmed;
+                srcpos -= trimmed * drspos;
+                if (srcpos < 0) srcpos = 0;
             }
         }
 
         int isrcpos = (int)srcpos;
+        // Upstream WDL 2016 feed-mode accounting fix: when srcpos runs past the buffered input the
+        // overshoot has to stay in m_fracpos so the next feed skips it, rather than being lost.
         if (isrcpos > m_samples_in_rsinbuf) isrcpos = m_samples_in_rsinbuf;
         m_fracpos = srcpos - isrcpos;
         m_samples_in_rsinbuf -= isrcpos;

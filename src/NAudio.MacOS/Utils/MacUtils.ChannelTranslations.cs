@@ -12,54 +12,82 @@ namespace NAudio.Utils;
 internal partial class MacUtils
 {
     public static Speakers DecodeAudioChannelLabel(AudioChannelLabel label)
+        => TryDecodeAudioChannelLabel(label, out Speakers speakers)
+            ? speakers
+            : throw new ArgumentException($"Cannot decode value {label} into a valid Speakers value");
+
+    // Reports whether a channel label has a Speakers equivalent instead of
+    // throwing when it does not, so that callers can decide for themselves what
+    // an unmappable label means for the layout as a whole.
+    public static bool TryDecodeAudioChannelLabel(AudioChannelLabel label, out Speakers speakers)
     {
         switch (label)
         {
             case AudioChannelLabel.kAudioChannelLabel_Mono:
-                return Speakers.Mono;
+                speakers = Speakers.Mono;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_Left:
             case AudioChannelLabel.kAudioChannelLabel_HeadphonesLeft:
-                return Speakers.FrontLeft;
+                speakers = Speakers.FrontLeft;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_Right:
             case AudioChannelLabel.kAudioChannelLabel_HeadphonesRight:
-                return Speakers.FrontRight;
+                speakers = Speakers.FrontRight;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_Center:
-                return Speakers.FrontCenter;
+                speakers = Speakers.FrontCenter;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_LFEScreen:
-                return Speakers.LowFrequency;
+                speakers = Speakers.LowFrequency;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_LeftSurround:
             case AudioChannelLabel.kAudioChannelLabel_RearSurroundLeft:
-                return Speakers.BackLeft;
+                speakers = Speakers.BackLeft;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_RightSurround:
             case AudioChannelLabel.kAudioChannelLabel_RearSurroundRight:
-                return Speakers.BackRight;
+                speakers = Speakers.BackRight;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_LeftCenter:
-                return Speakers.FrontLeftOfCenter;
+                speakers = Speakers.FrontLeftOfCenter;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_RightCenter:
-                return Speakers.FrontRightOfCenter;
+                speakers = Speakers.FrontRightOfCenter;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_CenterSurround:
             case AudioChannelLabel.kAudioChannelLabel_CenterSurroundDirect:
-                return Speakers.BackCenter;
+                speakers = Speakers.BackCenter;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_LeftSurroundDirect:
-                return Speakers.SideLeft;
+                speakers = Speakers.SideLeft;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_RightSurroundDirect:
-                return Speakers.SideRight;
+                speakers = Speakers.SideRight;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_TopCenterSurround:
-                return Speakers.TopCenter;
+                speakers = Speakers.TopCenter;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_VerticalHeightLeft:
-                return Speakers.TopFrontLeft;
+                speakers = Speakers.TopFrontLeft;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_VerticalHeightRight:
-                return Speakers.TopFrontRight;
+                speakers = Speakers.TopFrontRight;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_VerticalHeightCenter:
-                return Speakers.TopFrontCenter;
+                speakers = Speakers.TopFrontCenter;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_TopBackLeft:
-                return Speakers.TopBackLeft;
+                speakers = Speakers.TopBackLeft;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_TopBackRight:
-                return Speakers.TopBackRight;
+                speakers = Speakers.TopBackRight;
+                return true;
             case AudioChannelLabel.kAudioChannelLabel_TopBackCenter:
-                return Speakers.TopBackCenter;
+                speakers = Speakers.TopBackCenter;
+                return true;
             default:
-                throw new ArgumentException($"Cannot decode value {label} into a valid Speakers value");
+                speakers = Speakers.None;
+                return false;
         }
     }
 
@@ -99,7 +127,20 @@ internal partial class MacUtils
                 desc.mChannelLabel == AudioChannelLabel.kAudioChannelLabel_Unused ||
                 desc.mChannelLabel == AudioChannelLabel.kAudioChannelLabel_Unknown
             ) { continue; }
-            speakers.Add(DecodeAudioChannelLabel(desc.mChannelLabel));
+            if (!TryDecodeAudioChannelLabel(desc.mChannelLabel, out Speakers speaker))
+            {
+                // A label with no Speakers equivalent makes the layout as a whole
+                // unrepresentable as a bitmask, which is the same position we are
+                // in when a device publishes no layout at all, so answer the same
+                // way rather than throwing. Devices that number their discrete
+                // channels sequentially reach this as soon as they have more than
+                // 18 of them, because Core Audio defines labels 1-18 and then
+                // jumps to 33.
+                needsTranslation = false;
+                needsExtensible = false;
+                return Speakers.None;
+            }
+            speakers.Add(speaker);
         }
         if (speakers.Count == 0)
         {

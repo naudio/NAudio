@@ -83,6 +83,96 @@ public class ChannelConversionTests
         Assert.DoesNotThrow(handle.Dispose);
     }
 
+    // Devices that number their discrete channels sequentially publish channel
+    // descriptions labelled 1..N. Core Audio only defines labels 1-18 before
+    // jumping to 33, so everything past 18 has no Speakers equivalent. Such a
+    // layout cannot be expressed as a bitmask and must decode to Speakers.None
+    // rather than throwing - observed on Pro Tools Audio Bridge 32 and 64,
+    // where it made CoreAudioRecorder.CaptureFormat unusable.
+    [TestCase(19U)]
+    [TestCase(32U)]
+    [TestCase(64U)]
+    public unsafe void VerifyThatSequentiallyLabelledDiscreteLayoutDecodesToNone(uint channels)
+    {
+        var handle = ChannelLayoutHandle.Allocate(
+            (uint)(sizeof(AudioChannelLayout) + ((channels - 1) * sizeof(AudioChannelDescription)))
+        );
+
+        var layout = handle.DangerousGetHandle();
+
+        AudioChannelLayout.SetNumberOfChannelDescriptions(layout, channels);
+
+        for (uint channel = 0; channel < channels; channel++)
+        {
+            AudioChannelLayout.SetChannelDescription(layout, channel, new AudioChannelDescription()
+            {
+                mChannelFlags = AudioChannelFlags.kAudioChannelFlags_AllOff,
+                mChannelLabel = (AudioChannelLabel)(channel + 1)
+            });
+        }
+
+        Speakers spk = Speakers.None;
+
+        Assert.DoesNotThrow(
+            () => spk = MacUtils.ConstructSpeakersValue(layout, out _, out _),
+            $"A discrete {channels} channel layout must not throw!"
+        );
+
+        Assert.That(
+            spk,
+            Is.EqualTo(Speakers.None),
+            $"A discrete {channels} channel layout has no Speakers equivalent!"
+        );
+
+        _ = MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible);
+
+        Assert.That(needsTranslation, Is.False, "An unrepresentable layout cannot claim a translation is needed!");
+
+        Assert.That(needsExtensible, Is.False, "An unrepresentable layout does not need a WaveFormatExtensible!");
+
+        Assert.DoesNotThrow(handle.Dispose);
+    }
+
+    // The labels that do have equivalents must keep decoding as before. 1..6 is
+    // Core Audio's L R C LFE Ls Rs; a single surround pair maps to Back, so this
+    // is the back-speaker flavour of 5.1 rather than Speakers.Surround51, which
+    // is defined with SideLeft and SideRight.
+    [Test]
+    public unsafe void VerifyThatSequentiallyLabelledLayoutWithinRangeStillDecodes()
+    {
+        const uint Channels = 6U;
+
+        var handle = ChannelLayoutHandle.Allocate(
+            (uint)(sizeof(AudioChannelLayout) + ((Channels - 1) * sizeof(AudioChannelDescription)))
+        );
+
+        var layout = handle.DangerousGetHandle();
+
+        AudioChannelLayout.SetNumberOfChannelDescriptions(layout, Channels);
+
+        for (uint channel = 0; channel < Channels; channel++)
+        {
+            AudioChannelLayout.SetChannelDescription(layout, channel, new AudioChannelDescription()
+            {
+                mChannelFlags = AudioChannelFlags.kAudioChannelFlags_AllOff,
+                mChannelLabel = (AudioChannelLabel)(channel + 1)
+            });
+        }
+
+        Assert.That(
+            MacUtils.ConstructSpeakersValue(layout, out _, out var needsExtensible),
+            Is.EqualTo(
+                Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
+                Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight
+            ),
+            "Labels 1 to 6 are L R C LFE Ls Rs, which is a 5.1 layout with back speakers!"
+        );
+
+        Assert.That(needsExtensible, Is.True, "A 5.1 layout needs a WaveFormatExtensible!");
+
+        Assert.DoesNotThrow(handle.Dispose);
+    }
+
     [Test]
     public unsafe void VerifyThatEvenInconsistentButValidStereoConstructedThroughChannelDescriptionsSucceeds()
     {

@@ -32,3 +32,5 @@ myeasylog.log
 docfx/_site/
 docfx/api/*.yml
 docfx/api/.manifest
+# macOS APFS files
+.DS_Store

@@ -133,10 +133,22 @@ public class CoreAudioPlayerTests
             Thread.Sleep(500);
         }
 
-        tamperingThread.Join(TimeSpan.FromSeconds(10));
+        // Wait for the tampering to finish rather than bounding it here. Every
+        // wait inside it is already bounded, and a timeout that expires would
+        // leave the thread still changing the default device's format while the
+        // tests that follow run against it.
+        tamperingThread.Join();
 
         if (tamperingException is not null)
         {
+            // Assert.Ignore inside the thread surfaces as IgnoreException. It
+            // means the device cannot support this test, not that the test
+            // failed, so re-raise it rather than reporting a failure.
+            if (tamperingException is IgnoreException)
+            {
+                Assert.Ignore(tamperingException.Message);
+            }
+
             Assert.Fail("Tampering with the virtual format failed: " + tamperingException);
         }
 

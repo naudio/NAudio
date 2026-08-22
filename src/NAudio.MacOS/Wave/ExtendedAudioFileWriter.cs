@@ -139,16 +139,36 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
 
         using MacOS.CoreFoundationApi.CFURL urlNative = MacOS.CoreFoundationApi.CFURL.CreateFromFilePath(filePath, false);
 
-        ExtendedAudioFileException.ThrowIfError(
-            NativeMethods.ExtAudioFileCreateWithURL(
-                urlNative.DangerousGetObject(),
-                ft,
-                asbd,
-                layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
-                overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
-                out var outExtAudioFile
-            )
-        );
+        // The native call creates the container before it validates the data
+        // format against it, so a rejected combination (AAC cannot carry 32
+        // channels, for instance) leaves a stub file behind that a later reader
+        // then fails on with "the file is malformed".
+        //
+        // Cleanup therefore applies in two cases: a file this call brought into
+        // existence, and an existing file that EraseFile has already truncated,
+        // whose original contents are gone regardless. A file left untouched
+        // because overwriteIfExists was false is never removed.
+        bool removeOnFailure = overwriteIfExists || !System.IO.File.Exists(filePath);
+
+        IntPtr outExtAudioFile;
+        try
+        {
+            ExtendedAudioFileException.ThrowIfError(
+                NativeMethods.ExtAudioFileCreateWithURL(
+                    urlNative.DangerousGetObject(),
+                    ft,
+                    asbd,
+                    layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
+                    overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
+                    out outExtAudioFile
+                )
+            );
+        }
+        catch
+        {
+            DeleteFailedOutput(filePath, removeOnFailure);
+            throw;
+        }
 
         try
         {
@@ -159,7 +179,25 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         catch
         {
             _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
+            DeleteFailedOutput(filePath, removeOnFailure);
             throw;
+        }
+    }
+
+    // Removes the output of a failed creation attempt: either a file this call
+    // created, or one it truncated through EraseFile. A file it never touched is
+    // left alone. Cleanup problems are swallowed wholesale, deliberately - the
+    // caller needs to see why the write failed, not why the tidying up did.
+    private static void DeleteFailedOutput(string filePath, bool removeOnFailure)
+    {
+        if (!removeOnFailure) { return; }
+        try
+        {
+            if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); }
+        }
+        catch
+        {
+            // Nothing useful to do here, and throwing would hide the real error.
         }
     }
 

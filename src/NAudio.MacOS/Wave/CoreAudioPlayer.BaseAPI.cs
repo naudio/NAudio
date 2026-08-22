@@ -396,6 +396,12 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     public void Stop()
     {
         ThrowIfInvalidOrDisposed();
+        // One PlaybackStopped per playback, matching the rest of NAudio: WaveOut
+        // guards the same way, and AsioOut goes further and suppresses the event
+        // its Pause would otherwise raise. Without this, the ordinary
+        // Play(); ... Stop(); shape raises the event twice whenever the source
+        // reached its end first, and every further Stop() raises another.
+        if (PlaybackState == PlaybackState.Stopped) { return; }
         ioProcedure.Stop();
         FirePlaybackStopped(new());
     }

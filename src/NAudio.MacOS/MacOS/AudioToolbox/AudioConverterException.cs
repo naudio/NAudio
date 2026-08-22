@@ -77,6 +77,18 @@ public sealed class AudioConverterException : AudioToolboxException
         {
             throw new AudioConverterException("This converter object requires the packet descriptions to have been initialized.", osStatus);
         }
+        else if (osStatus == CoreAudioTypes.ErrorConstants.kAudio_ParamError)
+        {
+            // Reported by AudioConverterSetProperty when the properties set on the
+            // converter disagree with one another - a channel layout whose channel
+            // count does not match the stream format, for instance. Worth naming,
+            // because "Unspecified error" gives the caller nothing to go on.
+            throw new AudioConverterException(
+                "Invalid parameter passed to the audio converter (kAudio_ParamError). " +
+                "This usually means the properties assigned to the converter are inconsistent with each other.",
+                osStatus
+            );
+        }
         else
         {
             throw new AudioConverterException("Unspecified error.", osStatus);

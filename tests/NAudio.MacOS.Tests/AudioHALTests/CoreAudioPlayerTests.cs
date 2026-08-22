@@ -7,6 +7,8 @@ using NAudio.MacOS.CoreAudio;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
+using System.Linq;
+
 using NUnit.Framework;
 
 namespace NAudio.MacOS.Tests.AudioHALTests;
@@ -109,11 +111,33 @@ public class CoreAudioPlayerTests
 
         Assert.DoesNotThrow(player.Play);
 
-        new Thread(() => PerformArbitraryChanges(player)).Start();
+        // The tampering runs on its own thread, so anything it throws has to be
+        // carried back here. Left unhandled it takes down the whole test host
+        // and every test after this one never runs.
+        Exception tamperingException = null;
+        var tamperingThread = new Thread(() =>
+        {
+            try
+            {
+                PerformArbitraryChanges(player);
+            }
+            catch (Exception ex)
+            {
+                tamperingException = ex;
+            }
+        });
+        tamperingThread.Start();
 
         while (player.PlaybackState == PlaybackState.Playing)
         {
             Thread.Sleep(500);
+        }
+
+        tamperingThread.Join(TimeSpan.FromSeconds(10));
+
+        if (tamperingException is not null)
+        {
+            Assert.Fail("Tampering with the virtual format failed: " + tamperingException);
         }
 
         if (capturedException is not null)
@@ -128,9 +152,22 @@ public class CoreAudioPlayerTests
 
     private static void PerformArbitraryChanges(CoreAudioPlayer instance)
     {
-        // A list of sample rates that the random number generator should pick
-        // while tampering the stream's virtual format.
-        int[] sampleRatesToSelectFrom = [18000, 6000, 48000, 44100, 14000];
+        // The rates have to come from the device. A fixed list only works on
+        // hardware that happens to accept those particular values: a Universal
+        // Audio Apollo, for one, offers 44.1/48/88.2/96/176.4/192 and rejects
+        // anything else with kAudioDeviceUnsupportedFormatError, which used to
+        // abort the entire test run from this thread.
+        int[] sampleRatesToSelectFrom = instance.Device.AvailableNomimalSampleRates
+            .Where(static range => range.min == range.max)
+            .Select(static range => (int)range.min)
+            .Distinct()
+            .ToArray();
+
+        if (sampleRatesToSelectFrom.Length < 2)
+        {
+            Assert.Ignore("This test requires a device offering at least two discrete nominal sample rates.");
+        }
+
         int times = 0;
         AudioStream stream = null;
         WaveFormat outFormat = instance.OutputWaveFormat;
@@ -143,19 +180,91 @@ public class CoreAudioPlayerTests
                 break;
             }
         }
+        if (stream is null) { return; }
+
+        // The format this stream was in before the test touched anything. It has
+        // to be captured once, out here: capturing it inside the loop makes each
+        // pass treat whatever the previous pass left as the original, so the
+        // device drifts and is not put back where it started.
+        WaveFormat originalStreamFormat = stream.VirtualFormat;
+
         int newRate;
-        while (stream is not null && times < 5)
+        try
         {
-            newRate = sampleRatesToSelectFrom[(int)(Random.Shared.NextSingle() * sampleRatesToSelectFrom.Length)];
-            var vf = stream.VirtualFormat;
-            System.Console.WriteLine("Changing sample rate to: {0}", newRate);
-            stream.VirtualFormat = new(newRate, vf.BitsPerSample, vf.Channels);
-            Thread.Sleep(3400);
-            System.Console.WriteLine("Reverting sample rate change.");
-            stream.VirtualFormat = vf;
-            Thread.Sleep(2000);
-            times++;
+            while (times < 5)
+            {
+                newRate = sampleRatesToSelectFrom[(int)(Random.Shared.NextSingle() * sampleRatesToSelectFrom.Length)];
+                var vf = originalStreamFormat;
+                System.Console.WriteLine("Changing sample rate to: {0}", newRate);
+                stream.VirtualFormat = new(newRate, vf.BitsPerSample, vf.Channels);
+                // Wait for the hardware to arrive at the new rate rather than
+                // assuming a fixed interval. Virtual devices switch instantly;
+                // a Universal Audio Apollo does it with a mechanical relay and
+                // takes seconds. Driving the next step off a constant means the
+                // faster hardware waits needlessly and the slower hardware is
+                // still switching when the test moves on - which is what left the
+                // device in flux for the tests that follow.
+                WaitForStreamToSettle(stream);
+                Thread.Sleep(SettleMilliseconds);
+                System.Console.WriteLine("Reverting sample rate change.");
+                stream.VirtualFormat = vf;
+                WaitForStreamToSettle(stream);
+                Thread.Sleep(SettleMilliseconds);
+                times++;
+            }
+
         }
+        finally
+        {
+            // Put the stream back where it was found, whatever happened above,
+            // and wait until it has actually got there. Interfaces do not all
+            // switch instantly - a Universal Audio Apollo uses a mechanical
+            // relay and takes seconds - and while one is still switching it
+            // keeps emitting format-change notifications, which stop anything
+            // started against it. Returning while that is still going on leaves
+            // the tests that follow running against a device in flux.
+            stream.VirtualFormat = originalStreamFormat;
+            WaitForStreamToSettle(stream);
+        }
+
         System.Console.WriteLine("Arbitrary changes were performed and completed.");
+    }
+
+    // A floor on how long each rate is held, on top of waiting for the reported
+    // format to stop moving. The reported format does not track a mechanical
+    // relay's physical movement, so "settled" can arrive while the hardware is
+    // still switching; without a floor the test cycles a physical part faster
+    // than the original fixed delays did. Two seconds keeps it no more
+    // aggressive than the code this replaced.
+    private const int SettleMilliseconds = 2000;
+
+    // Waits until the stream's format stops moving, rather than for a
+    // particular value. Asking whether the stream has reached a specific rate
+    // does not work across hardware: on the interface this was written against
+    // the stream does not report the requested rate back promptly even when the
+    // change is accepted, so a target-value poll just burns its whole timeout.
+    // What the following tests actually need is for the device to have finished
+    // changing, whatever it settled on.
+    private static void WaitForStreamToSettle(AudioStream stream)
+    {
+        const int TimeoutMilliseconds = 30000;
+        const int PollMilliseconds = 250;
+        const int StableReadingsRequired = 4; // roughly a second unchanged
+
+        double previousRate = double.NaN;
+        int stableReadings = 0;
+
+        for (int waited = 0; waited < TimeoutMilliseconds; waited += PollMilliseconds)
+        {
+            double rate = stream.VirtualFormat.SampleRate;
+            stableReadings = rate.Equals(previousRate) ? stableReadings + 1 : 0;
+            if (stableReadings >= StableReadingsRequired) { return; }
+            previousRate = rate;
+            Thread.Sleep(PollMilliseconds);
+        }
+
+        System.Console.WriteLine(
+            "Warning: the stream's format was still changing after {0} ms; it reads {1} Hz.",
+            TimeoutMilliseconds, stream.VirtualFormat.SampleRate);
     }
 }

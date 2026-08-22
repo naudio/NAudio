@@ -137,6 +137,22 @@ public abstract class AudioObject :
         return returnValue;
     }
 
+    // The uint counterpart of GetStringPropertyValueOrEmptyIfNotExisting, for
+    // properties Core Audio marks optional. kAudioDevicePropertyUsesVariableBufferFrameSizes
+    // is absent on all 19 devices of the machine this was added for, which made
+    // the property throw rather than answer.
+    private protected uint GetUIntPropertyValueOrDefaultIfNotExisting(AudioObjectPropertyAddress address, uint defaultValue = 0U)
+    {
+        try
+        {
+            return GetUIntPropertyValue(address);
+        }
+        catch (CoreAudioPropertyNotFoundException)
+        {
+            return defaultValue;
+        }
+    }
+
     private protected unsafe uint GetUIntPropertyValue<T>(AudioObjectPropertyAddress address, Span<T> qualifier)
         where T : unmanaged
     {
@@ -185,6 +201,12 @@ public abstract class AudioObject :
     private protected unsafe AudioValueRange[] GetAudioValueRangesPropertyValue(AudioObjectPropertyAddress address)
     {
         uint nativeSize = QueryPropertySize(address);
+        // A property with nothing in it answers with a size of 0, which is not
+        // an error. Handing the resulting zero-length array to `fixed` yields a
+        // null pointer, and the HAL rejects a null buffer with
+        // kAudioHardwareIllegalOperationError - so an empty collection has to be
+        // returned before the data call rather than after it.
+        if (nativeSize == 0) { return []; }
         var returnValue = new AudioValueRange[nativeSize / sizeof(AudioValueRange)];
         fixed (AudioValueRange* memBlock = returnValue)
         {
@@ -199,6 +221,7 @@ public abstract class AudioObject :
     private protected unsafe T[] GetArrayOfTPropertyValue<T>(AudioObjectPropertyAddress address, int size)
         where T : unmanaged
     {
+        if (size == 0) { return []; }
         var returnValue = new T[size];
         uint nativeSize = (uint)(sizeof(T) * returnValue.LongLength);
         fixed (T* memBlock = returnValue)
@@ -215,6 +238,12 @@ public abstract class AudioObject :
         where T : unmanaged
     {
         uint nativeSize = QueryPropertySize(address);
+        // A property with nothing in it answers with a size of 0, which is not
+        // an error. Handing the resulting zero-length array to `fixed` yields a
+        // null pointer, and the HAL rejects a null buffer with
+        // kAudioHardwareIllegalOperationError - so an empty collection has to be
+        // returned before the data call rather than after it.
+        if (nativeSize == 0) { return []; }
         var returnValue = new T[nativeSize / sizeof(T)];
         fixed (T* memBlock = returnValue)
         {
@@ -255,6 +284,12 @@ public abstract class AudioObject :
         where T : AudioObject
     {
         uint size = QueryPropertySize(address);
+        // A property with nothing in it answers with a size of 0, which is not
+        // an error. Handing the resulting zero-length array to `fixed` yields a
+        // null pointer, and the HAL rejects a null buffer with
+        // kAudioHardwareIllegalOperationError - so an empty collection has to be
+        // returned before the data call rather than after it.
+        if (size == 0) { return []; }
         AudioObjectID[] ids = new AudioObjectID[size / sizeof(AudioObjectID)];
         fixed (AudioObjectID* pids = ids)
         {

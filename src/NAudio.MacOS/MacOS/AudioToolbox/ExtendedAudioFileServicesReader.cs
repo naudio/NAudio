@@ -306,6 +306,10 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
         }
         set
         {
+            // The getter checks this and the property is documented as throwing
+            // it, but the setter went straight to the native API with a dead
+            // handle and surfaced a bare kAudio_ParamError instead.
+            ObjectDisposedException.ThrowIf(disposed, this);
             // We could validate the value against the Length property,
             // but that is just an estimate, and so could falsely flag
             // ArgumentOutOfRangeException while there are still audio data to return.

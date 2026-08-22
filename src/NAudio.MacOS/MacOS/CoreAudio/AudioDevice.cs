@@ -303,6 +303,17 @@ public class AudioDevice : AudioObject
             {
                 return null;
             }
+            catch (CoreAudioException ex) when (ex.ErrorCode == ErrorConstants.kAudioHardwareUnspecifiedError)
+            {
+                // Some virtual drivers advertise the icon property and then fail
+                // to produce one. NDI Audio on the machine this was found on
+                // answers AudioObjectHasProperty with true and a size query with
+                // 8 bytes, then fails the data read with
+                // kAudioHardwareUnspecifiedError and hands back a NULL CFURLRef.
+                // There is no icon to return, which is exactly what this property
+                // already promises to signal for a device without one.
+                return null;
+            }
         }
     }
 
@@ -462,7 +473,12 @@ public class AudioDevice : AudioObject
     /// </summary>
     public bool HogMode
     {
-        get => unchecked((int)GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyHogMode))) != -1;
+        // Aggregate devices do not implement hog mode at all, and a device that
+        // cannot be hogged is by definition not hogged, so an absent property
+        // answers the same as the "nobody owns it" sentinel of -1.
+        get => unchecked((int)GetUIntPropertyValueOrDefaultIfNotExisting(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyHogMode),
+            unchecked((uint)-1))) != -1;
         set => SetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyHogMode), 0U);
     }
 
@@ -498,7 +514,7 @@ public class AudioDevice : AudioObject
     /// devices to be able to send buffers however they please. Rather, it is
     /// intended to allow for hardware whose natural rhythms lead to this necessity.
     /// </summary>
-    public uint UsesVariableBufferFrameSizes => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyUsesVariableBufferFrameSizes));
+    public uint UsesVariableBufferFrameSizes => GetUIntPropertyValueOrDefaultIfNotExisting(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyUsesVariableBufferFrameSizes));
 
     /// <summary>
     /// A <see cref="float"/> whose range is from 0 to 1. This value indicates how much of the

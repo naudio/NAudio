@@ -139,16 +139,32 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
 
         using MacOS.CoreFoundationApi.CFURL urlNative = MacOS.CoreFoundationApi.CFURL.CreateFromFilePath(filePath, false);
 
-        ExtendedAudioFileException.ThrowIfError(
-            NativeMethods.ExtAudioFileCreateWithURL(
-                urlNative.DangerousGetObject(),
-                ft,
-                asbd,
-                layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
-                overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
-                out var outExtAudioFile
-            )
-        );
+        // The native call creates the container before it validates the data
+        // format against it, so a rejected combination (AAC cannot carry 32
+        // channels, for instance) leaves a stub file behind that a later reader
+        // then fails on. Only a file this call brought into existence is removed
+        // on failure; one that was already there is left alone.
+        bool fileExistedBeforehand = System.IO.File.Exists(filePath);
+
+        IntPtr outExtAudioFile;
+        try
+        {
+            ExtendedAudioFileException.ThrowIfError(
+                NativeMethods.ExtAudioFileCreateWithURL(
+                    urlNative.DangerousGetObject(),
+                    ft,
+                    asbd,
+                    layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
+                    overwriteIfExists ? AudioFileFlags.EraseFile : AudioFileFlags.None,
+                    out outExtAudioFile
+                )
+            );
+        }
+        catch
+        {
+            DeleteIfCreatedHere(filePath, fileExistedBeforehand);
+            throw;
+        }
 
         try
         {
@@ -159,8 +175,23 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         catch
         {
             _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
+            DeleteIfCreatedHere(filePath, fileExistedBeforehand);
             throw;
         }
+    }
+
+    // Removes a file that a failed creation attempt brought into existence.
+    // Never touches a file that was already on disk, and never lets a cleanup
+    // problem replace the original failure.
+    private static void DeleteIfCreatedHere(string filePath, bool fileExistedBeforehand)
+    {
+        if (fileExistedBeforehand) { return; }
+        try
+        {
+            if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); }
+        }
+        catch (System.IO.IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>

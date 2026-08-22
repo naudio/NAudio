@@ -337,6 +337,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             ioProcedure.Event += queue.EnqueueFromHandler;
             ioProcedure.Start();
             state = CaptureState.Capturing;
+
             CoreAudioCaptureBuffer buffer;
             // Note that the below loop may be also stopped by using the IsRunning property.
             // This might happen for a couple of reasons:

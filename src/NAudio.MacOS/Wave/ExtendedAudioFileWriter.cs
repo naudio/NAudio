@@ -142,9 +142,13 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         // The native call creates the container before it validates the data
         // format against it, so a rejected combination (AAC cannot carry 32
         // channels, for instance) leaves a stub file behind that a later reader
-        // then fails on. Only a file this call brought into existence is removed
-        // on failure; one that was already there is left alone.
-        bool fileExistedBeforehand = System.IO.File.Exists(filePath);
+        // then fails on with "the file is malformed".
+        //
+        // Cleanup therefore applies in two cases: a file this call brought into
+        // existence, and an existing file that EraseFile has already truncated,
+        // whose original contents are gone regardless. A file left untouched
+        // because overwriteIfExists was false is never removed.
+        bool removeOnFailure = overwriteIfExists || !System.IO.File.Exists(filePath);
 
         IntPtr outExtAudioFile;
         try
@@ -162,7 +166,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         }
         catch
         {
-            DeleteIfCreatedHere(filePath, fileExistedBeforehand);
+            DeleteFailedOutput(filePath, removeOnFailure);
             throw;
         }
 
@@ -175,23 +179,26 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         catch
         {
             _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
-            DeleteIfCreatedHere(filePath, fileExistedBeforehand);
+            DeleteFailedOutput(filePath, removeOnFailure);
             throw;
         }
     }
 
-    // Removes a file that a failed creation attempt brought into existence.
-    // Never touches a file that was already on disk, and never lets a cleanup
-    // problem replace the original failure.
-    private static void DeleteIfCreatedHere(string filePath, bool fileExistedBeforehand)
+    // Removes the output of a failed creation attempt: either a file this call
+    // created, or one it truncated through EraseFile. A file it never touched is
+    // left alone. Cleanup problems are swallowed wholesale, deliberately - the
+    // caller needs to see why the write failed, not why the tidying up did.
+    private static void DeleteFailedOutput(string filePath, bool removeOnFailure)
     {
-        if (fileExistedBeforehand) { return; }
+        if (!removeOnFailure) { return; }
         try
         {
             if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); }
         }
-        catch (System.IO.IOException) { }
-        catch (UnauthorizedAccessException) { }
+        catch
+        {
+            // Nothing useful to do here, and throwing would hide the real error.
+        }
     }
 
     /// <summary>

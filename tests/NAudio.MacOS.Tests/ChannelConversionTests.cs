@@ -112,9 +112,10 @@ public class ChannelConversionTests
         }
 
         Speakers spk = Speakers.None;
+        bool needsTranslation = true, needsExtensible = true;
 
         Assert.DoesNotThrow(
-            () => spk = MacUtils.ConstructSpeakersValue(layout, out _, out _),
+            () => spk = MacUtils.ConstructSpeakersValue(layout, out needsTranslation, out needsExtensible),
             $"A discrete {channels} channel layout must not throw!"
         );
 
@@ -123,8 +124,6 @@ public class ChannelConversionTests
             Is.EqualTo(Speakers.None),
             $"A discrete {channels} channel layout has no Speakers equivalent!"
         );
-
-        _ = MacUtils.ConstructSpeakersValue(layout, out var needsTranslation, out var needsExtensible);
 
         Assert.That(needsTranslation, Is.False, "An unrepresentable layout cannot claim a translation is needed!");
 

@@ -34,12 +34,16 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
 
     /// <summary>
     /// Initializes a new Core Audio recoder instance, using the default input
-    /// device to capture audio data.
+    /// device to capture audio data. <br />
+    /// If a synchronization context is assigned for the thread where this instance
+    /// is created to, it is used during recording stopped events.
     /// </summary>
     public CoreAudioRecorder() : this(AudioSystemObject.Instance.DefaultInputDevice) { }
 
     /// <summary>
-    /// Initializes a new Core Audio recoder instance from the specified device.
+    /// Initializes a new Core Audio recoder instance from the specified device. <br />
+    /// If a synchronization context is assigned for the thread where this instance
+    /// is created to, it is used during recording stopped events.
     /// </summary>
     /// <param name="device">The <see cref="AudioDevice"/> to capture data from.</param>
     /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
@@ -241,6 +245,9 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// This API uses the <see cref="DataAvailable"/> event to pull the captured audio data.
     /// </summary>
     /// <seealso cref="CaptureAsync"/>
+    /// <exception cref="InvalidOperationException">The recorder is not initialized.</exception>
+    /// <exception cref="ObjectDisposedException">This recorder instance has been disposed of.</exception>
+    /// <exception cref="CoreAudioException">The device that is used by the recorder is not existing.</exception>
     public void StartRecording()
     {
         ThrowIfInvalidOrDisposed();
@@ -282,6 +289,9 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// <summary>
     /// Stops the recording, previously started by the <see cref="StartRecording"/> method.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The recorder is not initialized.</exception>
+    /// <exception cref="ObjectDisposedException">This recorder instance has been disposed of.</exception>
+    /// <exception cref="CoreAudioException">The device that is used by the recorder is not existing.</exception>
     public void StopRecording()
     {
         ThrowIfInvalidOrDisposed();
@@ -304,7 +314,9 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// </summary>
     /// <param name="cancellationToken">The token that can be used to manually stop recording (Although it is also possible by calling the <see cref="StopRecording"/> method).</param>
     /// <returns>An enumerable instance returning capture buffers in an asynchronous manner.</returns>
+    /// <exception cref="ObjectDisposedException">This recorder instance has been disposed of.</exception>
     /// <exception cref="InvalidOperationException">This recorder instance is already been in use.</exception>
+    /// <exception cref="CoreAudioException">The device that is used by the recorder is not existing.</exception>
     public async IAsyncEnumerable<CoreAudioCaptureBuffer> CaptureAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
@@ -390,7 +402,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// Provides an event that is fired when the recorder's capture format has been changed.
     /// </summary>
     /// <remarks>
-    /// If capture is already running on this instance, capture will be stopped. <br />
+    /// If capture is already running, capture will be stopped. <br />
     /// If you want to restart recording, explicitly call the <see cref="StartRecording"/> method.
     /// </remarks>
     public event CoreAudioCaptureFormatChangedHandler CaptureFormatChanged;

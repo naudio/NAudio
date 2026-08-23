@@ -44,14 +44,16 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
     /// <summary>
     /// Initializes a new Core Audio player instance that renders
-    /// audio to the system's default output device. 
+    /// audio to the system's default output device. <br />
+    /// If a synchronization context is assigned for the thread where this instance
+    /// is created to, it is used during playback stopped events.
     /// </summary>
     public CoreAudioPlayer() : this(AudioSystemObject.Instance.DefaultOutputDevice) { }
 
     /// <summary>
     /// Initializes a new Core Audio player instance that renders audio
     /// to the specified Core Audio <see cref="AudioDevice"/> instance. <br />
-    /// If a syncrhonization context is assigned for the thread where this instance
+    /// If a synchronization context is assigned for the thread where this instance
     /// is created to, it is used during playback stopped events.
     /// </summary>
     /// <param name="device">The audio device where the audio will be rendered to</param>
@@ -61,7 +63,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         ArgumentNullException.ThrowIfNull(device);
         if (!device.IsAlive)
         {
-            throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a capture device.");
+            throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a playback device.");
         }
         lockObject = new();
         selectedSource = null;

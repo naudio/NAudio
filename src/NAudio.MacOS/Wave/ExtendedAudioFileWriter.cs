@@ -57,6 +57,23 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         }
     }
 
+    // Removes the output of a failed creation attempt: either a file this call
+    // created, or one it truncated through EraseFile. A file it never touched is
+    // left alone. Cleanup problems are swallowed wholesale, deliberately - the
+    // caller needs to see why the write failed, not why the tidying up did.
+    private static void DeleteFailedOutput(string filePath, bool removeOnFailure)
+    {
+        if (!removeOnFailure) { return; }
+        try
+        {
+            if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); }
+        }
+        catch
+        {
+            // Nothing useful to do here, and throwing would hide the real error.
+        }
+    }
+
     /// <summary>
     /// Constructs a new instance of the <see cref="ExtendedAudioFileWriter" />
     /// class, providing the URL where the new produced file will be located to.
@@ -181,23 +198,6 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
             _ = NativeMethods.ExtAudioFileDispose(outExtAudioFile);
             DeleteFailedOutput(filePath, removeOnFailure);
             throw;
-        }
-    }
-
-    // Removes the output of a failed creation attempt: either a file this call
-    // created, or one it truncated through EraseFile. A file it never touched is
-    // left alone. Cleanup problems are swallowed wholesale, deliberately - the
-    // caller needs to see why the write failed, not why the tidying up did.
-    private static void DeleteFailedOutput(string filePath, bool removeOnFailure)
-    {
-        if (!removeOnFailure) { return; }
-        try
-        {
-            if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); }
-        }
-        catch
-        {
-            // Nothing useful to do here, and throwing would hide the real error.
         }
     }
 

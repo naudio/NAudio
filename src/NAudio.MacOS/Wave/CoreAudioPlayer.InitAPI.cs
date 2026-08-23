@@ -45,11 +45,18 @@ public partial class CoreAudioPlayer
 
         ioProcedure.Stop();
 
-        selectedSource.Dispose();
+        try
+        {
+            selectedSource.Dispose();
 
-        Initialize();
+            Initialize();
 
-        if (wasRunning) { ioProcedure.Start(); }
+            if (wasRunning) { ioProcedure.Start(); }
+        }
+        catch (Exception ex)
+        {
+            FirePlaybackStopped(new(ex));
+        }
     }
 
     private void OnVirtualFormatChanged(AudioObject stream)
@@ -57,17 +64,21 @@ public partial class CoreAudioPlayer
         bool wasRunning = ioProcedure.IsRunning;
         ioProcedure.Stop();
         // Do not fire playback stopped event here.
-        // Dispose the resampler, if we have one.
-        selectedSource.Dispose();
 
         try
         {
+            // Dispose the resampler, if we have one.
+            selectedSource.Dispose();
+
             // Perform initialization from the beginning.
             Initialize();
+
             if (wasRunning) { ioProcedure.Start(); }
         }
         catch (Exception ex)
         {
+            // Clear the initialized flag to avoid getting the player into an unspecified state.
+            flags &= ~CoreAudioPlayerStateFlags.Initialized;
             FirePlaybackStopped(new(ex));
         }
     }

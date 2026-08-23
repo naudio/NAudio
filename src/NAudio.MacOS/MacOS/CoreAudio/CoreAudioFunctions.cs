@@ -10,12 +10,12 @@ using NAudio.MacOS.CoreAudio.Interop;
 namespace NAudio.MacOS.CoreAudio;
 
 /// <summary>
-/// Exposes to the public some native functions, appropriately wrapped.
+/// Exposes utility methods, some of them are wrapping native functions.
 /// </summary>
 public static class CoreAudioFunctions
 {
     /// <summary>Gets the current host time.</summary>
-    /// <returns>A <see cref="double"/> containing the current host time.</returns>
+    /// <returns>A <see cref="ulong"/> containing the current host time.</returns>
     public static ulong CurrentHostTime => NativeMethods.AudioGetCurrentHostTime();
 
     /// <summary>Gets the number of ticks per second in the host time base.</summary>
@@ -40,6 +40,39 @@ public static class CoreAudioFunctions
     /// <returns>The converted host time value in seconds.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double ConvertHostTimeToSeconds(ulong hostTime) => hostTime / HostClockFrequency;
+
+    /// <summary>
+    /// Queries the current native virtual audio format of the specified <see cref="AudioStream"/> 
+    /// and gets a value whether the currently used HAL virtual format is non-interleaved. <br />
+    /// What is a non-interleaved audio format? <br />
+    /// All the audio data processed and produced by NAudio are grouped as interleaved samples. <br />
+    /// An interleaved sample contains all the sampled values for each channel. <br />
+    /// A non-interleaved sample contains a single sampled value for a single channel. <br />
+    /// This important distinction is existing in HAL and is used in top-notch professional
+    /// audio devices and aggregate devices, and as such when writing a custom <see cref="CoreAudioIOProcedure"/>
+    /// this is only way to know about this distinction.
+    /// </summary>
+    /// <param name="stream">The <see cref="AudioStream"/> whose virtual format is to be queried.</param>
+    /// <returns>A value whether the current format used by the stream is non-interleaved.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
+    public static bool IsNonInterleavedStream(AudioStream stream)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return stream.VirtualFormatNative.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved);
+    }
+
+    /// <summary>
+    /// Queries the current native virtual audio format of the specified <see cref="AudioStream"/> 
+    /// and gets a value whether the currently used HAL virtual format is non-mixable.
+    /// </summary>
+    /// <param name="stream">The <see cref="AudioStream"/> whose virtual format is to be queried.</param>
+    /// <returns>A value whether the current format used by the stream is non-mixable.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
+    public static bool IsNonMixableStream(AudioStream stream)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return stream.VirtualFormatNative.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonMixable);
+    }
 
     /// <summary>
     /// Gets the current time of the specified audio device, if running.

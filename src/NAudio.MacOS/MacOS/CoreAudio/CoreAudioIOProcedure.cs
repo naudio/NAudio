@@ -1,18 +1,18 @@
 
 using System;
+using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
 using NAudio.MacOS.CoreAudio.Interop;
-using System.Diagnostics;
 
 namespace NAudio.MacOS.CoreAudio;
 
 /// <summary>
 /// Provides the base type for creating I/O procedures and registering them to the HAL. <br />
 /// From this, an input source and an output sink of audio data can be created. <br />
-/// This is the type that the <see cref="Wave.CoreAudioPlayer"/> and <see cref="Wave.CoreAudioRecorder"/> classes will use to provide audio data.
+/// This is the type that the <see cref="Wave.CoreAudioPlayer"/> and <see cref="Wave.CoreAudioRecorder"/> classes will use to provide/acquire audio data.
 /// </summary>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.5")]
@@ -92,12 +92,6 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     /// Provides the method that is called automatically by the HAL IO thread as needed. <br />
     /// Data can be retrieved from this, as well as providing data to this.
     /// </summary>
-    /// <remarks>
-    /// Note that this method must not throw at any circumstance;
-    /// if it does so, it will fail fast the process, so try
-    /// to catch any exceptions thrown during any exceptional call 
-    /// and relay them to your own user code instead.
-    /// </remarks>
     /// <seealso href="https://developer.apple.com/documentation/coreaudio/audiodeviceioproc?language=objc"/>
     /// <param name="inNow">
     /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiotimestamp?language=objc">AudioTimeStamp</see> pointer that indicates the IO cycle started. 
@@ -175,17 +169,17 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     public sealed override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <summary>
-    /// Release the IO procedure and all the required interoperation objects that it needs to communicate over .NET.
+    /// Release the I/O procedure and all the required interoperation objects that it needs to communicate over .NET.
     /// </summary>
-    /// <returns>A value whether the IO procedure was freed sucessfully.</returns>
+    /// <returns>A value whether the I/O procedure was freed sucessfully.</returns>
     protected sealed override bool ReleaseHandle()
     {
         isRunning = false;
-        // Note: The below function invocations may 
-        // return bad device error when the device 
+        // Note: The below function invocations may
+        // return bad device error when the device
         // is disconnected from the HAL.
-        // Once this happens, the HAL is seem to dispose everything 
-        // associated with the device: It's I/O procedures, 
+        // Once this happens, the HAL is seem to dispose everything
+        // associated with the device: It's I/O procedures,
         // the property listeners, it's controls and everything
         // else associated with it. As such, whence disposing
         // an AudioDevice which was valid at the time of construction
@@ -194,9 +188,9 @@ public abstract class CoreAudioIOProcedure : SafeHandle
         // when disposing the GC handle. The old check enforced
         // that these invocations pass, and as such could
         // genuinely leak the GC handle if/when the audio
-        // device was disconnected from the HAL. 
+        // device was disconnected from the HAL.
         // Note that we do still flag to .NET that there is an error
-        // when osStatus != 0, but we dispose the delegate GC handle 
+        // when osStatus != 0, but we dispose the delegate GC handle
         // if there is a bad device error.
         int osStatus = NativeMethods.AudioDeviceStop(device.objectId, handle);
         if (osStatus == ErrorConstants.kAudioHardwareNoError)
@@ -204,12 +198,13 @@ public abstract class CoreAudioIOProcedure : SafeHandle
             osStatus = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle);
         }
         if (
-            (osStatus == 0 || osStatus == ErrorConstants.kAudioHardwareBadDeviceError)
+            (osStatus == ErrorConstants.kAudioHardwareNoError ||
+            osStatus == ErrorConstants.kAudioHardwareBadDeviceError)
             && delegateGcHandle.IsAllocated
         )
         {
             delegateGcHandle.Free();
         }
-        return osStatus == 0;
+        return osStatus == ErrorConstants.kAudioHardwareNoError;
     }
 }

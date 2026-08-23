@@ -402,7 +402,11 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     public sealed override TimeSpan CurrentTime
     {
         get => TimeSpan.FromSeconds(PositionInFrames / sourceAsbd.mSampleRate);
-        set => PositionInFrames = (long)(value.TotalSeconds * sourceAsbd.mSampleRate);
+        // mdcdi1315: We are calling base.CurrentTime instead to ensure
+        // that the clientReadBytes field is correctly updated.
+        // The overriden getter can be kept as-is.
+        // set => PositionInFrames = (long)(value.TotalSeconds * sourceAsbd.mSampleRate);
+        set => base.CurrentTime = value;
     }
 
     /// <inheritdoc />

@@ -50,7 +50,17 @@ public partial class CoreAudioRecorder
                 Monitor.Exit(lockObject);
             }
         }
-        Initialize();
+        try
+        {
+            Initialize();
+        }
+        catch (Exception e)
+        {
+            // Clear the initialized flag to avoid getting the recorder into an unspecified state.
+            flags &= ~CoreAudioRecorderStateFlags.Initialized;
+            OnRecodingStopped(e);
+            return;
+        }
         CaptureFormatChanged?.Invoke(this);
     }
 
@@ -73,7 +83,17 @@ public partial class CoreAudioRecorder
             Monitor.Exit(lockObject);
         }
         state = CaptureState.Stopped;
-        Initialize();
+        try
+        {
+            Initialize();
+        }
+        catch (Exception e)
+        {
+            // Clear the initialized flag to avoid getting the recorder into an unspecified state.
+            flags &= ~CoreAudioRecorderStateFlags.Initialized;
+            OnRecodingStopped(e);
+            return;
+        }
         if (oldState) { ioProcedure.Start(); }
     }
 

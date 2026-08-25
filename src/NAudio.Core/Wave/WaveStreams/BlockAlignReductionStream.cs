@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
@@ -15,7 +16,7 @@ public class BlockAlignReductionStream : WaveStream
     private readonly CircularBuffer circularBuffer;
     private long bufferStartPosition;
     private byte[] sourceBuffer;
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
 
     /// <summary>
     /// Creates a new BlockAlignReductionStream

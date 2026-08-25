@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -20,7 +21,7 @@ public class WaveOffsetStream : WaveStream
     private TimeSpan startTime;
     private TimeSpan sourceOffset;
     private TimeSpan sourceLength;
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
 
     /// <summary>
     /// Creates a new WaveOffsetStream

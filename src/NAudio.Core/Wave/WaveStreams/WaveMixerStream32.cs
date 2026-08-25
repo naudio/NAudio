@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Utils;
 
 namespace NAudio.Wave;
@@ -14,7 +15,7 @@ namespace NAudio.Wave;
 public class WaveMixerStream32 : WaveStream
 {
     private readonly List<WaveStream> inputStreams;
-    private readonly object inputsLock;
+    private readonly Lock inputsLock;
     private WaveFormat waveFormat;
     private long length;
     private long position;
@@ -30,7 +31,7 @@ public class WaveMixerStream32 : WaveStream
         waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
         bytesPerSample = 4;
         inputStreams = new List<WaveStream>();
-        inputsLock = new object();
+        inputsLock = new Lock();
     }
 
     /// <summary>

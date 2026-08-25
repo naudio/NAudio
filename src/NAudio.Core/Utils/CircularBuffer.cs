@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 
 namespace NAudio.Utils;
 
@@ -9,7 +10,7 @@ namespace NAudio.Utils;
 public class CircularBuffer
 {
     private readonly byte[] buffer;
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private int writePosition;
     private int readPosition;
     private int byteCount;
@@ -21,7 +22,7 @@ public class CircularBuffer
     public CircularBuffer(int size)
     {
         buffer = new byte[size];
-        lockObject = new object();
+        lockObject = new Lock();
     }
 
     /// <summary>

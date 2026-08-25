@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using NAudio.Utils;
+using System.Threading;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -18,7 +19,7 @@ public class AiffFileReader : WaveStream
     private readonly int dataChunkLength;
     private readonly List<AiffChunk> chunks = new();
     private Stream waveStream;
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
 
     /// <summary>Supports opening a AIF file</summary>
     /// <remarks>The AIF is of similar nastiness to the WAV format.

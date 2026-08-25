@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace NAudio.Sequencing;
 
@@ -10,7 +11,7 @@ namespace NAudio.Sequencing;
 /// </summary>
 public sealed class LiveTempoMap : ITempoMap
 {
-    private readonly object writerLock = new();
+    private readonly Lock writerLock = new();
     private volatile Segment[] segments;
 
     /// <summary>Creates a tempo map starting at the given BPM from tick 0.</summary>

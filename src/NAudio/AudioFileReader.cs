@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Wave.SampleProviders;
 
 // ReSharper disable once CheckNamespace
@@ -22,7 +23,7 @@ public class AudioFileReader : WaveStream, ISampleProvider
     private int destBytesPerSample;
     private int sourceBytesPerSample;
     private long length;
-    private readonly object lockObject;
+    private readonly Lock lockObject;
 
     /// <summary>
     /// Initializes a new instance of AudioFileReader
@@ -33,7 +34,7 @@ public class AudioFileReader : WaveStream, ISampleProvider
     /// NAudio.SoundFile package.</exception>
     public AudioFileReader(string fileName)
     {
-        lockObject = new object();
+        lockObject = new Lock();
         FileName = fileName;
         CreateReaderStream(fileName);
         Init();
@@ -56,7 +57,7 @@ public class AudioFileReader : WaveStream, ISampleProvider
     public AudioFileReader(Stream inputStream)
     {
         ArgumentNullException.ThrowIfNull(inputStream);
-        lockObject = new object();
+        lockObject = new Lock();
         CreateReaderStream(inputStream);
         Init();
     }

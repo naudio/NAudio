@@ -779,7 +779,7 @@ namespace NAudio.Wave
         internal interface IDirectSound
         {
             //STDMETHOD(CreateSoundBuffer)    (THIS_ LPCDSBUFFERDESC pcDSBufferDesc, LPDIRECTSOUNDBUFFER *ppDSBuffer, LPUNKNOWN pUnkOuter) PURE;
-            void CreateSoundBuffer([In] BufferDescription desc, [Out, MarshalAs(UnmanagedType.Interface)] out object dsDSoundBuffer, IntPtr pUnkOuter);
+            void CreateSoundBuffer([In, MarshalAs(UnmanagedType.LPStruct)] BufferDescription desc, [Out, MarshalAs(UnmanagedType.Interface)] out object dsDSoundBuffer, IntPtr pUnkOuter);
             //STDMETHOD(GetCaps)              (THIS_ LPDSCAPS pDSCaps) PURE;
             void GetCaps(IntPtr caps);
             //STDMETHOD(DuplicateSoundBuffer) (THIS_ LPDIRECTSOUNDBUFFER pDSBufferOriginal, LPDIRECTSOUNDBUFFER *ppDSBufferDuplicate) PURE;

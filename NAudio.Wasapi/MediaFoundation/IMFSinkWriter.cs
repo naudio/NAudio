@@ -54,6 +54,6 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Gets statistics about the performance of the sink writer.
         /// </summary>
-        void GetStatistics([In] int dwStreamIndex, [In, Out] MF_SINK_WRITER_STATISTICS pStats);
+        void GetStatistics([In] int dwStreamIndex, [In, Out, MarshalAs(UnmanagedType.LPStruct)] MF_SINK_WRITER_STATISTICS pStats);
     }
 }

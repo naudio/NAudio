@@ -28,7 +28,7 @@ namespace NAudio.CoreAudioApi.Interfaces
             AudioClientStreamFlags streamFlags,
             long hnsBufferDuration, // REFERENCE_TIME
             long hnsPeriodicity, // REFERENCE_TIME
-            [In] WaveFormat pFormat,
+            [In, MarshalAs(UnmanagedType.LPStruct)] WaveFormat pFormat,
             [In] ref Guid audioSessionGuid);
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         int IsFormatSupported(
             AudioClientShareMode shareMode,
-            [In] WaveFormat pFormat,
+            [In, MarshalAs(UnmanagedType.LPStruct)] WaveFormat pFormat,
             IntPtr closestMatchFormat); // or outIntPtr??
 
         /// <summary>

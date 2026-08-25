@@ -158,7 +158,7 @@ namespace NAudio.Wave.Compression
             IntPtr hAcmDriver,
             IntPtr sourceFormatPointer,
             IntPtr destFormatPointer,
-            [In] WaveFilter waveFilter,
+            [In, MarshalAs(UnmanagedType.LPStruct)] WaveFilter waveFilter,
             IntPtr callback,
             IntPtr instance,
             AcmStreamOpenFlags openFlags);
@@ -169,11 +169,11 @@ namespace NAudio.Wave.Compression
 
         // http://msdn.microsoft.com/en-us/library/dd742924%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
-        public static extern MmResult acmStreamConvert(IntPtr hAcmStream, [In, Out] AcmStreamHeaderStruct streamHeader, AcmStreamConvertFlags streamConvertFlags);
+        public static extern MmResult acmStreamConvert(IntPtr hAcmStream, [In, Out, MarshalAs(UnmanagedType.LPStruct)] AcmStreamHeaderStruct streamHeader, AcmStreamConvertFlags streamConvertFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd742929%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
-        public static extern MmResult acmStreamPrepareHeader(IntPtr hAcmStream, [In, Out] AcmStreamHeaderStruct streamHeader, int prepareFlags);
+        public static extern MmResult acmStreamPrepareHeader(IntPtr hAcmStream, [In, Out, MarshalAs(UnmanagedType.LPStruct)] AcmStreamHeaderStruct streamHeader, int prepareFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd742929%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
@@ -185,6 +185,6 @@ namespace NAudio.Wave.Compression
 
         // http://msdn.microsoft.com/en-us/library/dd742932%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
-        public static extern MmResult acmStreamUnprepareHeader(IntPtr hAcmStream, [In, Out] AcmStreamHeaderStruct streamHeader, int flags);
+        public static extern MmResult acmStreamUnprepareHeader(IntPtr hAcmStream, [In, Out, MarshalAs(UnmanagedType.LPStruct)] AcmStreamHeaderStruct streamHeader, int flags);
     }
 }

@@ -1,8 +1,9 @@
 
-using NAudio.Wave;
 using System.Text;
-using NAudio.Utils;
 using System.Collections.Generic;
+
+using NAudio.Wave;
+using NAudio.Utils;
 
 using NAudio.MacOS.CoreAudioTypes;
 
@@ -46,6 +47,87 @@ public class ChannelConversionTests
             (Speakers)l.mChannelBitmap,
             Is.EqualTo(valueToTest),
             "Channel bitmaps must match!"
+        );
+    }
+
+    // AudioChannelLayout.GetNumberOfChannels has to read the channel count out
+    // of whichever of the three layout forms is in use. CoreAudioPlayer relies
+    // on it to decide whether a device's preferred layout describes the stream
+    // it is configuring, so every possible form needs to be covered.
+
+    [TestCase(1U)]
+    [TestCase(2U)]
+    [TestCase(8U)]
+    [TestCase(34U)]
+    public unsafe void VerifyChannelCountFromChannelDescriptions(uint channels)
+    {
+        var handle = ChannelLayoutHandle.Allocate(
+            (uint)(sizeof(AudioChannelLayout) + ((channels - 1) * sizeof(AudioChannelDescription)))
+        );
+
+        var layout = handle.DangerousGetHandle();
+        AudioChannelLayout.SetNumberOfChannelDescriptions(layout, channels);
+
+        Assert.That(
+            AudioChannelLayout.GetNumberOfChannels(layout),
+            Is.EqualTo(channels),
+            "A UseChannelDescriptions layout counts its descriptions!"
+        );
+
+        Assert.DoesNotThrow(handle.Dispose);
+    }
+
+    [TestCase(Speakers.Mono, 1U)]
+    [TestCase(Speakers.Stereo, 2U)]
+    [TestCase(Speakers.Quad, 4U)]
+    [TestCase(Speakers.Surround51, 6U)]
+    [TestCase(Speakers.Surround71, 8U)]
+    public unsafe void VerifyChannelCountFromChannelBitmap(Speakers speakers, uint expected)
+    {
+        AudioChannelLayout layout = new()
+        {
+            mChannelLayoutTag = AudioChannelLayoutTag.kAudioChannelLayoutTag_UseChannelBitmap,
+            mChannelBitmap = (AudioChannelBitmap)speakers,
+        };
+
+        Assert.That(
+            AudioChannelLayout.GetNumberOfChannels(new(&layout)),
+            Is.EqualTo(expected),
+            "A UseChannelBitmap layout counts the bits that are set!"
+        );
+    }
+
+    [TestCase(AudioChannelLayoutTag.kAudioChannelLayoutTag_Mono, 1U)]
+    [TestCase(AudioChannelLayoutTag.kAudioChannelLayoutTag_Stereo, 2U)]
+    [TestCase(AudioChannelLayoutTag.kAudioChannelLayoutTag_Quadraphonic, 4U)]
+    [TestCase(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_A, 6U)]
+    [TestCase(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_A, 8U)]
+    public unsafe void VerifyChannelCountFromTag(uint tag, uint expected)
+    {
+        AudioChannelLayout layout = new() { mChannelLayoutTag = (AudioChannelLayoutTag)tag };
+
+        Assert.That(
+            AudioChannelLayout.GetNumberOfChannels(new(&layout)),
+            Is.EqualTo(expected),
+            "Every other tag carries its channel count in the low 16 bits!"
+        );
+    }
+
+    // The case the aggregate-device fix turns on: a device-wide layout whose
+    // channel count does not match the single stream being configured.
+    [Test]
+    public unsafe void VerifyChannelCountOfDiscreteInOrderTag()
+    {
+        AudioChannelLayout layout = new()
+        {
+            mChannelLayoutTag = (AudioChannelLayoutTag)
+                ((uint)AudioChannelLayoutTag.kAudioChannelLayoutTag_DiscreteInOrder | 32U),
+        };
+
+        Assert.That(
+            AudioChannelLayout.GetNumberOfChannels(new(&layout)),
+            Is.EqualTo(32U),
+            "DiscreteInOrder is ORed with the channel count!"
         );
     }
 

@@ -252,6 +252,18 @@ public partial class CoreAudioPlayer
                 // No preferred channel layout reported by the device
                 handle = null;
             }
+            // kAudioDevicePropertyPreferredChannelLayout describes the whole
+            // device. On a device with more than one stream it therefore covers
+            // every stream, while the converter is being configured for the one
+            // stream selected above, and AudioConverterSetProperty rejects the
+            // mismatched pair with kAudio_ParamError. Treat a layout that does
+            // not describe this stream the same as a device that publishes none.
+            if (handle is not null &&
+                AudioChannelLayout.GetNumberOfChannels(handle.DangerousGetHandle()) != asbdToUse.mChannelsPerFrame)
+            {
+                handle.Dispose();
+                handle = null;
+            }
             try
             {
                 // Configure the resampler as appropriate.
@@ -317,6 +329,13 @@ public partial class CoreAudioPlayer
                 {
                     enabledStreams[I] = I == selectedStream;
                 }
+                // The output AudioBufferList carries one buffer per stream of
+                // the device, including the streams disabled just above, and
+                // the HAL discards whatever is written into those. The
+                // procedure must therefore fill only the buffer belonging to
+                // the stream we enabled, or the source is consumed several
+                // times over and most of it thrown away.
+                ((InterleavedProcedure)ioProcedure).EnabledBufferIndex = (uint)Math.Max(selectedStream, 0);
             }
             ioProcedure.Source = selectedSource;
             selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Output, enabledStreams);

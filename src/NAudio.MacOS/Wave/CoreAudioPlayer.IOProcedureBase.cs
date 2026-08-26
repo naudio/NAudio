@@ -17,6 +17,16 @@ public partial class CoreAudioPlayer
     {
         private Exception exception;
         private IPlayerSource source;
+        // The device's sample time on the first cycle of the current run. The
+        // device clock counts from whenever the device itself started, which is
+        // not when this player started, so it only becomes a position once it
+        // is measured against where this run began. Taken here rather than
+        // after AudioDeviceStart returns, because the device has not produced a
+        // valid timestamp at that point.
+        private double firstSampleTime;
+        // The most recent figure computed from a valid timestamp, held so that
+        // an invalid one reports no movement rather than a jump backwards.
+        private double lastPlayedFrames;
         private bool shouldStopInNextCall;
         private AudioTimeStamp nowStamp, outTimeStamp;
 
@@ -25,6 +35,7 @@ public partial class CoreAudioPlayer
         {
             source = null;
             exception = null;
+            firstSampleTime = double.NaN;
             shouldStopInNextCall = false;
             nowStamp = outTimeStamp = default;
         }
@@ -55,6 +66,12 @@ public partial class CoreAudioPlayer
             // (which we do so), inOutputTime is always valid.
             nowStamp = *(AudioTimeStamp*)inNow.ToPointer();
             outTimeStamp = *(AudioTimeStamp*)inOutputTime.ToPointer();
+
+            if (double.IsNaN(firstSampleTime) &&
+                nowStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid))
+            {
+                firstSampleTime = nowStamp.mSampleTime;
+            }
         }
 
         // The actual implementation that reads from a given 
@@ -92,6 +109,37 @@ public partial class CoreAudioPlayer
                 _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.EventInvoker(), this, false);
             }
             catch { }
+        }
+
+        // Frames the device has played since this run began, or 0 before the
+        // first cycle has been seen. Survives the device stopping at the end of
+        // the source, because the last timestamp stays put.
+        public double PlayedFrames
+        {
+            get
+            {
+                // The baseline is only taken from a timestamp that declared its
+                // sample time valid, and the same has to hold for the reading
+                // measured against it. Core Audio can hand out a timestamp
+                // without a valid sample time across a start or stop, and
+                // subtracting from that would send the position backwards.
+                if (double.IsNaN(firstSampleTime) ||
+                    !nowStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid))
+                {
+                    return lastPlayedFrames;
+                }
+
+                double played = nowStamp.mSampleTime - firstSampleTime;
+                return lastPlayedFrames = played > 0d ? played : 0d;
+            }
+        }
+
+        // Starts the frame count again from the next cycle. Called when a new
+        // run begins, so that a run counts from its own beginning.
+        public void RestartFrameCount()
+        {
+            firstSampleTime = double.NaN;
+            lastPlayedFrames = 0d;
         }
 
         // source is only settable, it's value is provided by the player implementation.

@@ -1,0 +1,79 @@
+name: build
+
+# Build & test the NAudio 2 maintenance branch.
+#
+# windows-latest ships the .NET 8/9/10 SDKs, Windows SDK 10.0.26100 and the
+# .NET Framework 4.7.2 targeting pack, which between them cover every TFM in
+# NAudio.sln - so no setup-dotnet step and no Windows SDK install is needed.
+# (The Azure pipeline this replaces installed Windows SDK 10.1.18362 via
+# chocolatey, dating from when NAudio.Uap was a UWP project. It now targets
+# net9.0-windows10.0.26100 and gets its Windows projections from the
+# Microsoft.Windows.SDK.NET.Ref NuGet package instead.)
+
+on:
+  pull_request:
+  push:
+    branches: [release/2.x]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore
+        run: dotnet restore NAudio.sln
+
+      # Any CPU matches what the Azure pipeline built. Note that
+      # NAudioUniversalDemo (WinUI 3) has no Release|Any CPU Build entry in
+      # NAudio.sln - it has no AnyCPU platform - so it is restored but not
+      # built, exactly as before.
+      - name: Build
+        run: dotnet build NAudio.sln --configuration Release --no-restore
+
+      # NAudioTests is the only test project. IntegrationTest needs real audio
+      # hardware, so it is filtered out of the headless run.
+      #
+      # The project path is positional and the trx report comes from --logger,
+      # because this branch has no global.json opting into Microsoft.Testing
+      # .Platform - so dotnet test runs in VSTest mode. Do not copy main's
+      # `--project` / `--solution` / `--report-trx` spelling here: those are
+      # MTP-mode switches and MSBuild rejects them (MSB1001) in VSTest mode.
+      - name: Test
+        run: >
+          dotnet test NAudioTests/NAudioTests.csproj
+          --configuration Release
+          --no-build
+          --filter "TestCategory!=IntegrationTest"
+          --logger "trx;LogFileName=NAudioTests.trx"
+          --results-directory ${{ runner.temp }}/TestResults
+
+      # All nine package projects set GeneratePackageOnBuild, so the Release
+      # build above already produced the .nupkg files. Uploading them lets a
+      # release be pushed from a CI-built artifact instead of a local build.
+      #
+      # The glob wildcards start at the repo root, so upload-artifact roots the
+      # zip there and preserves <Package>/bin/Release/<Package>.<version>.nupkg
+      # - the exact layout publish.ps1 globs for. Extract into an empty
+      # directory, drop publish.ps1 alongside, and it runs unchanged.
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: '**/bin/Release/*.nupkg'
+          if-no-files-found: error
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ runner.temp }}/TestResults/*.trx
+          if-no-files-found: warn

@@ -55,6 +55,21 @@ jobs:
           --logger "trx;LogFileName=NAudioTests.trx"
           --results-directory ${{ runner.temp }}/TestResults
 
+      # All nine package projects set GeneratePackageOnBuild, so the Release
+      # build above already produced the .nupkg files. Uploading them lets a
+      # release be pushed from a CI-built artifact instead of a local build.
+      #
+      # The glob wildcards start at the repo root, so upload-artifact roots the
+      # zip there and preserves <Package>/bin/Release/<Package>.<version>.nupkg
+      # - the exact layout publish.ps1 globs for. Extract into an empty
+      # directory, drop publish.ps1 alongside, and it runs unchanged.
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: '**/bin/Release/*.nupkg'
+          if-no-files-found: error
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

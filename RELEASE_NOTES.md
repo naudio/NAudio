@@ -1,6 +1,9 @@
 ### Unreleased
 
+### 2.4.0 (26 Aug 2026)
+
  * Added `DeviceCount` and `GetCapabilities` static methods to `WaveOutEvent` so output devices can be enumerated without referencing `NAudio.WinForms` (#1331, #777)
+ * Fixed WASAPI and Media Foundation interop under Unity's Mono runtime, which marshalled formatted class parameters as COM interfaces; they are now explicitly marked `[MarshalAs(UnmanagedType.LPStruct)]` (#1414)
 
 ### 2.3.0 (12 Mar 2026)
 

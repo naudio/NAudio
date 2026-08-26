@@ -40,9 +40,15 @@ jobs:
 
       # NAudioTests is the only test project. IntegrationTest needs real audio
       # hardware, so it is filtered out of the headless run.
+      #
+      # The project path is positional and the trx report comes from --logger,
+      # because this branch has no global.json opting into Microsoft.Testing
+      # .Platform - so dotnet test runs in VSTest mode. Do not copy main's
+      # `--project` / `--solution` / `--report-trx` spelling here: those are
+      # MTP-mode switches and MSBuild rejects them (MSB1001) in VSTest mode.
       - name: Test
         run: >
-          dotnet test --project NAudioTests/NAudioTests.csproj
+          dotnet test NAudioTests/NAudioTests.csproj
           --configuration Release
           --no-build
           --filter "TestCategory!=IntegrationTest"

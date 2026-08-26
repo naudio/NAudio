@@ -1,0 +1,58 @@
+name: build
+
+# Build & test the NAudio 2 maintenance branch.
+#
+# windows-latest ships the .NET 8/9/10 SDKs, Windows SDK 10.0.26100 and the
+# .NET Framework 4.7.2 targeting pack, which between them cover every TFM in
+# NAudio.sln - so no setup-dotnet step and no Windows SDK install is needed.
+# (The Azure pipeline this replaces installed Windows SDK 10.1.18362 via
+# chocolatey, dating from when NAudio.Uap was a UWP project. It now targets
+# net9.0-windows10.0.26100 and gets its Windows projections from the
+# Microsoft.Windows.SDK.NET.Ref NuGet package instead.)
+
+on:
+  pull_request:
+  push:
+    branches: [release/2.x]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore
+        run: dotnet restore NAudio.sln
+
+      # Any CPU matches what the Azure pipeline built. Note that
+      # NAudioUniversalDemo (WinUI 3) has no Release|Any CPU Build entry in
+      # NAudio.sln - it has no AnyCPU platform - so it is restored but not
+      # built, exactly as before.
+      - name: Build
+        run: dotnet build NAudio.sln --configuration Release --no-restore
+
+      # NAudioTests is the only test project. IntegrationTest needs real audio
+      # hardware, so it is filtered out of the headless run.
+      - name: Test
+        run: >
+          dotnet test --project NAudioTests/NAudioTests.csproj
+          --configuration Release
+          --no-build
+          --filter "TestCategory!=IntegrationTest"
+          --logger "trx;LogFileName=NAudioTests.trx"
+          --results-directory ${{ runner.temp }}/TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ runner.temp }}/TestResults/*.trx
+          if-no-files-found: warn

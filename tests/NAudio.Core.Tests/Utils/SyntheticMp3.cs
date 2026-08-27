@@ -17,8 +17,9 @@ internal static class SyntheticMp3
     //   channel mode 00 (= stereo), mode-ext 00, copyright 0, original 0, emphasis 00 → byte 3 = 0x00
     // Frame size = floor(144 * bitrate / samplerate) = floor(144 * 96000 / 44100) = 313 bytes (no padding).
     // 1152 samples / 44100 Hz ≈ 26.12 ms per frame.
-    private const int FrameSize = 313;
-    private const int SamplesPerFrame = 1152;
+    /// <summary>Bytes per frame in the generated stream — lets tests map file offsets to frame ordinals.</summary>
+    public const int FrameSize = 313;
+    public const int SamplesPerFrame = 1152;
     public const int SampleRate = 44100;
     public const int Channels = 2;
     public const int BitRate = 96000;

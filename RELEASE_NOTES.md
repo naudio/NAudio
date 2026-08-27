@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Fixed `Mp3FileReaderBase` seeking silently restarting playback from the beginning of the file on MP3s with a Xing/Info header — the lazy frame index was gated on `IsLengthExact`, which such a header sets without any frame having been scanned. Also fixed seeks landing on the wrong frame when the target fell exactly on a frame boundary, and Xing/Info header frames being indexed as audio (shifting every seek in those files ~26 ms early). A 3.0.0 regression (#1419)
  * Fixed `WdlResamplingSampleProvider` losing samples, and eventually returning 0 permanently, when asked for more output than the source could supply — a 3.0.0 regression that broke the common pattern of reading generously from a `BufferedWaveProvider`-backed capture chain. `WdlResampler.ResampleOut` also no longer drifts in input-driven (feed) mode when handed fewer samples than `ResamplePrepare` requested (#1412)
 
 ### 3.0.1 (18 Aug 2026)

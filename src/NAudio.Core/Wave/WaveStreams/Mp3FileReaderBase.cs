@@ -39,6 +39,10 @@ public class Mp3FileReaderBase : WaveStream
 
     private long totalSamples;
     private bool isLengthExact;
+    // Distinct from isLengthExact: a Xing/Info header gives us an exact length without
+    // us having scanned a single frame, so the two must not be conflated. This one is
+    // only ever set when a frame scan actually reaches the end of the stream.
+    private bool tocComplete;
     private long scannedToFilePosition;
     private long scannedToSamplePosition;
     private readonly int bytesPerSample;
@@ -118,6 +122,10 @@ public class Mp3FileReaderBase : WaveStream
             // workaround for a longstanding issue with some files failing to load
             // because they report a spurious sample rate change
             var secondFrame = Mp3Frame.LoadFromStream(mp3Stream);
+            // Decoding starts at dataStartPosition, so the table of contents has to start
+            // there too. When a Xing/Info header is present firstFrame *is* that header —
+            // a valid MPEG frame, but not audio — so the first audio frame is the second one.
+            var firstAudioFrame = xingHeader != null ? secondFrame : firstFrame;
             if (secondFrame != null &&
                 (secondFrame.SampleRate != firstFrame.SampleRate ||
                  secondFrame.ChannelMode != firstFrame.ChannelMode))
@@ -126,6 +134,7 @@ public class Mp3FileReaderBase : WaveStream
                 dataStartPosition = secondFrame.FileOffset;
                 // forget about the first frame, the second one is the first one we really care about
                 firstFrame = secondFrame;
+                firstAudioFrame = secondFrame;
             }
 
             mp3DataLength = mp3Stream.Length - dataStartPosition;
@@ -146,7 +155,7 @@ public class Mp3FileReaderBase : WaveStream
             Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate,
                 firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, firstFrame.BitRate);
 
-            SeedTableOfContents(firstFrame);
+            SeedTableOfContents(firstAudioFrame);
             EstimateTotalSamples(firstFrame);
 
             mp3Stream.Position = dataStartPosition;
@@ -172,20 +181,27 @@ public class Mp3FileReaderBase : WaveStream
     /// <returns>An MP3 Frame decompressor</returns>
     public delegate IMp3FrameDecompressor FrameDecompressorBuilder(WaveFormat mp3Format);
 
-    private void SeedTableOfContents(Mp3Frame firstFrame)
+    private void SeedTableOfContents(Mp3Frame firstAudioFrame)
     {
         tableOfContents = new List<Mp3Index>();
+        tocIndex = 0;
+        if (firstAudioFrame == null)
+        {
+            // A Xing/Info header with nothing after it. Nothing to index; Read returns 0.
+            scannedToFilePosition = dataStartPosition;
+            scannedToSamplePosition = 0;
+            return;
+        }
         var index = new Mp3Index
         {
-            FilePosition = firstFrame.FileOffset,
+            FilePosition = firstAudioFrame.FileOffset,
             SamplePosition = 0,
-            SampleCount = firstFrame.SampleCount,
-            ByteCount = firstFrame.FrameLength,
+            SampleCount = firstAudioFrame.SampleCount,
+            ByteCount = firstAudioFrame.FrameLength,
         };
         tableOfContents.Add(index);
-        scannedToFilePosition = firstFrame.FileOffset + firstFrame.FrameLength;
-        scannedToSamplePosition = firstFrame.SampleCount;
-        tocIndex = 0;
+        scannedToFilePosition = firstAudioFrame.FileOffset + firstAudioFrame.FrameLength;
+        scannedToSamplePosition = firstAudioFrame.SampleCount;
     }
 
     private void EstimateTotalSamples(Mp3Frame firstFrame)
@@ -206,19 +222,21 @@ public class Mp3FileReaderBase : WaveStream
     }
 
     // Caller must hold repositionLock. Saves and restores mp3Stream.Position.
-    // Scans frame headers (no PCM data) appending to TOC until scannedToSamplePosition >=
-    // targetSamplePosition or EOF is reached. On EOF, isLengthExact is set true and
-    // totalSamples is replaced with the exact frame-summed value.
+    // Scans frame headers (no PCM data) appending to TOC until the frame *containing*
+    // targetSamplePosition has been indexed, or EOF is reached. scannedToSamplePosition is
+    // an exclusive upper bound, so covering the target needs it to end up strictly greater.
+    // On EOF, tocComplete is set true, and totalSamples is replaced with the exact
+    // frame-summed value unless a Xing/Info header already gave us an authoritative one.
     private void ExtendTableOfContentsTo(long targetSamplePosition, CancellationToken cancellationToken)
     {
-        if (isLengthExact) return;
-        if (scannedToSamplePosition >= targetSamplePosition) return;
+        if (tocComplete) return;
+        if (scannedToSamplePosition > targetSamplePosition) return;
 
         long savedPosition = mp3Stream.Position;
         try
         {
             mp3Stream.Position = scannedToFilePosition;
-            while (scannedToSamplePosition < targetSamplePosition)
+            while (scannedToSamplePosition <= targetSamplePosition)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 Mp3Frame frame;
@@ -232,8 +250,7 @@ public class Mp3FileReaderBase : WaveStream
                 }
                 if (frame == null)
                 {
-                    isLengthExact = true;
-                    totalSamples = scannedToSamplePosition;
+                    MarkEndOfStreamReached();
                     break;
                 }
                 ValidateFrameFormat(frame);
@@ -243,6 +260,19 @@ public class Mp3FileReaderBase : WaveStream
         finally
         {
             mp3Stream.Position = savedPosition;
+        }
+    }
+
+    // A frame scan hit the end of the stream: the TOC now covers every frame. Only adopt
+    // the frame-summed sample count as the length if we didn't already have an exact one —
+    // a Xing/Info Frames field is authoritative, and overwriting it would make Length jump.
+    private void MarkEndOfStreamReached()
+    {
+        tocComplete = true;
+        if (!isLengthExact)
+        {
+            isLengthExact = true;
+            totalSamples = scannedToSamplePosition;
         }
     }
 
@@ -322,11 +352,10 @@ public class Mp3FileReaderBase : WaveStream
                 AppendIfNewFrame(frame);
                 tocIndex++;
             }
-            else if (!isLengthExact)
+            else
             {
-                // EOF reached during sequential read — we now know the exact length.
-                isLengthExact = true;
-                totalSamples = scannedToSamplePosition;
+                // EOF reached during sequential read — the TOC now covers the whole stream.
+                MarkEndOfStreamReached();
             }
         }
         catch (EndOfStreamException)
@@ -361,10 +390,15 @@ public class Mp3FileReaderBase : WaveStream
     /// <summary>
     /// Forces a full scan of the MP3 frame index so <see cref="Length"/> reports the exact
     /// frame-summed sample count and <see cref="IsLengthExact"/> returns <c>true</c>.
-    /// No-op (returns a completed task) if Length is already exact. Safe to call concurrently
-    /// with Read and <see cref="Position"/> changes; scan is serialised against playback by
-    /// the same internal lock. Restores the current playback position when complete.
+    /// No-op (returns a completed task) if Length is already exact — which it is from the
+    /// constructor for CBR files and for VBR files carrying a Xing/Info header. Safe to call
+    /// concurrently with Read and <see cref="Position"/> changes; scan is serialised against
+    /// playback by the same internal lock. Restores the current playback position when complete.
     /// </summary>
+    /// <remarks>
+    /// This is about <see cref="Length"/> only — it is not a prerequisite for seeking.
+    /// <see cref="Position"/> extends the frame index on demand whatever this reports.
+    /// </remarks>
     /// <param name="cancellationToken">Token observed between frames during the scan.</param>
     public Task EnsureExactLengthAsync(CancellationToken cancellationToken = default)
     {
@@ -430,7 +464,7 @@ public class Mp3FileReaderBase : WaveStream
         target = Math.Max(Math.Min(target, Length), 0);
         var samplePosition = target / bytesPerSample;
 
-        if (samplePosition > scannedToSamplePosition && !isLengthExact)
+        if (samplePosition >= scannedToSamplePosition && !tocComplete)
         {
             ExtendTableOfContentsTo(samplePosition, CancellationToken.None);
             target = Math.Max(Math.Min(target, Length), 0);
@@ -463,6 +497,10 @@ public class Mp3FileReaderBase : WaveStream
         }
         else
         {
+            // At or past the end of the data. tocIndex has to move with it: Read's warm-up
+            // rewind indexes off tocIndex, and leaving it stale would silently restart
+            // playback from wherever it happened to point.
+            tocIndex = tableOfContents.Count;
             mp3Stream.Position = mp3DataLength + dataStartPosition;
         }
 
@@ -520,7 +558,10 @@ public class Mp3FileReaderBase : WaveStream
                 // the data as it would be when reading sequentially from the beginning, because
                 // the decoder is missing the required overlap from the previous frame.
                 tocIndex = Math.Max(0, tocIndex - 3); // no warm-up at the beginning of the stream
-                mp3Stream.Position = tableOfContents[tocIndex].FilePosition;
+                if (tocIndex < tableOfContents.Count)
+                {
+                    mp3Stream.Position = tableOfContents[tocIndex].FilePosition;
+                }
 
                 repositionedFlag = false;
             }

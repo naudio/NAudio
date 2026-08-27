@@ -13,14 +13,14 @@ public class Mp3Frame
         {
             // MPEG Version 1
             { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448 }, // Layer 1
-            { 0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384 }, // Layer 2
-            { 0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 }, // Layer 3
+            { 0, 32, 48, 56,  64,  80,  96, 112, 128, 160, 192, 224, 256, 320, 384 }, // Layer 2
+            { 0, 32, 40, 48,  56,  64,  80,  96, 112, 128, 160, 192, 224, 256, 320 }, // Layer 3
         },
         {
             // MPEG Version 2 & 2.5
             { 0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256 }, // Layer 1
-            { 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 }, // Layer 2 
-            { 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 }, // Layer 3 (same as layer 2)
+            { 0,  8, 16, 24, 32, 40, 48, 56,   64,  80,  96, 112, 128, 144, 160 }, // Layer 2 
+            { 0,  8, 16, 24, 32, 40, 48, 56,   64,  80,  96, 112, 128, 144, 160 }, // Layer 3 (same as layer 2)
         }
     };
     private static readonly int[,] samplesPerFrame = new int[,] {
@@ -36,9 +36,9 @@ public class Mp3Frame
         }
     };
 
-    private static readonly int[] sampleRatesVersion1 = new int[] { 44100, 48000, 32000 };
-    private static readonly int[] sampleRatesVersion2 = new int[] { 22050, 24000, 16000 };
-    private static readonly int[] sampleRatesVersion25 = new int[] { 11025, 12000, 8000 };
+    private static ReadOnlySpan<int> sampleRatesVersion1 => [44100, 48000, 32000];
+    private static ReadOnlySpan<int> sampleRatesVersion2 => [22050, 24000, 16000];
+    private static ReadOnlySpan<int> sampleRatesVersion25 => [11025, 12000, 8000];
 
     //private short crc;
     private const int MaxFrameLength = 16 * 1024;
@@ -65,8 +65,8 @@ public class Mp3Frame
 
         var frame = new Mp3Frame();
         frame.FileOffset = input.Position;
-        byte[] headerBytes = new byte[4];
-        int bytesRead = input.Read(headerBytes, 0, headerBytes.Length);
+        Span<byte> headerBytes = new byte[4];
+        int bytesRead = input.Read(headerBytes);
         if (bytesRead < headerBytes.Length)
         {
             // reached end of stream, no more MP3 frames
@@ -78,7 +78,7 @@ public class Mp3Frame
             headerBytes[0] = headerBytes[1];
             headerBytes[1] = headerBytes[2];
             headerBytes[2] = headerBytes[3];
-            bytesRead = input.Read(headerBytes, 3, 1);
+            bytesRead = input.Read(headerBytes.Slice(3));
             if (bytesRead < 1)
             {
                 return null;
@@ -93,7 +93,7 @@ public class Mp3Frame
         if (readData)
         {
             frame.RawData = new byte[frame.FrameLength];
-            Array.Copy(headerBytes, frame.RawData, 4);
+            headerBytes.CopyTo(frame.RawData);
             bytesRead = input.Read(frame.RawData, 4, bytesRequired);
             if (bytesRead < bytesRequired)
             {
@@ -121,6 +121,7 @@ public class Mp3Frame
         long originalPosition = input.Position;
         long nextFrameOffset = firstFrame.FileOffset;
         Mp3Frame previousFrame = firstFrame;
+        Span<byte> headerBytes = stackalloc byte[4];
 
         try
         {
@@ -133,8 +134,7 @@ public class Mp3Frame
                 }
 
                 input.Position = nextFrameOffset;
-                byte[] headerBytes = new byte[4];
-                int bytesRead = input.Read(headerBytes, 0, headerBytes.Length);
+                int bytesRead = input.Read(headerBytes);
                 if (bytesRead < headerBytes.Length)
                 {
                     return false;
@@ -180,8 +180,14 @@ public class Mp3Frame
     /// checks if the four bytes represent a valid header,
     /// if they are, will parse the values into Mp3Frame
     /// </summary>
-    private static bool IsValidHeader(byte[] headerBytes, Mp3Frame frame)
+    private static bool IsValidHeader(ReadOnlySpan<byte> headerBytes, Mp3Frame frame)
     {
+        if (headerBytes.Length != 4)
+        {
+            //throw new ArgumentException("headerBytes must be 4 bytes long");
+            return false;
+        }
+
         if ((headerBytes[0] == 0xFF) && ((headerBytes[1] & 0xE0) == 0xE0))
         {
             // TODO: could do with a bitstream class here

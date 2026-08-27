@@ -23,18 +23,18 @@ namespace NAudio.Sfz;
 /// ranges, tuning, envelopes…) and external sample loading are applied by
 /// later layers on top of the parsed model.
 /// </summary>
-public static class SfzParser
+public static partial class SfzParser
 {
     private const int MaxIncludeDepth = 32;
 
-    private static readonly Regex DefineRegex =
-        new(@"^\s*#define\s+(\$[A-Za-z0-9_]+)\s+(.+?)\s*$", RegexOptions.Compiled);
-    private static readonly Regex IncludeRegex =
-        new(@"^\s*#include\s+""([^""]+)""\s*$", RegexOptions.Compiled);
-    private static readonly Regex VariableRegex =
-        new(@"\$[A-Za-z0-9_]+", RegexOptions.Compiled);
-    private static readonly Regex BlockCommentRegex =
-        new(@"/\*.*?\*/", RegexOptions.Compiled | RegexOptions.Singleline);
+    [GeneratedRegex(@"^\s*#define\s+(\$[A-Za-z0-9_]+)\s+(.+?)\s*$", RegexOptions.Compiled)]
+    private static partial Regex DefineRegex { get; }
+    [GeneratedRegex(@"^\s*#include\s+""([^""]+)""\s*$", RegexOptions.Compiled)]
+    private static partial Regex IncludeRegex { get; }
+    [GeneratedRegex(@"\$[A-Za-z0-9_]+", RegexOptions.Compiled)]
+    private static partial Regex VariableRegex { get; }
+    [GeneratedRegex(@"/\*.*?\*/", RegexOptions.Compiled | RegexOptions.Singleline)]
+    private static partial Regex BlockCommentRegex { get; }
 
     /// <summary>
     /// Parses SFZ text. <paramref name="includeResolver"/> supplies the text

@@ -32,8 +32,8 @@ public sealed class FdnReverbEffect : AudioEffect, IParameterized
     private const int Lines = 8;
 
     // Mutually-incommensurate base delays (ms) — primes-ish to avoid resonances.
-    private static readonly float[] BaseDelaysMs =
-        { 29.7f, 34.1f, 37.3f, 41.1f, 43.7f, 47.3f, 53.9f, 59.3f };
+    private static ReadOnlySpan<float> BaseDelaysMs =>
+        [29.7f, 34.1f, 37.3f, 41.1f, 43.7f, 47.3f, 53.9f, 59.3f];
 
     private DelayLine[] lines = Array.Empty<DelayLine>();
     private DelayLine preDelay;

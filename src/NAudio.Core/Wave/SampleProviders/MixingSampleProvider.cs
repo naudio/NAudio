@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics.Tensors;
+using System.Threading;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders;
@@ -11,6 +12,10 @@ namespace NAudio.Wave.SampleProviders;
 public class MixingSampleProvider : ISampleProvider
 {
     private readonly List<ISampleProvider> sources;
+    // A dedicated lock rather than lock(sources): the list itself is handed out
+    // publicly by MixerInputs, so locking on it means anyone holding that
+    // reference shares the mixer's own lock.
+    private readonly Lock inputsLock = new();
     private float[] sourceBuffer;
     private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
@@ -68,7 +73,7 @@ public class MixingSampleProvider : ISampleProvider
     {
         // we'll just call the lock around add since we are protecting against an AddMixerInput at
         // the same time as a Read, rather than two AddMixerInput calls at the same time
-        lock (sources)
+        lock (inputsLock)
         {
             if (sources.Count >= MaxInputs)
             {
@@ -107,7 +112,7 @@ public class MixingSampleProvider : ISampleProvider
     /// <param name="mixerInput">Mixer input to remove</param>
     public void RemoveMixerInput(ISampleProvider mixerInput)
     {
-        lock (sources)
+        lock (inputsLock)
         {
             sources.Remove(mixerInput);
         }
@@ -118,7 +123,7 @@ public class MixingSampleProvider : ISampleProvider
     /// </summary>
     public void RemoveAllMixerInputs()
     {
-        lock (sources)
+        lock (inputsLock)
         {
             sources.Clear();
         }
@@ -136,7 +141,7 @@ public class MixingSampleProvider : ISampleProvider
     {
         int outputSamples = 0;
         sourceBuffer = BufferHelpers.Ensure(sourceBuffer, buffer.Length);
-        lock (sources)
+        lock (inputsLock)
         {
             int index = sources.Count - 1;
             while (index >= 0)

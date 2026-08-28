@@ -11,7 +11,7 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 {
-    private readonly object waveOutLock;
+    private readonly Lock waveOutLock;
     private readonly SynchronizationContext syncContext;
     private IntPtr hWaveOut; // WaveOut handle
     private WaveOutBuffer[] buffers;
@@ -71,7 +71,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         syncContext = SynchronizationContext.Current;
         BufferMilliseconds = 100;
         NumberOfBuffers = 2;
-        waveOutLock = new object();
+        waveOutLock = new Lock();
     }
 
     /// <summary>

@@ -69,7 +69,7 @@ public class Mp3FileReaderBase : WaveStream
     private const int ScrubDetectionWindowMs = 30;
     private const int SettleWindowMs = 50;
 
-    private readonly object repositionLock = new();
+    private readonly Lock repositionLock = new();
 
 
     /// <summary>Supports opening a MP3 file</summary>

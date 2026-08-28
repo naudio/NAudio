@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave;
@@ -21,7 +22,7 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     private volatile float pan;
     private long position;
     private readonly ISampleChunkConverter sampleProvider;
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
 
     /// <summary>
     /// Creates a new WaveChannel32

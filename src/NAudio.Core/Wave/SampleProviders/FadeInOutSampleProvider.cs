@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace NAudio.Wave.SampleProviders;
 
@@ -15,7 +16,7 @@ public class FadeInOutSampleProvider : ISampleProvider
         FadingOut,
     }
 
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
     private readonly ISampleProvider source;
     private int fadeSamplePosition;
     private int fadeSampleCount;

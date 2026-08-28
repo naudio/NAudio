@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Wave;
 
 namespace NAudio.SoundFile;
@@ -18,7 +19,7 @@ namespace NAudio.SoundFile;
 /// </remarks>
 public sealed class SoundFileReader : WaveStream, ISampleProvider
 {
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
     private readonly WaveFormat waveFormat;
     private readonly SafeSndFileHandle handle;
     private readonly StreamVirtualIo virtualIo;

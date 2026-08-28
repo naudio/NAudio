@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -45,7 +46,7 @@ internal class WasapiRecorderViewModel : ViewModelBase, IDisposable
     // field — which the UI thread may null out from under it during teardown.
     private WaveFormat captureFormat;
     private WaveFileWriter writer;
-    private readonly object writerLock = new();
+    private readonly Lock writerLock = new();
     private readonly DispatcherTimer meterTimer = new();
 
     // Written by the capture thread, read and reset by the meter timer on the UI thread. Float

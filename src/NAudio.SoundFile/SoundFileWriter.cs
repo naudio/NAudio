@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -24,7 +25,7 @@ public sealed class SoundFileWriter : Stream
 {
     private enum ItemType { Short, Float }
 
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
     private readonly WaveFormat sourceFormat;
     private readonly ItemType itemType;
     private readonly int channels;

@@ -15,7 +15,7 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
 {
-    private readonly object waveOutLock = new();
+    private readonly Lock waveOutLock = new();
     private readonly SynchronizationContext syncContext;
     private readonly WaveInterop.WaveCallback callback;
     private readonly WaveCallbackHost callbackHost;

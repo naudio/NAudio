@@ -40,8 +40,13 @@ public partial class DirectSoundOut : IWavePlayer
     private readonly SynchronizationContext syncContext;
     private long bytesPlayed;
 
-    // Used purely for locking
-    private readonly Object m_LockObject = new();
+    // Used purely for locking. Deliberately a plain object rather than a
+    // System.Threading.Lock: Stop() needs the bounded Monitor.TryEnter(obj, 50)
+    // below, and Monitor.Enter/TryEnter on a Lock takes that instance's object
+    // header instead of the Lock itself — a different mutex from the one the
+    // lock statements here use, silently losing mutual exclusion. Switch this
+    // to Lock only together with Stop(), using Lock.TryEnter(TimeSpan).
+    private readonly object m_LockObject = new();
 
     /// <summary>
     /// Gets the DirectSound output devices in the system

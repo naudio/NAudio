@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Interop;
 using NAudio.Vst3;
 
@@ -21,7 +22,7 @@ internal class Vst3EditorHost : HwndHost
     // probably other parent-snooping plug-ins) embed cleanly — STATIC has subtle differences
     // a few editors trip over, e.g. cbWndExtra/cbClsExtra defaults and the absence of CS_DBLCLKS.
     private const string ContainerClassName = "NAudio.Vst3.EditorHostContainer";
-    private static readonly object classRegLock = new();
+    private static readonly Lock classRegLock = new();
     private static bool classRegistered;
     private static WndProcDelegate containerWndProc; // rooted so the JIT can't GC the delegate while Win32 holds the fn ptr
 

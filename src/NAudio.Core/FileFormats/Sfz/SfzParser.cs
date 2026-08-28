@@ -27,13 +27,13 @@ public static partial class SfzParser
 {
     private const int MaxIncludeDepth = 32;
 
-    [GeneratedRegex(@"^\s*#define\s+(\$[A-Za-z0-9_]+)\s+(.+?)\s*$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^\s*#define\s+(\$[A-Za-z0-9_]+)\s+(.+?)\s*$")]
     private static partial Regex DefineRegex { get; }
-    [GeneratedRegex(@"^\s*#include\s+""([^""]+)""\s*$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^\s*#include\s+""([^""]+)""\s*$")]
     private static partial Regex IncludeRegex { get; }
-    [GeneratedRegex(@"\$[A-Za-z0-9_]+", RegexOptions.Compiled)]
+    [GeneratedRegex(@"\$[A-Za-z0-9_]+")]
     private static partial Regex VariableRegex { get; }
-    [GeneratedRegex(@"/\*.*?\*/", RegexOptions.Compiled | RegexOptions.Singleline)]
+    [GeneratedRegex(@"/\*.*?\*/", RegexOptions.Singleline)]
     private static partial Regex BlockCommentRegex { get; }
 
     /// <summary>

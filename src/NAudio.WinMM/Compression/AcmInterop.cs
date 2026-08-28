@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace NAudio.Wave.Compression;
 
@@ -22,7 +23,7 @@ namespace NAudio.Wave.Compression;
 /// <see cref="AcmLock"/> and forwards to it.
 /// </para>
 /// <para>
-/// The lock is reentrant (<see cref="System.Threading.Monitor"/>), so
+/// The lock is reentrant (<see cref="System.Threading.Lock"/>), so
 /// msacm32 callbacks such as <see cref="AcmDriverEnumCallback"/>,
 /// <see cref="AcmFormatEnumCallback"/> and
 /// <see cref="AcmFormatTagEnumCallback"/> are free to call back into this
@@ -35,7 +36,7 @@ internal class AcmInterop
     /// Process-wide lock guarding every msacm32 P/Invoke. See the class
     /// remarks on <see cref="AcmInterop"/> for why this exists.
     /// </summary>
-    internal static readonly object AcmLock = new();
+    internal static readonly Lock AcmLock = new();
 
     // http://msdn.microsoft.com/en-us/library/dd742891%28VS.85%29.aspx
     public delegate bool AcmDriverEnumCallback(IntPtr hAcmDriverId, IntPtr instance, AcmDriverDetailsSupportFlags flags);

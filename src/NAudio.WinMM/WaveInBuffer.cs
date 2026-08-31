@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // ReSharper disable once CheckNamespace
@@ -9,12 +10,20 @@ namespace NAudio.Wave;
 /// </summary>
 internal class WaveInBuffer : IDisposable
 {
-    private readonly WaveHeader header;
     private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
     private readonly byte[] buffer;
+    private readonly int headerSize;
     private GCHandle hBuffer;
     private IntPtr waveInHandle;
-    private GCHandle hHeader; // we need to pin the header structure
+    // The WAVEHDR lives in unmanaged memory rather than as a pinned managed object.
+    // waveInAddBuffer hands this exact address to the driver, which keeps it queued and
+    // writes dwFlags / dwBytesRecorded into it from its own thread long after the call
+    // returns, so the address has to stay valid and stable. It used to be a pinned
+    // [StructLayout] class passed by value, which worked only because CoreCLR pins blittable
+    // class arguments in place; NativeAOT copies them into a per-call temporary instead, so
+    // WHDR_PREPARED never made it back and every waveInAddBuffer failed with
+    // WAVERR_UNPREPARED. See https://github.com/naudio/NAudio/issues/1425.
+    private IntPtr headerPtr;
 
     /// <summary>
     /// creates a new wavebuffer
@@ -28,21 +37,28 @@ internal class WaveInBuffer : IDisposable
         this.hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
         this.waveInHandle = waveInHandle;
 
-        header = new WaveHeader();
-        hHeader = GCHandle.Alloc(header, GCHandleType.Pinned);
-        header.dataBuffer = hBuffer.AddrOfPinnedObject();
-        header.bufferLength = bufferSize;
-        header.loops = 1;
+        headerSize = Marshal.SizeOf<WaveHeader>();
+        headerPtr = Marshal.AllocHGlobal(headerSize);
+        Header = default; // AllocHGlobal does not zero the block
+        Header.dataBuffer = hBuffer.AddrOfPinnedObject();
+        Header.bufferLength = bufferSize;
+        Header.loops = 1;
 
-        MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveInPrepareHeader");
+        MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, headerPtr, headerSize), "waveInPrepareHeader");
     }
+
+    /// <summary>
+    /// The WAVEHDR itself, accessed in place so the driver's asynchronous updates to
+    /// dwFlags and dwBytesRecorded are visible without copying the block back and forth.
+    /// </summary>
+    private unsafe ref WaveHeader Header => ref Unsafe.AsRef<WaveHeader>((void*)headerPtr);
 
     /// <summary>
     /// Place this buffer back to record more audio
     /// </summary>
     public void Reuse()
     {
-        MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
+        MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, headerPtr, headerSize), "waveInAddBuffer");
     }
 
     #region Dispose Pattern
@@ -76,11 +92,15 @@ internal class WaveInBuffer : IDisposable
         // free unmanaged resources
         if (waveInHandle != IntPtr.Zero)
         {
-            WaveInterop.waveInUnprepareHeader(waveInHandle, header, Marshal.SizeOf(header));
+            WaveInterop.waveInUnprepareHeader(waveInHandle, headerPtr, headerSize);
             waveInHandle = IntPtr.Zero;
         }
-        if (hHeader.IsAllocated)
-            hHeader.Free();
+        // only after unpreparing, while the driver could still be holding the address
+        if (headerPtr != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(headerPtr);
+            headerPtr = IntPtr.Zero;
+        }
         if (hBuffer.IsAllocated)
             hBuffer.Free();
 
@@ -106,7 +126,7 @@ internal class WaveInBuffer : IDisposable
     {
         get
         {
-            return (header.flags & WaveHeaderFlags.Done) == WaveHeaderFlags.Done;
+            return (Header.flags & WaveHeaderFlags.Done) == WaveHeaderFlags.Done;
         }
     }
 
@@ -118,7 +138,7 @@ internal class WaveInBuffer : IDisposable
     {
         get
         {
-            return (header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
+            return (Header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
         }
     }
 
@@ -129,7 +149,7 @@ internal class WaveInBuffer : IDisposable
     {
         get
         {
-            return header.bytesRecorded;
+            return Header.bytesRecorded;
         }
     }
 

@@ -1,14 +1,14 @@
-# NAudioAotSmokeTest
+﻿# NAudioAotSmokeTest
 
 A console smoke that validates the source-generated COM bridging in
-`NAudio.Wasapi` survives the trim/AOT compiler. Built as part of the regular
-solution build so a regression in the `[GeneratedComInterface]` /
-`[GeneratedComClass]` analyzer story breaks CI immediately
-(`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
+`NAudio.Wasapi`, and the winmm interop in `NAudio.WinMM`, survive the trim/AOT
+compiler. Built as part of the regular solution build so a regression in the
+`[GeneratedComInterface]` / `[GeneratedComClass]` analyzer story breaks CI
+immediately (`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
 
 ## What it covers
 
-The program runs in two phases against the default render endpoint:
+The program runs in several phases against the default render endpoint:
 
 1. **RCW direction** (Phase 2d / 2e). Enumerates active render endpoints via
    `MMDeviceEnumerator`, opens the property store on each, and reads
@@ -23,12 +23,23 @@ The program runs in two phases against the default render endpoint:
    native (the latter being the bug fixed by Phase 2f's
    `Query<X>Interface` helpers).
 
+3. **winmm WAVEHDR / WAVEFORMATEX** (issue #1425). `NAudio.WinMM` used to pass
+   two native types to winmm as `[StructLayout]` classes by value. CoreCLR pins
+   a blittable class argument in place; NativeAOT copies it into a per-call
+   temporary and, for a class hierarchy, drops the base class fields entirely.
+   So `WAVEHDR` never saw the driver's `WHDR_PREPARED` (every `waveInAddBuffer`
+   returned `WAVERR_UNPREPARED`) and `WaveFormatExtensible` reached the driver
+   with its SubFormat GUID written over the sample rate. This phase asserts the
+   `WaveFormat.MarshalToPtr` blob layout byte by byte — which needs no audio
+   hardware, so it is a real regression guard anywhere — and then drives
+   `WaveOut` and `WaveIn` if the machine has devices.
+
 ## How CI uses it
 
 `dotnet build NAudio.slnx` builds this project alongside the rest. With
 `<IsAotCompatible>true</IsAotCompatible>` and `<PublishAot>true</PublishAot>`
 set, the trim/AOT analyzer runs on every build. Any new `[RequiresUnreferencedCode]`-annotated
-call from `NAudio.Wasapi` or `NAudio.Core` (e.g. someone re-introducing
+call from `NAudio.Wasapi`, `NAudio.WinMM` or `NAudio.Core` (e.g. someone re-introducing
 `Marshal.GetObjectForIUnknown`-shaped reflection paths) will surface as an
 `IL2026` / `IL3050` warning, which is treated as an error here.
 
@@ -48,9 +59,15 @@ dotnet publish NAudioAotSmokeTest/NAudioAotSmokeTest.csproj -c Release
 ```
 
 Then run the produced `NAudioAotSmokeTest.exe` from the publish directory.
-Expect output ending with `CCW dispatch under PublishAot: OK` and a clean
-exit. A `0xC0000005` access violation, a fast-fail message, or
-`zero callbacks fired` indicates a regression in the Phase 2f migration.
+Expect output ending with `winmm WAVEHDR/WAVEFORMATEX under PublishAot: OK`
+and exit code 0. A `0xC0000005` access violation, a fast-fail message, or
+`zero callbacks fired` indicates a regression in the Phase 2f migration; a
+`FAIL` line in the winmm phase (or exit code 1) indicates a regression in the
+issue #1425 marshalling fix.
+
+The winmm blob assertions run without audio hardware, so they are worth running
+even on a machine with no devices — the `WaveOut`/`WaveIn` drives report `SKIP`
+there rather than failing.
 
 ## Why the runtime test isn't in CI
 

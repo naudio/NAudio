@@ -527,7 +527,13 @@ public class AudioClient : IDisposable
 
             if (closestMatchPtr != IntPtr.Zero)
             {
-                closestMatchFormat = Marshal.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
+                // Decoded via MarshalFromPtr rather than PtrToStructure<WaveFormatExtensible>:
+                // NativeAOT drops the inherited WAVEFORMATEX fields of a WaveFormat subclass,
+                // so the direct call returned a format with its SubFormat GUID sitting where
+                // the sample rate should be. See https://github.com/naudio/NAudio/issues/1425.
+                // A closest match that isn't WAVE_FORMAT_EXTENSIBLE now yields null rather
+                // than a WaveFormatExtensible with junk in its extensible fields.
+                closestMatchFormat = WaveFormat.MarshalFromPtr(closestMatchPtr) as WaveFormatExtensible;
                 Marshal.FreeCoTaskMem(closestMatchPtr);
             }
 

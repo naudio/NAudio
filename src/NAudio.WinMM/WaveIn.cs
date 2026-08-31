@@ -96,9 +96,21 @@ public class WaveIn : IWaveIn, IWaveLatency
     private void OpenWaveInDevice()
     {
         CloseWaveInDevice();
-        MmResult result = WaveInterop.waveInOpenWindow(out waveInHandle, DeviceNumber, WaveFormat,
-            callbackEvent.SafeWaitHandle.DangerousGetHandle(),
-            IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
+        // A WAVEFORMATEX block built by hand: WaveFormat's subclasses add their fields by
+        // inheritance, which the NativeAOT marshaller drops when a WaveFormat-typed parameter
+        // is marshalled. See https://github.com/naudio/NAudio/issues/1425.
+        IntPtr formatPointer = WaveFormat.MarshalToPtr(WaveFormat);
+        MmResult result;
+        try
+        {
+            result = WaveInterop.waveInOpenWindow(out waveInHandle, DeviceNumber, formatPointer,
+                callbackEvent.SafeWaitHandle.DangerousGetHandle(),
+                IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(formatPointer);
+        }
         MmException.Try(result, "waveInOpen");
         CreateBuffers();
     }

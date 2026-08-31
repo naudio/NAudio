@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -21,6 +23,27 @@ public class AdpcmWaveFormat : WaveFormat
     /// </summary>
     private AdpcmWaveFormat() : this(8000, 1)
     {
+    }
+
+    /// <summary>
+    /// Reads an AdpcmWaveFormat from a fmt chunk (a 4-byte length followed by the
+    /// WAVEFORMATEX and its extra bytes). Only the extra bytes actually present are read,
+    /// so a short or truncated block leaves the remaining coefficients at zero.
+    /// </summary>
+    internal AdpcmWaveFormat(BinaryReader reader) : base(reader)
+    {
+        coefficients = new short[14];
+        if (extraSize < 4)
+        {
+            return;
+        }
+        samplesPerBlock = reader.ReadInt16();
+        numCoeff = reader.ReadInt16();
+        int available = Math.Min(coefficients.Length, (extraSize - 4) / 2);
+        for (int n = 0; n < available; n++)
+        {
+            coefficients[n] = reader.ReadInt16();
+        }
     }
 
     /// <summary>

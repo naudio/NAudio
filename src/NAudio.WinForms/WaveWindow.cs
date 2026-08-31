@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 // ReSharper disable once CheckNamespace
@@ -18,14 +17,15 @@ internal static class WaveWindowMessages
         {
             case WaveInterop.WaveMessage.WaveOutDone:
             case WaveInterop.WaveMessage.WaveInData:
-                var waveHeader = Marshal.PtrToStructure<WaveHeader>(m.LParam);
-                callback(m.WParam, message, IntPtr.Zero, waveHeader, IntPtr.Zero);
+                // lParam is the address of the WAVEHDR the buffer was submitted with; pass it
+                // straight through rather than copying the block into a managed object.
+                callback(m.WParam, message, IntPtr.Zero, m.LParam, IntPtr.Zero);
                 return true;
             case WaveInterop.WaveMessage.WaveOutOpen:
             case WaveInterop.WaveMessage.WaveOutClose:
             case WaveInterop.WaveMessage.WaveInOpen:
             case WaveInterop.WaveMessage.WaveInClose:
-                callback(m.WParam, message, IntPtr.Zero, null, IntPtr.Zero);
+                callback(m.WParam, message, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
                 return true;
             default:
                 return false;

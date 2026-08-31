@@ -30,6 +30,18 @@ public class Gsm610WaveFormat : WaveFormat
     }
 
     /// <summary>
+    /// Reads a Gsm610WaveFormat from a fmt chunk (a 4-byte length followed by the
+    /// WAVEFORMATEX and its 2 extra bytes).
+    /// </summary>
+    internal Gsm610WaveFormat(BinaryReader reader) : base(reader)
+    {
+        if (extraSize >= 2)
+        {
+            samplesPerBlock = reader.ReadInt16();
+        }
+    }
+
+    /// <summary>
     /// Samples per block
     /// </summary>
     public short SamplesPerBlock { get { return samplesPerBlock; } }

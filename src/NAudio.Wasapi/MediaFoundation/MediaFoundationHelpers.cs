@@ -121,7 +121,20 @@ public static class MediaFoundationApi
         var (ptr, rcw) = CreateMediaType();
         try
         {
-            MediaFoundationInterop.MFInitMediaTypeFromWaveFormatEx(ptr, waveFormat, Marshal.SizeOf(waveFormat));
+            // A caller-built WAVEFORMATEX block. Passing the WaveFormat itself relied on the
+            // marshaller flattening a class hierarchy, which NativeAOT does not do — a
+            // WaveFormatExtensible (as MediaFoundationResampler accepts) arrived with its
+            // SubFormat GUID over the sample rate. See
+            // https://github.com/naudio/NAudio/issues/1425.
+            IntPtr formatPtr = WaveFormat.MarshalToPtr(waveFormat);
+            try
+            {
+                MediaFoundationInterop.MFInitMediaTypeFromWaveFormatEx(ptr, formatPtr, 18 + waveFormat.ExtraSize);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(formatPtr);
+            }
             return (ptr, rcw);
         }
         catch

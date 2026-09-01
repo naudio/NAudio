@@ -34,8 +34,14 @@
     { "id": "Wasapi.FindBestExclusiveFormat", "params": { "rate": 96000, "bits": 32, "channels": 2 } },
     { "id": "Wasapi.ExclusiveQuickScan" },
 
-    // --- DMO: DmoMediaType.GetWaveFormat goes through MarshalFromPtr
+    // --- DMO: DmoMediaType.SetWaveFormat / GetWaveFormat both go through the blob now
     { "id": "Dmo.DecodeMp3",    "params": { "input": "C:\\path\\to\\test.mp3" } },
-    { "id": "Dmo.ResampleFile", "params": { "input": "C:\\path\\to\\test.wav" } }
+    { "id": "Dmo.ResampleFile", "params": { "input": "C:\\path\\to\\test.wav", "targetRate": 22050 } },
+    { "id": "Dmo.EchoEffect",   "params": { "input": "C:\\path\\to\\test.wav" } },
+
+    // --- Media Foundation: MFInitMediaTypeFromWaveFormatEx now takes a caller-built block
+    { "id": "MediaFoundation.ResampleFile",         "params": { "input": "C:\\path\\to\\test.wav", "targetRate": 22050 } },
+    { "id": "MediaFoundation.EncodeToMp3",          "params": { "input": "C:\\path\\to\\test.wav" } },
+    { "id": "MediaFoundation.RoundTripMemoryStream", "params": { "input": "C:\\path\\to\\test.wav" } }
   ]
 }

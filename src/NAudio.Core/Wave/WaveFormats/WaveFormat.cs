@@ -194,7 +194,24 @@ public class WaveFormat
     /// </summary>
     private const int WaveFormatExLength = 18;
 
+    /// <summary>
+    /// Size of a canonical PCMWAVEFORMAT, which carries no cbSize field.
+    /// </summary>
+    private const int PcmWaveFormatLength = 16;
+
     private static BinaryReader OpenBlob(byte[] blob) => new(new MemoryStream(blob, writable: false));
+
+    /// <summary>
+    /// Extra bytes the corresponding WaveFormat subclass always occupies, i.e. how many
+    /// <see cref="Marshal.PtrToStructure{T}(IntPtr)"/> used to read regardless of cbSize.
+    /// </summary>
+    private static int MinimumExtraSize(WaveFormatEncoding encoding) => encoding switch
+    {
+        WaveFormatEncoding.Extensible => 22, // wValidBitsPerSample + dwChannelMask + SubFormat
+        WaveFormatEncoding.Adpcm => 32,      // samplesPerBlock + numCoeff + 14 coefficients
+        WaveFormatEncoding.Gsm610 => 2,      // samplesPerBlock
+        _ => 0,
+    };
 
     /// <summary>
     /// Copies a native WAVEFORMATEX block into the byte layout the BinaryReader constructors
@@ -213,6 +230,11 @@ public class WaveFormat
         {
             extraSize = 0;
         }
+        // Marshal.PtrToStructure<T> read a fixed number of extra bytes for these encodings
+        // whatever cbSize said, and drivers do under-report it. Keep reading at least that
+        // much so an under-reporting driver still yields populated subclass fields rather
+        // than a zeroed SubFormat — this is never a larger overread than the old code's.
+        extraSize = Math.Max(extraSize, MinimumExtraSize(encoding));
 
         var blob = new byte[FormatChunkPrefixLength + WaveFormatExLength + extraSize];
         BitConverter.TryWriteBytes(blob.AsSpan(), WaveFormatExLength + extraSize);
@@ -258,8 +280,19 @@ public class WaveFormat
         // length prefix, and restore the cbSize field that the canonical 16-byte PCM form
         // omits — native callers always read a full 18-byte WAVEFORMATEX. Math.Max leaves
         // the two extra bytes zeroed, which is the cbSize = 0 those callers expect.
+        //
+        // The block is also never shorter than the cbSize it advertises. A native consumer
+        // reads 18 + cbSize bytes, so a subclass that declares extraSize but doesn't write
+        // it in Serialize (as Mp3WaveFormat itself did until recently, and as a third-party
+        // subclass laying its fields out via [StructLayout] still might) would otherwise
+        // have the consumer read off the end of the allocation.
         int length = serialized.Length - FormatChunkPrefixLength;
-        var blob = new byte[Math.Max(length, WaveFormatExLength)];
+        int declared = WaveFormatExLength + Math.Max((int)extraSize, 0);
+        // length == PcmWaveFormatLength is the canonical PCM shape, where Serialize omits
+        // cbSize entirely and the Math.Max below pads it back to 18 with a zero.
+        Debug.Assert(length >= declared || length == PcmWaveFormatLength,
+            $"{GetType().Name}.Serialize wrote {length} bytes but cbSize advertises {declared}");
+        var blob = new byte[Math.Max(length, Math.Max(declared, WaveFormatExLength))];
         Buffer.BlockCopy(serialized, FormatChunkPrefixLength, blob, 0, length);
         return blob;
     }

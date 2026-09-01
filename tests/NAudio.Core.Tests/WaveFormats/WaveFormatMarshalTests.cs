@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
 using NUnit.Framework;
@@ -149,6 +150,77 @@ public class WaveFormatMarshalTests
             Assert.That(extraData.SampleRate, Is.EqualTo(44100));
             Assert.That(extraData.ExtraSize, Is.EqualTo(12));
             Assert.That(BitConverter.ToUInt16(extraData.ExtraData, 6), Is.EqualTo(1152), "nBlockSize");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+    }
+
+    /// <summary>
+    /// The contract every native consumer relies on: it reads cbSize bytes of extra data
+    /// after the 18-byte header, so the block MarshalToPtr allocates must be at least that
+    /// long. Before this was enforced, a subclass that declared extraSize but did not write
+    /// it in Serialize (as Mp3WaveFormat did) produced an 18-byte block advertising more.
+    /// </summary>
+    [TestCaseSource(nameof(AllShippedFormats))]
+    public void BlobIsNeverShorterThanTheCbSizeItAdvertises(WaveFormat format)
+    {
+        IntPtr pointer = WaveFormat.MarshalToPtr(format);
+        try
+        {
+            short cbSize = Marshal.ReadInt16(pointer, 16);
+            Assert.That(cbSize, Is.GreaterThanOrEqualTo(0), "cbSize must not be negative");
+
+            // Re-derive the block length the way ToWaveFormatExBytes does, then assert the
+            // advertised extent fits inside it.
+            var blob = new byte[18 + cbSize];
+            Assert.DoesNotThrow(() => Marshal.Copy(pointer, blob, 0, blob.Length),
+                "reading 18 + cbSize bytes must stay inside the allocation");
+            Assert.That(cbSize, Is.EqualTo(format.ExtraSize),
+                "the emitted cbSize should match the format's ExtraSize");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+    }
+
+    private static IEnumerable<TestCaseData> AllShippedFormats()
+    {
+        yield return new TestCaseData(new WaveFormat(44100, 16, 2)).SetName("Pcm");
+        yield return new TestCaseData(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)).SetName("IeeeFloat");
+        yield return new TestCaseData(new WaveFormatExtensible(48000, 24, 2, 0x3)).SetName("Extensible");
+        yield return new TestCaseData(new AdpcmWaveFormat(22050, 1)).SetName("Adpcm");
+        yield return new TestCaseData(new Gsm610WaveFormat()).SetName("Gsm610");
+        yield return new TestCaseData(new Mp3WaveFormat(44100, 2, 1152, 128000)).SetName("Mp3");
+        yield return new TestCaseData(new TrueSpeechWaveFormat()).SetName("TrueSpeech");
+    }
+
+    /// <summary>
+    /// Drivers do under-report cbSize on WAVE_FORMAT_EXTENSIBLE. Marshal.PtrToStructure read
+    /// the 22 extensible bytes regardless, and callers depend on getting a real SubFormat, so
+    /// the hand-rolled decode has to do the same.
+    /// </summary>
+    [TestCase((short)22)]
+    [TestCase((short)0)]
+    [TestCase((short)14)]
+    public void ExtensibleWithUnderReportedCbSizeStillDecodesItsSubFormat(short cbSize)
+    {
+        var source = new WaveFormatExtensible(48000, 24, 2, 0x3);
+        IntPtr pointer = WaveFormat.MarshalToPtr(source);
+        try
+        {
+            // The block really does carry all 22 extra bytes; only cbSize lies about it.
+            Marshal.WriteInt16(pointer, 16, cbSize);
+
+            var result = WaveFormat.MarshalFromPtr(pointer) as WaveFormatExtensible;
+
+            Assert.That(result, Is.Not.Null, "should still decode as WaveFormatExtensible");
+            Assert.That(result.SampleRate, Is.EqualTo(48000));
+            Assert.That(result.SubFormat, Is.EqualTo(source.SubFormat));
+            Assert.That(result.ChannelMask, Is.EqualTo(0x3));
+            Assert.That(result.ValidBitsPerSample, Is.EqualTo(24));
         }
         finally
         {

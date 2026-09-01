@@ -140,9 +140,23 @@ public struct DmoMediaType
         }
         bFixedSizeSamples = (SubType == AudioMediaSubtypes.MEDIASUBTYPE_PCM || SubType == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT) ? 1 : 0;
         formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
-        if (cbFormat < Marshal.SizeOf(waveFormat))
+        // Built via MarshalToPtr rather than Marshal.SizeOf + StructureToPtr: those drop the
+        // inherited WAVEFORMATEX fields of a WaveFormat subclass under NativeAOT, so a
+        // WaveFormatExtensible was written with its SubFormat GUID over the sample rate.
+        // See https://github.com/naudio/NAudio/issues/1425.
+        int formatSize = 18 + waveFormat.ExtraSize;
+        if (cbFormat < formatSize)
             throw new InvalidOperationException("Not enough memory assigned for a WaveFormat structure");
-        //Debug.Assert(cbFormat >= ,"Not enough space");
-        Marshal.StructureToPtr(waveFormat, pbFormat, false);
+        IntPtr source = WaveFormat.MarshalToPtr(waveFormat);
+        try
+        {
+            var bytes = new byte[formatSize];
+            Marshal.Copy(source, bytes, 0, formatSize);
+            Marshal.Copy(bytes, 0, pbFormat, formatSize);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(source);
+        }
     }
 }

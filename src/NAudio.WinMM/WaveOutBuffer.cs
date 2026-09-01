@@ -101,11 +101,14 @@ internal class WaveOutBuffer : IDisposable
             }
             hWaveOut = IntPtr.Zero;
         }
-        // only after unpreparing, while the driver could still be holding the address
+        // only after unpreparing, while the driver could still be holding the address.
+        // Clear the field before freeing so a concurrent reader of Done/InQueue/BytesRecorded
+        // sees "disposed" rather than briefly dereferencing released memory.
         if (headerPtr != IntPtr.Zero)
         {
-            Marshal.FreeHGlobal(headerPtr);
+            var toFree = headerPtr;
             headerPtr = IntPtr.Zero;
+            Marshal.FreeHGlobal(toFree);
         }
         if (hBuffer.IsAllocated)
             hBuffer.Free();
@@ -150,6 +153,10 @@ internal class WaveOutBuffer : IDisposable
     {
         get
         {
+            // WaveOut disposes its buffers without joining the playback thread, and the
+            // public IWaveLatency.CurrentLatency reads this from any thread, so the block may
+            // already be freed. Report "not queued" rather than dereferencing released memory.
+            if (headerPtr == IntPtr.Zero) return false;
             return (Header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
         }
     }

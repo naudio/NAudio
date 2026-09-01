@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -54,6 +54,13 @@ internal class WaveInBuffer : IDisposable
     private unsafe ref WaveHeader Header => ref Unsafe.AsRef<WaveHeader>((void*)headerPtr);
 
     /// <summary>
+    /// The header's flags, or none once disposed. WaveIn disposes its buffers without joining
+    /// the recording thread, so this can be read after Dispose has freed the block; reporting
+    /// "no flags set" keeps that benign, as it was when the header was a managed object.
+    /// </summary>
+    private WaveHeaderFlags Flags => headerPtr == IntPtr.Zero ? 0 : Header.flags;
+
+    /// <summary>
     /// Place this buffer back to record more audio
     /// </summary>
     public void Reuse()
@@ -95,11 +102,14 @@ internal class WaveInBuffer : IDisposable
             WaveInterop.waveInUnprepareHeader(waveInHandle, headerPtr, headerSize);
             waveInHandle = IntPtr.Zero;
         }
-        // only after unpreparing, while the driver could still be holding the address
+        // only after unpreparing, while the driver could still be holding the address.
+        // Clear the field before freeing so a concurrent reader of Done/InQueue/BytesRecorded
+        // sees "disposed" rather than briefly dereferencing released memory.
         if (headerPtr != IntPtr.Zero)
         {
-            Marshal.FreeHGlobal(headerPtr);
+            var toFree = headerPtr;
             headerPtr = IntPtr.Zero;
+            Marshal.FreeHGlobal(toFree);
         }
         if (hBuffer.IsAllocated)
             hBuffer.Free();
@@ -126,7 +136,7 @@ internal class WaveInBuffer : IDisposable
     {
         get
         {
-            return (Header.flags & WaveHeaderFlags.Done) == WaveHeaderFlags.Done;
+            return (Flags & WaveHeaderFlags.Done) == WaveHeaderFlags.Done;
         }
     }
 
@@ -138,7 +148,7 @@ internal class WaveInBuffer : IDisposable
     {
         get
         {
-            return (Header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
+            return (Flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
         }
     }
 
@@ -149,7 +159,7 @@ internal class WaveInBuffer : IDisposable
     {
         get
         {
-            return Header.bytesRecorded;
+            return headerPtr == IntPtr.Zero ? 0 : Header.bytesRecorded;
         }
     }
 

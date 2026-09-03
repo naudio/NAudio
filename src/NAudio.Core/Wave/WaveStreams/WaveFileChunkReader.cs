@@ -62,6 +62,7 @@ internal class WaveFileChunkReader
         // this -8 is so we can be sure that there are at least 8 bytes for a chunk id and length
         while (stream.Position <= stopPosition - 8)
         {
+            long chunkStartPosition = stream.Position;
             Int32 chunkIdentifier = br.ReadInt32();
             var chunkLength = br.ReadUInt32();
             if (chunkIdentifier == dataChunkId)
@@ -123,6 +124,15 @@ internal class WaveFileChunkReader
                     stream.Position--;
                 }
             }
+
+            // Every iteration reads at least an 8-byte chunk header, so the position must
+            // have moved on. If it hasn't, a size field we trusted has sent us backwards and
+            // continuing would loop forever - bail out and let the fmt/data checks below
+            // decide whether what we already have is usable. See #1428.
+            if (stream.Position <= chunkStartPosition)
+            {
+                break;
+            }
         }
 
         if (waveFormat == null)
@@ -147,9 +157,27 @@ internal class WaveFileChunkReader
             throw new FormatException("Invalid RF64 WAV file - No ds64 chunk found");
         }
         int chunkSize = reader.ReadInt32();
+        // The three 64-bit fields below take up 24 bytes, so anything smaller is not a ds64
+        // chunk. Without this check ReadBytes below is handed a negative count.
+        if (chunkSize < 24)
+        {
+            throw new FormatException($"Invalid RF64 WAV file - ds64 chunk size must be at least 24 bytes, but was {chunkSize}");
+        }
         this.riffSize = reader.ReadInt64();
         this.dataChunkLength = reader.ReadInt64();
         long sampleCount = reader.ReadInt64(); // replaces the value in the fact chunk
+        // These are signed fields in the file, and the chunk-walking loop in ReadWaveHeader
+        // advances the stream by dataChunkLength. A negative value walks it backwards - at
+        // exactly -8 the net advance per iteration is zero and the loop spins forever without
+        // allocating or throwing. Reject both negatives here, at the point of read. See #1428.
+        if (riffSize < 0)
+        {
+            throw new FormatException($"Invalid RF64 WAV file - negative RIFF size ({riffSize}) in ds64 chunk");
+        }
+        if (dataChunkLength < 0)
+        {
+            throw new FormatException($"Invalid RF64 WAV file - negative data chunk length ({dataChunkLength}) in ds64 chunk");
+        }
         reader.ReadBytes(chunkSize - 24); // get to the end of this chunk (should parse extra stuff later)
     }
 

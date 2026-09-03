@@ -211,7 +211,14 @@ public class CueList
             int chunkId = BitConverter.ToInt32(listChunkData, p);
             int chunkSize = BitConverter.ToInt32(listChunkData, p + 4);
 
-            if (chunkId == labelChunkId && chunkSize >= 4 && listChunkData.Length - p >= chunkSize + 8)
+            // chunkSize is signed in the file. A negative one walks p backwards - at exactly
+            // -8 it doesn't move at all and this loop spins forever - and a size larger than
+            // the bytes we hold can't describe a real sub-chunk (it would also overflow the
+            // chunkSize + 8 arithmetic below). Either way the adtl list is corrupt from here
+            // on, so stop. See issue #1428.
+            if (chunkSize < 0 || listChunkData.Length - p - 8 < chunkSize) break;
+
+            if (chunkId == labelChunkId && chunkSize >= 4)
             {
                 // This is a label chunk - extract the label data
                 int labelLength = chunkSize - 4; // chunkSize includes the dwIdentifier
@@ -226,7 +233,7 @@ public class CueList
                     }
                 }
             }
-            else if (chunkId == ltxtChunkId && chunkSize >= 20 && listChunkData.Length - p >= chunkSize + 8)
+            else if (chunkId == ltxtChunkId && chunkSize >= 20)
             {
                 // Text-with-data-length: carries a region length (dwSampleLength) for a cue point.
                 // Minimum payload is 20 bytes: dwIdentifier + dwSampleLength + dwPurpose + 4x Int16.

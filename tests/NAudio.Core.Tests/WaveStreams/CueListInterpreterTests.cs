@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using NAudio.Core.Tests.Utils;
 using NAudio.Utils;
 using NAudio.Wave;
 using NUnit.Framework;
@@ -257,6 +258,38 @@ public class CueListInterpreterTests
         Assert.That(cues[0].Length, Is.Null);
     }
 
+    [TestCase(-8)]          // net advance of exactly zero - the spin reported in #1428
+    [TestCase(-100)]        // walks the read position backwards
+    [TestCase(int.MaxValue - 4)] // chunkSize + 8 overflows to a negative advance
+    public void MalformedAdtlSubChunkSizeDoesNotLoop(int chunkSize)
+    {
+        // A labl sub-chunk whose size field is negative (or so large that size + 8 overflows)
+        // used to leave the adtl walk stuck: at exactly -8 the loop's net advance is zero and
+        // it spins at 100% CPU without allocating or throwing (#1428). The cue itself must
+        // still come back, just without its label.
+        var cueBytes = BuildCueChunkBody((cueId: 1, samplePosition: 100));
+        var adtlBytes = BuildAdtlListChunkBodyWithRawSize("labl", chunkSize);
+
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        {
+            w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
+            w.AddChunk("LIST", adtlBytes, ChunkPosition.AfterData);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+
+        CompletesWithin.Run(() =>
+        {
+            using var reader = new WaveFileReader(ms);
+            var cues = reader.Chunks.ReadCueList();
+            Assert.That(cues, Is.Not.Null);
+            Assert.That(cues.Count, Is.EqualTo(1));
+            Assert.That(cues[0].Position, Is.EqualTo(100));
+            Assert.That(cues[0].Label, Is.EqualTo(string.Empty));
+        });
+    }
+
     // ---- helpers ------------------------------------------------------------
 
     /// <summary>
@@ -352,5 +385,19 @@ public class CueListInterpreterTests
             }
         }
         throw new InvalidOperationException($"Marker '{from}' not found");
+    }
+
+    /// <summary>
+    /// Builds a <c>LIST/adtl</c> body containing a single sub-chunk with the given id and a
+    /// raw (deliberately bogus) size field, and no payload.
+    /// </summary>
+    private static byte[] BuildAdtlListChunkBodyWithRawSize(string subChunkId, int rawSize)
+    {
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write(Encoding.UTF8.GetBytes("adtl"));
+        w.Write(ChunkIdentifier.ChunkIdentifierToInt32(subChunkId));
+        w.Write(rawSize);
+        return ms.ToArray();
     }
 }

@@ -245,11 +245,10 @@ public class MediaObject : IDisposable
     private DmoMediaType CreateDmoMediaTypeForWaveFormat(WaveFormat waveFormat)
     {
         DmoMediaType mediaType = new DmoMediaType();
-        // 18 + ExtraSize, not Marshal.SizeOf: the latter returns only the subclass's own
-        // fields under NativeAOT (22 for a WaveFormatExtensible rather than 40), which then
-        // under-allocates the media type. See https://github.com/naudio/NAudio/issues/1425.
-        int waveFormatExSize = 18 + waveFormat.ExtraSize;
-        DmoInterop.MoInitMediaType(ref mediaType, waveFormatExSize);
+        // Sized from the same blob SetWaveFormat will write, so the two can't disagree.
+        // Marshal.SizeOf returns only a subclass's own fields under NativeAOT (22 for a
+        // WaveFormatExtensible rather than 40). See https://github.com/naudio/NAudio/issues/1425.
+        DmoInterop.MoInitMediaType(ref mediaType, waveFormat.ToWaveFormatExBytes().Length);
         mediaType.SetWaveFormat(waveFormat);
         return mediaType;
     }

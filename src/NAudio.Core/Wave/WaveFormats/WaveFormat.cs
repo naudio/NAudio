@@ -266,8 +266,11 @@ public class WaveFormat
     /// <summary>
     /// Renders this WaveFormat as a native WAVEFORMATEX block — the fixed 18-byte header
     /// (cbSize always present) followed by cbSize bytes of format-specific extra data.
+    /// Use this when writing into a buffer you already own; <see cref="MarshalToPtr"/>
+    /// wraps it for the common case of needing a freshly allocated unmanaged block.
     /// </summary>
-    internal byte[] ToWaveFormatExBytes()
+    /// <returns>The WAVEFORMATEX bytes, always at least 18 long.</returns>
+    public byte[] ToWaveFormatExBytes()
     {
         using var memoryStream = new MemoryStream();
         using (var writer = new BinaryWriter(memoryStream, System.Text.Encoding.UTF8, leaveOpen: true))

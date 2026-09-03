@@ -36,12 +36,23 @@ The program runs in several phases against the default render endpoint:
 
 ## How CI uses it
 
-`dotnet build NAudio.slnx` builds this project alongside the rest. With
+CI covers this project in two ways.
+
+**The `build` job** compiles it alongside the rest of the solution. With
 `<IsAotCompatible>true</IsAotCompatible>` and `<PublishAot>true</PublishAot>`
 set, the trim/AOT analyzer runs on every build. Any new `[RequiresUnreferencedCode]`-annotated
 call from `NAudio.Wasapi`, `NAudio.WinMM` or `NAudio.Core` (e.g. someone re-introducing
 `Marshal.GetObjectForIUnknown`-shaped reflection paths) will surface as an
 `IL2026` / `IL3050` warning, which is treated as an error here.
+
+**The `aot` job** publishes it with `PublishAot`, which runs ILC for real. This
+exists because the analyzer only sees *annotated* APIs, and a lot of AOT breakage
+carries no annotation at all — issue #1425 (marshalling a `[StructLayout]` class
+by value) and Hazard H11 in `MODERNIZATION.md` (`Marshal.GetObjectForIUnknown`)
+both produced a clean analyzer pass while being broken under AOT. Publishing
+catches whole-program analysis and native link failures the analyzer cannot.
+It runs as a separate job so the ILCompiler download and native link stay off
+the critical path.
 
 ## Running the actual smoke locally
 
@@ -71,7 +82,14 @@ there rather than failing.
 
 ## Why the runtime test isn't in CI
 
-CI agents typically have no audio hardware (or only a virtual device that
-doesn't fire `IAudioEndpointVolumeCallback.OnNotify`). The build-time
-analyzer pass is the part of the test that's reliable in CI; the runtime
-smoke is a manual / local validation step.
+CI publishes the app but never launches it. CI agents typically have no audio
+hardware (or only a virtual device that doesn't fire
+`IAudioEndpointVolumeCallback.OnNotify`), and the program drives a real render
+endpoint and master volume before it reaches anything hardware-free — so it
+would fault long before the winmm blob assertions, which need no device at all.
+
+Making the run itself CI-viable means guarding each phase independently so
+absent hardware is a skip rather than an unhandled exception. Worth doing: those
+blob assertions are the only place the format checks execute under genuine
+NativeAOT, which is the only place the #1425 corruption was observable — the
+`WaveFormatMarshalTests` equivalents run on the JIT and passed throughout.

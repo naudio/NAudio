@@ -125,10 +125,8 @@ internal class WaveFileChunkReader
                 }
             }
 
-            // Every iteration reads at least an 8-byte chunk header, so the position must
-            // have moved on. If it hasn't, a size field we trusted has sent us backwards and
-            // continuing would loop forever - bail out and let the fmt/data checks below
-            // decide whether what we already have is usable. See #1428.
+            // Every iteration reads an 8-byte header, so the position must have moved on.
+            // If a size field sent us backwards, continuing would loop forever. See #1428.
             if (stream.Position <= chunkStartPosition)
             {
                 break;
@@ -157,8 +155,8 @@ internal class WaveFileChunkReader
             throw new FormatException("Invalid RF64 WAV file - No ds64 chunk found");
         }
         int chunkSize = reader.ReadInt32();
-        // The three 64-bit fields below take up 24 bytes, so anything smaller is not a ds64
-        // chunk. Without this check ReadBytes below is handed a negative count.
+        // The three 64-bit fields below occupy 24 bytes; anything smaller also hands the
+        // ReadBytes at the end of this method a negative count.
         if (chunkSize < 24)
         {
             throw new FormatException($"Invalid RF64 WAV file - ds64 chunk size must be at least 24 bytes, but was {chunkSize}");
@@ -166,10 +164,8 @@ internal class WaveFileChunkReader
         this.riffSize = reader.ReadInt64();
         this.dataChunkLength = reader.ReadInt64();
         long sampleCount = reader.ReadInt64(); // replaces the value in the fact chunk
-        // These are signed fields in the file, and the chunk-walking loop in ReadWaveHeader
-        // advances the stream by dataChunkLength. A negative value walks it backwards - at
-        // exactly -8 the net advance per iteration is zero and the loop spins forever without
-        // allocating or throwing. Reject both negatives here, at the point of read. See #1428.
+        // The chunk-walking loop advances the stream by dataChunkLength, so a negative value
+        // walks it backwards - at exactly -8 it doesn't move at all and spins forever. See #1428.
         if (riffSize < 0)
         {
             throw new FormatException($"Invalid RF64 WAV file - negative RIFF size ({riffSize}) in ds64 chunk");

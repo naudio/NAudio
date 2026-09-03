@@ -211,11 +211,8 @@ public class CueList
             int chunkId = BitConverter.ToInt32(listChunkData, p);
             int chunkSize = BitConverter.ToInt32(listChunkData, p + 4);
 
-            // chunkSize is signed in the file. A negative one walks p backwards - at exactly
-            // -8 it doesn't move at all and this loop spins forever - and a size larger than
-            // the bytes we hold can't describe a real sub-chunk (it would also overflow the
-            // chunkSize + 8 arithmetic below). Either way the adtl list is corrupt from here
-            // on, so stop. See issue #1428.
+            // A negative size never advances p (at exactly -8 it spins forever); an oversized
+            // one can't be a real sub-chunk, and would overflow chunkSize + 8 below. See #1428.
             if (chunkSize < 0 || listChunkData.Length - p - 8 < chunkSize) break;
 
             if (chunkId == labelChunkId && chunkSize >= 4)

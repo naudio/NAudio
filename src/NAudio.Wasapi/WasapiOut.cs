@@ -371,7 +371,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         if (shareMode == AudioClientShareMode.Exclusive)
         {
             flags = AudioClientStreamFlags.None;
-            if (!audioClient.IsFormatSupported(shareMode, OutputWaveFormat, out WaveFormatExtensible closestSampleRateFormat))
+            if (!audioClient.IsFormatSupported(shareMode, OutputWaveFormat, out WaveFormat closestSampleRateFormat))
             {
                 // The device won't take the source format natively. Adapt bit depth/channels (never the
                 // sample rate) to a supported format if we can — this restores the most common NAudio 2

@@ -515,9 +515,9 @@ public class AudioClient : IDisposable
     /// </summary>
     /// <param name="shareMode">Share Mode</param>
     /// <param name="desiredFormat">Desired Format</param>
-    /// <param name="closestMatchFormat">Output The closest match format.</param>
+    /// <param name="closestMatchFormat">The closest supported format, or null if there is none. Shared mode only — always null in exclusive mode.</param>
     /// <returns>True if the format is supported</returns>
-    public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat)
+    public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormat closestMatchFormat)
     {
         closestMatchFormat = null;
         var formatPtr = WaveFormat.MarshalToPtr(desiredFormat);
@@ -527,13 +527,8 @@ public class AudioClient : IDisposable
 
             if (closestMatchPtr != IntPtr.Zero)
             {
-                // Decoded via MarshalFromPtr rather than PtrToStructure<WaveFormatExtensible>:
-                // NativeAOT drops the inherited WAVEFORMATEX fields of a WaveFormat subclass,
-                // so the direct call returned a format with its SubFormat GUID sitting where
-                // the sample rate should be. See https://github.com/naudio/NAudio/issues/1425.
-                // A closest match that isn't WAVE_FORMAT_EXTENSIBLE now yields null rather
-                // than a WaveFormatExtensible with junk in its extensible fields.
-                closestMatchFormat = WaveFormat.MarshalFromPtr(closestMatchPtr) as WaveFormatExtensible;
+                // WASAPI may return either a WAVEFORMATEX or a WAVEFORMATEXTENSIBLE here.
+                closestMatchFormat = WaveFormat.MarshalFromPtr(closestMatchPtr);
                 Marshal.FreeCoTaskMem(closestMatchPtr);
             }
 

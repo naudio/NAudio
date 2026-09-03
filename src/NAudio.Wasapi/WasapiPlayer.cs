@@ -297,7 +297,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
     /// <param name="format">The format to check.</param>
     /// <param name="closestMatch">In shared mode, the closest supported format if the exact format isn't supported. Always null in exclusive mode.</param>
     /// <returns>True if the format is supported.</returns>
-    public bool IsFormatSupported(WaveFormat format, out WaveFormatExtensible closestMatch)
+    public bool IsFormatSupported(WaveFormat format, out WaveFormat closestMatch)
     {
         return audioClient.IsFormatSupported(shareMode, format, out closestMatch);
     }

@@ -151,31 +151,99 @@ public class WaveFormat
     /// <returns></returns>
     public static WaveFormat MarshalFromPtr(IntPtr pointer)
     {
-        var waveFormat = Marshal.PtrToStructure<WaveFormat>(pointer);
-        switch (waveFormat.Encoding)
+        // Decoded by hand rather than with Marshal.PtrToStructure<T>. The WaveFormat
+        // subclasses express their native layout through inheritance, and NativeAOT ignores
+        // base-class fields when it builds the marshalling stub for such a class — so
+        // PtrToStructure<WaveFormatExtensible> reads wValidBitsPerSample/dwChannelMask/
+        // subFormat from offset 0 and silently returns a format with a garbage sample rate.
+        // See https://github.com/naudio/NAudio/issues/1425.
+        byte[] blob = ReadFormatBlob(pointer);
+        var encoding = (WaveFormatEncoding)BitConverter.ToUInt16(blob, FormatChunkPrefixLength);
+        switch (encoding)
         {
-            case WaveFormatEncoding.Pcm:
-                // can't rely on extra size even being there for PCM so blank it to avoid reading
-                // corrupt data
-                waveFormat.extraSize = 0;
-                break;
             case WaveFormatEncoding.Extensible:
-                waveFormat = Marshal.PtrToStructure<WaveFormatExtensible>(pointer);
-                break;
+                return new WaveFormatExtensible(OpenBlob(blob));
             case WaveFormatEncoding.Adpcm:
-                waveFormat = Marshal.PtrToStructure<AdpcmWaveFormat>(pointer);
-                break;
+                return new AdpcmWaveFormat(OpenBlob(blob));
             case WaveFormatEncoding.Gsm610:
-                waveFormat = Marshal.PtrToStructure<Gsm610WaveFormat>(pointer);
-                break;
-            default:
-                if (waveFormat.ExtraSize > 0)
-                {
-                    waveFormat = Marshal.PtrToStructure<WaveFormatExtraData>(pointer);
-                }
-                break;
+                return new Gsm610WaveFormat(OpenBlob(blob));
+        }
+
+        var waveFormat = new WaveFormat(OpenBlob(blob));
+        if (encoding == WaveFormatEncoding.Pcm)
+        {
+            // can't rely on extra size even being there for PCM so blank it to avoid reading
+            // corrupt data
+            waveFormat.extraSize = 0;
+        }
+        else if (waveFormat.ExtraSize > 0)
+        {
+            waveFormat = new WaveFormatExtraData(OpenBlob(blob));
         }
         return waveFormat;
+    }
+
+    /// <summary>
+    /// Number of bytes the <see cref="Serialize"/> / <see cref="WaveFormat(BinaryReader)"/>
+    /// pair spends on the fmt chunk length that precedes the WAVEFORMATEX itself.
+    /// </summary>
+    private const int FormatChunkPrefixLength = 4;
+
+    /// <summary>
+    /// Size of a native WAVEFORMATEX: the 16-byte PCMWAVEFORMAT plus the cbSize field.
+    /// </summary>
+    private const int WaveFormatExLength = 18;
+
+    /// <summary>
+    /// Size of a canonical PCMWAVEFORMAT, which carries no cbSize field.
+    /// </summary>
+    private const int PcmWaveFormatLength = 16;
+
+    private static BinaryReader OpenBlob(byte[] blob) => new(new MemoryStream(blob, writable: false));
+
+    /// <summary>
+    /// Extra bytes the corresponding WaveFormat subclass always occupies, i.e. how many
+    /// <see cref="Marshal.PtrToStructure{T}(IntPtr)"/> used to read regardless of cbSize.
+    /// </summary>
+    private static int MinimumExtraSize(WaveFormatEncoding encoding) => encoding switch
+    {
+        WaveFormatEncoding.Extensible => 22, // wValidBitsPerSample + dwChannelMask + SubFormat
+        WaveFormatEncoding.Adpcm => 32,      // samplesPerBlock + numCoeff + 14 coefficients
+        WaveFormatEncoding.Gsm610 => 2,      // samplesPerBlock
+        _ => 0,
+    };
+
+    /// <summary>
+    /// Copies a native WAVEFORMATEX block into the byte layout the BinaryReader constructors
+    /// expect: a 4-byte fmt chunk length followed by the WAVEFORMATEX and its extra bytes.
+    /// </summary>
+    private static byte[] ReadFormatBlob(IntPtr pointer)
+    {
+        // Reading all 18 bytes means overreading a canonical 16-byte PCMWAVEFORMAT by the
+        // width of cbSize. Marshal.PtrToStructure<WaveFormat> did the same, and callers rely
+        // on it, so keep the behaviour — but don't trust those two bytes for PCM.
+        var header = new byte[WaveFormatExLength];
+        Marshal.Copy(pointer, header, 0, header.Length);
+        var encoding = (WaveFormatEncoding)BitConverter.ToUInt16(header, 0);
+        int extraSize = encoding == WaveFormatEncoding.Pcm ? 0 : BitConverter.ToInt16(header, 16);
+        if (extraSize < 0)
+        {
+            extraSize = 0;
+        }
+        // Marshal.PtrToStructure<T> read a fixed number of extra bytes for these encodings
+        // whatever cbSize said, and drivers do under-report it. Keep reading at least that
+        // much so an under-reporting driver still yields populated subclass fields rather
+        // than a zeroed SubFormat — this is never a larger overread than the old code's.
+        extraSize = Math.Max(extraSize, MinimumExtraSize(encoding));
+
+        var blob = new byte[FormatChunkPrefixLength + WaveFormatExLength + extraSize];
+        BitConverter.TryWriteBytes(blob.AsSpan(), WaveFormatExLength + extraSize);
+        Buffer.BlockCopy(header, 0, blob, FormatChunkPrefixLength, header.Length);
+        if (extraSize > 0)
+        {
+            Marshal.Copy(pointer + WaveFormatExLength, blob, FormatChunkPrefixLength + WaveFormatExLength, extraSize);
+        }
+        return blob;
     }
 
     /// <summary>
@@ -185,10 +253,51 @@ public class WaveFormat
     /// <returns>IntPtr to WaveFormat structure (needs to be freed by callee)</returns>
     public static IntPtr MarshalToPtr(WaveFormat format)
     {
-        int formatSize = Marshal.SizeOf(format);
-        IntPtr formatPointer = Marshal.AllocHGlobal(formatSize);
-        Marshal.StructureToPtr(format, formatPointer, false);
+        // Built from Serialize() rather than Marshal.StructureToPtr for the reason given on
+        // MarshalFromPtr: under NativeAOT the marshaller drops the base-class fields of a
+        // WaveFormat subclass, writing (for example) a WaveFormatExtensible's subformat GUID
+        // over the sample rate. See https://github.com/naudio/NAudio/issues/1425.
+        byte[] blob = format.ToWaveFormatExBytes();
+        IntPtr formatPointer = Marshal.AllocHGlobal(blob.Length);
+        Marshal.Copy(blob, 0, formatPointer, blob.Length);
         return formatPointer;
+    }
+
+    /// <summary>
+    /// Renders this WaveFormat as a native WAVEFORMATEX block — the fixed 18-byte header
+    /// (cbSize always present) followed by cbSize bytes of format-specific extra data.
+    /// Use this when writing into a buffer you already own; <see cref="MarshalToPtr"/>
+    /// wraps it for the common case of needing a freshly allocated unmanaged block.
+    /// </summary>
+    /// <returns>The WAVEFORMATEX bytes, always at least 18 long.</returns>
+    public byte[] ToWaveFormatExBytes()
+    {
+        using var memoryStream = new MemoryStream();
+        using (var writer = new BinaryWriter(memoryStream, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            Serialize(writer);
+        }
+        byte[] serialized = memoryStream.ToArray();
+
+        // Serialize() writes a fmt chunk: a 4-byte length, then the WAVEFORMATEX. Drop the
+        // length prefix, and restore the cbSize field that the canonical 16-byte PCM form
+        // omits — native callers always read a full 18-byte WAVEFORMATEX. Math.Max leaves
+        // the two extra bytes zeroed, which is the cbSize = 0 those callers expect.
+        //
+        // The block is also never shorter than the cbSize it advertises. A native consumer
+        // reads 18 + cbSize bytes, so a subclass that declares extraSize but doesn't write
+        // it in Serialize (as Mp3WaveFormat itself did until recently, and as a third-party
+        // subclass laying its fields out via [StructLayout] still might) would otherwise
+        // have the consumer read off the end of the allocation.
+        int length = serialized.Length - FormatChunkPrefixLength;
+        int declared = WaveFormatExLength + Math.Max((int)extraSize, 0);
+        // length == PcmWaveFormatLength is the canonical PCM shape, where Serialize omits
+        // cbSize entirely and the Math.Max below pads it back to 18 with a zero.
+        Debug.Assert(length >= declared || length == PcmWaveFormatLength,
+            $"{GetType().Name}.Serialize wrote {length} bytes but cbSize advertises {declared}");
+        var blob = new byte[Math.Max(length, Math.Max(declared, WaveFormatExLength))];
+        Buffer.BlockCopy(serialized, FormatChunkPrefixLength, blob, 0, length);
+        return blob;
     }
 
     /// <summary>

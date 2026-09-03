@@ -150,13 +150,25 @@ public class WaveInWindow : IWaveIn, IWaveLatency
     private void OpenWaveInDevice()
     {
         CloseWaveInDevice();
-        MmResult result = WaveInterop.waveInOpenWindow(
-            out waveInHandle,
-            DeviceNumber,
-            WaveFormat,
-            callbackHost.Handle,
-            IntPtr.Zero,
-            WaveInterop.WaveInOutOpenFlags.CallbackWindow);
+        // A WAVEFORMATEX block built by hand: WaveFormat's subclasses add their fields by
+        // inheritance, which the NativeAOT marshaller drops when a WaveFormat-typed parameter
+        // is marshalled. See https://github.com/naudio/NAudio/issues/1425.
+        IntPtr formatPointer = WaveFormat.MarshalToPtr(WaveFormat);
+        MmResult result;
+        try
+        {
+            result = WaveInterop.waveInOpenWindow(
+                out waveInHandle,
+                DeviceNumber,
+                formatPointer,
+                callbackHost.Handle,
+                IntPtr.Zero,
+                WaveInterop.WaveInOutOpenFlags.CallbackWindow);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(formatPointer);
+        }
         MmException.Try(result, "waveInOpen");
         CreateBuffers();
     }
@@ -240,7 +252,7 @@ public class WaveInWindow : IWaveIn, IWaveLatency
         return new MixerLine(DeviceNumber, 0, MixerFlags.WaveIn);
     }
 
-    private void Callback(IntPtr hWaveIn, WaveInterop.WaveMessage message, IntPtr userData, WaveHeader waveHeader, IntPtr reserved)
+    private void Callback(IntPtr hWaveIn, WaveInterop.WaveMessage message, IntPtr userData, IntPtr waveHeader, IntPtr reserved)
     {
         if (message != WaveInterop.WaveMessage.WaveInData) return;
         if (!recording) return;

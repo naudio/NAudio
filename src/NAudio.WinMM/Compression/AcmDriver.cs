@@ -125,9 +125,10 @@ public class AcmDriver : IDisposable
         formatChoose.waveFormatEnumPointer = IntPtr.Zero;
         if (enumFormat != null)
         {
-            IntPtr enumPointer = Marshal.AllocHGlobal(Marshal.SizeOf(enumFormat));
-            Marshal.StructureToPtr(enumFormat, enumPointer, false);
-            formatChoose.waveFormatEnumPointer = enumPointer;
+            // MarshalToPtr, not AllocHGlobal + StructureToPtr: the latter drops a subclass's
+            // inherited WAVEFORMATEX fields under NativeAOT.
+            // See https://github.com/naudio/NAudio/issues/1425.
+            formatChoose.waveFormatEnumPointer = WaveFormat.MarshalToPtr(enumFormat);
         }
         formatChoose.instanceHandle = IntPtr.Zero;
         formatChoose.templateName = null;

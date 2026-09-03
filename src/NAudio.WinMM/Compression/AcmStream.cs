@@ -137,8 +137,11 @@ public class AcmStream : IDisposable
         IntPtr compressedFormatPointer = WaveFormat.MarshalToPtr(compressedFormat);
         try
         {
+            // acmFormatSuggest writes back into suggestedFormatPointer, so the size handed to
+            // it has to match what MarshalToPtr actually allocated (18 + cbSize) rather than
+            // Marshal.SizeOf, which disagrees for a subclass under NativeAOT.
             MmResult result = AcmInterop.acmFormatSuggest2(IntPtr.Zero, compressedFormatPointer,
-                suggestedFormatPointer, Marshal.SizeOf(suggestedFormat), AcmFormatSuggestFlags.FormatTag);
+                suggestedFormatPointer, 18 + suggestedFormat.ExtraSize, AcmFormatSuggestFlags.FormatTag);
             suggestedFormat = WaveFormat.MarshalFromPtr(suggestedFormatPointer);
             MmException.Try(result, "acmFormatSuggest");
         }

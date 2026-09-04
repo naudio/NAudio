@@ -207,6 +207,37 @@ public class WaveFileChunkReaderTests
         Assert.That(r.WaveFormat, Is.Not.Null);
     }
 
+    [Test]
+    public void Rf64WithNegativeDataChunkLengthThrowsInsteadOfLooping()
+    {
+        // ds64 declares dataChunkLength = -8. The chunk-walking loop adds that to the stream
+        // position after reading the 8-byte data header, so the net advance per iteration is
+        // exactly zero and the reader spins at 100% CPU without allocating or throwing (#1428).
+        var bytes = Rf64WithDs64(riffSize: int.MaxValue, dataChunkLength: -8);
+        CompletesWithin.Run(() =>
+            Assert.That(() => OpenReader(bytes),
+                Throws.TypeOf<FormatException>().With.Message.Contain("negative data chunk length")));
+    }
+
+    [Test]
+    public void Rf64WithNegativeRiffSizeThrows()
+    {
+        var bytes = Rf64WithDs64(riffSize: -8, dataChunkLength: 4);
+        CompletesWithin.Run(() =>
+            Assert.That(() => OpenReader(bytes),
+                Throws.TypeOf<FormatException>().With.Message.Contain("negative RIFF size")));
+    }
+
+    [Test]
+    public void Rf64WithUndersizedDs64ChunkThrowsFormatException()
+    {
+        // ds64's three 64-bit fields need 24 bytes; a smaller declared size used to reach
+        // ReadBytes(chunkSize - 24) with a negative count.
+        var bytes = Rf64WithDs64(riffSize: int.MaxValue, dataChunkLength: 4, ds64ChunkSize: 16);
+        Assert.That(() => OpenReader(bytes),
+            Throws.TypeOf<FormatException>().With.Message.Contain("ds64 chunk size"));
+    }
+
     // --- Corrupt / oversized trailing chunk ----------------------------
 
     [Test]
@@ -337,4 +368,21 @@ public class WaveFileChunkReaderTests
 
     private static WaveFileReader OpenReader(byte[] bytes)
         => new(new MemoryStream(bytes));
+
+    // An RF64 file whose ds64 chunk carries the given (possibly bogus) sizes, followed by a
+    // fmt chunk and a 4-byte data chunk.
+    private static byte[] Rf64WithDs64(long riffSize, long dataChunkLength, int ds64ChunkSize = 24)
+        => Riff("RF64", w =>
+        {
+            Fourcc(w, "WAVE");
+            Fourcc(w, "ds64");
+            w.Write(ds64ChunkSize);
+            w.Write(riffSize);
+            w.Write(dataChunkLength);
+            w.Write(0L);                 // sampleCount
+            WriteFmt(w);
+            Fourcc(w, "data");
+            w.Write(0xFFFFFFFFu);        // RF64 sentinel in the data header
+            w.Write(new byte[] { 1, 2, 3, 4 });
+        }, riffSizeOverride: 0xFFFFFFFF);
 }

@@ -62,6 +62,7 @@ internal class WaveFileChunkReader
         // this -8 is so we can be sure that there are at least 8 bytes for a chunk id and length
         while (stream.Position <= stopPosition - 8)
         {
+            long chunkStartPosition = stream.Position;
             Int32 chunkIdentifier = br.ReadInt32();
             var chunkLength = br.ReadUInt32();
             if (chunkIdentifier == dataChunkId)
@@ -123,6 +124,13 @@ internal class WaveFileChunkReader
                     stream.Position--;
                 }
             }
+
+            // Every iteration reads an 8-byte header, so the position must have moved on.
+            // If a size field sent us backwards, continuing would loop forever. See #1428.
+            if (stream.Position <= chunkStartPosition)
+            {
+                break;
+            }
         }
 
         if (waveFormat == null)
@@ -147,9 +155,25 @@ internal class WaveFileChunkReader
             throw new FormatException("Invalid RF64 WAV file - No ds64 chunk found");
         }
         int chunkSize = reader.ReadInt32();
+        // The three 64-bit fields below occupy 24 bytes; anything smaller also hands the
+        // ReadBytes at the end of this method a negative count.
+        if (chunkSize < 24)
+        {
+            throw new FormatException($"Invalid RF64 WAV file - ds64 chunk size must be at least 24 bytes, but was {chunkSize}");
+        }
         this.riffSize = reader.ReadInt64();
         this.dataChunkLength = reader.ReadInt64();
         long sampleCount = reader.ReadInt64(); // replaces the value in the fact chunk
+        // The chunk-walking loop advances the stream by dataChunkLength, so a negative value
+        // walks it backwards - at exactly -8 it doesn't move at all and spins forever. See #1428.
+        if (riffSize < 0)
+        {
+            throw new FormatException($"Invalid RF64 WAV file - negative RIFF size ({riffSize}) in ds64 chunk");
+        }
+        if (dataChunkLength < 0)
+        {
+            throw new FormatException($"Invalid RF64 WAV file - negative data chunk length ({dataChunkLength}) in ds64 chunk");
+        }
         reader.ReadBytes(chunkSize - 24); // get to the end of this chunk (should parse extra stuff later)
     }
 

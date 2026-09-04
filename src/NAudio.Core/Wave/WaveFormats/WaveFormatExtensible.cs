@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
 
@@ -8,7 +7,6 @@ namespace NAudio.Wave;
 /// WaveFormatExtensible
 /// http://www.microsoft.com/whdc/device/audio/multichaud.mspx
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
 public class WaveFormatExtensible : WaveFormat
 {
     private readonly short wValidBitsPerSample; // bits of precision, or is wSamplesPerBlock if wBitsPerSample==0

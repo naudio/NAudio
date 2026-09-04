@@ -1,13 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
 
 /// <summary>
 /// MP3 WaveFormat, MPEGLAYER3WAVEFORMAT from mmreg.h
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
 public class Mp3WaveFormat : WaveFormat
 {
     /// <summary>

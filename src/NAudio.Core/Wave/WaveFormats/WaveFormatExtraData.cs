@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.IO;
+﻿using System.IO;
 using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
@@ -8,11 +7,9 @@ namespace NAudio.Wave;
 /// <summary>
 /// This class used for marshalling from unmanaged code
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
 public class WaveFormatExtraData : WaveFormat
 {
     // try with 100 bytes for now, increase if necessary
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 100)]
     private readonly byte[] extraData = new byte[100];
 
     /// <summary>

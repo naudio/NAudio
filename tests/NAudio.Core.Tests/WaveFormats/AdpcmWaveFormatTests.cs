@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using System.Runtime.InteropServices;
 using NAudio.Wave;
 
 namespace NAudio.Core.Tests.WaveFormats;
@@ -9,12 +8,13 @@ namespace NAudio.Core.Tests.WaveFormats;
 public class AdpcmWaveFormatTests
 {
     [Test]
-    public void StructureSizeIsCorrect()
+    public void WaveFormatExSizeIsCorrect()
     {
+        // Was Marshal.SizeOf, until the format types stopped carrying [StructLayout].
         WaveFormat waveFormat = new WaveFormat(8000, 16, 1);
-        Assert.That(Marshal.SizeOf(waveFormat), Is.EqualTo(18), "WaveFormat Size");
+        Assert.That(waveFormat.ToWaveFormatExBytes().Length, Is.EqualTo(18), "WaveFormat Size");
         AdpcmWaveFormat adpcmWaveFormat = new AdpcmWaveFormat(8000, 1);
-        Assert.That(Marshal.SizeOf(adpcmWaveFormat), Is.EqualTo(18 + 32), "WaveFormat Size");
+        Assert.That(adpcmWaveFormat.ToWaveFormatExBytes().Length, Is.EqualTo(18 + 32), "AdpcmWaveFormat Size");
     }
 
     [Test]

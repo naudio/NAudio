@@ -32,14 +32,14 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check every tutorial is in the TOC
         shell: bash
         run: ./.github/scripts/check-docs-toc.sh
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '9.0.x'
 
@@ -52,9 +52,12 @@ jobs:
       - name: Upload Pages artifact
         # Only needed for the deploy job, which only runs on main.
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docfx/_site
+          # v3 archived dotfiles; v5 drops them unless asked. DocFX doesn't
+          # emit any today, but keep the old behaviour rather than find out.
+          include-hidden-files: true
 
   deploy:
     # Publish to GitHub Pages only from main.
@@ -70,4 +73,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

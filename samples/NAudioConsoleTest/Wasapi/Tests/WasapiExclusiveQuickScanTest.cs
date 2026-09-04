@@ -1,4 +1,4 @@
-﻿using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
@@ -33,7 +33,11 @@ internal sealed class WasapiExclusiveQuickScanTest : IConsoleTest
             foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
                 foreach (var ch in WasapiExclusiveFormatHelper.ChannelCounts)
                 {
-                    var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, ch, encoding);
+                    // Probe with the canonical layout for the channel count, not dwChannelMask = 0:
+                    // drivers like Realtek reject an unspecified mask outright, so a zero mask made
+                    // the scan report nothing on devices that in fact support plenty of formats.
+                    var mask = WasapiExclusiveFormatHelper.DefaultChannelMask(ch);
+                    var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, ch, encoding, mask);
                     if (client.IsFormatSupported(AudioClientShareMode.Exclusive, format))
                     {
                         table.AddRow($"{rate}Hz {bits}bit {encoding} {ch}ch", "[green]YES[/]");
@@ -42,7 +46,7 @@ internal sealed class WasapiExclusiveQuickScanTest : IConsoleTest
                 }
 
         if (supportedCount == 0)
-            AnsiConsole.MarkupLine("[yellow]No formats supported with default channel masks. " +
+            AnsiConsole.MarkupLine("[yellow]No formats supported with the canonical channel layouts. " +
                                    "Try 'Channel mask deep-dive' — your device may need a specific layout.[/]");
         else
             AnsiConsole.Write(table);

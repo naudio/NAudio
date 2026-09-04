@@ -30,9 +30,9 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
     private const float ScaleDamp = 0.4f;
     private const int StereoSpread = 23;
 
-    private static readonly int[] CombTuning =
-        { 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617 };
-    private static readonly int[] AllpassTuning = { 556, 441, 341, 225 };
+    private static ReadOnlySpan<int> CombTuning =>
+        [1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617];
+    private static ReadOnlySpan<int> AllpassTuning => [556, 441, 341, 225];
 
     private Comb[,] combs;       // [bank, 8]
     private Allpass[,] allpasses; // [bank, 4]

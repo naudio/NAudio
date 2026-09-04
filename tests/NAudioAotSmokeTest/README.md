@@ -56,9 +56,14 @@ the critical path.
 
 ## Running the actual smoke locally
 
-CI only validates the analyzer pass. To run the program end-to-end (which
-requires a real audio device with non-zero default master volume that can
-be driven) use one of:
+**`dotnet run` does not test AOT.** `PublishAot` only takes effect on
+`dotnet publish`, so `dotnet run` executes under the JIT — where every path here
+passed even while it was broken under AOT, which is how issue #1425 survived. The
+program prints the runtime it is actually executing under, and labels its results
+with it, so a green JIT run can't be mistaken for AOT validation.
+
+To run the program end-to-end (which requires a real audio device with non-zero
+default master volume that can be driven) use one of:
 
 ```bash
 # Trim publish — fastest, no MSVC required

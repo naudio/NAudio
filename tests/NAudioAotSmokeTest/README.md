@@ -34,6 +34,16 @@ The program runs in several phases against the default render endpoint:
    hardware, so it is a real regression guard anywhere — and then drives
    `WaveOut` and `WaveIn` if the machine has devices.
 
+4. **ACM stream header** (issue #1425). `ACMSTREAMHEADER` was the third native
+   type passed as a `[StructLayout]` class by value, and the first fix missed it.
+   The codec keeps private state in the header's reserved tail between
+   `acmStreamPrepareHeader`, `acmStreamConvert` and `acmStreamUnprepareHeader`;
+   NativeAOT's per-call copy round-trips the declared fields alone, so that tail
+   came back zeroed and every conversion failed. This phase converts PCM through
+   `AcmStream` directly, reads through a `WaveFormatConversionStream` (the path
+   `Mp3FileReader` and `AudioFileReader` decode through), and suggests a PCM
+   format for GSM 6.10. ACM codecs are software, so none of it needs a device.
+
 ## How CI uses it
 
 CI covers this project in two ways.
@@ -75,15 +85,19 @@ dotnet publish NAudioAotSmokeTest/NAudioAotSmokeTest.csproj -c Release
 ```
 
 Then run the produced `NAudioAotSmokeTest.exe` from the publish directory.
-Expect output ending with `winmm WAVEHDR/WAVEFORMATEX under PublishAot: OK`
-and exit code 0. A `0xC0000005` access violation, a fast-fail message, or
+Expect output ending with `ACM stream header under NativeAOT: OK` and exit
+code 0. A `0xC0000005` access violation, a fast-fail message, or
 `zero callbacks fired` indicates a regression in the Phase 2f migration; a
-`FAIL` line in the winmm phase (or exit code 1) indicates a regression in the
-issue #1425 marshalling fix.
+`FAIL` line in the winmm or ACM phase (or exit code 1) indicates a regression
+in the issue #1425 marshalling fix.
 
-The winmm blob assertions run without audio hardware, so they are worth running
-even on a machine with no devices — the `WaveOut`/`WaveIn` drives report `SKIP`
-there rather than failing.
+The banner reports whether the run is under `JIT` or `NativeAOT`, because every
+one of these paths passed under the JIT while broken under AOT. A `dotnet run`
+of this project proves nothing about AOT.
+
+The winmm blob assertions and the whole ACM phase run without audio hardware, so
+they are worth running even on a machine with no devices — the `WaveOut`/`WaveIn`
+drives report `SKIP` there rather than failing.
 
 ## Why the runtime test isn't in CI
 
@@ -91,7 +105,8 @@ CI publishes the app but never launches it. CI agents typically have no audio
 hardware (or only a virtual device that doesn't fire
 `IAudioEndpointVolumeCallback.OnNotify`), and the program drives a real render
 endpoint and master volume before it reaches anything hardware-free — so it
-would fault long before the winmm blob assertions, which need no device at all.
+would fault long before the winmm blob assertions and the ACM phase, which need
+no device at all.
 
 Making the run itself CI-viable means guarding each phase independently so
 absent hardware is a skip rather than an unhandled exception. Worth doing: those

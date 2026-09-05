@@ -21,6 +21,7 @@
     <Project Path="src/NAudio.WinForms/NAudio.WinForms.csproj" />
     <Project Path="src/NAudio.WinMM/NAudio.WinMM.csproj" />
     <Project Path="src/NAudio/NAudio.csproj" />
+    <Project Path="src/NAudio.MacOS/NAudio.MacOS.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MfStressTest/MfStressTest.csproj">
@@ -31,6 +32,7 @@
       <BuildType Project="Release" />
     </Project>
     <Project Path="tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj" />
+    <Project Path="tests/NAudio.MacOS.Tests/NAudio.MacOS.Tests.csproj" />
     <Project Path="tests/NAudio.Sampler.Tests/NAudio.Sampler.Tests.csproj" />
     <Project Path="tests/NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
     <Project Path="tests/NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />

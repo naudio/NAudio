@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+        Tests for the macOS wrappers - they should be run against 
+        the latest macOS (as the time of writing this, 26 (Tahoe)),
+        although that they could run even back to 10.5, but we do not
+        have such device to test the API's in such old macOS version.
+        Also, specifying macOS 26 in the TFM needs XCode installed, which we do not
+        need for our tests.
+    -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+    <!-- Required for channel layout tests currently -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Core\NAudio.Core.csproj" />
+    <!-- 
+        Today, the below project reference is not used as the MIDI wrappers 
+        are not defined yet. Explicitly defferred for later so that the 
+        currently defined wrappers mature.
+    -->
+    <ProjectReference Include="..\..\src\NAudio.Midi\NAudio.Midi.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.MacOS\NAudio.MacOS.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Genuinely cross-suite helpers live in NAudio.Core.Tests\Utils\Shared.
+         Linking (not duplicating) means there's one source of truth for any
+         helper used on both sides. -->
+    <Compile Include="..\NAudio.Core.Tests\Utils\Shared\*.cs"
+             Link="Utils\Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

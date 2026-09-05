@@ -92,23 +92,30 @@ internal class WaveOutBuffer : IDisposable
         {
             // free managed resources
         }
-        // free unmanaged resources
-        if (hWaveOut != IntPtr.Zero)
+        // free unmanaged resources. WriteToWaveOut holds waveOutLock across waveOutWrite, so
+        // unpreparing, clearing the pointer and freeing all happen under that same lock: a
+        // concurrent write either completes first or sees IntPtr.Zero, never a freed address.
+        // The condition keeps a partially constructed buffer — where waveOutLock is still
+        // null — out of the lock; it has nothing to release anyway.
+        if (hWaveOut != IntPtr.Zero || headerPtr != IntPtr.Zero)
         {
             lock (waveOutLock)
             {
-                WaveInterop.waveOutUnprepareHeader(hWaveOut, headerPtr, headerSize);
+                if (hWaveOut != IntPtr.Zero)
+                {
+                    WaveInterop.waveOutUnprepareHeader(hWaveOut, headerPtr, headerSize);
+                    hWaveOut = IntPtr.Zero;
+                }
+                // Only after unpreparing, while the driver could still be holding the address.
+                // Clear the field before freeing so a concurrent reader of Done/InQueue/
+                // BytesRecorded sees "disposed" rather than briefly dereferencing released memory.
+                if (headerPtr != IntPtr.Zero)
+                {
+                    var toFree = headerPtr;
+                    headerPtr = IntPtr.Zero;
+                    Marshal.FreeHGlobal(toFree);
+                }
             }
-            hWaveOut = IntPtr.Zero;
-        }
-        // only after unpreparing, while the driver could still be holding the address.
-        // Clear the field before freeing so a concurrent reader of Done/InQueue/BytesRecorded
-        // sees "disposed" rather than briefly dereferencing released memory.
-        if (headerPtr != IntPtr.Zero)
-        {
-            var toFree = headerPtr;
-            headerPtr = IntPtr.Zero;
-            Marshal.FreeHGlobal(toFree);
         }
         if (hBuffer.IsAllocated)
             hBuffer.Free();

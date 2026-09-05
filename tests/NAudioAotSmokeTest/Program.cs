@@ -9,6 +9,7 @@ using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
+using NAudio.Wave.Compression;
 using NAudio.Wave.SampleProviders;
 
 // AOT smoke app. Exercises three directions of the source-generated COM bridging:
@@ -60,6 +61,14 @@ using NAudio.Wave.SampleProviders;
 //     driver with its SubFormat GUID written over the sample rate. The blob
 //     assertions below need no audio hardware and are the regression guard; the
 //     WaveOut/WaveIn drives that follow are skipped when there is no device.
+//
+// (6) ACM — issue #1425 again (this section). ACMSTREAMHEADER was the third native type
+//     expressed as a [StructLayout] class passed by value, and #1427 missed it. The codec
+//     keeps private state in the header's reserved tail between acmStreamPrepareHeader,
+//     acmStreamConvert and acmStreamUnprepareHeader; NativeAOT's per-call copy round-trips
+//     the declared fields alone, so that tail came back zeroed and every conversion failed.
+//     Mp3FileReader and AudioFileReader both decode through this path. ACM codecs are
+//     software, so unlike the WaveOut/WaveIn drives this section needs no audio hardware.
 
 // PublishAot only takes effect on `dotnet publish`; `dotnet run` executes this under the JIT,
 // where every path below passed even while it was broken under AOT — which is how issue #1425 went
@@ -353,4 +362,111 @@ Console.WriteLine(winmmFailures == 0
     ? $"  winmm WAVEHDR/WAVEFORMATEX under {runtime}: OK"
     : $"  winmm WAVEHDR/WAVEFORMATEX under {runtime}: FAIL ({winmmFailures} check(s))");
 
-return winmmFailures == 0 ? 0 : 1;
+Console.WriteLine();
+Console.WriteLine("=== Issue #1425: ACM stream header marshalling ===\n");
+
+int acmFailures = 0;
+
+void AcmCheck(string what, bool condition, object? actual)
+{
+    if (!condition)
+    {
+        acmFailures++;
+    }
+    Console.WriteLine($"  {(condition ? "OK  " : "FAIL")} {what} = {actual}");
+}
+
+// A recognisable signal rather than silence, so the checks below can tell a working
+// conversion from one that returns the right byte count full of zeroes.
+static byte[] GenerateTone(WaveFormat format, int sampleCount)
+{
+    var bytes = new byte[sampleCount * format.BlockAlign];
+    for (int n = 0; n < sampleCount; n++)
+    {
+        short sample = (short)(Math.Sin(2 * Math.PI * 440 * n / format.SampleRate) * 16000);
+        for (int channel = 0; channel < format.Channels; channel++)
+        {
+            int offset = n * format.BlockAlign + channel * 2;
+            bytes[offset] = (byte)(sample & 0xFF);
+            bytes[offset + 1] = (byte)((sample >> 8) & 0xFF);
+        }
+    }
+    return bytes;
+}
+
+var acmSourceFormat = new WaveFormat(44100, 16, 2);
+var acmTargetFormat = new WaveFormat(22050, 16, 1);
+
+// Part 1 — AcmStream directly: the prepare / convert / unprepare sequence that broke.
+try
+{
+    using var acmStream = new AcmStream(acmSourceFormat, acmTargetFormat);
+    var tone = GenerateTone(acmSourceFormat, 4410);
+    Array.Copy(tone, acmStream.SourceBuffer, tone.Length);
+
+    int converted = acmStream.Convert(tone.Length, out int sourceUsed);
+    AcmCheck("AcmStream produced output", converted > 0, $"{converted} bytes");
+    AcmCheck("AcmStream consumed input", sourceUsed > 0, $"{sourceUsed} bytes");
+
+    bool anyAudio = false;
+    for (int n = 0; n < converted && !anyAudio; n++)
+    {
+        anyAudio = acmStream.DestBuffer[n] != 0;
+    }
+    AcmCheck("AcmStream output is not silence", anyAudio, anyAudio ? "non-zero samples" : "all zero");
+
+    // The second conversion reuses the same header block. Before the fix each call started
+    // from a tail the previous one had already lost.
+    int secondConverted = acmStream.Convert(tone.Length, out _);
+    AcmCheck("AcmStream converts repeatedly", secondConverted > 0, $"{secondConverted} bytes");
+}
+catch (MmException e)
+{
+    acmFailures++;
+    Console.WriteLine($"  FAIL AcmStream threw {e.Result} calling {e.Function}");
+}
+
+// Part 2 — the consumer path callers actually reach: Mp3FileReader and AudioFileReader
+// both decode through WaveFormatConversionStream.
+try
+{
+    var pcmBytes = GenerateTone(acmSourceFormat, 44100);
+    using var rawSource = new RawSourceWaveStream(new MemoryStream(pcmBytes), acmSourceFormat);
+    using var conversionStream = new WaveFormatConversionStream(acmTargetFormat, rawSource);
+    var readBuffer = new byte[8192];
+    int totalRead = 0;
+    int read;
+    while (totalRead < readBuffer.Length &&
+           (read = conversionStream.Read(readBuffer, totalRead, readBuffer.Length - totalRead)) > 0)
+    {
+        totalRead += read;
+    }
+    AcmCheck("WaveFormatConversionStream read", totalRead > 0, $"{totalRead} bytes");
+}
+catch (MmException e)
+{
+    acmFailures++;
+    Console.WriteLine($"  FAIL WaveFormatConversionStream threw {e.Result} calling {e.Function}");
+}
+
+// Part 3 — acmFormatSuggest, which takes the WAVEFORMATEX blob rather than the header.
+// Fixed in #1427; kept here because GSM 6.10 declares extra data beyond the 18-byte base
+// and so exercises the subclass path that rewrite was for.
+try
+{
+    var suggested = AcmStream.SuggestPcmFormat(new Gsm610WaveFormat());
+    AcmCheck("SuggestPcmFormat returned PCM", suggested.Encoding == WaveFormatEncoding.Pcm, suggested.Encoding);
+    AcmCheck("SuggestPcmFormat kept the sample rate", suggested.SampleRate == 8000, suggested.SampleRate);
+}
+catch (MmException e)
+{
+    // The GSM 6.10 codec is optional; a missing one is not a marshalling failure.
+    Console.WriteLine($"  SKIP SuggestPcmFormat — acmFormatSuggest returned {e.Result}");
+}
+
+Console.WriteLine();
+Console.WriteLine(acmFailures == 0
+    ? $"  ACM stream header under {runtime}: OK"
+    : $"  ACM stream header under {runtime}: FAIL ({acmFailures} check(s))");
+
+return winmmFailures + acmFailures == 0 ? 0 : 1;

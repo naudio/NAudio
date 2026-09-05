@@ -232,19 +232,22 @@ internal class AcmInterop
     }
 
     // http://msdn.microsoft.com/en-us/library/dd742924%28VS.85%29.aspx
+    // The header is passed as a pointer to a caller-owned block, not as a class: the codec
+    // keeps private state in the reserved tail across prepare/convert/unprepare, which the
+    // NativeAOT class marshaller discards. See https://github.com/naudio/NAudio/issues/1425.
     [DllImport("Msacm32.dll", EntryPoint = "acmStreamConvert")]
-    private static extern MmResult Native_acmStreamConvert(IntPtr hAcmStream, [In, Out] AcmStreamHeaderStruct streamHeader, AcmStreamConvertFlags streamConvertFlags);
+    private static extern MmResult Native_acmStreamConvert(IntPtr hAcmStream, IntPtr streamHeader, AcmStreamConvertFlags streamConvertFlags);
 
-    public static MmResult acmStreamConvert(IntPtr hAcmStream, AcmStreamHeaderStruct streamHeader, AcmStreamConvertFlags streamConvertFlags)
+    public static MmResult acmStreamConvert(IntPtr hAcmStream, IntPtr streamHeader, AcmStreamConvertFlags streamConvertFlags)
     {
         lock (AcmLock) return Native_acmStreamConvert(hAcmStream, streamHeader, streamConvertFlags);
     }
 
     // http://msdn.microsoft.com/en-us/library/dd742929%28VS.85%29.aspx
     [DllImport("Msacm32.dll", EntryPoint = "acmStreamPrepareHeader")]
-    private static extern MmResult Native_acmStreamPrepareHeader(IntPtr hAcmStream, [In, Out] AcmStreamHeaderStruct streamHeader, int prepareFlags);
+    private static extern MmResult Native_acmStreamPrepareHeader(IntPtr hAcmStream, IntPtr streamHeader, int prepareFlags);
 
-    public static MmResult acmStreamPrepareHeader(IntPtr hAcmStream, AcmStreamHeaderStruct streamHeader, int prepareFlags)
+    public static MmResult acmStreamPrepareHeader(IntPtr hAcmStream, IntPtr streamHeader, int prepareFlags)
     {
         lock (AcmLock) return Native_acmStreamPrepareHeader(hAcmStream, streamHeader, prepareFlags);
     }
@@ -269,9 +272,9 @@ internal class AcmInterop
 
     // http://msdn.microsoft.com/en-us/library/dd742932%28VS.85%29.aspx
     [DllImport("Msacm32.dll", EntryPoint = "acmStreamUnprepareHeader")]
-    private static extern MmResult Native_acmStreamUnprepareHeader(IntPtr hAcmStream, [In, Out] AcmStreamHeaderStruct streamHeader, int flags);
+    private static extern MmResult Native_acmStreamUnprepareHeader(IntPtr hAcmStream, IntPtr streamHeader, int flags);
 
-    public static MmResult acmStreamUnprepareHeader(IntPtr hAcmStream, AcmStreamHeaderStruct streamHeader, int flags)
+    public static MmResult acmStreamUnprepareHeader(IntPtr hAcmStream, IntPtr streamHeader, int flags)
     {
         lock (AcmLock) return Native_acmStreamUnprepareHeader(hAcmStream, streamHeader, flags);
     }

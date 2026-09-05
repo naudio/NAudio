@@ -228,6 +228,33 @@ public class WaveFormatMarshalTests
         }
     }
 
+    /// <summary>
+    /// The format types deliberately carry no [StructLayout], so the runtime refuses to marshal them
+    /// rather than silently producing a wrong answer. Under Native AOT a class hierarchy marshals to
+    /// the derived type's own fields only — Marshal.SizeOf&lt;WaveFormatExtensible&gt;() returned 22
+    /// instead of 40 and PtrToStructure read the extension fields from offset 0, leaving the base
+    /// fields at their constructor defaults. See https://github.com/naudio/NAudio/issues/1432.
+    /// </summary>
+    [Test]
+    public void FormatTypesAreNotDirectlyMarshallable()
+    {
+        Assert.Throws<ArgumentException>(() => Marshal.SizeOf<WaveFormatExtensible>(),
+            "adding [StructLayout] back would re-enable silently wrong marshalling under AOT");
+        Assert.Throws<ArgumentException>(() => Marshal.SizeOf<WaveFormat>());
+
+        IntPtr pointer = WaveFormat.MarshalToPtr(new WaveFormatExtensible(48000, 24, 2, 0x3));
+        try
+        {
+            Assert.Throws<ArgumentException>(() => Marshal.PtrToStructure<WaveFormatExtensible>(pointer));
+            // The supported route decodes the very same block correctly.
+            Assert.That(((WaveFormatExtensible)WaveFormat.MarshalFromPtr(pointer)).SampleRate, Is.EqualTo(48000));
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+    }
+
     [Test]
     public void PcmRoundTripsAsPlainWaveFormatWithNoExtraData()
     {

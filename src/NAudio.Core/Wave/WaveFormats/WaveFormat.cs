@@ -8,7 +8,14 @@ namespace NAudio.Wave;
 /// <summary>
 /// Represents a Wave file format
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
+/// <remarks>
+/// Not an interop type. It once carried <c>[StructLayout]</c> and was marshalled directly as a
+/// WAVEFORMATEX, but a class hierarchy cannot be marshalled correctly under Native AOT — the
+/// inherited fields are dropped, so a subclass decodes from offset 0 with its base fields left at
+/// their defaults. Use <see cref="ToWaveFormatExBytes"/>, <see cref="MarshalToPtr"/> or
+/// <see cref="MarshalFromPtr"/> to cross a native boundary.
+/// See https://github.com/naudio/NAudio/issues/1432.
+/// </remarks>
 public class WaveFormat
 {
     /// <summary>format type</summary>

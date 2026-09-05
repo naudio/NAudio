@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.IO;
+﻿using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -7,7 +6,6 @@ namespace NAudio.Wave;
 /// <summary>
 /// GSM 610
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 2)]
 public class Gsm610WaveFormat : WaveFormat
 {
     private readonly short samplesPerBlock;

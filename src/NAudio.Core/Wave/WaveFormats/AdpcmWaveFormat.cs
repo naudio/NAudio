@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -9,13 +8,11 @@ namespace NAudio.Wave;
 /// Microsoft ADPCM
 /// See http://icculus.org/SDL_sound/downloads/external_documentation/wavecomp.htm
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 2)]
 public class AdpcmWaveFormat : WaveFormat
 {
     private readonly short samplesPerBlock;
     private readonly short numCoeff;
     // 7 pairs of coefficients
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 14)]
     private readonly short[] coefficients;
 
     /// <summary>

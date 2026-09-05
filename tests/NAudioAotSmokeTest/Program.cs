@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Threading;
@@ -59,6 +60,18 @@ using NAudio.Wave.SampleProviders;
 //     driver with its SubFormat GUID written over the sample rate. The blob
 //     assertions below need no audio hardware and are the regression guard; the
 //     WaveOut/WaveIn drives that follow are skipped when there is no device.
+
+// PublishAot only takes effect on `dotnet publish`; `dotnet run` executes this under the JIT,
+// where every path below passed even while it was broken under AOT — which is how issue #1425 went
+// unnoticed. Report the runtime actually executing so a green JIT run can't be mistaken for AOT
+// validation, and label the per-phase results with it rather than asserting PublishAot regardless.
+var runtime = RuntimeFeature.IsDynamicCodeSupported ? "JIT" : "NativeAOT";
+Console.WriteLine($"NAudio AOT smoke test — running under {runtime}\n");
+if (RuntimeFeature.IsDynamicCodeSupported)
+{
+    Console.WriteLine("NOTE: this is NOT an AOT validation run. Publish with PublishAot and run the");
+    Console.WriteLine("      produced executable instead — see README.md in this folder.\n");
+}
 
 Console.WriteLine("=== Phase 2d / 2e: RCW direction (property reads) ===\n");
 
@@ -130,8 +143,8 @@ try
     Thread.Sleep(200); // let stragglers land
     Console.WriteLine($"  Drove {levels.Length} master-volume changes, {notifyCount} OnVolumeNotification callbacks fired.");
     Console.WriteLine(notifyCount > 0
-        ? "  CCW dispatch under PublishAot: OK"
-        : "  CCW dispatch under PublishAot: FAIL — zero callbacks fired (registration didn't take or AOT trimmed the dispatch path)");
+        ? $"  CCW dispatch under {runtime}: OK"
+        : $"  CCW dispatch under {runtime}: FAIL — zero callbacks fired (registration didn't take or AOT trimmed the dispatch path)");
 }
 finally
 {
@@ -180,8 +193,8 @@ try
     Console.WriteLine($"  MediaFoundationResampler 44100->22050: produced {resampleTotal} bytes");
 
     Console.WriteLine(total > 0 && resampleTotal > 0
-        ? "  MediaFoundation under PublishAot: OK"
-        : "  MediaFoundation under PublishAot: FAIL");
+        ? $"  MediaFoundation under {runtime}: OK"
+        : $"  MediaFoundation under {runtime}: FAIL");
 }
 finally
 {
@@ -217,7 +230,7 @@ using (var dsoundOut = new DirectSoundOut(40))
     Thread.Sleep(150);
     Console.WriteLine($"  DirectSoundOut PlaybackState after Stop:    {dsoundOut.PlaybackState}");
 }
-Console.WriteLine("  DirectSound playback under PublishAot: OK");
+Console.WriteLine($"  DirectSound playback under {runtime}: OK");
 
 Console.WriteLine();
 Console.WriteLine("=== Issue #1425: winmm WAVEHDR / WAVEFORMATEX marshalling ===\n");
@@ -337,7 +350,7 @@ else
 
 Console.WriteLine();
 Console.WriteLine(winmmFailures == 0
-    ? "  winmm WAVEHDR/WAVEFORMATEX under PublishAot: OK"
-    : $"  winmm WAVEHDR/WAVEFORMATEX under PublishAot: FAIL ({winmmFailures} check(s))");
+    ? $"  winmm WAVEHDR/WAVEFORMATEX under {runtime}: OK"
+    : $"  winmm WAVEHDR/WAVEFORMATEX under {runtime}: FAIL ({winmmFailures} check(s))");
 
 return winmmFailures == 0 ? 0 : 1;

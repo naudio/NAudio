@@ -81,8 +81,10 @@ internal static class Cli
 
     public static void PrintLayoutAssertions()
     {
-        int wfSize = Marshal.SizeOf<WaveFormat>();
-        Console.WriteLine($"Marshal.SizeOf<WaveFormat> = {wfSize} (expect 18)");
+        // Not Marshal.SizeOf: the format types deliberately carry no [StructLayout], because a
+        // class hierarchy marshals wrongly under Native AOT. See naudio/NAudio#1432.
+        int wfSize = new WaveFormat(44100, 16, 2).ToWaveFormatExBytes().Length;
+        Console.WriteLine($"WaveFormat WAVEFORMATEX size = {wfSize} (expect 18)");
         if (wfSize != 18) throw new InvalidOperationException($"WaveFormat layout size mismatch: {wfSize}");
     }
 }

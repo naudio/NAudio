@@ -1,15 +1,12 @@
-﻿using System.Runtime.InteropServices;
-using System.IO;
+﻿using System.IO;
 
 namespace NAudio.Wave;
 
 /// <summary>
 /// DSP Group TrueSpeech
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 2)]
 public class TrueSpeechWaveFormat : WaveFormat
 {
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
     private readonly short[] unknown;
 
     /// <summary>

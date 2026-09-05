@@ -11,7 +11,7 @@ public class WaveFilter
     /// <summary>
     /// cbStruct
     /// </summary>
-    public int StructureSize = Marshal.SizeOf(typeof(WaveFilter));
+    public int StructureSize = Marshal.SizeOf<WaveFilter>();
     /// <summary>
     /// dwFilterTag
     /// </summary>

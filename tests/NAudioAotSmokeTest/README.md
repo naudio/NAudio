@@ -48,12 +48,20 @@ The program runs in several phases against the default render endpoint:
 
 CI covers this project in two ways.
 
-**The `build` job** compiles it alongside the rest of the solution. With
-`<IsAotCompatible>true</IsAotCompatible>` and `<PublishAot>true</PublishAot>`
-set, the trim/AOT analyzer runs on every build. Any new `[RequiresUnreferencedCode]`-annotated
-call from `NAudio.Wasapi`, `NAudio.WinMM` or `NAudio.Core` (e.g. someone re-introducing
-`Marshal.GetObjectForIUnknown`-shaped reflection paths) will surface as an
-`IL2026` / `IL3050` warning, which is treated as an error here.
+**The `build` job** compiles it alongside the rest of the solution. Two settings
+have to line up for that to mean anything. `<IsAotCompatible>true</IsAotCompatible>`
+(or `<PublishAot>`) turns the ILLink analyzer on for a project, and
+[.globalconfig](../../.globalconfig) promotes its `Trimming`, `SingleFile` and
+`AOT` categories to warning. Without the second, the repo's catch-all
+`dotnet_analyzer_diagnostic.severity = suggestion` swallows them: they show in
+the IDE, never reach the build, and `TreatWarningsAsErrors` never sees them.
+That was the state until the categories were named explicitly, and it is worth
+knowing because the symptom is a clean build rather than an error — `NAudio.WinMM`
+was marked `IsAotCompatible` and reported zero warnings while six `IL3050`s sat
+in it. With both in place, a new `[RequiresUnreferencedCode]`- or
+`[RequiresDynamicCode]`-annotated call from any of the AOT-compatible projects
+(e.g. someone re-introducing `Marshal.GetObjectForIUnknown`-shaped reflection, or
+`Marshal.SizeOf(Type)` in place of `Marshal.SizeOf<T>()`) fails the build.
 
 **The `aot` job** publishes it with `PublishAot`, which runs ILC for real. This
 exists because the analyzer only sees *annotated* APIs, and a lot of AOT breakage

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using NAudio.Vst3;
 
@@ -50,7 +51,7 @@ internal static class Vst3InstalledPlugins
 {
     private const int CacheVersion = 1;
 
-    private static readonly object syncRoot = new();
+    private static readonly Lock syncRoot = new();
     private static IReadOnlyList<Vst3InstalledPlugin> cached;
     private static Task<IReadOnlyList<Vst3InstalledPlugin>> inflight;
 

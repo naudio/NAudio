@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\..\src\NAudio.Dmo\NAudio.Dmo.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.WinMM\NAudio.WinMM.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +36,7 @@
          them by symbol, rather than collapsing each assembly into a single IL2104. -->
     <TrimmableAssembly Include="NAudio.Wasapi" />
     <TrimmableAssembly Include="NAudio.Dmo" />
+    <TrimmableAssembly Include="NAudio.WinMM" />
     <TrimmableAssembly Include="NAudio.Core" />
   </ItemGroup>
 

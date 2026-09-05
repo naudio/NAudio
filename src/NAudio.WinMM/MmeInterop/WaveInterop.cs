@@ -88,7 +88,7 @@ internal class WaveInterop
     /// <summary>
     /// Wave Callback
     /// </summary>
-    public delegate void WaveCallback(IntPtr hWaveOut, WaveMessage message, IntPtr dwInstance, WaveHeader wavhdr, IntPtr dwReserved);
+    public delegate void WaveCallback(IntPtr hWaveOut, WaveMessage message, IntPtr dwInstance, IntPtr wavhdr, IntPtr dwReserved);
 
     /// <summary>
     /// Convert a mmio string to FOURCC
@@ -105,30 +105,30 @@ internal class WaveInterop
     /// Prepare wave out header
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveOutPrepareHeader(IntPtr hWaveOut, WaveHeader lpWaveOutHdr, int uSize);
+    public static extern MmResult waveOutPrepareHeader(IntPtr hWaveOut, IntPtr lpWaveOutHdr, int uSize);
     /// <summary>
     /// Unprepare WaveOut header
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveOutUnprepareHeader(IntPtr hWaveOut, WaveHeader lpWaveOutHdr, int uSize);
+    public static extern MmResult waveOutUnprepareHeader(IntPtr hWaveOut, IntPtr lpWaveOutHdr, int uSize);
     /// <summary>
     /// Write to WaveOut device
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveOutWrite(IntPtr hWaveOut, WaveHeader lpWaveOutHdr, int uSize);
+    public static extern MmResult waveOutWrite(IntPtr hWaveOut, IntPtr lpWaveOutHdr, int uSize);
 
     // http://msdn.microsoft.com/en-us/library/dd743866%28VS.85%29.aspx
     /// <summary>
     /// Open WaveOut Device
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveOutOpen(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
+    public static extern MmResult waveOutOpen(out IntPtr hWaveOut, IntPtr uDeviceID, IntPtr lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
 
     /// <summary>
     /// Open WaveOut Device with window callback
     /// </summary>
     [DllImport("winmm.dll", EntryPoint = "waveOutOpen")]
-    public static extern MmResult waveOutOpenWindow(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
+    public static extern MmResult waveOutOpenWindow(out IntPtr hWaveOut, IntPtr uDeviceID, IntPtr lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
 
 
     /// <summary>
@@ -208,7 +208,7 @@ internal class WaveInterop
     /// Add WaveIn Buffer
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveInAddBuffer(IntPtr hWaveIn, WaveHeader pwh, int cbwh);
+    public static extern MmResult waveInAddBuffer(IntPtr hWaveIn, IntPtr pwh, int cbwh);
     /// <summary>
     /// Close WaveIn device
     /// </summary>
@@ -220,26 +220,26 @@ internal class WaveInterop
     /// Open WaveIn Device
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveInOpen(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
+    public static extern MmResult waveInOpen(out IntPtr hWaveIn, IntPtr uDeviceID, IntPtr lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
 
     /// <summary>
     /// Open WaveIn Device with Window callbacks
     /// </summary>
     [DllImport("winmm.dll", EntryPoint = "waveInOpen")]
-    public static extern MmResult waveInOpenWindow(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
+    public static extern MmResult waveInOpenWindow(out IntPtr hWaveIn, IntPtr uDeviceID, IntPtr lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
 
     // http://msdn.microsoft.com/en-us/library/dd743848%28VS.85%29.aspx
     /// <summary>
     /// Prepare WaveIn Header
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveInPrepareHeader(IntPtr hWaveIn, WaveHeader lpWaveInHdr, int uSize);
+    public static extern MmResult waveInPrepareHeader(IntPtr hWaveIn, IntPtr lpWaveInHdr, int uSize);
 
     /// <summary>
     /// Unprepare WaveIn Header
     /// </summary>
     [DllImport("winmm.dll")]
-    public static extern MmResult waveInUnprepareHeader(IntPtr hWaveIn, WaveHeader lpWaveInHdr, int uSize);
+    public static extern MmResult waveInUnprepareHeader(IntPtr hWaveIn, IntPtr lpWaveInHdr, int uSize);
 
     // http://msdn.microsoft.com/en-us/library/dd743850%28VS.85%29.aspx
     /// <summary>

@@ -211,7 +211,11 @@ public class CueList
             int chunkId = BitConverter.ToInt32(listChunkData, p);
             int chunkSize = BitConverter.ToInt32(listChunkData, p + 4);
 
-            if (chunkId == labelChunkId && chunkSize >= 4 && listChunkData.Length - p >= chunkSize + 8)
+            // A negative size never advances p (at exactly -8 it spins forever); an oversized
+            // one can't be a real sub-chunk, and would overflow chunkSize + 8 below. See #1428.
+            if (chunkSize < 0 || listChunkData.Length - p - 8 < chunkSize) break;
+
+            if (chunkId == labelChunkId && chunkSize >= 4)
             {
                 // This is a label chunk - extract the label data
                 int labelLength = chunkSize - 4; // chunkSize includes the dwIdentifier
@@ -226,7 +230,7 @@ public class CueList
                     }
                 }
             }
-            else if (chunkId == ltxtChunkId && chunkSize >= 20 && listChunkData.Length - p >= chunkSize + 8)
+            else if (chunkId == ltxtChunkId && chunkSize >= 20)
             {
                 // Text-with-data-length: carries a region length (dwSampleLength) for a cue point.
                 // Minimum payload is 20 bytes: dwIdentifier + dwSampleLength + dwPurpose + 4x Int16.

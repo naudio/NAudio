@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net9.0-windows</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
     <Description>winmm.dll-based Windows audio APIs (WaveOut, WaveIn, MidiIn, MidiOut, ACM) for the NAudio audio library.</Description>
   </PropertyGroup>
 

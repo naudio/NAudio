@@ -25,7 +25,7 @@ internal static class WasapiExclusiveFormatHelper
 
     public static readonly (int mask, string name)[] ChannelMasks =
     [
-        (0, "(default)"),
+        (0, "(unspecified)"),
         ((int)Speakers.Mono, "1.0 Mono (FC)"),
         ((int)Speakers.Stereo, "2.0 Stereo (FL|FR)"),
         ((int)(Speakers.FrontCenter | Speakers.LowFrequency), "1.1 (FC|LFE)"),
@@ -47,9 +47,18 @@ internal static class WasapiExclusiveFormatHelper
     public static WaveFormatExtensible CreateFormat(int rate, int bits, int channels, string encoding, int channelMask = 0)
         => new(rate, bits, channels, useIeeeFloat: encoding == "Float", validBitsPerSample: bits, channelMask);
 
+    /// <summary>
+    /// The canonical channel mask for a channel count &mdash; the first <paramref name="channels"/>
+    /// speaker positions, which is what <see cref="WaveFormatExtensible(int, int, int, int)"/> derives
+    /// when no mask is given and what <c>WasapiPlayer</c> therefore ends up probing with.
+    /// Many drivers (e.g. Realtek) reject a <c>dwChannelMask</c> of 0 outright, so probing with 0
+    /// reports nothing supported even on devices with plenty of exclusive-mode formats.
+    /// </summary>
+    public static int DefaultChannelMask(int channels) => (1 << channels) - 1;
+
     public static List<(int mask, string name)> GetMasksForChannelCount(int channelCount)
     {
-        var masks = new List<(int, string)> { (0, "(default)") };
+        var masks = new List<(int, string)> { (0, "(unspecified)") };
         foreach (var (mask, name) in ChannelMasks)
         {
             if (mask == 0) continue;

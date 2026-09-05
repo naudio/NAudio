@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -12,7 +13,7 @@ internal static class WaveOutUtils
     /// <summary>
     /// Get WaveOut Volume
     /// </summary>
-    public static float GetWaveOutVolume(IntPtr hWaveOut, object lockObject)
+    public static float GetWaveOutVolume(IntPtr hWaveOut, Lock lockObject)
     {
         int stereoVolume;
         MmResult result;
@@ -27,7 +28,7 @@ internal static class WaveOutUtils
     /// <summary>
     /// Set WaveOut Volume
     /// </summary>
-    public static void SetWaveOutVolume(float value, IntPtr hWaveOut, object lockObject)
+    public static void SetWaveOutVolume(float value, IntPtr hWaveOut, Lock lockObject)
     {
         if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
         if (value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
@@ -46,7 +47,7 @@ internal static class WaveOutUtils
     /// <summary>
     /// Get position in bytes
     /// </summary>
-    public static long GetPositionBytes(IntPtr hWaveOut, object lockObject)
+    public static long GetPositionBytes(IntPtr hWaveOut, Lock lockObject)
     {
         lock (lockObject)
         {

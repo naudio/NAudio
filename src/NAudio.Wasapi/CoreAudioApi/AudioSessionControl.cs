@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using System.Threading;
 using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi;
@@ -23,7 +24,7 @@ public class AudioSessionControl : IDisposable
     private IAudioSessionControl2 audioSessionControlInterface2;
     private readonly bool ownsInterface;
     private readonly Dictionary<IAudioSessionEventsHandler, AudioSessionEventsCallback> audioSessionEventCallbacks = new();
-    private readonly object eventCallbackLock = new();
+    private readonly Lock eventCallbackLock = new();
 
     // ComWrappers CCWs return a distinct IntPtr per interface (and a separate vtable
     // for IUnknown). Registration APIs that expect IAudioSessionEvents* must receive

@@ -133,7 +133,7 @@ public sealed unsafe class Vst3Plugin : IDisposable
     // Updated at the top of every Process call (audio thread). Read under the lock by producers
     // computing target samples in Send* methods. Lock contention is microsecond-scale (two stores
     // on each side) and only happens when a MIDI event arrives — fine for the audio thread.
-    private readonly object _clockLock = new();
+    private readonly Lock _clockLock = new();
     private long _blockStartSample;
     private long _blockStartTimestampTicks;
 

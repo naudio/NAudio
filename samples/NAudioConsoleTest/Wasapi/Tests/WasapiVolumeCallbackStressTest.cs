@@ -61,7 +61,7 @@ internal sealed class WasapiVolumeCallbackStressTest : IConsoleTest
                                $"settleTime={settleTime.TotalMilliseconds:F0}ms[/]\n");
 
         var notifyCount = 0;
-        var sync = new object();
+        var sync = new Lock();
         float[] latestChannelVolumes = [];
         void OnNotify(AudioVolumeNotificationData data)
         {

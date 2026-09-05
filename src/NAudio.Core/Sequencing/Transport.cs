@@ -15,7 +15,7 @@ public sealed class Transport
 {
     private readonly ITempoMap tempoMap;
     private readonly int sampleRate;
-    private readonly object mutationLock = new();
+    private readonly Lock mutationLock = new();
     private long currentFrames;
     private long currentTicks;
     private int isPlaying;

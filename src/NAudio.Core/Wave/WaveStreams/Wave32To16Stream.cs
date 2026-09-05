@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
@@ -16,7 +17,7 @@ public class Wave32To16Stream : WaveStream
     private long position;
     private bool clip;
     private float volume;
-    private readonly object lockObject = new();
+    private readonly Lock lockObject = new();
 
     /// <summary>
     /// Reused between <c>Read</c> calls to avoid per-read allocations.

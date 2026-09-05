@@ -515,9 +515,9 @@ public class AudioClient : IDisposable
     /// </summary>
     /// <param name="shareMode">Share Mode</param>
     /// <param name="desiredFormat">Desired Format</param>
-    /// <param name="closestMatchFormat">Output The closest match format.</param>
+    /// <param name="closestMatchFormat">The closest supported format, or null if there is none. Shared mode only — always null in exclusive mode.</param>
     /// <returns>True if the format is supported</returns>
-    public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat)
+    public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormat closestMatchFormat)
     {
         closestMatchFormat = null;
         var formatPtr = WaveFormat.MarshalToPtr(desiredFormat);
@@ -527,7 +527,8 @@ public class AudioClient : IDisposable
 
             if (closestMatchPtr != IntPtr.Zero)
             {
-                closestMatchFormat = Marshal.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
+                // WASAPI may return either a WAVEFORMATEX or a WAVEFORMATEXTENSIBLE here.
+                closestMatchFormat = WaveFormat.MarshalFromPtr(closestMatchPtr);
                 Marshal.FreeCoTaskMem(closestMatchPtr);
             }
 

@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.IO;
+﻿using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -7,7 +6,6 @@ namespace NAudio.Wave;
 /// <summary>
 /// GSM 610
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 2)]
 public class Gsm610WaveFormat : WaveFormat
 {
     private readonly short samplesPerBlock;
@@ -27,6 +25,18 @@ public class Gsm610WaveFormat : WaveFormat
 
         extraSize = 2;
         samplesPerBlock = 320;
+    }
+
+    /// <summary>
+    /// Reads a Gsm610WaveFormat from a fmt chunk (a 4-byte length followed by the
+    /// WAVEFORMATEX and its 2 extra bytes).
+    /// </summary>
+    internal Gsm610WaveFormat(BinaryReader reader) : base(reader)
+    {
+        if (extraSize >= 2)
+        {
+            samplesPerBlock = reader.ReadInt16();
+        }
     }
 
     /// <summary>

@@ -1,0 +1,47 @@
+// Regression plan for the Native AOT marshalling fix (issue #1425), which changed how
+// WAVEHDR and WAVEFORMATEX cross into native code. These all run on CoreCLR, so the point
+// is to prove the rewrite did not regress normal (non-AOT) behaviour.
+//
+// Replace the "input" paths with files on your machine. A 44.1kHz stereo 16-bit WAV and an
+// MP3 are enough; add a 24-bit or multichannel WAV if you have one, since those are the
+// formats that travel as WAVEFORMATEXTENSIBLE.
+//
+//     NAudioConsoleTest run-batch BatchPlans/winmm-waveformat-regression.json --out=results
+{
+  "name": "WinMM + WaveFormat marshalling regression (#1425)",
+  "stopOnFail": false,
+  "timeoutSeconds": 60,
+  "tests": [
+    // --- WAVEHDR path: waveOutPrepareHeader/waveOutWrite and waveInPrepareHeader/waveInAddBuffer
+    { "id": "WinMm.PlayFile",     "params": { "input": "C:\\path\\to\\test.wav", "maxDuration": "8s" } },
+    { "id": "WinMm.RecordToFile", "params": { "duration": "5s" } },
+    { "id": "WinMm.RecordToFile", "params": { "duration": "5s", "sampleRate": 48000, "bitsPerSample": 16, "channels": 1 } },
+
+    // --- ACM path: MarshalToPtr + MarshalFromPtr round trip through acmStreamOpen/acmFormatSuggest
+    { "id": "WinMm.ConvertWithStream",   "params": { "input": "C:\\path\\to\\test.wav", "targetRate": 22050 } },
+    { "id": "WinMm.ConvertWithProvider", "params": { "input": "C:\\path\\to\\test.wav", "targetRate": 8000 } },
+    { "id": "WinMm.DecodeMp3",           "params": { "input": "C:\\path\\to\\test.mp3" } },
+
+    // --- WASAPI: MarshalToPtr into IAudioClient::Initialize / IsFormatSupported
+    { "id": "Wasapi.ListDevices" },
+    { "id": "Wasapi.PlaySineWave", "params": { "duration": "3s" } },
+    { "id": "Wasapi.PlayFile",     "params": { "input": "C:\\path\\to\\test.wav", "mode": "Shared",    "maxDuration": "8s" } },
+    { "id": "Wasapi.PlayFile",     "params": { "input": "C:\\path\\to\\test.wav", "mode": "Exclusive", "maxDuration": "8s" } },
+    { "id": "Wasapi.RecordToWavFile", "params": { "duration": "5s" } },
+
+    // --- WASAPI closest-match: the AudioClient.IsFormatSupported out-param this change touched
+    { "id": "Wasapi.FindBestExclusiveFormat", "params": { "rate": 48000, "bits": 24, "channels": 2 } },
+    { "id": "Wasapi.FindBestExclusiveFormat", "params": { "rate": 96000, "bits": 32, "channels": 2 } },
+    { "id": "Wasapi.ExclusiveQuickScan" },
+
+    // --- DMO: DmoMediaType.SetWaveFormat / GetWaveFormat both go through the blob now
+    { "id": "Dmo.DecodeMp3",    "params": { "input": "C:\\path\\to\\test.mp3" } },
+    { "id": "Dmo.ResampleFile", "params": { "input": "C:\\path\\to\\test.wav", "targetRate": 22050 } },
+    { "id": "Dmo.EchoEffect",   "params": { "input": "C:\\path\\to\\test.wav" } },
+
+    // --- Media Foundation: MFInitMediaTypeFromWaveFormatEx now takes a caller-built block
+    { "id": "MediaFoundation.ResampleFile",         "params": { "input": "C:\\path\\to\\test.wav", "targetRate": 22050 } },
+    { "id": "MediaFoundation.EncodeToMp3",          "params": { "input": "C:\\path\\to\\test.wav" } },
+    { "id": "MediaFoundation.RoundTripMemoryStream", "params": { "input": "C:\\path\\to\\test.wav" } }
+  ]
+}

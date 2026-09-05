@@ -24,7 +24,7 @@ namespace NAudio.Wave;
 public sealed class AsioDevice : IDisposable
 {
     private readonly SynchronizationContext syncContext;
-    private readonly object stateLock = new();
+    private readonly Lock stateLock = new();
     private AsioDriverExt driver;
     private AsioDeviceState state;
 

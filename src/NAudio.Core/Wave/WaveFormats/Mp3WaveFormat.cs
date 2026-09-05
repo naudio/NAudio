@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Runtime.InteropServices;
+using System.IO;
 
 namespace NAudio.Wave;
 
 /// <summary>
 /// MP3 WaveFormat, MPEGLAYER3WAVEFORMAT from mmreg.h
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
 public class Mp3WaveFormat : WaveFormat
 {
     /// <summary>
@@ -50,6 +49,20 @@ public class Mp3WaveFormat : WaveFormat
         this.blockSize = (ushort)blockSize;
         this.framesPerBlock = 1;
         this.codecDelay = 0;
+    }
+
+    /// <summary>
+    /// Writes this structure to a BinaryWriter. The five MPEGLAYER3WAVEFORMAT fields
+    /// account for exactly the 12 extra bytes cbSize advertises.
+    /// </summary>
+    public override void Serialize(BinaryWriter writer)
+    {
+        base.Serialize(writer);
+        writer.Write((ushort)id);
+        writer.Write((uint)flags);
+        writer.Write(blockSize);
+        writer.Write(framesPerBlock);
+        writer.Write(codecDelay);
     }
 }
 

@@ -1,27 +1,27 @@
-﻿using System.Runtime.InteropServices;
+using System;
 using System.IO;
-using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
 
 /// <summary>
-/// This class used for marshalling from unmanaged code
+/// A WaveFormat that keeps the format-specific extra bytes (cbSize) it was read with, without
+/// interpreting them. Reading a WAV fmt chunk produces one of these, and
+/// <see cref="WaveFormat.MarshalFromPtr"/> falls back to it for an encoding NAudio has no
+/// dedicated subclass for.
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
 public class WaveFormatExtraData : WaveFormat
 {
-    // try with 100 bytes for now, increase if necessary
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 100)]
-    private readonly byte[] extraData = new byte[100];
+    private byte[] extraData = Array.Empty<byte>();
 
     /// <summary>
-    /// Allows the extra data to be read
+    /// The extra bytes that followed the WAVEFORMATEX header, exactly
+    /// <see cref="WaveFormat.ExtraSize"/> of them.
     /// </summary>
     public byte[] ExtraData => extraData;
 
     /// <summary>
-    /// parameterless constructor for marshalling
+    /// Creates an empty instance, to be filled in by <see cref="WaveFormat.FromFormatChunk"/>
     /// </summary>
     internal WaveFormatExtraData()
     {
@@ -38,17 +38,19 @@ public class WaveFormatExtraData : WaveFormat
 
     internal void ReadExtraData(BinaryReader reader)
     {
-        if (extraSize > extraData.Length)
+        if (extraSize <= 0)
         {
-            // The fmt chunk declares more extra bytes than our fixed buffer can hold.
-            // Consume them so the stream stays aligned for the next chunk, then discard.
-            Debug.WriteLine($"Discarding {extraSize} bytes of fmt extra data exceeding the {extraData.Length}-byte buffer");
-            reader.ReadBytes(extraSize);
-            extraSize = 0;
+            return;
         }
-        if (extraSize > 0)
+        // Sized from cbSize. This used to be a fixed 100-byte array because
+        // [MarshalAs(UnmanagedType.ByValArray, SizeConst = 100)] needed a compile-time size, and
+        // a format declaring more than that had all of its extra data discarded (issue #482).
+        extraData = reader.ReadBytes(extraSize);
+        if (extraData.Length < extraSize)
         {
-            reader.Read(extraData, 0, extraSize);
+            // The stream ended early. Keep what arrived and correct cbSize, so the format stays
+            // self-describing and Serialize writes exactly the bytes that exist.
+            extraSize = (short)extraData.Length;
         }
     }
 

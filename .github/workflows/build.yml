@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Restore
         run: dotnet restore NAudio.slnx
@@ -40,8 +40,36 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: ${{ runner.temp }}/TestResults/*.trx
           if-no-files-found: warn
+
+  aot:
+    # The trim/AOT analyzers that run during the normal build only flag APIs
+    # annotated [RequiresDynamicCode] / [RequiresUnreferencedCode], so they are
+    # blind to whole classes of AOT breakage. Issue #1425 — marshalling a
+    # [StructLayout] class by value, which CoreCLR pins in place but NativeAOT
+    # copies into a temporary — produced zero analyzer warnings while being
+    # thoroughly broken under AOT. Publishing NAudioAotSmokeTest runs ILC for
+    # real, catching whole-program analysis and native link failures that the
+    # analyzers cannot see.
+    #
+    # Publish only, not run: the smoke test drives real render endpoints and
+    # master volume, which CI agents don't have. See tests/NAudioAotSmokeTest.
+    #
+    # A separate job so it runs in parallel with `build` rather than adding the
+    # ILCompiler download and native link to the critical path.
+    name: aot-publish
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Publish Native AOT smoke test
+        # The csproj already sets PublishAot and RuntimeIdentifier=win-x64, so
+        # this needs no extra flags. windows-latest ships the MSVC toolchain
+        # that ILC needs for the native link step.
+        run: dotnet publish tests/NAudioAotSmokeTest/NAudioAotSmokeTest.csproj --configuration Release

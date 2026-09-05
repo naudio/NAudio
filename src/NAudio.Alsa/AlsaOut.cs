@@ -24,7 +24,7 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
         PCMFormat.SND_PCM_FORMAT_S24_3LE,
     };
 
-    private readonly object sync = new();
+    private readonly Lock sync = new();
     private readonly ManualResetEventSlim resumeGate = new(initialState: true);
     private readonly AlsaPcm pcm;
     private SampleChannel channel;

@@ -17,7 +17,7 @@ namespace NAudio.Sequencing;
 /// <typeparam name="T">Payload type. See <see cref="SequencerEvent{T}"/>.</typeparam>
 public sealed class EventTimeline<T>
 {
-    private readonly object writeLock = new();
+    private readonly Lock writeLock = new();
     private SequencerEvent<T>[] snapshot = Array.Empty<SequencerEvent<T>>();
 
     /// <summary>The number of events currently in the timeline.</summary>

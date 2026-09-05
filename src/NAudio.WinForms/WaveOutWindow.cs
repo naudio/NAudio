@@ -15,7 +15,7 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
 {
-    private readonly object waveOutLock = new();
+    private readonly Lock waveOutLock = new();
     private readonly SynchronizationContext syncContext;
     private readonly WaveInterop.WaveCallback callback;
     private readonly WaveCallbackHost callbackHost;
@@ -101,13 +101,24 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
         MmResult result;
         lock (waveOutLock)
         {
-            result = WaveInterop.waveOutOpenWindow(
-                out hWaveOut,
-                DeviceNumber,
-                waveStream.WaveFormat,
-                callbackHost.Handle,
-                IntPtr.Zero,
-                WaveInterop.WaveInOutOpenFlags.CallbackWindow);
+            // A WAVEFORMATEX block built by hand: WaveFormat's subclasses add their fields
+            // by inheritance, which the NativeAOT marshaller drops when a WaveFormat-typed
+            // parameter is marshalled. See https://github.com/naudio/NAudio/issues/1425.
+            IntPtr formatPointer = WaveFormat.MarshalToPtr(waveStream.WaveFormat);
+            try
+            {
+                result = WaveInterop.waveOutOpenWindow(
+                    out hWaveOut,
+                    DeviceNumber,
+                    formatPointer,
+                    callbackHost.Handle,
+                    IntPtr.Zero,
+                    WaveInterop.WaveInOutOpenFlags.CallbackWindow);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(formatPointer);
+            }
         }
         MmException.Try(result, "waveOutOpen");
 
@@ -327,7 +338,7 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
         Dispose(false);
     }
 
-    private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, IntPtr dwInstance, WaveHeader wavhdr, IntPtr dwReserved)
+    private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, IntPtr dwInstance, IntPtr wavhdr, IntPtr dwReserved)
     {
         if (uMsg != WaveInterop.WaveMessage.WaveOutDone) return;
         if (buffers == null) return;

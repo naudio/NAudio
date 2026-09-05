@@ -28,7 +28,7 @@ internal sealed class AlsaPcm : IDisposable
     /// <summary>Number of periods in the device ring buffer.</summary>
     internal const uint Periods = 4;
 
-    private readonly object gate = new();
+    private readonly Lock gate = new();
     private readonly SafePcmHandle handle;
     private bool disposed;
     private Thread worker;

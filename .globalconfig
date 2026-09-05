@@ -1,4 +1,4 @@
-is_global = true
+﻿is_global = true
 global_level = 0
 
 # =============================================================================
@@ -104,6 +104,33 @@ dotnet_diagnostic.IDE0063.severity = warning
 
 # IDE0031: Use null propagation
 dotnet_diagnostic.IDE0031.severity = warning
+
+# --- Trim / Native AOT analyzer (ILLink) ---
+# These have to be named explicitly. The catch-all default above is 'suggestion',
+# which is IDE-only, so IL2xxx/IL3xxx never reached the build and
+# TreatWarningsAsErrors never saw them: NAudio.WinMM was marked IsAotCompatible
+# and reported zero warnings while six IL3050s sat in it. Issue #1425 is what
+# happens when nobody is watching this family.
+#
+# They stay at 'warning' rather than 'error' because TreatWarningsAsErrors
+# already fails the build, and warning is the severity the SDK itself assigns —
+# so a project that legitimately needs to NoWarn one still can.
+#
+# Only projects setting IsAotCompatible/IsTrimmable/PublishAot run the analyzer
+# at all, so the sample and tool projects are unaffected.
+#
+# Note this only covers APIs annotated [RequiresDynamicCode]/[RequiresUnreferencedCode].
+# It cannot see the marshalling bugs behind #1425 and #1432 — publishing
+# NAudioAotSmokeTest and running it is what catches those.
+
+# IL2xxx: trim analysis (reflection over trimmed members)
+dotnet_analyzer_diagnostic.category-Trimming.severity = warning
+
+# IL3000-IL3002: single-file analysis (Assembly.Location and friends)
+dotnet_analyzer_diagnostic.category-SingleFile.severity = warning
+
+# IL3050+: Native AOT analysis (runtime code generation, e.g. Marshal.SizeOf(Type))
+dotnet_analyzer_diagnostic.category-AOT.severity = warning
 
 # --- Rules promoted to ERROR (genuine breakage, not style) ---
 # Source-generated COM interop diagnostics that mean the code is actually

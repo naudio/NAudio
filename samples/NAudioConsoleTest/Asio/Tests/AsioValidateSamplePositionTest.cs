@@ -44,7 +44,7 @@ internal sealed class AsioValidateSamplePositionTest : IConsoleTest
         });
 
         var samples = new List<Sample>(capacity: 8192);
-        var lockObj = new object();
+        var lockObj = new Lock();
         device.AudioCaptured += (_, e) =>
         {
             lock (lockObj)

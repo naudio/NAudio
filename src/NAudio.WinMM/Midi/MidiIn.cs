@@ -113,7 +113,7 @@ public class MidiIn : IMidiInput
         if (SysexBufferHeaders.Length > 0) return;
 
         SysexBufferHeaders = new IntPtr[DefaultSysexBufferCount];
-        var hdrSize = Marshal.SizeOf(typeof(MidiInterop.MIDIHDR));
+        var hdrSize = Marshal.SizeOf<MidiInterop.MIDIHDR>();
         for (var i = 0; i < DefaultSysexBufferCount; i++)
         {
             var hdr = new MidiInterop.MIDIHDR();
@@ -156,7 +156,7 @@ public class MidiIn : IMidiInput
                 // parameter 2 is milliseconds since MidiInStart
                 if (SysexMessageReceived != null)
                 {
-                    MidiInterop.MIDIHDR hdr = (MidiInterop.MIDIHDR)Marshal.PtrToStructure(messageParameter1, typeof(MidiInterop.MIDIHDR));
+                    var hdr = Marshal.PtrToStructure<MidiInterop.MIDIHDR>(messageParameter1);
 
                     //  Copy the bytes received into an array so that the buffer is immediately available for re-use
                     var sysexBytes = new byte[hdr.dwBytesRecorded];
@@ -169,7 +169,7 @@ public class MidiIn : IMidiInput
                     //  BUT When disposing the (resetting the MidiIn port), LONGDATA midi message are fired with a zero length.
                     //  In that case, buffer should no be ReAdd to avoid an inifinite loop of callback as buffer are reused forever.
                     if (!disposeIsRunning)
-                        MidiInterop.midiInAddBuffer(hMidiIn, messageParameter1, Marshal.SizeOf(typeof(MidiInterop.MIDIHDR)));
+                        MidiInterop.midiInAddBuffer(hMidiIn, messageParameter1, Marshal.SizeOf<MidiInterop.MIDIHDR>());
                 }
                 break;
             case MidiInterop.MidiInMessage.LongError:
@@ -217,8 +217,8 @@ public class MidiIn : IMidiInput
                 //  Free up all created and allocated buffers for incoming Sysex messages
                 foreach (var lpHeader in SysexBufferHeaders)
                 {
-                    MidiInterop.MIDIHDR hdr = (MidiInterop.MIDIHDR)Marshal.PtrToStructure(lpHeader, typeof(MidiInterop.MIDIHDR));
-                    MmException.Try(MidiInterop.midiInUnprepareHeader(hMidiIn, lpHeader, Marshal.SizeOf(typeof(MidiInterop.MIDIHDR))), "midiInPrepareHeader");
+                    var hdr = Marshal.PtrToStructure<MidiInterop.MIDIHDR>(lpHeader);
+                    MmException.Try(MidiInterop.midiInUnprepareHeader(hMidiIn, lpHeader, Marshal.SizeOf<MidiInterop.MIDIHDR>()), "midiInPrepareHeader");
                     Marshal.FreeHGlobal(hdr.lpData);
                     Marshal.FreeHGlobal(lpHeader);
                 }

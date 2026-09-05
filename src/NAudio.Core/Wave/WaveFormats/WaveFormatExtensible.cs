@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Runtime.InteropServices;
+using System.IO;
 
 namespace NAudio.Wave;
 
@@ -7,7 +7,6 @@ namespace NAudio.Wave;
 /// WaveFormatExtensible
 /// http://www.microsoft.com/whdc/device/audio/multichaud.mspx
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
 public class WaveFormatExtensible : WaveFormat
 {
     private readonly short wValidBitsPerSample; // bits of precision, or is wSamplesPerBlock if wBitsPerSample==0
@@ -22,13 +21,32 @@ public class WaveFormatExtensible : WaveFormat
     }
 
     /// <summary>
+    /// Reads a WaveFormatExtensible from a fmt chunk (a 4-byte length followed by the
+    /// WAVEFORMATEX and its 22 extra bytes).
+    /// </summary>
+    internal WaveFormatExtensible(BinaryReader reader) : base(reader)
+    {
+        if (extraSize < ExtensibleExtraBytes)
+        {
+            // Tagged as extensible but carrying too little extra data to be one. Leave the
+            // subformat fields at their defaults rather than reading off the end of the block.
+            return;
+        }
+        wValidBitsPerSample = reader.ReadInt16();
+        dwChannelMask = reader.ReadInt32();
+        subFormat = new Guid(reader.ReadBytes(16));
+    }
+
+    private const short ExtensibleExtraBytes = 22; // wValidBitsPerSample + dwChannelMask + SubFormat
+
+    /// <summary>
     /// Creates a new WaveFormatExtensible for PCM or IEEE
     /// </summary>
     public WaveFormatExtensible(int rate, int bits, int channels, int channelMask = 0)
         : base(rate, bits, channels)
     {
         waveFormatTag = WaveFormatEncoding.Extensible;
-        extraSize = 22;
+        extraSize = ExtensibleExtraBytes;
         wValidBitsPerSample = (short)bits;
         if (channelMask != 0)
         {
@@ -72,7 +90,7 @@ public class WaveFormatExtensible : WaveFormat
         : base(rate, bits, channels)
     {
         waveFormatTag = WaveFormatEncoding.Extensible;
-        extraSize = 22;
+        extraSize = ExtensibleExtraBytes;
         wValidBitsPerSample = (short)validBitsPerSample;
         dwChannelMask = channelMask;
         this.subFormat = subFormat;

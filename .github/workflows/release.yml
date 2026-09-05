@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0   # full history so gh release --generate-notes can diff against the previous tag
 
@@ -190,7 +190,7 @@ jobs:
           }
 
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nupkg-${{ steps.version.outputs.version }}
           path: |
@@ -238,13 +238,31 @@ jobs:
       # ship to NuGet — no GitHub Release noise for every preview. The
       # release-body.md file was already produced by the earlier
       # "Extract RELEASE_NOTES.md section" step.
+      #
+      # The .nupkg files are attached as release assets. artifacts/ is still
+      # on disk from the Pack step, so there is no artifact round-trip. This
+      # also gives a permanent copy of exactly what shipped: Actions artifacts
+      # expire (90 days by default), release assets do not. Symbol packages
+      # are deliberately left off — they go to NuGet's symbol server and would
+      # only double the asset list here.
+      #
+      # gh does not expand globs, and PowerShell does not expand wildcards in
+      # arguments to external commands, so the file list is built explicitly —
+      # same reason as the Push step above.
       - name: Create GitHub Release (final only)
         if: steps.version.outputs.is_final == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
+          $assets = @(Get-ChildItem -Path "artifacts\*.nupkg" | ForEach-Object { $_.FullName })
+          if ($assets.Count -eq 0) {
+            Write-Error "No .nupkg files found in artifacts/ to attach to the release"
+            exit 1
+          }
+          Write-Host "Attaching $($assets.Count) package(s) to the release"
           gh release create "v${{ steps.version.outputs.version }}" `
             --title "NAudio ${{ steps.version.outputs.version }}" `
             --notes-file release-body.md `
-            --verify-tag
+            --verify-tag `
+            @assets

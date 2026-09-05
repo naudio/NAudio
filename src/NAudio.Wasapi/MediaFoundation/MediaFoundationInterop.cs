@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 
 namespace NAudio.MediaFoundation;
 
@@ -56,7 +55,7 @@ internal static partial class MediaFoundationInterop
     /// pending (see follow-up note in MODERNIZATION.md).
     /// </remarks>
     [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-    internal static extern void MFInitMediaTypeFromWaveFormatEx([In] IntPtr pMFType, [In] WaveFormat pWaveFormat, [In] int cbBufSize);
+    internal static extern void MFInitMediaTypeFromWaveFormatEx([In] IntPtr pMFType, [In] IntPtr pWaveFormat, [In] int cbBufSize);
 
     /// <summary>
     /// Converts a Media Foundation audio media type to a WAVEFORMATEX structure.

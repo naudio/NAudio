@@ -11,7 +11,7 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 {
-    private readonly object waveOutLock;
+    private readonly Lock waveOutLock;
     private readonly SynchronizationContext syncContext;
     private IntPtr hWaveOut; // WaveOut handle
     private WaveOutBuffer[] buffers;
@@ -71,7 +71,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         syncContext = SynchronizationContext.Current;
         BufferMilliseconds = 100;
         NumberOfBuffers = 2;
-        waveOutLock = new object();
+        waveOutLock = new Lock();
     }
 
     /// <summary>
@@ -101,7 +101,18 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         MmResult result;
         lock (waveOutLock)
         {
-            result = WaveInterop.waveOutOpenWindow(out hWaveOut, DeviceNumber, waveStream.WaveFormat, callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
+            // A WAVEFORMATEX block built by hand: WaveFormat's subclasses add their fields by
+            // inheritance, which the NativeAOT marshaller drops when a WaveFormat-typed
+            // parameter is marshalled. See https://github.com/naudio/NAudio/issues/1425.
+            IntPtr formatPointer = WaveFormat.MarshalToPtr(waveStream.WaveFormat);
+            try
+            {
+                result = WaveInterop.waveOutOpenWindow(out hWaveOut, DeviceNumber, formatPointer, callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(formatPointer);
+            }
         }
         MmException.Try(result, "waveOutOpen");
 

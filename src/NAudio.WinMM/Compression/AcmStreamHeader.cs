@@ -75,6 +75,10 @@ internal class AcmStreamHeader : IDisposable
 
     public int Convert(int bytesToConvert, out int sourceBytesConverted)
     {
+        // A call arriving after Dispose would otherwise write through a null ref into the
+        // freed block. Racing Dispose from another thread can still slip past this.
+        ObjectDisposedException.ThrowIf(headerPtr == IntPtr.Zero, this);
+
         Prepare();
         try
         {

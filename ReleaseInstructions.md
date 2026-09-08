@@ -10,9 +10,11 @@ Prerequisites: `gh` CLI authenticated, working directory inside the repo, on `ma
 gh workflow run release.yml
 ```
 
-Produces `<VersionPrefix>-preview.<run_number>` — e.g. `3.0.0-preview.5`. Watch in the [Actions tab](https://github.com/naudio/NAudio/actions/workflows/release.yml). On success, all 13 packages (`.nupkg` + `.snupkg`) appear on NuGet within a few minutes.
+Produces `<VersionPrefix>-preview.<run_number>` — e.g. `3.0.0-preview.5`. Watch in the [Actions tab](https://github.com/naudio/NAudio/actions/workflows/release.yml). On success, all 14 packages (`.nupkg` + `.snupkg`) appear on NuGet within a few minutes.
 
-The 13 packed packages are `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`, `NAudio.Dmo`, `NAudio.WinForms`, `NAudio.Vst3`, `NAudio.Alsa`, `NAudio.SoundFile`, `NAudio.Sampler`, `NAudio.Extras` and the `NAudio` meta-package. The list lives in the `Pack` step of [release.yml](.github/workflows/release.yml) — a new package must be added there or it silently won't ship.
+The 14 packed packages are `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`, `NAudio.Dmo`, `NAudio.WinForms`, `NAudio.Vst3`, `NAudio.Alsa`, `NAudio.SoundFile`, `NAudio.MacOS`, `NAudio.Sampler`, `NAudio.Extras` and the `NAudio` meta-package. The list lives in the `Pack` step of [release.yml](.github/workflows/release.yml) — a new package must be added there or it silently won't ship.
+
+**`NAudio.MacOS` is the one exception to lockstep versioning:** it always ships pre-release, including on a final tag run, where it packs as `<VersionPrefix>-preview.<run_number>` while everything else packs stable. Nothing needs doing to keep that true — it is enforced by a `<VersionSuffix>` fallback in [NAudio.MacOS.csproj](src/NAudio.MacOS/NAudio.MacOS.csproj). See [ReleaseStrategy.md](Docs/Architecture/ReleaseStrategy.md#naudiomacos-the-one-package-that-stays-pre-release).
 
 ## 2. Named pre-release milestone
 
@@ -50,7 +52,7 @@ The tag push triggers `release.yml`, which:
 
 - Validates the tag matches `<VersionPrefix>` in `Directory.Build.props`.
 - Validates `RELEASE_NOTES.md` has a matching `### 3.0.0` section, and that it fits NuGet's 35,000-character `PackageReleaseNotes` limit.
-- Packs all 13 NAudio packages (+ matching `.snupkg` symbol packages).
+- Packs all 14 NAudio packages (+ matching `.snupkg` symbol packages), `NAudio.MacOS` pre-release and the rest stable.
 - Pushes everything to NuGet via trusted publishing.
 - Creates a GitHub Release titled `NAudio 3.0.0` with body extracted from the `RELEASE_NOTES.md` section, with the 13 `.nupkg` files attached as release assets (symbol packages are not attached — they go to NuGet's symbol server).
 

@@ -32,7 +32,7 @@ When opening a PR (where you have permission), apply one of: `breaking`, `enhanc
 
 ## Versioning
 
-Package versions are centralised in [Directory.Build.props](Directory.Build.props) as `<VersionPrefix>`. Do **not** add a per-csproj `<Version>` to NAudio packages — they're meant to stay in lockstep. The tool/sample apps (MixDiff, AudioFileInspector, MidiFileConverter) keep their own explicit `<Version>` and are exempt.
+Package versions are centralised in [Directory.Build.props](Directory.Build.props) as `<VersionPrefix>`. Do **not** add a per-csproj `<Version>` to NAudio packages — they're meant to stay in lockstep. The tool/sample apps (MixDiff, AudioFileInspector, MidiFileConverter) keep their own explicit `<Version>` and are exempt, as is the `<VersionSuffix>` in `NAudio.MacOS.csproj` that keeps that package pre-release ([why](Docs/Architecture/ReleaseStrategy.md#naudiomacos-the-one-package-that-stays-pre-release)).
 
 ## Building & testing on Linux
 

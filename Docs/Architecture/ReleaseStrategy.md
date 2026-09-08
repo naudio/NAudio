@@ -60,6 +60,40 @@ All packages share one version, declared once in `Directory.Build.props` as `<Ve
 
 CI sets `<VersionSuffix>` for pre-release builds via `dotnet pack -p:VersionSuffix=preview.NN`; final-release builds set neither suffix.
 
+### `NAudio.MacOS`: the one package that stays pre-release
+
+`NAudio.MacOS` landed in #1398 as a large, brand-new native-interop surface, and it wants a settling-in period before its API is covered by the stable-release promise — while the rest of NAudio carries on shipping finals. So it is the single exception to lockstep: it tracks the shared `<VersionPrefix>` like everything else, but never packs a stable version.
+
+The obvious implementation — an explicit `<Version>` in the csproj — is the wrong one. A full `<Version>` overrides both `<VersionPrefix>` and `<VersionSuffix>`, so CI's `-p:VersionSuffix=preview.NN` would be ignored and the number would have to be hand-bumped before every release. Worse, forgetting is silent: `dotnet nuget push --skip-duplicate` turns the resulting 409 into a success, so a release would appear to ship a macOS package it had actually skipped.
+
+Pinning only the *suffix* avoids all of that. In `NAudio.MacOS.csproj`:
+
+```xml
+<VersionSuffix Condition="'$(VersionSuffix)' == '' and '$(GITHUB_RUN_NUMBER)' != ''">preview.$(GITHUB_RUN_NUMBER)</VersionSuffix>
+<VersionSuffix Condition="'$(VersionSuffix)' == ''">preview.0</VersionSuffix>
+```
+
+A command-line `-p:VersionSuffix` is a global property, so on preview runs it wins and both lines are inert. Only a final tag run — the one case where CI passes no suffix — falls through to the fallback. Reading `GITHUB_RUN_NUMBER` from the environment follows the same idiom as `<ContinuousIntegrationBuild>` in `Directory.Build.props`, and gives a counter that is unique per release-workflow run and only ever increases, so each macOS package sorts above the previous one and can never collide with a version already on NuGet.
+
+What the two triggers now produce (verified by packing the real projects at `<VersionPrefix>3.1.1</VersionPrefix>`):
+
+| Trigger | Other 13 packages | `NAudio.MacOS` |
+| --- | --- | --- |
+| `workflow_dispatch` (no milestone) | `3.1.1-preview.44` | `3.1.1-preview.44` |
+| `workflow_dispatch -f milestone=rc.1` | `3.1.1-rc.1` | `3.1.1-rc.1` |
+| `push` tag `v3.1.1` | `3.1.1` | `3.1.1-preview.<run_number>` |
+| local `dotnet pack` | `3.1.1` | `3.1.1-preview.0` |
+
+Keeping the rule in the csproj rather than special-casing the workflow's `Pack` loop matters for one concrete reason: a `-p:VersionSuffix` passed to just that `dotnet pack` invocation would be global to it, so `NAudio.Core` would evaluate with the suffix too and the packed dependency would read `NAudio.Core >= 3.1.1-preview.57` — a floor pointing at a version that was never published. Project-local, it stays `NAudio.Core >= 3.1.1`. The assembly's `AssemblyInformationalVersion` also matches the package version, because build and pack evaluate the same property; `AssemblyVersion` is unaffected by a suffix and stays `3.1.1.0` in lockstep with the rest.
+
+Constraints while this holds:
+
+- **The `NAudio` meta-package must not reference `NAudio.MacOS`.** A stable meta-package with a pre-release dependency drags pre-release semantics into everyone's graph, and plenty of shops block that outright. The meta-package has no macOS leg today; adding one is the graduation event, not a step along the way.
+- **`RELEASE_NOTES.md` bullets for macOS want a `(preview)` marker.** The same extracted section is embedded as `PackageReleaseNotes` in *every* package, so macOS entries appear on the stable packages' NuGet pages too.
+- **The `v*` GitHub Release lists the macOS `.nupkg` as an asset** alongside the stable ones, since the release step attaches everything in `artifacts/`. That is deliberate — it is an accurate record of what the run produced.
+
+**Graduating it:** delete the `<VersionSuffix>` PropertyGroup from `NAudio.MacOS.csproj`, add the `net9.0-macos` leg to the `NAudio` meta-package, and drop the pre-release wording from the package `<Description>` and README. It rejoins lockstep at the next release with no version discontinuity — the first stable `NAudio.MacOS` is simply whatever `<VersionPrefix>` is current, which sorts above every preview that came before it.
+
 ### Pre-release: manual trigger, auto-incrementing counter
 
 Pre-releases are triggered manually via `workflow_dispatch`. The workflow uses `github.run_number` as the auto-incrementing preview counter, producing versions like `3.0.0-preview.142`. A `milestone` input on the dispatch lets the maintainer override the suffix when cutting a named milestone (`alpha.1`, `beta.2`, `rc.1`).
@@ -284,6 +318,6 @@ The pragmatic path: disable the pipeline first, wait a couple of weeks, then del
 ## Out of scope
 
 - Migrating CHANGELOG generation tooling beyond the GitHub built-in (`.github/release.yml`). If we outgrow it, swap in something heavier later.
-- Per-package independent versioning. Lockstep is the chosen model; revisit only if it becomes painful.
+- Per-package independent versioning. Lockstep is the chosen model; revisit only if it becomes painful. `NAudio.MacOS` is a deliberate and self-maintaining exception — it shares the lockstep *version* and only pins the pre-release suffix, so it is not independent versioning in the sense rejected here.
 - Automatic changelog enforcement via CI block. Explicitly rejected as friction without value.
 - Appending the auto-generated PR list to GitHub Release bodies. `gh release create` makes `--notes-file` and `--generate-notes` mutually exclusive; adding both would require fetching auto-notes via `gh api` and concatenating. Possible follow-up if the curated notes alone prove insufficient.

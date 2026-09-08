@@ -12,6 +12,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <EnableNUnitRunner>true</EnableNUnitRunner>
+    <IsPackable>false</IsPackable>
     <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
     <!-- Required for channel layout tests currently -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

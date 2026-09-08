@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * **macOS support** - A new wrappers library (is in pre-release stage for NAudio 3) is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
+
 ### 3.1.0 (7 Sep 2026)
 
 A correctness release, with Native AOT as the theme. NAudio's remaining

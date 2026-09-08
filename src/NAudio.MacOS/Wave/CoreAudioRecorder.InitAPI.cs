@@ -1,6 +1,5 @@
 
 using System;
-using System.Threading;
 
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
@@ -37,7 +36,7 @@ public partial class CoreAudioRecorder
             // We take the lock to ensure that we can safely call
             // the StopRecordingInternal method - and we also
             // execute it only when not in stopped condition.
-            Monitor.Enter(lockObject);
+            lockObject.Enter();
             try
             {
                 if (state != CaptureState.Stopped)
@@ -47,7 +46,7 @@ public partial class CoreAudioRecorder
             }
             finally
             {
-                Monitor.Exit(lockObject);
+                lockObject.Exit();
             }
         }
         try
@@ -66,11 +65,11 @@ public partial class CoreAudioRecorder
 
     private void OnStreamsChanged(AudioObject _)
     {
-        bool oldState = ioProcedure.IsRunning;
+        bool wasRunning = ioProcedure?.IsRunning ?? false;
         // We take the lock to ensure that we can safely call
         // the StopRecordingInternal method - and we also
         // execute it only when not in stopped condition.
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (state != CaptureState.Stopped)
@@ -80,7 +79,7 @@ public partial class CoreAudioRecorder
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
         state = CaptureState.Stopped;
         try
@@ -94,7 +93,7 @@ public partial class CoreAudioRecorder
             OnRecodingStopped(e);
             return;
         }
-        if (oldState) { ioProcedure.Start(); }
+        if (wasRunning) { StartRecording(); }
     }
 
     private void Initialize(bool isInit = false)
@@ -106,10 +105,9 @@ public partial class CoreAudioRecorder
         var streams = selectedDevice.GetStreams(AudioObjectPropertyScopeConstants.Input);
 
         AudioStreamBasicDescription virtualFormat = default;
-        foreach (var s in streams)
+        for (int I = 0; I < streams.Length; I++)
         {
-            selectedIndex++;
-            virtualFormat = s.VirtualFormatNative;
+            virtualFormat = streams[I].VirtualFormatNative;
             if (virtualFormat.mFormatID != AudioFormatIDs.kAudioFormatLinearPCM)
             {
                 // Not supported, see whether we have any other streams
@@ -121,12 +119,14 @@ public partial class CoreAudioRecorder
             )
             {
                 // We have non-interleaved case.
+                selectedIndex = I;
                 flags |= CoreAudioRecorderStateFlags.NonInterleaved;
                 break;
             }
             else
             {
                 // Use the current stream.
+                selectedIndex = I;
                 break;
             }
         }

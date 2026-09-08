@@ -2,6 +2,7 @@
 // See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
+
 using NAudio.Wave;
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio.Interop;
@@ -9,9 +10,10 @@ using NAudio.MacOS.CoreAudio.Interop;
 namespace NAudio.MacOS.CoreAudio;
 
 /// <summary>
-/// AudioStream is a subclass of AudioObject and has only the single scope,
-/// kAudioObjectPropertyScopeGlobal. They have a main element and an element for
-/// each channel in the stream numbered upward from 1.
+/// The <see cref="AudioStream"/> class represents a stream of audio data that can be
+/// either provided to, or receieved from the associated <see cref="AudioDevice"/> object. <br />
+/// An <see cref="AudioStream"/> is providing all the required information to the callers to understand the
+/// data format the HAL requires for audio transactions.
 /// </summary>
 public sealed class AudioStream : AudioObject
 {
@@ -109,7 +111,7 @@ public sealed class AudioStream : AudioObject
     );
 
     /// <summary>
-    /// An array of <see cref="WaveFormat"/> that describe the available data
+    /// An array of <see cref="RangedWaveFormat"/> that describe the available data
     /// formats for the <see cref="AudioStream"/>. The virtual format refers to the data format in
     /// which all IOProcs for the owning <see cref="AudioDevice"/> will perform IO transactions.
     /// </summary>
@@ -143,7 +145,7 @@ public sealed class AudioStream : AudioObject
     ));
 
     /// <summary>
-    /// An array of <see cref="WaveFormat"/> that describe the available data
+    /// An array of <see cref="RangedWaveFormat"/> that describe the available data
     /// formats for the <see cref="AudioStream"/>. The physical format refers to the data format
     /// in which the hardware for the owning <see cref="AudioDevice"/> performs its IO
     /// transactions.

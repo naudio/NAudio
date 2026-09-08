@@ -10,7 +10,8 @@ namespace NAudio.Wave;
 /// <summary>
 /// Provides the ability to decode and read files from URL paths. <br />
 /// The reader does the best effort to decode to PCM - as such, all the audio
-/// file data that you will recieve will not ever be compressed formats.
+/// file data that you will recieve will not ever be compressed formats. <br />
+/// Uses the Audio Toolbox framework Extended Audio File Services API.
 /// </summary>
 [SupportedOSPlatform("ios2.1")]
 [SupportedOSPlatform("macos10.5")]

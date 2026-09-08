@@ -1,4 +1,5 @@
 
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio.Interop;
 
 namespace NAudio.MacOS.CoreAudio;
@@ -17,5 +18,6 @@ public sealed class CoreAudioPropertyNotFoundException : CoreAudioException
         : base(ErrorConstants.kAudioHardwareUnknownPropertyError)
     {
         Data.Add("PropertyName", propertyName);
+        Data.Add("PropertyNameString", MacUtils.GetCharCodeFromUIntConstantValue(propertyName));
     }
 }

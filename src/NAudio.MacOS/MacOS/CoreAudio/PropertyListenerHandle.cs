@@ -34,7 +34,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
 
     private int handlerId;
     private bool disposed;
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private readonly AudioObject audioObject;
     private readonly AudioObjectPropertyAddress address;
     private readonly AudioObjectPropertyListenerProc listener;
@@ -156,7 +156,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
     /// </remarks>
     public void Dispose()
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (!disposed)
@@ -167,7 +167,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 }

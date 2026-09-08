@@ -45,7 +45,7 @@ public static class CoreAudioFunctions
     /// Queries the current native virtual audio format of the specified <see cref="AudioStream"/> 
     /// and gets a value whether the currently used HAL virtual format is non-interleaved. <br />
     /// What is a non-interleaved audio format? <br />
-    /// All the audio data processed and produced by NAudio are grouped as interleaved samples. <br />
+    /// All the audio data processed and produced by NAudio <see cref="IWaveProvider"/> instances are grouped as interleaved samples. <br />
     /// An interleaved sample contains all the sampled values for each channel. <br />
     /// A non-interleaved sample contains a single sampled value for a single channel. <br />
     /// This important distinction is existing in HAL and is used in top-notch professional

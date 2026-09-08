@@ -6,15 +6,17 @@ using NAudio.Utils;
 namespace NAudio.MacOS.CoreAudio;
 
 /// <summary>
-/// AudioStream Terminal Types <br />
-/// Various constants that describe the terminal type of an AudioStream.
+/// <see cref="AudioStream"/> Terminal Types <br />
+/// Various constants that describe the terminal type of an <see cref="AudioStream"/>.
 /// </summary>
+/// <seealso cref="AudioStream.TerminalType"/>
+/// <seealso cref="AudioStreamTerminalTypeConstants"/>
 public enum AudioStreamTerminalType : uint
 {
     // mdcdi1315: NOTE: The prefix kAudioStreamTerminalType is omitted for brevity.
 
     /// <summary>
-    /// The ID used when the terminal type for the AudioStream is not known.
+    /// The ID used when the terminal type for the <see cref="AudioStream"/> is not known.
     /// </summary>
     Unknown = 0
 }

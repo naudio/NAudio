@@ -12,7 +12,7 @@ namespace NAudio.MacOS.CoreAudio.Interop;
 /// These are the error constants that are unique to the HAL. <br />
 /// Note that the HAL's functions can and will return other codes that are not listed here. 
 /// While these constants give a general idea of what might have gone wrong during the execution of an API call,
-/// if an API call returns anything other than public static readonly int kAudioHardwareNoError it is to be viewed as the same failure regardless of what constant is actually returned.
+/// if an API call returns anything other than kAudioHardwareNoError it is to be viewed as the same failure regardless of what constant is actually returned.
 /// </summary>
 internal static class ErrorConstants /* OSStatus */
 {

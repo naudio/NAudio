@@ -26,7 +26,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     private long length;
     private bool disposed;
     private IntPtr extFileObject;
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private readonly ExtendedAudioFileWriterSettings settings;
 
     private protected ExtendedAudioFileServicesWriter(IntPtr hExtFileObject, ExtendedAudioFileWriterSettings settings)
@@ -439,7 +439,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     /// <inheritdoc />
     protected sealed override void Dispose(bool disposing)
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             base.Dispose(disposing);
@@ -451,7 +451,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 }

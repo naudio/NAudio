@@ -4,6 +4,7 @@
 using System;
 using System.Numerics;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.CoreAudio.Interop;
@@ -14,20 +15,7 @@ namespace NAudio.MacOS.CoreAudio;
 /// Provides the base class for the Core Audio HAL audio objects. <br /> <br />
 /// 
 /// AudioObjects all have a set of properties that describe and manipulate their state. 
-/// A property is accessed via an ordered triple. 
-/// The first coordinate is the selector which describes the property. 
-/// The other two coordinates are the scope and element that identify the particular part of the object in which to look for the selector. 
-/// The AudioObjectPropertyAddress structure encapsulates the property address. 
-/// The value of a property is an untyped block of data whose content depends on the specifics of the selector. 
-/// Some selectors also require the use of a qualifier when querying. 
-/// The qualifier allows for additional information to be provided to used in the manipulation of the property. 
 /// Changing the value of a property is always considered asynchronous. <br /> <br />
-/// 
-/// Applications use the routines AudioObjectHasProperty(), AudioObjectIsPropertySettable() and
-/// AudioObjectGetPropertyDataSize() to find useful meta-information about the property. Apps use
-/// AudioObjectGetPropertyData() and AudioObjectSetPropertyData() to manipulate the value of the
-/// property. Apps use AudioObjectAddPropertyListener() and AudioObjectRemovePropertyListener() to
-/// register/unregister a function that is to be called when a given property's value changes. <br /> <br />
 /// 
 /// The class of an AudioObject determines the basic functionality of the object in terms of what
 /// functions will operate on it as well as the set of properties that can be expected to be
@@ -35,24 +23,24 @@ namespace NAudio.MacOS.CoreAudio;
 /// here. There are no other classes. The set of classes is arranged in a hierarchy such that one
 /// class inherits the properties/routines of its super class. <br /> <br />
 /// 
-/// The base class for all AudioObjects is the class AudioObject. As such, each AudioObject will 
+/// The base class for all AudioObjects is the class <see cref="AudioObject"/>. As such, each <see cref="AudioObject"/> will 
 /// provide basic properties such as its class, its human readable name, and the other
-/// AudioObjects it contains. Other important classes include AudioSystemObject, AudioDevice, and
-/// AudioStream. <br /> <br />
+/// AudioObjects it contains. Other important classes include <see cref="AudioSystemObject"/>, <see cref="AudioDevice"/>, and
+/// <see cref="AudioStream"/>. <br /> <br />
 /// 
 /// The AudioObjects in the HAL are arranged in a containment hierarchy. The root of the hierarchy
-/// is the one and only instance of the AudioSystemObject class. The properties of the
-/// AudioSystemObject describe the process global settings such as the various default devices and
-/// the notification run loop. The AudioSystemObject also contains all the AudioDevices that are
+/// is the one and only instance of the <see cref="AudioSystemObject"/> class. The properties of the
+/// <see cref="AudioSystemObject"/> describe the process global settings such as the various default devices and
+/// the notification run loop. The <see cref="AudioSystemObject"/> also contains all the AudioDevices that are
 /// available. <br /> <br />
 /// 
-/// Instances of the AudioDevice class encapsulate individual audio devices. An AudioDevice serves
+/// Instances of the <see cref="AudioDevice"/> class encapsulate individual audio devices. An <see cref="AudioDevice"/> serves
 /// as the basic unit of IO. It provides a single IO cycle, a timing source based on it, and all the
 /// buffers synchronized to it. The IO cycle presents all the synchronized buffers to the client in
 /// the same call out along with time stamps that specify the current time, when the input data was
 /// acquired and when the output data will be presented. <br /> <br />
 /// 
-/// AudioDevices contain instances of the AudioStream class. An AudioStream represents a single
+/// AudioDevices contain instances of the <see cref="AudioStream"/> class. An <see cref="AudioStream"/> represents a single
 /// buffer of data for transferring across the user/kernel boundary. As such, AudioStreams are the
 /// gatekeepers of format information. Each has its own format and list of available formats.
 /// AudioStreams can provide data in any format, including encoded formats and non-audio formats. If
@@ -60,11 +48,13 @@ namespace NAudio.MacOS.CoreAudio;
 /// floating point. All conversions to and from the true physical format of the hardware is handled
 /// by the device's driver. <br /> <br />
 /// 
-/// Both AudioDevices and AudioStreams can contain instances of the AudioControl class or its many
-/// subclasses. An AudioControl provides properties that describe/manipulate a particular aspect of
+/// Both AudioDevices and AudioStreams can contain instances of the <see cref="AudioControl"/> class or its many
+/// subclasses. An <see cref="AudioControl"/> provides properties that describe/manipulate a particular aspect of
 /// the object such as gain, mute, data source selection, etc. Many common controls are also
-/// also available as properties on the AudioDevice or AudioStream.
+/// also available as properties on the <see cref="AudioDevice"/> or <see cref="AudioStream"/>.
 /// </summary>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.4")]
 public abstract class AudioObject :
     IEquatable<AudioObject>,
     IEqualityOperators<AudioObject, AudioObject, bool>
@@ -493,12 +483,8 @@ public abstract class AudioObject :
     /// Determines whether two <see cref="AudioObject"/> instances are pointing to a different Core Audio object.
     /// </summary>
     /// <remarks>
-    /// Note that this operator tests whether the wrapped interop objects are the same;
-    /// as such, you could have two <see cref="AudioObject"/> instances that are different in .NET
-    /// (the test <see cref="object.ReferenceEquals(object?, object?)"/> is <see langword="false"/>)
-    /// but both are targeting the same natively wrapped object. This is actually valid,
-    /// because these classes are just wrapping the objects, and as such they have 
-    /// the exact same effects even if two different wrapper references are created.
+    /// This operator is the negation of the <see cref="operator ==(AudioObject, AudioObject)"/> operator. <br />
+    /// See that operator's remarks section for more information on how this operator is behaving.
     /// </remarks>
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>

@@ -4,9 +4,9 @@
     <TargetFramework>net9.0</TargetFramework>
 
     <IsAotCompatible>true</IsAotCompatible>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>macOS playback and recording support types for the NAudio audio library.</Description>
+    <Description>macOS playback and recording support types for the NAudio audio library. macOS-only at runtime.</Description>
   </PropertyGroup>
 
   <!-- needed for perfomance profiling unit tests -->

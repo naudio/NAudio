@@ -7,9 +7,10 @@ namespace NAudio.MacOS.CoreAudio;
 
 /// <summary>
 /// Transport Type IDs <br />
-/// Commonly used values for kAudioDevicePropertyTransportType 
-/// and kAudioTransportManagerPropertyTransportType
+/// Commonly used values for the <see cref="AudioDevice.GetTransportType(AudioObjectPropertyScope)"/> method. 
 /// </summary>
+/// <seealso cref="TransportTypeConstants"/>
+/// <seealso cref="AudioDevice.GetTransportType(AudioObjectPropertyScope)"/>
 public enum TransportType : uint
 {
     /// <summary>The transport type ID returned when a device doesn't provide a transport type.</summary>

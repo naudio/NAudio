@@ -19,7 +19,7 @@ namespace NAudio.Wave;
 [SupportedOSPlatform("macos10.2")]
 public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
 {
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private readonly WaveFormat targetFormat;
     private readonly LowLevelAudioConverter actualConverter;
 
@@ -53,10 +53,11 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
 
-        ArgumentNullException.ThrowIfNull(targetFormat = outputFormat);
+        ArgumentNullException.ThrowIfNull(outputFormat);
         ArgumentNullException.ThrowIfNull(providerToResample);
 
         lockObject = new();
+        targetFormat = outputFormat;
 
         // Although that the converter can also work with compressed formats,
         // it will probably return the encoded data only and not any useful headers
@@ -230,6 +231,48 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     }
 
     /// <summary>
+    /// Allows to assign a custom channel mapping matrix to
+    /// map an input channel to an output channel. <br />
+    /// The array is arranged as follows: <br />
+    /// Each element in the array is an output channel.
+    /// The first element is the first channel, the second the second channel, and goes on.
+    /// Each of these elements do contain an index to an index of a channel of the
+    /// source <see cref="IWaveProvider"/> format. <br />
+    ///
+    /// An example (Stereo input to four channel output, the stereo input is copied to the last two channels):
+    ///
+    /// <code>
+    /// int[] chMap = [ 0, 1, 0, 1 ];
+    /// theConverter.SetChannelMap(chMap);
+    /// </code>
+    /// </summary>
+    /// <remarks>
+    /// You may also set any element to a value of <c>-1</c>.
+    /// This special value means that no input channel is to be
+    /// mapped to the output.
+    /// </remarks>
+    /// <param name="channelMap">
+    /// The array that contains channel map to assign.
+    /// The length of this array must be the value of the <see cref="WaveFormat.Channels"/> property.
+    /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="channelMap"/> is <see langword="null"/>.</exception>
+    /// <exception cref="AudioConverterException">If <paramref name="channelMap"/> is invalid for the current object or it cannot be set.</exception>
+    /// <exception cref="ArgumentException"><paramref name="channelMap"/> must have a length equal to the output format number of channels.</exception>
+    public void SetChannelMap(int[] channelMap)
+    {
+        ArgumentNullException.ThrowIfNull(channelMap);
+        ObjectDisposedException.ThrowIf(actualConverter.IsDisposed, this);
+        if (channelMap.Length == targetFormat.Channels)
+        {
+            actualConverter.SetChannelMap(channelMap);
+        }
+        else
+        {
+            throw new ArgumentException("The channel map array must have a length equal to the output number of channels.", nameof(channelMap));
+        }
+    }
+
+    /// <summary>
     /// Resets the buffer state of the audio converter object,
     /// if there is reported a discontinuity in the source provider.
     /// </summary>
@@ -246,7 +289,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// </summary>
     public void Dispose()
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (!actualConverter.IsDisposed)
@@ -256,7 +299,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 }

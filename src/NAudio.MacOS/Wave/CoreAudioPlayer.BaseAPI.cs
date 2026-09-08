@@ -14,7 +14,7 @@ using NAudio.MacOS.CoreAudioTypes;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides an audio player based on the Apple's Audio HAL framework library, 
+/// Provides an audio player based on the Apple's audio HAL framework library, 
 /// namely the Core Audio Framework. <br />
 /// The user provides the audio device to perform playback upon, 
 /// the audio provider to do playback for, and the rest are managed by this class.
@@ -29,7 +29,7 @@ namespace NAudio.Wave;
 [SupportedOSPlatform("macos10.5")]
 public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePosition, IAsyncDisposable
 {
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private PlayerProcedure ioProcedure;
     private IPlayerSource selectedSource;
     // Bytes played in runs of this playback that have already finished. Pause
@@ -348,7 +348,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     public void Init(IWaveProvider waveProvider)
     {
         ArgumentNullException.ThrowIfNull(waveProvider);
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.Initialized))
@@ -366,7 +366,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 
@@ -432,7 +432,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// <exception cref="AggregateException">One or more native objects were failed to be disposed of.</exception>
     public void Dispose()
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (HasStateFlagFast(CoreAudioPlayerStateFlags.Disposed)) { return; }
@@ -461,7 +461,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 

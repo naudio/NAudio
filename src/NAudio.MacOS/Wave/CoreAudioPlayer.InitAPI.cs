@@ -41,9 +41,13 @@ public partial class CoreAudioPlayer
     /// <param name="audioDevice">The audio device object.</param>
     private void OnStreamsChanged(AudioObject audioDevice)
     {
-        bool wasRunning = ioProcedure.IsRunning;
+        bool wasRunning = false;
 
-        ioProcedure.Stop();
+        if (ioProcedure is not null)
+        {
+            wasRunning = ioProcedure.IsRunning;
+            ioProcedure.Stop();
+        }
 
         try
         {
@@ -61,8 +65,14 @@ public partial class CoreAudioPlayer
 
     private void OnVirtualFormatChanged(AudioObject stream)
     {
-        bool wasRunning = ioProcedure.IsRunning;
-        ioProcedure.Stop();
+        bool wasRunning = false;
+
+        if (ioProcedure is not null)
+        {
+            wasRunning = ioProcedure.IsRunning;
+            ioProcedure.Stop();
+        }
+
         // Do not fire playback stopped event here.
 
         try

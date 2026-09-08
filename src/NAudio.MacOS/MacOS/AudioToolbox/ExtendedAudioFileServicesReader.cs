@@ -16,7 +16,9 @@ namespace NAudio.MacOS.AudioToolbox;
 /// Provides the base class for extended audio file services readers. <br />
 /// Not meant to be extended by external code. <br />
 /// Instead, use the dedicated subclasses of this class, 
-/// located at the <see cref="NAudio.Wave"/> namespace.
+/// located at the <see cref="NAudio.Wave"/> namespace. <br />
+/// Extends the <see cref="WaveStream"/> class and fully supports seeking,
+/// if the source from where the reader is initialized from supports seeking.
 /// </summary>
 [SupportedOSPlatform("ios2.1")]
 [SupportedOSPlatform("macos10.4")]
@@ -26,7 +28,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     private long clientReadBytes;
     private IntPtr extFileHandle;
     private WaveFormat targetFormat;
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private AudioStreamBasicDescription sourceAsbd;
     private readonly ExtendedAudioFileReaderSettings settings;
 
@@ -219,7 +221,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
 
     /// <summary>
     /// Implementations of this allow to initialize the 
-    /// Extended Audio File services from a source.
+    /// Extended Audio File services reader from a source.
     /// </summary>
     /// <returns>Handle to an extended audio file.</returns>
     protected abstract IntPtr InitializeReader();
@@ -433,7 +435,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     /// <inheritdoc />
     protected sealed override void Dispose(bool disposing)
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             base.Dispose(disposing);
@@ -445,7 +447,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 }

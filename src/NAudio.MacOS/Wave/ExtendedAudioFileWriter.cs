@@ -12,8 +12,8 @@ using NAudio.MacOS.AudioToolbox.Interop;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides a writer that can create audio files
-/// using the macOS Audio Toolbox framework.
+/// Provides a writer that can create audio files. <br />
+/// Uses the Audio Toolbox framework Extended Audio File Services API to write the file.
 /// </summary>
 [SupportedOSPlatform("ios2.1")]
 [SupportedOSPlatform("macos10.4")]

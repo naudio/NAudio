@@ -315,12 +315,12 @@ public sealed class AudioSystemObject : AudioObject
     }
 
     /// <summary>
-    /// A UInt32 whose values are drawn from the AudioHardwarePowerHint enum above.
+    /// A UInt32 whose values are drawn from the <see cref="AudioHardwarePowerHint"/> enum.
     /// Only those values are allowed. This property allows a process to indicate how
     /// aggressive the system can be with optimizations that save power. The default
-    /// value is kAudioHardwarePowerHintNone. Note that the value of this
+    /// value is <see cref="AudioHardwarePowerHint.None"/>. Note that the value of this
     /// property can be set in an application's info.plist using the key,
-    /// "AudioHardwarePowerHint". The values for this key are the strings that
+    /// &quot;AudioHardwarePowerHint&quot;. The values for this key are the strings that
     /// correspond to the values in the Power Hints enum.
     /// </summary>
     public AudioHardwarePowerHint PowerHint
@@ -379,6 +379,13 @@ public sealed class AudioSystemObject : AudioObject
     /// Event that clients can be informed when the default system output device is changed.
     /// </summary>
     public event AudioObjectPropertyListenerDelegate DefaultSystemOutputDeviceChanged;
+
+    #endregion
+
+    #region Base class overrides
+
+    /// <inheritdoc />
+    public override string ToString() => "Audio System Object";
 
     #endregion
 }

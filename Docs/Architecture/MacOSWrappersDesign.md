@@ -43,7 +43,7 @@ wrapper surface to users, and it is based on the object-centric approach that
 is declared in the native headers.
 
 - **Audio Toolbox**: Wrappers for the Audio Converter, that provides the 
-resampler, and the Extended Audio File Services API, that provides
+platform's resampler, and the Extended Audio File Services API, that provides
 the platform's audio file readers and writers.
 
 ## 3. Understanding macOS API's and libraries.
@@ -60,7 +60,7 @@ is living here.
 - The `/System/Library/Frameworks` folder - framework libraries provided by Apple directly for 
 applications to code against macOS - graphics, audio (in our case), basic building types, web API's, and others.
 
-The libraries we need are 3, and are all framework libraries, meaning that 
+The libraries we need are three, and are all framework libraries, meaning that 
 they are living in the `/System/Library/Frameworks` folder,
 and are:
 
@@ -94,6 +94,19 @@ that is C. However, it is to be noted down that Apple does not explicitly mark t
 and their function pointer definitions over what calling convention they are, but is seems 
 that all the API's are built against it.
 Probably it is something pertaining to the Apple's Clang compiler.
+
+### About property constant values
+
+Several Core Audio and Audio Toolbox property constants are four character codes.
+However, because they are directly defined as strings in the native headers, the C compiler 
+stores those constants differently in different endian architectures.
+For example, the Core Audio audio stream property constant `kAudioStreamPropertyTerminalType` (string code `term` in big-endian) is differently stored in little-endian and it is `mret`. As such, a handful of custom conversion
+methods is provided and classes are internally provided keeping those constants available as their original
+numeric underlying type so that no translation from a UTF-16 .NET string to the equal number is required,
+while also working on both CPU endianness. Tests verifying the integrity of those algorithms are also provided.
+
+> [!NOTE]
+This does also affect some of the publicly exposed enumeration types in Core Audio and Audio Toolbox frameworks. For these cases, a custom `Constants` class is provided for the in question type, for example, for the `TransportType` enumeration in Core Audio, there is the `TransportTypeConstants` class providing the actual constant values.
 
 ## 4. Architecture
 
@@ -143,8 +156,8 @@ during several key interactions with the API.
 
 ### Playback/Recording
 
-To actually provide or retrieve data to/from an a
-ctual hardware device, the HAL offers us the I/O procedure.
+To actually provide or retrieve data to/from an actual
+hardware device, the HAL offers us the I/O procedure.
 
 In it's core, the I/O procedure is just a callback that is
 periodically dispatched on the device's I/O thread.
@@ -162,9 +175,9 @@ that are only available through the macOS dispatch API.
 The only closest to it is the `IOCycleUsage` property on the audio device object,
 which it indicates the time to allocate for all the I/O procedures declared on the process.
 
-3. There is no clean `Pause` state. This is HAL design specific because 
-its I/O procedures simply transfer data to/from it, and then performs 
-the transactions to the hardware device; as such, no bufferring 
+3. There is no clean `Pause` state. This is HAL design specific because
+its I/O procedures simply transfer data to/from it, and then performs
+the transactions to the hardware device; as such, no bufferring
 involved and a `Pause` state becomes effectively useless.
 Note that the `CoreAudioPlayer` API, which is the de-facto NAudio
 player wrapper implementation for macOS, honours this peculiarity
@@ -185,12 +198,12 @@ A handful of macOS devices (notably professional ones)
 do require to provide (or when recording, to retrieve) 
 all the audio data as non-interleaved audio, which each
 sample frame is an individual channel of the audio data.
-However, in NAudio all the audio data are provided
+However, in NAudio all the audio data provided by an `IWaveProvider` are provided
 interleaved, where each sample frame contains the samples
 for all the channels of an audio stream.
 
 Currently, the `CoreAudioPlayer` class appropriately
-de-interleaves from a given provider if so required
+de-interleaves the samples from a given provider if so required
 (`CoreAudio` does also support interleaved cases), and
 the `CoreAudioRecorder` class does interleave the samples,
 if non-interleaved.
@@ -216,7 +229,12 @@ A non-interleaved buffer would look like:
 ~~~
 
 - `chStride`: Number of bytes required to jump by one channel, this corresponds to the `BlockAlign` value.
-- `sampleStride`: Number of bytes required to jump to the next sample, can be found by `sampleStride * nChannels`.
+- `sampleStride`: Number of bytes required to jump to the next sample, can be found by `chStride * nChannels`.
+
+So, for PCM 44100 Hz, 16 bits per sample and 8 channels those values would be:
+
+- `chStride`: 2 bytes, specifically: `(16 bits / 8 bits) = 2 bytes`.
+- `sampleStride`: 16 bytes, specifically: `(chStride * 8 channels) = (2 * 8) = 16 bytes`
 
 An interleaved buffer would look like:
 
@@ -236,6 +254,28 @@ So, we can quickly realize the difference here:
 - `sampleStride` in non-interleaved audio is corresponding to a sample frame of a **single** channel.
 
 While, the `sampleStride` in interleaved audio is corresponding to a sample frame of **ALL** the channels of the stream.
+
+#### The `Process` class naming conflict issue
+
+In the Core Audio framework, there is existing a class object called `Process` and it provides information
+about the macOS processes using the HAL for playback/recording. The class contains that process ID,
+and the devices it uses to do I/O. However, this naming conflicts with the `System.Diagnostics.Process` class,
+that allows to spawn a child process. Using both, however, for typical cases, seems rather rare and the
+Core Audio framework wrappers are a large area spanning a lot of API's to cover the entire HAL API,
+and keeping the name as it is declared in the native header is better and any developers that have used
+before the native C/C++/ObjC API's and the HAL will be familiar with the name.
+
+#### Shared vs. Exclusive mode
+
+Like Windows WASAPI, the audio HAL in macOS supports doing I/O in exclusive mode,
+but testing this particular feature quickly revealed a HAL quirk:
+Even preparing the player for exclusive mode, we cannot
+assign any format of our liking, so this causes the audio data
+to be heard garbled. The code has been kept if there is existing a driver
+that could allow any possible virtual format, and not found yet.
+However, users can still enable exclusive mode by using the `HogMode`
+property before initializing playback, but just acquiring the 
+device without the custom format benefit it is probably useless.
 
 ## 6. Audio Toolbox
 

@@ -14,8 +14,15 @@ using NAudio.MacOS.CoreAudio;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides a class for capturing audio from a specified audio device using the 
-/// macOS audio HAL API for accessing the captured data.
+/// Provides a way to capture data from an audio device based on the 
+/// Apple's audio HAL framework library, namely the Core Audio Framework. <br />
+/// The user provides the audio device to perform recording upon and the rest are managed by this class.
+/// This class does also manage cases where the streams may be invalidated,
+/// or when the selected stream's virtual format has been changed, for which
+/// cases the recorder will dispatch the <see cref="CaptureFormatChanged"/> event. <br />
+/// There are also several properties that can be configured by the provided <see cref="AudioDevice"/>
+/// object during construction (applying to all the attached recorders of the device).
+/// See the <see cref="AudioDevice"/> properties and methods to see what can be configured.
 /// </summary>
 /// <seealso cref="MacOS.CoreAudio"/>
 [SupportedOSPlatform("ios2.0")]
@@ -23,7 +30,7 @@ namespace NAudio.Wave;
 public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 {
     private CaptureState state;
-    private readonly object lockObject;
+    private readonly Lock lockObject;
     private RecorderProcedure ioProcedure;
     private CoreAudioRecorderStateFlags flags;
     private readonly AudioDevice selectedDevice;
@@ -36,14 +43,14 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// Initializes a new Core Audio recoder instance, using the default input
     /// device to capture audio data. <br />
     /// If a synchronization context is assigned for the thread where this instance
-    /// is created to, it is used during recording stopped events.
+    /// is created to, it is used when a recording stopped event is dispatching.
     /// </summary>
     public CoreAudioRecorder() : this(AudioSystemObject.Instance.DefaultInputDevice) { }
 
     /// <summary>
     /// Initializes a new Core Audio recoder instance from the specified device. <br />
     /// If a synchronization context is assigned for the thread where this instance
-    /// is created to, it is used during recording stopped events.
+    /// is created to, it is used when a recording stopped event is dispatching.
     /// </summary>
     /// <param name="device">The <see cref="AudioDevice"/> to capture data from.</param>
     /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
@@ -211,7 +218,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// <exception cref="InvalidOperationException">The recorder could not be set up (invalid device, invalid streams, etc.)</exception>
     public void InitializeRecording()
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (flags.HasFlag(CoreAudioRecorderStateFlags.Initialized)) { return; }
@@ -225,7 +232,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 
@@ -251,7 +258,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     public void StartRecording()
     {
         ThrowIfInvalidOrDisposed();
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             // Prefer to exit cleanly rather than racing the startup.
@@ -282,7 +289,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 
@@ -295,7 +302,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     public void StopRecording()
     {
         ThrowIfInvalidOrDisposed();
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             // Prefer to exit cleanly rather than racing the stop.
@@ -304,7 +311,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         }
         finally
         {
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 
@@ -484,7 +491,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// <exception cref="AggregateException">One or more native objects were failed to be disposed of.</exception>
     public void Dispose()
     {
-        Monitor.Enter(lockObject);
+        lockObject.Enter();
         try
         {
             if (flags.HasFlag(CoreAudioRecorderStateFlags.Disposed)) { return; }
@@ -505,7 +512,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         {
             flags |= CoreAudioRecorderStateFlags.Disposed;
             state = CaptureState.Stopped;
-            Monitor.Exit(lockObject);
+            lockObject.Exit();
         }
     }
 

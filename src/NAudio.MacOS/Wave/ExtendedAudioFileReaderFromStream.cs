@@ -16,7 +16,8 @@ namespace NAudio.Wave;
 /// file data that you will recieve will not ever be compressed formats. <br />
 /// Unlike the <see cref="ExtendedAudioFileReaderFromURL"/> class,
 /// it requires to set up either a MIME type or a file extension to
-/// be able to better recognize the data stream.
+/// be able to better recognize the data stream. <br />
+/// Uses the Audio Toolbox framework Extended Audio File Services API.
 /// </summary>
 [SupportedOSPlatform("ios2.1")]
 [SupportedOSPlatform("macos10.4")]

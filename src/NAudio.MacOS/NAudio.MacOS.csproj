@@ -6,7 +6,33 @@
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>macOS playback and recording support types for the NAudio audio library. macOS-only at runtime.</Description>
+    <Description>macOS playback and recording support types for the NAudio audio library. macOS-only at runtime. This package is pre-release while its API settles.</Description>
+  </PropertyGroup>
+
+  <!--
+    Pre-release only. Unlike every other NAudio package, NAudio.MacOS never packs
+    a stable version while its API settles: it tracks the shared <VersionPrefix>
+    from Directory.Build.props but always carries a pre-release suffix.
+
+    On a preview run the release workflow already passes -p:VersionSuffix (which
+    is a global property, so it wins) and both lines below are inert. On a final
+    tag run there is no suffix, so we supply one: GITHUB_RUN_NUMBER is unique per
+    release-workflow run and only ever increases, so each package sorts above the
+    previous preview and can never collide with a version already pushed to NuGet
+    (a collision would be swallowed silently by the push step's skip-duplicate
+    flag, so the package would appear to ship without actually shipping).
+
+    Setting the *suffix* rather than a whole <Version> is what keeps this
+    maintenance-free — nothing here needs bumping per release — and it is
+    project-local, so NAudio.Core is still evaluated without it and the packed
+    dependency stays a clean `NAudio.Core >= <VersionPrefix>`.
+
+    To graduate the package into the lockstep stable line, delete this
+    PropertyGroup (see Docs/Architecture/ReleaseStrategy.md).
+  -->
+  <PropertyGroup>
+    <VersionSuffix Condition="'$(VersionSuffix)' == '' and '$(GITHUB_RUN_NUMBER)' != ''">preview.$(GITHUB_RUN_NUMBER)</VersionSuffix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == ''">preview.0</VersionSuffix>
   </PropertyGroup>
 
   <!-- needed for perfomance profiling unit tests -->

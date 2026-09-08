@@ -34,6 +34,8 @@ When opening a PR (where you have permission), apply one of: `breaking`, `enhanc
 
 Package versions are centralised in [Directory.Build.props](Directory.Build.props) as `<VersionPrefix>`. Do **not** add a per-csproj `<Version>` to NAudio packages — they're meant to stay in lockstep. The tool/sample apps (MixDiff, AudioFileInspector, MidiFileConverter) keep their own explicit `<Version>` and are exempt.
 
+`NAudio.MacOS` sets a `<VersionSuffix>` fallback in its csproj so that it always packs pre-release, even on a final tag run, while its API settles. That is deliberate, not a stray override to tidy up — it still shares the lockstep `<VersionPrefix>` and needs no per-release maintenance. See [ReleaseStrategy.md](Docs/Architecture/ReleaseStrategy.md#naudiomacos-the-one-package-that-stays-pre-release) before changing it, and mark macOS entries in `RELEASE_NOTES.md` as `(preview)` — that section is embedded as `PackageReleaseNotes` in every package, stable ones included.
+
 ## Building & testing on Linux
 
 Some cloud and CI environments start without a .NET SDK on the PATH — this isn't a property of the repo but of the host. The default Anthropic cloud-agent sandbox is one example, and other infrastructure (GitHub Copilot agents, fresh CI runners, etc.) may differ now or in the future. So **first check whether `dotnet` is available**; only install it if it isn't. On Debian/Ubuntu, install .NET 10 via apt: add Microsoft's feed with `wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O /tmp/ms.deb && sudo dpkg -i /tmp/ms.deb && sudo apt-get update`, then `sudo apt-get install -y dotnet-sdk-10.0` (the SDK builds the `net9.0` libraries fine).

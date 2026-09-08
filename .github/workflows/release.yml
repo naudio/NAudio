@@ -155,10 +155,16 @@ jobs:
       # Pack the NAudio NuGet packages explicitly so we don't accidentally
       # ship the tool/sample apps. Tools (MixDiff, AudioFileInspector,
       # MidiFileConverter) keep their own <Version> in csproj but we never
-      # publish them to NuGet. NAudio.Alsa and NAudio.SoundFile are the
-      # cross-platform backend/codec packages — net9.0 (no -windows TFM),
-      # so they build and pack fine on the windows-latest runner; their
+      # publish them to NuGet. NAudio.Alsa, NAudio.SoundFile and NAudio.MacOS
+      # are the cross-platform backend/codec packages — net9.0 (no -windows
+      # TFM), so they build and pack fine on the windows-latest runner; their
       # *.Tests projects are IsPackable=false and excluded here.
+      #
+      # NAudio.MacOS is the one package that does not follow the lockstep
+      # version: it always packs pre-release, even on a final tag run. That
+      # is enforced in its own csproj rather than here, so nothing in this
+      # workflow needs to know about the exception — see the comment in
+      # src/NAudio.MacOS/NAudio.MacOS.csproj.
       - name: Pack
         shell: pwsh
         run: |
@@ -173,6 +179,7 @@ jobs:
             'NAudio.Vst3',
             'NAudio.Alsa',
             'NAudio.SoundFile',
+            'NAudio.MacOS',
             'NAudio.Sampler',
             'NAudio',
             'NAudio.Extras'

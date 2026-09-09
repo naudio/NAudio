@@ -18,7 +18,7 @@ var audio = new AudioFileReader("example.mp3");
 var reverb = new ReverbEffect { Mix = 0.25f };
 var output = new EffectSampleProvider(audio, reverb);
 
-var device = new WaveOutEvent();
+var device = new WasapiPlayerBuilder().Build();
 device.Init(output);
 device.Play();
 ```

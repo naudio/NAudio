@@ -13,6 +13,9 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+- Added `SampleProviderBase` and `WaveProviderBase`, array-based (`Read(buffer, offset, count)`) base classes for writing providers from languages that cannot express `Span<T>` in a signature, notably VB.NET (#1426)
+- Added a [Using NAudio from VB.NET](Docs/UsingNAudioFromVB.md) guide (#1426)
+
 ### 3.1.0 (7 Sep 2026)
 
 A correctness release, with Native AOT as the theme. NAudio's remaining

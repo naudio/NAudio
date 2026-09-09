@@ -1,8 +1,61 @@
 # Enumerating Audio Devices
 
-The technique you use to enumerate audio devices depends on what audio output (or input) driver type you are using. This article shows the technique for each supported output device.
+The technique you use to enumerate audio devices depends on what audio output (or input) driver type you are using. This article shows the technique for each supported output device. On Windows, start with the WASAPI section — `WasapiPlayer` and `WasapiRecorder` are the recommended playback and capture devices, and `MMDeviceEnumerator` is how you discover the endpoints they use.
+
+## WASAPI Devices
+
+WASAPI playback (render) and recording (capture) devices can both be accessed via the `MMDeviceEnumerator` class. This allows you to enumerate only the type of devices you want (`DataFlow.Render` or `DataFlow.Capture` or `DataFlow.All`).
+
+You can also choose whether you want to include devices that are active, or also include disabled, unplugged or otherwise not present devices with the `DeviceState` bitmask. Here we show them all:
+
+```c#
+var enumerator = new MMDeviceEnumerator();
+foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
+{
+    Console.WriteLine($"{wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}");
+}
+```
+
+Unlike the WinMM device names below, these names are not truncated.
+
+To open the device you want, pass the device in to the appropriate WASAPI builder depending on whether you are playing back or recording...
+
+```c#
+var outputDevice = new WasapiPlayerBuilder().WithDevice(mmDevice).Build();
+var recordingDevice = new WasapiRecorderBuilder().WithDevice(captureDevice).Build();
+var loopbackCapture = new WasapiRecorderBuilder().WithDevice(loopbackDevice).WithLoopbackCapture().Build();
+```
+
+You can also use the MMEnumerator to request what the default device is for a number of different scenarios (playback or record, and voice, multimedia or 'console'):
+
+```c#
+enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+```
+
+If you just want the default device, you don't need to enumerate at all — building a `WasapiPlayer` or `WasapiRecorder` with no `WithDevice` call uses the system default. See [WasapiPlayer](WasapiPlayer.md) and [WasapiRecorder](WasapiRecorder.md).
+
+## ASIO
+
+You can discover the registered ASIO drivers on your system with `AsioDevice.GetDriverNames`. There is no guarantee that the associated soundcard is currently connected to the system.
+
+```c#
+foreach (var asio in AsioDevice.GetDriverNames())
+{
+    Console.WriteLine(asio);
+}
+```
+
+You can then use the driver name to open the device:
+
+```c#
+using var device = AsioDevice.Open(driverName);
+```
+
+(`AsioDevice` is the NAudio 3 ASIO API. The legacy `AsioOut` class still works — see [Migrating from AsioOut to AsioDevice](AsioMigration.md).)
 
 ## WaveOut
+
+`WaveOut` wraps the legacy WinMM APIs. Prefer WASAPI for new code, but the enumeration API is here if you need it.
 
 To discover the number of output devices you can use `WaveOut.DeviceCount`. Then you can call `WaveOut.GetCapabilities` passing in the index of a device to find out its name (and some basic information about its capabilities).
 
@@ -42,7 +95,7 @@ Once you've selected the device you want, you can open it by creating an instanc
 var recordingDevice = new WaveIn() { DeviceNumber = deviceNumber };
 ```
 
-# DirectSoundOut
+## DirectSoundOut
 
 `DirectSoundOut` exposes the `Devices` static method allowing you to enumerate through all the output devices. This has the benefit over `WaveOut` of not having truncated device names:
 
@@ -61,54 +114,7 @@ var outputDevice = new DirectSoundOut(deviceGuid);
 
 There are also a couple of special device GUIDs you can use to open the default playback device (`DirectSoundOut.DSDEVID_DefaultPlayback`) or default voice playback device (`DirectSoundOut.DSDEVID_DefaultVoicePlayback`)
 
-# WASAPI Devices
-
-WASAPI playback (render) and recording (capture) devices can both be accessed via the `MMDeviceEnumerator` class. This allows you to enumerate only the type of devices you want (`DataFlow.Render` or `DataFlow.Capture` or `DataFlow.All`).
-
-You can also choose whether you want to include devices that are active, or also include disabled, unplugged or otherwise not present devices with the `DeviceState` bitmask. Here we show them all:
-
-```c#
-var enumerator = new MMDeviceEnumerator();
-foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All))
-{
-    Console.WriteLine($"{wasapi.DataFlow} {wasapi.FriendlyName} {wasapi.DeviceFriendlyName} {wasapi.State}");
-}
-```
-
-To open the device you want, pass the device in to the appropriate WASAPI builder depending on whether you are playing back or recording...
-
-```c#
-var outputDevice = new WasapiPlayerBuilder().WithDevice(mmDevice).Build();
-var recordingDevice = new WasapiRecorderBuilder().WithDevice(captureDevice).Build();
-var loopbackCapture = new WasapiRecorderBuilder().WithDevice(loopbackDevice).WithLoopbackCapture().Build();
-```
-
-You can also use the MMEnumerator to request what the default device is for a number of different scenarios (playback or record, and voice, multimedia or 'console'):
-
-```c#
-enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-```
-
-# ASIO
-
-You can discover the registered ASIO drivers on your system with `AsioDevice.GetDriverNames`. There is no guarantee that the associated soundcard is currently connected to the system.
-
-```c#
-foreach (var asio in AsioDevice.GetDriverNames())
-{
-    Console.WriteLine(asio);
-}
-```
-
-You can then use the driver name to open the device:
-
-```c#
-using var device = AsioDevice.Open(driverName);
-```
-
-(`AsioDevice` is the NAudio 3 ASIO API. The legacy `AsioOut` class still works — see [Migrating from AsioOut to AsioDevice](AsioMigration.md).)
-
-# Management Objects
+## Management Objects
 
 Finally you can use Windows Management Objects to get hold of details of the sound devices installed. This doesn't map specifically to any of the NAudio output device types, but can be a source of useful information
 

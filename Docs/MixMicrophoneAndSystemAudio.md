@@ -7,7 +7,7 @@ In this tutorial we will show how to capture audio from multiple devices (e.g. r
 `MixingSampleProvider` sums its inputs sample‑for‑sample. For that to be meaningful, **every input must have the same wave format**: the same sample rate, the same channel count, and 32‑bit IEEE float samples. Two capture devices almost never agree on this:
 
 - **System audio** — captured with [`WasapiRecorder`](WasapiRecorder.md) and `WithLoopbackCapture()` (or the legacy `WasapiLoopbackCapture`) — is delivered as **IEEE float at the render device's mix format**, commonly 48 kHz, stereo.
-- **The microphone** — captured with `WasapiRecorder` (or a legacy `WaveInEvent`) — has the **capture device's mix format**, often a different sample rate and channel count (e.g. 44.1 kHz, mono). A legacy `WaveInEvent` mic is usually **16‑bit PCM** as well.
+- **The microphone** — captured with `WasapiRecorder` (or a legacy `WaveIn`) — has the **capture device's mix format**, often a different sample rate and channel count (e.g. 44.1 kHz, mono). A legacy `WaveIn` mic is usually **16‑bit PCM** as well.
 
 So before mixing you have to bring both sources to a **common format**. The pipeline for each source is:
 
@@ -120,7 +120,7 @@ For diagnostics, `CaptureMixerInput` exposes `BufferedFrames` (and `HasReceivedD
 - **Loopback silence.** WASAPI loopback capture only raises `DataAvailable` while audio is actually playing, so `RealtimeCaptureMixer` fills those gaps with silence (the output stays paced to the wall clock) — a loopback source with nothing playing simply contributes silence.
 - **Clock drift.** The microphone and the soundcard are driven by independent clocks, but the wall-clock-paced output keeps both locked to real time (see above). This isn't sample-accurate; if you need tighter long-run A/V sync you'd add per-source adaptive resampling driven by the measured QPC-vs-samples error.
 - **Disposal order.** Stop both captures, let the pump loop finish, *then* dispose the recorders and the writer. `WasapiRecorder` also implements `IAsyncDisposable`, so prefer `await recorder.DisposeAsync()` (or `await using`) off a UI thread.
-- **Legacy capture devices.** `CaptureMixerInput` is device-agnostic: to mix a classic `IWaveIn` device (`WaveInEvent`, `WasapiLoopbackCapture`) add it with `mixer.AddInput(waveIn.WaveFormat)` and feed it the same way — `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
+- **Legacy capture devices.** `CaptureMixerInput` is device-agnostic: to mix a classic `IWaveIn` device (`WaveIn`, `WasapiLoopbackCapture`) add it with `mixer.AddInput(waveIn.WaveFormat)` and feed it the same way — `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
 
 ## Mixing vs. separate channels
 

@@ -14,6 +14,7 @@ var third = new AudioFileReader("third.mp3");
 var playlist = new ConcatenatingSampleProvider(new[] { first, second, third });
 
 // to play:
+var outputDevice = new WasapiPlayerBuilder().Build();
 outputDevice.Init(playlist);
 outputDevice.Play();
 

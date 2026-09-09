@@ -116,3 +116,9 @@
       href: RecordAudioFileLinuxAlsa.md
     - name: Validating ALSA on Linux
       href: ValidatingAlsaOnLinux.md
+- name: macOS (Core Audio)
+  items:
+    - name: Play an audio file on macOS (Core Audio)
+      href: PlayAudioFileMacOS.md
+    - name: Record an audio file on macOS (Core Audio)
+      href: RecordAudioFileMacOS.md

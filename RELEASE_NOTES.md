@@ -13,8 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
-- Added `SampleProviderBase` and `WaveProviderBase`, array-based (`Read(buffer, offset, count)`) base classes for writing providers from languages that cannot express `Span<T>` in a signature, notably VB.NET (#1426)
-- Added a [Using NAudio from VB.NET](Docs/UsingNAudioFromVB.md) guide (#1426)
+ * **macOS support (preview)** - A new wrappers library is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. The `NAudio.MacOS` package ships pre-release only (`X.Y.Z-preview.N`) while its API settles, so it stays pre-release alongside stable releases of the other packages. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
+ * **VB.NET support** - Added `SampleProviderBase` and `WaveProviderBase`, base classes that keep the NAudio 2 `Read(buffer, offset, count)` signature for languages that cannot name a `Span<T>` in a method signature, and a [Using NAudio from VB.NET](Docs/UsingNAudioFromVB.md) guide covering playback, recording and custom providers from VB (#1426)
 
 ### 3.1.0 (7 Sep 2026)
 

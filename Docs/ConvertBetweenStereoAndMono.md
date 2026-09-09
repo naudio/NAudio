@@ -17,8 +17,9 @@ using(var inputReader = new AudioFileReader(monoFilePath))
     stereo.RightVolume = 1.0f; // full volume in right channel
 
     // can either use this for playback:
-    myOutputDevice.Init(stereo);
-    myOutputDevice.Play();
+    var outputDevice = new WasapiPlayerBuilder().Build();
+    outputDevice.Init(stereo);
+    outputDevice.Play();
     // ...
 
     // ... OR ... could write the stereo audio out to a WAV file
@@ -45,8 +46,9 @@ using(var inputReader = new AudioFileReader(stereoFilePath))
     mono.RightVolume = 1.0f; // keep the right channel
 
     // can either use this for playback:
-    myOutputDevice.Init(mono);
-    myOutputDevice.Play();
+    var outputDevice = new WasapiPlayerBuilder().Build();
+    outputDevice.Init(mono);
+    outputDevice.Play();
     // ...
 
     // ... OR ... could write the mono audio out to a WAV file
@@ -76,8 +78,9 @@ using(var inputReader = new AudioFileReader(monoFilePath))
     panner.Pan = -0.5f; // pan 50% left
 
     // can either use this for playback:
-    myOutputDevice.Init(panner);
-    myOutputDevice.Play();
+    var outputDevice = new WasapiPlayerBuilder().Build();
+    outputDevice.Init(panner);
+    outputDevice.Play();
     // ...
 
     // ... OR ... could write the stereo audio out to a WAV file

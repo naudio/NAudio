@@ -10,7 +10,7 @@ using NAudio.Wave.SampleProviders;
 
 public class MainForm : Form
 {
-    private WaveOut outputDevice;
+    private WasapiPlayer outputDevice;
     private AudioFileReader audioFile;
 
     public MainForm()
@@ -43,7 +43,7 @@ public class MainForm : Form
 
 Now we've not defined the button handlers yet, so let's do that. First of all the Play button. The first time we click this, we won't have opened our output device or audio file.
 
-So we'll create an output device of type `WaveOut`. This is only one of several options for sending audio to the soundcard, but its a good choice in many scenarios, due to its ease of use and broad platform support.
+So we'll create an output device of type `WasapiPlayer`, using `WasapiPlayerBuilder`. This is the recommended way to play audio on Windows: with no builder configuration it opens the default playback device in shared mode, where WASAPI resamples whatever we give it to the device's format. Other output devices are available (see [Choose an output device type](OutputDeviceTypes.md)) and they all implement `IWavePlayer`, so only this line would change if you picked a different one.
 
 We'll also subscribe to the `PlaybackStopped` event, which we can use to do some cleaning up.
 
@@ -58,7 +58,7 @@ private void OnButtonPlayClick(object sender, EventArgs args)
 {
     if (outputDevice == null)
     {
-        outputDevice = new WaveOut();
+        outputDevice = new WasapiPlayerBuilder().Build();
         outputDevice.PlaybackStopped += OnPlaybackStopped;
     }
     if (audioFile == null)
@@ -110,7 +110,7 @@ Obviously it is important that when the form is closed we do properly stop playb
 Here's the code
 
 ```c#
-var wo = new WaveOut();
+var wo = new WasapiPlayerBuilder().Build();
 var af = new AudioFileReader(@"example.mp3");
 var closing = false;
 wo.PlaybackStopped += (s, a) => { if (closing) { wo.Dispose(); af.Dispose(); } };
@@ -135,7 +135,7 @@ In this example, we'll build on the previous one by adding in a volume slider. W
 
 When the user moves the trackbar, the `Scroll` event fires and we can adjust the volume in one of two ways.
 
-First, we can simply change the volume of our output device. It's important to note that this is a floating point value where 0.0f is silence and 1.0f is the maximum value. So we'll need to divide the value of our `TrackBar` by 100.
+First, we can simply change the volume of our output device. It's important to note that this is a floating point value where 0.0f is silence and 1.0f is the maximum value. So we'll need to divide the value of our `TrackBar` by 100. On `WasapiPlayer` this is your application's own slider in the Windows volume mixer, so it doesn't affect what other applications are playing.
 
 ```c#
 t.Scroll += (s, a) => wo.Volume = t.Value / 100f;
@@ -150,7 +150,7 @@ t.Scroll += (s, a) => af.Volume = t.Value / 100f;
 Let's see the revised version of our form:
 
 ```c#
-var wo = new WaveOut();
+var wo = new WasapiPlayerBuilder().Build();
 var af = new AudioFileReader(inputFilePath);
 var closing = false;
 wo.PlaybackStopped += (s, a) => { if (closing) { wo.Dispose(); af.Dispose(); } };

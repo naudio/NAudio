@@ -164,30 +164,51 @@ public class WaveFormat
         // PtrToStructure<WaveFormatExtensible> reads wValidBitsPerSample/dwChannelMask/
         // subFormat from offset 0 and silently returns a format with a garbage sample rate.
         // See https://github.com/naudio/NAudio/issues/1425.
-        byte[] blob = ReadFormatBlob(pointer);
+        // ReadFormatBlob already blanks cbSize for PCM (it can't be relied on to even be
+        // present), so CreateFormat sees no extra data for a PCM block and returns a plain
+        // WaveFormat rather than reading whatever followed the header.
+        return CreateFormat(ReadFormatBlob(pointer));
+    }
+
+    /// <summary>
+    /// Selects the WaveFormat type that best describes a format block and decodes it. Shared
+    /// by <see cref="MarshalFromPtr"/> and <see cref="FromFormatChunk"/> so that a format
+    /// obtained from a native pointer and the same format read from a file come back as the
+    /// same type.
+    /// </summary>
+    /// <param name="blob">
+    /// A 4-byte fmt chunk length followed by the WAVEFORMATEX and its extra bytes - the
+    /// layout the BinaryReader constructors expect.
+    /// </param>
+    private static WaveFormat CreateFormat(byte[] blob)
+    {
+        int formatChunkLength = BitConverter.ToInt32(blob, 0);
         var encoding = (WaveFormatEncoding)BitConverter.ToUInt16(blob, FormatChunkPrefixLength);
-        switch (encoding)
+        // ReadWaveFormat believes the chunk length over cbSize when the two disagree, so the
+        // number of extra bytes that are really there follows from the length alone.
+        int extraSize = formatChunkLength > PcmWaveFormatLength
+            ? Math.Max(formatChunkLength - WaveFormatExLength, 0)
+            : 0;
+
+        // Only decode into a dedicated subclass when all the bytes that subclass reads (and
+        // writes back out in Serialize) are present. A block carrying less than that keeps
+        // its extra bytes verbatim instead, so nothing is invented and nothing is lost.
+        if (extraSize >= SpecialisedExtraSize(encoding))
         {
-            case WaveFormatEncoding.Extensible:
-                return new WaveFormatExtensible(OpenBlob(blob));
-            case WaveFormatEncoding.Adpcm:
-                return new AdpcmWaveFormat(OpenBlob(blob));
-            case WaveFormatEncoding.Gsm610:
-                return new Gsm610WaveFormat(OpenBlob(blob));
+            switch (encoding)
+            {
+                case WaveFormatEncoding.Extensible:
+                    return new WaveFormatExtensible(OpenBlob(blob));
+                case WaveFormatEncoding.Adpcm:
+                    return new AdpcmWaveFormat(OpenBlob(blob));
+                case WaveFormatEncoding.Gsm610:
+                    return new Gsm610WaveFormat(OpenBlob(blob));
+                case WaveFormatEncoding.MpegLayer3:
+                    return new Mp3WaveFormat(OpenBlob(blob));
+            }
         }
 
-        var waveFormat = new WaveFormat(OpenBlob(blob));
-        if (encoding == WaveFormatEncoding.Pcm)
-        {
-            // can't rely on extra size even being there for PCM so blank it to avoid reading
-            // corrupt data
-            waveFormat.extraSize = 0;
-        }
-        else if (waveFormat.ExtraSize > 0)
-        {
-            waveFormat = new WaveFormatExtraData(OpenBlob(blob));
-        }
-        return waveFormat;
+        return extraSize > 0 ? new WaveFormatExtraData(OpenBlob(blob)) : new WaveFormat(OpenBlob(blob));
     }
 
     /// <summary>
@@ -209,16 +230,29 @@ public class WaveFormat
     private static BinaryReader OpenBlob(byte[] blob) => new(new MemoryStream(blob, writable: false));
 
     /// <summary>
-    /// Extra bytes the corresponding WaveFormat subclass always occupies, i.e. how many
-    /// <see cref="Marshal.PtrToStructure{T}(IntPtr)"/> used to read regardless of cbSize.
+    /// Number of extra bytes the dedicated WaveFormat subclass for an encoding reads, and
+    /// writes back out in its <see cref="Serialize"/>. Zero for an encoding NAudio has no
+    /// subclass for, which is also the answer for a block carrying no extra data at all.
     /// </summary>
-    private static int MinimumExtraSize(WaveFormatEncoding encoding) => encoding switch
+    private static int SpecialisedExtraSize(WaveFormatEncoding encoding) => encoding switch
     {
         WaveFormatEncoding.Extensible => 22, // wValidBitsPerSample + dwChannelMask + SubFormat
         WaveFormatEncoding.Adpcm => 32,      // samplesPerBlock + numCoeff + 14 coefficients
         WaveFormatEncoding.Gsm610 => 2,      // samplesPerBlock
+        WaveFormatEncoding.MpegLayer3 => 12, // MPEGLAYER3_WFX_EXTRA_BYTES
         _ => 0,
     };
+
+    /// <summary>
+    /// Extra bytes the corresponding WaveFormat subclass always occupies, i.e. how many
+    /// <see cref="Marshal.PtrToStructure{T}(IntPtr)"/> used to read regardless of cbSize.
+    /// MPEGLAYER3WAVEFORMAT is left out: PtrToStructure never produced an
+    /// <see cref="Mp3WaveFormat"/>, so overreading a native block for it would be a new risk
+    /// rather than preserved behaviour - an MP3 block is decoded into an
+    /// <see cref="Mp3WaveFormat"/> only when its own cbSize says the 12 bytes are there.
+    /// </summary>
+    private static int MinimumExtraSize(WaveFormatEncoding encoding) =>
+        encoding == WaveFormatEncoding.MpegLayer3 ? 0 : SpecialisedExtraSize(encoding);
 
     /// <summary>
     /// Copies a native WAVEFORMATEX block into the byte layout the BinaryReader constructors
@@ -308,18 +342,54 @@ public class WaveFormat
     }
 
     /// <summary>
-    /// Reads in a WaveFormat (with extra data) from a fmt chunk (chunk identifier and
-    /// length should already have been read)
+    /// Reads in a WaveFormat from a fmt chunk (chunk identifier and length should already
+    /// have been read), returning the most specific type that describes it - a
+    /// <see cref="WaveFormatExtensible"/>, <see cref="AdpcmWaveFormat"/>,
+    /// <see cref="Gsm610WaveFormat"/> or <see cref="Mp3WaveFormat"/> where the encoding and
+    /// the extra data allow, a <see cref="WaveFormatExtraData"/> holding the extra bytes
+    /// verbatim for any other encoding that carries them, and a plain <see cref="WaveFormat"/>
+    /// when there are none. This is the same choice <see cref="MarshalFromPtr"/> makes.
     /// </summary>
     /// <param name="br">Binary reader</param>
     /// <param name="formatChunkLength">Format chunk length</param>
-    /// <returns>A WaveFormatExtraData</returns>
+    /// <returns>The decoded WaveFormat</returns>
     public static WaveFormat FromFormatChunk(BinaryReader br, int formatChunkLength)
     {
-        var waveFormat = new WaveFormatExtraData();
-        waveFormat.ReadWaveFormat(br, formatChunkLength);
-        waveFormat.ReadExtraData(br);
-        return waveFormat;
+        return CreateFormat(ReadFormatChunkBlob(br, formatChunkLength));
+    }
+
+    /// <summary>
+    /// Consumes a fmt chunk body from a reader into the same byte layout
+    /// <see cref="ReadFormatBlob"/> builds from a native pointer, so both decode paths can
+    /// share <see cref="CreateFormat"/>. The encoding has to be known before the right type
+    /// can be constructed, and a stream is not necessarily seekable, so the bytes are
+    /// buffered rather than peeked at.
+    /// </summary>
+    private static byte[] ReadFormatChunkBlob(BinaryReader br, int formatChunkLength)
+    {
+        if (formatChunkLength < PcmWaveFormatLength)
+        {
+            throw new InvalidDataException("Invalid WaveFormat Structure");
+        }
+        // A canonical 16-byte PCMWAVEFORMAT has no cbSize field; any longer chunk carries one.
+        int headerLength = formatChunkLength > PcmWaveFormatLength ? WaveFormatExLength : PcmWaveFormatLength;
+        byte[] header = br.ReadBytes(headerLength);
+        if (header.Length < headerLength)
+        {
+            throw new EndOfStreamException("Reached the end of the stream before the end of the WAVEFORMATEX header");
+        }
+        // cbSize is a 16-bit field, so no fmt chunk can honestly describe more extra data than
+        // this. Clamping stops a corrupt chunk length demanding a huge allocation.
+        int extraSize = Math.Min(Math.Max(formatChunkLength - WaveFormatExLength, 0), short.MaxValue);
+        byte[] extra = extraSize > 0 ? br.ReadBytes(extraSize) : Array.Empty<byte>();
+
+        // The stream can end early; keep whatever arrived and describe the block by the bytes
+        // that are really in it, which is what correcting cbSize after a short read achieved.
+        var blob = new byte[FormatChunkPrefixLength + header.Length + extra.Length];
+        BitConverter.TryWriteBytes(blob.AsSpan(), header.Length + extra.Length);
+        Buffer.BlockCopy(header, 0, blob, FormatChunkPrefixLength, header.Length);
+        Buffer.BlockCopy(extra, 0, blob, FormatChunkPrefixLength + header.Length, extra.Length);
+        return blob;
     }
 
     private void ReadWaveFormat(BinaryReader br, int formatChunkLength)

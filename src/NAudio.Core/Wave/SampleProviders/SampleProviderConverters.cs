@@ -83,9 +83,10 @@ internal static class SampleProviderConverters
     /// </summary>
     private static WaveFormat ToStandardWaveFormat(WaveFormat waveFormat)
     {
-        // A WaveFormatExtensible (e.g. built in code) exposes the SubFormat directly,
-        // whereas reading from a file (WaveFileReader) yields a WaveFormatExtraData whose
-        // 22-byte extension carries it after wValidBitsPerSample (2) and dwChannelMask (4).
+        // A WaveFormatExtensible exposes the SubFormat directly. A format tagged extensible
+        // can still arrive as a WaveFormatExtraData - from a block carrying fewer than the 22
+        // extension bytes, or from calling code that built one by hand - and there the GUID
+        // sits in the extra data after wValidBitsPerSample (2) and dwChannelMask (4).
         Guid subFormat;
         if (waveFormat is WaveFormatExtensible extensible)
         {

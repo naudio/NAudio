@@ -85,6 +85,14 @@ internal class WaveFileChunkReader
                 if (chunkLength > Int32.MaxValue)
                     throw new InvalidDataException($"Format chunk length must be between 0 and {Int32.MaxValue}.");
                 waveFormat = WaveFormat.FromFormatChunk(br, (int)chunkLength);
+                // The format parser stops at the fields it understands, and clamps a
+                // nonsensical chunk length rather than allocating for it. Resume at the end of
+                // the chunk the file declared so an odd fmt chunk can't desynchronise the walk.
+                long formatChunkEnd = chunkStartPosition + 8 + chunkLength;
+                if (formatChunkEnd <= stream.Length)
+                {
+                    stream.Position = formatChunkEnd;
+                }
             }
             else
             {

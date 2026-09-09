@@ -426,7 +426,7 @@ public class WaveFileWriter : Stream
             // A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
             // distinguished by its SubFormat GUID (NAudio defaults 32-bit extensible to IEEE
             // float). AsStandardWaveFormat resolves the subformat for both WaveFormatExtensible
-            // and WaveFormatExtraData, so honour it rather than assuming PCM.
+            // and a WaveFormatExtraData tagged extensible, so honour it rather than assuming PCM.
             if (WaveFormat.AsStandardWaveFormat().Encoding == WaveFormatEncoding.IeeeFloat)
             {
                 writer.Write(sample);

@@ -137,10 +137,28 @@ public class WaveFormatMarshalTests
     }
 
     [Test]
-    public void UnrecognisedEncodingWithExtraDataRoundTripsAsExtraData()
+    public void Mp3RoundTrips()
     {
         var original = new Mp3WaveFormat(44100, 2, 1152, 128000);
-        IntPtr pointer = WaveFormat.MarshalToPtr(original);
+        var result = RoundTrip(original);
+
+        Assert.That(result.SampleRate, Is.EqualTo(44100));
+        Assert.That(result.Channels, Is.EqualTo(2));
+        Assert.That(result.AverageBytesPerSecond, Is.EqualTo(original.AverageBytesPerSecond));
+        Assert.That(result.ExtraSize, Is.EqualTo(12));
+        Assert.That(result.id, Is.EqualTo(Mp3WaveFormatId.Mpeg), "wID");
+        Assert.That(result.flags, Is.EqualTo(Mp3WaveFormatFlags.PaddingIso), "fdwFlags");
+        Assert.That(result.blockSize, Is.EqualTo(1152), "nBlockSize");
+        Assert.That(result.framesPerBlock, Is.EqualTo(1), "nFramesPerBlock");
+        Assert.That(result.codecDelay, Is.EqualTo(0), "nCodecDelay");
+    }
+
+    [Test]
+    public void UnrecognisedEncodingWithExtraDataRoundTripsAsExtraData()
+    {
+        // Vorbis has no dedicated WaveFormat subclass, so its extra bytes are kept verbatim.
+        var extra = new byte[] { 1, 2, 3, 4 };
+        IntPtr pointer = AllocateWaveFormatEx(WaveFormatEncoding.Vorbis1, extra);
         try
         {
             var result = WaveFormat.MarshalFromPtr(pointer);
@@ -148,13 +166,35 @@ public class WaveFormatMarshalTests
             Assert.That(result, Is.InstanceOf<WaveFormatExtraData>());
             var extraData = (WaveFormatExtraData)result;
             Assert.That(extraData.SampleRate, Is.EqualTo(44100));
-            Assert.That(extraData.ExtraSize, Is.EqualTo(12));
-            Assert.That(BitConverter.ToUInt16(extraData.ExtraData, 6), Is.EqualTo(1152), "nBlockSize");
+            Assert.That(extraData.ExtraSize, Is.EqualTo(extra.Length));
+            Assert.That(extraData.ExtraData, Is.EqualTo(extra));
         }
         finally
         {
             Marshal.FreeHGlobal(pointer);
         }
+    }
+
+    /// <summary>
+    /// Builds a raw 44.1kHz stereo 16 bit WAVEFORMATEX with an arbitrary encoding tag and
+    /// extra data - the shape a driver or codec hands back, without going through a
+    /// WaveFormat subclass first.
+    /// </summary>
+    private static IntPtr AllocateWaveFormatEx(WaveFormatEncoding encoding, byte[] extra)
+    {
+        var block = new byte[18 + extra.Length];
+        BitConverter.TryWriteBytes(block.AsSpan(0), (ushort)encoding);
+        BitConverter.TryWriteBytes(block.AsSpan(2), (short)2);      // channels
+        BitConverter.TryWriteBytes(block.AsSpan(4), 44100);         // sample rate
+        BitConverter.TryWriteBytes(block.AsSpan(8), 176400);        // average bytes per second
+        BitConverter.TryWriteBytes(block.AsSpan(12), (short)4);     // block align
+        BitConverter.TryWriteBytes(block.AsSpan(14), (short)16);    // bits per sample
+        BitConverter.TryWriteBytes(block.AsSpan(16), (short)extra.Length); // cbSize
+        extra.CopyTo(block.AsSpan(18));
+
+        IntPtr pointer = Marshal.AllocHGlobal(block.Length);
+        Marshal.Copy(block, 0, pointer, block.Length);
+        return pointer;
     }
 
     /// <summary>

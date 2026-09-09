@@ -29,9 +29,8 @@ public static class WaveExtensionMethods
 
     /// <summary>
     /// Turns a WAVE_FORMAT_EXTENSIBLE into a standard waveformat if possible. Copes with
-    /// both <see cref="WaveFormatExtensible"/> (e.g. one you constructed) and
-    /// <see cref="WaveFormatExtraData"/> (how an extensible format read from a file or stream
-    /// is materialised), unpacking the SubFormat GUID from the raw extra data in the latter case.
+    /// both <see cref="WaveFormatExtensible"/> and a <see cref="WaveFormatExtraData"/> that is
+    /// tagged extensible, unpacking the SubFormat GUID from the raw extra data in the latter case.
     /// </summary>
     /// <param name="waveFormat">Input wave format</param>
     /// <returns>A standard PCM or IEEE waveformat, or the original waveformat</returns>
@@ -41,9 +40,11 @@ public static class WaveExtensionMethods
         {
             return wfe.ToStandardWaveFormat();
         }
-        // A WaveFormatExtensible read back from a stream arrives as a WaveFormatExtraData whose
-        // SubFormat GUID lives in the extra data (after the 2-byte wValidBitsPerSample and
-        // 4-byte dwChannelMask fields).
+        // NAudio's own readers now decode an extensible fmt block into a WaveFormatExtensible,
+        // but a WaveFormatExtraData tagged extensible still turns up - from a block carrying
+        // fewer than the 22 extension bytes, or from calling code that built one by hand. Its
+        // SubFormat GUID lives in the extra data, after the 2-byte wValidBitsPerSample and
+        // 4-byte dwChannelMask fields.
         if (waveFormat is WaveFormatExtraData { Encoding: WaveFormatEncoding.Extensible } extra && extra.ExtraSize >= 22)
         {
             var subFormat = new Guid(extra.ExtraData.AsSpan(6, 16));

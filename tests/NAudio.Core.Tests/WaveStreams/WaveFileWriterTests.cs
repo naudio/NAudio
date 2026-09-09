@@ -193,9 +193,9 @@ public class WaveFileWriterTests
     [Test]
     public void WriteSampleResolvesSubFormatFromReadBackExtensibleFormat()
     {
-        // When an extensible format is read back from a stream it materialises as a
-        // WaveFormatExtraData (not a WaveFormatExtensible), so WriteSample must still be able to
-        // resolve the IEEE-float subformat when that format is reused to write a new file.
+        // An extensible format read back from a stream materialises as a WaveFormatExtensible,
+        // so WriteSample must resolve the IEEE-float subformat when that format is reused to
+        // write a new file.
         var samples = new[] { 0.0f, 0.5f, -0.5f, 1.0f, -1.0f };
 
         var firstPass = new MemoryStream();
@@ -207,10 +207,10 @@ public class WaveFileWriterTests
         firstPass.Position = 0;
         using var reader = new WaveFileReader(firstPass);
         var readBackFormat = reader.WaveFormat;
-        Assert.That(readBackFormat, Is.InstanceOf<WaveFormatExtraData>(), "Read-back format type");
+        Assert.That(readBackFormat, Is.InstanceOf<WaveFormatExtensible>(), "Read-back format type");
         Assert.That(readBackFormat.AsStandardWaveFormat().Encoding, Is.EqualTo(WaveFormatEncoding.IeeeFloat), "Resolved subformat");
 
-        // Reuse the read-back (WaveFormatExtraData) format to write a fresh file.
+        // Reuse the read-back format to write a fresh file.
         var secondPass = new MemoryStream();
         using (var writer = new WaveFileWriter(new IgnoreDisposeStream(secondPass), readBackFormat))
         {

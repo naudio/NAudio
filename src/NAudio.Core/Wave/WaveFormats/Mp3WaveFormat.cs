@@ -52,6 +52,27 @@ public class Mp3WaveFormat : WaveFormat
     }
 
     /// <summary>
+    /// Reads an Mp3WaveFormat from a fmt block (a 4-byte length followed by the WAVEFORMATEX
+    /// and its 12 extra bytes).
+    /// </summary>
+    internal Mp3WaveFormat(BinaryReader reader) : base(reader)
+    {
+        if (extraSize < Mp3WaveFormatExtraBytes)
+        {
+            // Tagged as MP3 but carrying too little extra data to be an MPEGLAYER3WAVEFORMAT.
+            // Leave the fields at their defaults rather than reading off the end of the block.
+            return;
+        }
+        id = (Mp3WaveFormatId)reader.ReadUInt16();
+        flags = (Mp3WaveFormatFlags)reader.ReadUInt32();
+        blockSize = reader.ReadUInt16();
+        framesPerBlock = reader.ReadUInt16();
+        codecDelay = reader.ReadUInt16();
+        // Serialize writes exactly these five fields, so cbSize must describe exactly them.
+        extraSize = Mp3WaveFormatExtraBytes;
+    }
+
+    /// <summary>
     /// Writes this structure to a BinaryWriter. The five MPEGLAYER3WAVEFORMAT fields
     /// account for exactly the 12 extra bytes cbSize advertises.
     /// </summary>

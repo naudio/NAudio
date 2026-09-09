@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Fixed several buffer and handle lifetime bugs in the winmm MIDI backend: `MidiOut.SendBuffer` no longer frees a sysex buffer while the driver may still own it, `MidiIn` now stops input before resetting it, and neither class calls into winmm with a handle it never opened. `MidiOut.SendBuffer` now blocks until the driver releases the buffer and throws `MmException` if the send fails.
  * **macOS support (preview)** - A new wrappers library is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. The `NAudio.MacOS` package ships pre-release only (`X.Y.Z-preview.N`) while its API settles, so it stays pre-release alongside stable releases of the other packages. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
 
 ### 3.1.0 (7 Sep 2026)

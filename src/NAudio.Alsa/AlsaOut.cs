@@ -17,12 +17,12 @@ namespace NAudio.Wave.Alsa;
 /// </remarks>
 public sealed class AlsaOut : IWavePlayer, IWaveLatency
 {
-    private static readonly PCMFormat[] PreferredFormats =
-    {
+    private static ReadOnlySpan<PCMFormat> PreferredFormats =>
+    [
         PCMFormat.SND_PCM_FORMAT_FLOAT_LE,
         PCMFormat.SND_PCM_FORMAT_S16_LE,
         PCMFormat.SND_PCM_FORMAT_S24_3LE,
-    };
+    ];
 
     private readonly Lock sync = new();
     private readonly ManualResetEventSlim resumeGate = new(initialState: true);

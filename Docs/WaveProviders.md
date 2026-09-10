@@ -64,8 +64,8 @@ that can be played or rendered to a file.
 ## `ISampleProvider`
 
 While implementing `IWaveProvider` is a useful approach to implement an audio effect, it has the caveat that
-decoding the samples depends of the bit rate (number of bits per sample) declared on the `WaveFormat`. 
-And, it can be difficult to get the samples as numbers and cover all the possible bit rates.
+decoding the samples depends of the bit depth (number of bits per sample) declared on the `WaveFormat`. 
+And, it can be difficult to get the samples as numbers and cover all the possible bit depths.
 
 While the `IWaveProvider` is able to represent a lot of audio formats, 
 just doing any signal processing suddenly becomes one of the hardest tasks to do.
@@ -79,7 +79,7 @@ method provides 32-bit IEEE floating-point samples:
 public interface ISampleProvider
 {
     WaveFormat WaveFormat { get; }
-    int Read(float[] buffer, int offset, int count);
+    int Read(Span<float> buffer);
 }
 ```
 
@@ -87,7 +87,7 @@ The `WaveFormat` will always be 32 bit floating point,
 but the number of channels or sample rate may of course vary by implementation.
 
 The `Read` method's `buffer` parameter specifies the buffer to place the processed samples into.
-The buffer's `Length` property denotes how many bytes are expected to be written to it.
+The buffer's `Length` property denotes how many samples are expected to be written to it.
 
 Finally, the return value indicates how many samples were written to the buffer.
 You should return 0 to signal that you do not have any other data to provide.
@@ -99,7 +99,7 @@ In the `Read` method you typically read from your source `ISampleProvider`, then
 Here's the implementation of the `Read` method in `VolumeSampleProvider` showing how simple this can be:
 
 ```c#
-public int Read(Span<byte> buffer)
+public int Read(Span<float> buffer)
 {
     int samplesRead = source.Read(buffer);
     if (volume != 1f)

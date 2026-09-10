@@ -7,33 +7,27 @@ namespace NAudio.Wave;
 /// Like the <see cref="IWaveProvider"/> interface, the <see cref="ISampleProvider"/> interface is 
 /// also a low-level primitive that is an audio source, but all the audio samples are provided
 /// as 32-bit floating-point. <br />
-/// This was primarily useful back in .NET Framework when the Span API still not existed and reinterpreting
-/// samples as their numeric types needed loads of code in the Read implementation. For example, applying
-/// just a gain (volume) modifier on PCM 16 bit rate audio would require the following code:
-/// <code>
-/// float gain = 0.7f;
-/// IWaveProvider sourceProvider;
+/// <b>Why to use <see cref="ISampleProvider"/> instead of <see cref="IWaveProvider"/>?</b> <br /> <br />
+///
+/// While <see cref="IWaveProvider"/> gives you the raw audio data as is, you cannot 
+/// just 'magically' read the samples. That happens because the bit depth is typically different on
+/// each audio source, for example you may see a source that provides 8 bits per sample, while other
+/// one provides 24 bits per sample. <br /> <br />
+///
+/// As such, even creating a simple gain effect can prove extremely difficult as you must literally
+/// implement 5 different Read helpers to implement the rather simple effect for 8, 16, 24, 32 and 64 bit depth sources,
+/// and this is not all the possible bit depths that a source may be into, because there can also be bit depths of 10, or 12,
+/// which they are not powers of two and as such it becomes even worse to decode them. <br /> <br />
+///
+/// So, the <see cref="ISampleProvider"/> interface takes that pain away, and instead, it always gives you
+/// 32-bit floating-point samples that are really much easier to work with for any effect that you want to create.
+/// It is also very useful if you want to implement a metering control or something else that analyzes the samples
+/// as you are getting them.
+/// To be noted, the <see cref="WaveExtensionMethods"/> class provides extension methods to many
+/// converters that make the conversion of an <see cref="IWaveProvider"/> 
+/// to an <see cref="ISampleProvider"/> look effortless, and vice-versa. <br /> <br />
 /// 
-/// int Read(byte[] buffer, int offset, int count)
-/// {
-///     int read = sourceProvider.Read(buffer, offset, count);
-///
-///     for (int I = 0; I &lt; read; I += 2)
-///     {
-///         short sample = BitConverter.ToInt16(buffer, I + offset);
-///         sample = (short)(sample * gain);
-///         Array.Copy(BitConverter.GetBytes(sample), 0, buffer, I + offset, 2);
-///     }
-///
-///     return read;
-/// }
-/// </code>
-/// This example is only for 16-bit audio, and there are a lot of 
-/// bit rates to be covered, for example 8/24/32/64 bit audio. <br />
-/// Despite it's historical meaning, and the fact that the Span
-/// API's are now existing, this interface is still relevant today as
-/// just implementing gain (and any other audio effect) on all possible bit rates is impractical, 
-/// and using floating-point values to represent the sample values allow to: <br />
+/// Using floating-point values to represent the sample values allow to: <br />
 /// <list type="bullet">
 ///     <item>Cleanly separate each channel. Each <see cref="float"/> value in the buffer is a sample for a single channel.</item>
 ///     <item>Do complex floating-point arithmetic operations without the restrictions that integers do have.</item>
@@ -42,8 +36,6 @@ namespace NAudio.Wave;
 ///         The <see cref="SampleProviders.VolumeSampleProvider"/> uses this to implement the gain.
 ///     </item>
 /// </list>
-/// Note that the <see cref="WaveExtensionMethods"/> class provides extension methods that make it 
-/// just as easy to convert an <see cref="IWaveProvider"/> to an <see cref="ISampleProvider"/>, and vice-versa.
 /// </summary>
 public interface ISampleProvider
 {

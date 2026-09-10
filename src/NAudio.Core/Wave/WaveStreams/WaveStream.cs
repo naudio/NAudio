@@ -144,12 +144,12 @@ public abstract class WaveStream : Stream, IWaveProvider
     {
         long length = Length;
         long newPosition = Position + WaveFormat.AverageBytesPerSecond * seconds;
-        if (newPosition > Length)
-            newPosition = Length;
+        if (newPosition > length)
+            newPosition = length;
         else if (newPosition < 0L)
             newPosition = 0L;
-        else
-            Position = newPosition;
+
+        Position = newPosition;
     }
 
     /// <summary>
@@ -166,11 +166,24 @@ public abstract class WaveStream : Stream, IWaveProvider
         get => TimeSpan.FromSeconds((double)Position / WaveFormat.AverageBytesPerSecond);
         set
         {
-            long length = Length;
+            long length;
+            try
+            {
+                // Attempt to get the length.
+                // It is not necessary that all the streams will implement it,
+                // so we get the value only if we are able to do so, and otherwise
+                // set to 0 to indicate we could not get the length.
+                // This is special-cased in the if statement below.
+                length = Length;
+            }
+            catch
+            {
+                length = 0L;
+            }
             long bytePosition = (long)(value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
             if (bytePosition < 0L)
                 Position = 0L;
-            else if (bytePosition > length)
+            else if (length > 0L && bytePosition > length) // Do the bound check only if we are able to do so.
                 Position = length;
             else
                 Position = bytePosition - (bytePosition % BlockAlign);

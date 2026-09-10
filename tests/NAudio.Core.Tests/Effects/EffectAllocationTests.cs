@@ -55,6 +55,7 @@ public class EffectAllocationTests
         // failed in CI on a single one-off of ~1.4KB, which is not a per-call cost. What the claim
         // actually needs is that no window allocates, and a genuine per-call allocation dirties
         // every window, so retrying keeps the guarantee strict while dropping that false failure.
+        var windows = new long[MeasurementWindows];
         var allocated = long.MaxValue;
         var windowsUsed = 0;
         while (windowsUsed < MeasurementWindows && allocated != 0)
@@ -63,7 +64,7 @@ public class EffectAllocationTests
             for (var p = 0; p < ProcessCallsPerWindow; p++)
                 effect.Process(buffer);
             allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-            windowsUsed++;
+            windows[windowsUsed++] = allocated;
         }
 
         if (allocated == 0 && windowsUsed > 1)
@@ -76,7 +77,7 @@ public class EffectAllocationTests
         }
 
         Assert.That(allocated, Is.EqualTo(0L),
-            $"{effect.GetType().Name} allocated {allocated} bytes across {ProcessCallsPerWindow} Process " +
-            $"calls in every one of {MeasurementWindows} consecutive windows");
+            $"{effect.GetType().Name} allocated on every one of {windowsUsed} consecutive windows of " +
+            $"{ProcessCallsPerWindow} Process calls: {string.Join(", ", windows[..windowsUsed])} bytes");
     }
 }

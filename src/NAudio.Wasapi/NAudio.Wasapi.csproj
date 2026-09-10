@@ -15,12 +15,6 @@
     <Description>WASAPI playback and capture (including loopback and process loopback) and Media Foundation codecs for the NAudio audio library. Windows-only at runtime.</Description>
   </PropertyGroup>
 
-  <!-- needed for perfomance profiling unit tests -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	<DebugType>full</DebugType>
-	<DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <!-- NAudio.Midi reference dropped: WinRT MIDI (its only consumer here) moved

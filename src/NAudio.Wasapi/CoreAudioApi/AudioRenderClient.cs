@@ -114,10 +114,27 @@ public ref struct RenderBufferLease
     }
 
     /// <summary>
-    /// Releases the buffer with the full requested frame count.
+    /// Releases the buffer, discarding its contents if <see cref="Release(int?, AudioClientBufferFlags)"/>
+    /// was never called.
     /// </summary>
+    /// <remarks>
+    /// An unreleased lease reaching here means the caller never wrote any audio - typically because an
+    /// exception escaped the <c>using</c> block. Releasing the full frame count in that case would hand
+    /// WASAPI a buffer of undefined data and leave the stream padded full, so the next
+    /// <see cref="AudioRenderClient.GetBuffer"/> fails with AUDCLNT_E_BUFFER_TOO_LARGE (issue #1442);
+    /// releasing zero frames discards the packet instead. Never throws: a dispose running while an
+    /// exception is in flight must not replace it with a less useful one.
+    /// </remarks>
     public void Dispose()
     {
-        Release();
+        try
+        {
+            owner?.ReleaseBuffer(0, AudioClientBufferFlags.None);
+        }
+        catch
+        {
+            // The buffer is being abandoned; failing to hand it back is not actionable here.
+        }
+        owner = null;
     }
 }

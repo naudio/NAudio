@@ -1,4 +1,4 @@
-- name: Upgrading
+﻿- name: Upgrading
   items:
     - name: Migrating from NAudio 2 to NAudio 3
       href: MigratingFromNAudio2.md
@@ -116,8 +116,12 @@
       href: RecordAudioFileLinuxAlsa.md
     - name: Validating ALSA on Linux
       href: ValidatingAlsaOnLinux.md
-- name: macOS (Core Audio)
+- name: macOS
   items:
+    - name: Use the Extended Audio File Services reader to read compressed files
+      href: ExtendedAudioFileServicesReader.md
+    - name: Use the Extended Audio File Services reader to write compressed files
+      href: ExtendedAudioFileServicesWriter.md
     - name: Play an audio file on macOS (Core Audio)
       href: PlayAudioFileMacOS.md
     - name: Record an audio file on macOS (Core Audio)

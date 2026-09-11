@@ -1,4 +1,4 @@
-
+﻿
 using System;
 
 namespace NAudio.Wave;
@@ -15,7 +15,7 @@ namespace NAudio.Wave;
 /// your own buffer before the execution of the method reaches it's end.
 /// </remarks>
 /// <param name="audioData">The span of bytes containing the capture data.</param>
-/// <param name="currentTimeInSeconds">A HAL timestamp, in seconds, that indicate when the HAL invoked the handler.</param>
+/// <param name="currentTimeInSeconds">A HAL timestamp, in seconds, that indicate when the HAL started the I/O cycle.</param>
 /// <param name="firstByteAcquiredFromHALTimeInSeconds">A HAL timestamp, in seconds, that indicate when the first byte of the currently provided audio data was retrieved.</param>
 public delegate void CoreAudioCaptureDataAvailableHandler(
     ReadOnlySpan<byte> audioData,

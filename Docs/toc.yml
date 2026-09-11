@@ -102,6 +102,10 @@
   items:
     - name: Stream live audio over the network (Network Chat)
       href: NetworkChatDemo.md
+- name: Other languages
+  items:
+    - name: Using NAudio from VB.NET
+      href: UsingNAudioFromVB.md
 - name: Cross-platform & Linux
   items:
     - name: Cross-platform audio files with SoundFile

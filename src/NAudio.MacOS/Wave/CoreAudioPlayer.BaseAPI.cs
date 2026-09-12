@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -49,7 +49,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// Initializes a new Core Audio player instance that renders
     /// audio to the system's default output device. <br />
     /// If a synchronization context is assigned for the thread where this instance
-    /// is created to, it is used during playback stopped events.
+    /// is created to, it is used when a playback stopped event is dispatching.
     /// </summary>
     public CoreAudioPlayer() : this(AudioSystemObject.Instance.DefaultOutputDevice) { }
 
@@ -57,7 +57,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// Initializes a new Core Audio player instance that renders audio
     /// to the specified Core Audio <see cref="AudioDevice"/> instance. <br />
     /// If a synchronization context is assigned for the thread where this instance
-    /// is created to, it is used during playback stopped events.
+    /// is created to, it is used when a playback stopped event is dispatching.
     /// </summary>
     /// <param name="device">The audio device where the audio will be rendered to</param>
     /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
@@ -384,9 +384,6 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// </remarks>
     public void Pause()
     {
-        // The below function call is not required; it is implicitly 
-        // handled by the call of OutputWaveFormat property, passed
-        // to the CurrentRunBytes method.
         ThrowIfInvalidOrDisposed();
         ioProcedure.Stop();
         // Bank what this run played, so a following Play continues the count.

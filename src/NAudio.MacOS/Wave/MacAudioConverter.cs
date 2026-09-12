@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -252,7 +252,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// mapped to the output.
     /// </remarks>
     /// <param name="channelMap">
-    /// The array that contains channel map to assign.
+    /// The array that contains the channel map to assign.
     /// The length of this array must be the value of the <see cref="WaveFormat.Channels"/> property.
     /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="channelMap"/> is <see langword="null"/>.</exception>

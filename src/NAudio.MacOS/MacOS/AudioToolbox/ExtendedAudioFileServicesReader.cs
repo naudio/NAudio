@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Numerics;
 using System.Threading;
@@ -58,7 +58,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
         // The wave format is constructed with minimal effort 
         // closest to the file's one, if no special options were given by the user.
 
-        bool allowNonPowerOfTwoRates = true;
+        bool allowNonPowerOfTwoDepths = true;
         bool needsIeeeFloatSpecifically = false;
         Speakers decodedSpeakers = Speakers.None;
 
@@ -68,7 +68,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
             if (targetFormat is null)
             {
                 needsIeeeFloatSpecifically = settings.RequestIeeeFloat;
-                allowNonPowerOfTwoRates = settings.AllowNonPowerOfTwoBitRates;
+                allowNonPowerOfTwoDepths = settings.AllowNonPowerOfTwoBitDepths;
             }
             else if (targetFormat is WaveFormatExtensible ext)
             {
@@ -79,25 +79,25 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
         if (targetFormat is null)
         {
             // Source format may be wildly incomplete, so try to complete it and do validation on it.
-            bool bitRateSpecified = false;
-            int bitRate, sampleRate, channels;
+            bool bitDepthSpecified = false;
+            int bitDepth, sampleRate, channels;
             if (needsIeeeFloatSpecifically)
             {
-                bitRate = 32;
+                bitDepth = 32;
             }
             // Bit rate may be specified as zero, so define good defaults for it.
             else if (sourceAsbd.mBitsPerChannel == 0U)
             {
                 // 16 bit depth suffices for most cases.
-                bitRate = 16;
+                bitDepth = 16;
             }
             else
             {
-                // The bit rate might not be a power of two for some files,
+                // The bit depth might not be a power of two for some files,
                 // so we need to flag that to not lose any information 
-                // (if of course the user wants non-power of two bit depth rates)
-                bitRateSpecified = !allowNonPowerOfTwoRates;
-                bitRate = (int)sourceAsbd.mBitsPerChannel;
+                // (if of course the user wants non-power of two bit depths)
+                bitDepthSpecified = !allowNonPowerOfTwoDepths;
+                bitDepth = (int)sourceAsbd.mBitsPerChannel;
             }
 
             if (sourceAsbd.mSampleRate == 0d)
@@ -128,14 +128,14 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
             bool extensibleIsNeeded = false;
             decodedSpeakers = ComputeFileSpeakersValue(out extensibleIsNeeded);
 
-            if (extensibleIsNeeded || (bitRateSpecified && (!BitOperations.IsPow2(bitRate))))
+            if (extensibleIsNeeded || (bitDepthSpecified && (!BitOperations.IsPow2(bitDepth))))
             {
                 targetFormat = new WaveFormatExtensible(
                     sampleRate,
-                    bitRateSpecified ? (int)BitOperations.RoundUpToPowerOf2((uint)bitRate) : bitRate,
+                    bitDepthSpecified ? (int)BitOperations.RoundUpToPowerOf2((uint)bitDepth) : bitDepth,
                     channels,
                     needsIeeeFloatSpecifically,
-                    bitRate,
+                    bitDepth,
                     decodedSpeakers
                 );
             }
@@ -143,7 +143,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
             {
                 targetFormat = needsIeeeFloatSpecifically ?
                     WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels) :
-                    new(sampleRate, bitRate, channels);
+                    new(sampleRate, bitDepth, channels);
             }
         }
 

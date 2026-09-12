@@ -174,7 +174,7 @@ foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
 ~~~
 
 > [!CAUTION]
-Try not to hardcode the MIME type given to this parameter as it subject to change
+Try not to hardcode the MIME type given to the property as it subject to change
 in different macOS versions. Make sure to call first the `SupportedMimeTypes` property
 and use one of those values.
 

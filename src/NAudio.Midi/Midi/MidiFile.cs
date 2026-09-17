@@ -334,7 +334,7 @@ public class MidiFile
             throw new ArgumentException("Can't export more than one track to a type 0 file");
         }
         using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
-        writer.Write(Encoding.UTF8.GetBytes("MThd"));
+        writer.Write("MThd"u8);
         writer.Write(SwapUInt32(6)); // chunk size
         writer.Write(SwapUInt16((ushort)events.MidiFileType));
         writer.Write(SwapUInt16((ushort)events.Tracks));
@@ -344,7 +344,7 @@ public class MidiFile
         {
             IList<MidiEvent> eventList = events[track];
 
-            writer.Write(Encoding.UTF8.GetBytes("MTrk"));
+            writer.Write("MTrk"u8);
             long trackSizePosition = writer.BaseStream.Position;
             writer.Write(SwapUInt32(0));
 

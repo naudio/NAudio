@@ -353,7 +353,7 @@ public class MidiFile
 
             // use a stable sort to preserve ordering of MIDI events whose
             // absolute times are the same
-            MergeSort.Sort(eventList, new MidiEventComparer());
+            MergeSort.Sort(eventList, MidiEventComparer.Instance);
             if (eventList.Count > 0)
             {
                 System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");

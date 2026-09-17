@@ -40,13 +40,13 @@ public interface IWaveChunkWriter
 /// </summary>
 public class WaveFileWriter : Stream
 {
-    private Stream outStream;
+    private readonly Stream outStream;
     private readonly BinaryWriter writer;
     private long dataSizePos;
     private long factSampleCountPos;
     private long dataChunkSize;
     private readonly WaveFormat format;
-    private readonly string filename;
+    private readonly string? filename;
     private readonly bool ownsStream;
     private readonly bool enableRf64;
     private readonly long rf64PromotionThreshold;
@@ -55,7 +55,7 @@ public class WaveFileWriter : Stream
     private bool isDisposed;
     private readonly List<BufferedChunk> beforeDataChunks = new();
     private readonly List<BufferedChunk> afterDataChunks = new();
-    private CueList bufferedCues;
+    private CueList? bufferedCues;
 
     private readonly struct BufferedChunk
     {
@@ -142,12 +142,12 @@ public class WaveFileWriter : Stream
     /// the WAV header and flushes the stream, but leaves it open for the caller to dispose.
     /// Use the filename constructor if you want the writer to own and close the underlying file.
     /// </remarks>
-    public WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions options)
+    public WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions? options)
         : this(outStream, format, options, ownsStream: false)
     {
     }
 
-    private WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions options, bool ownsStream)
+    private WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions? options, bool ownsStream)
     {
         options ??= new WaveFileWriterOptions();
         this.outStream = outStream;
@@ -316,7 +316,7 @@ public class WaveFileWriter : Stream
     /// <summary>
     /// The wave file name or null if not applicable
     /// </summary>
-    public string Filename => filename;
+    public string? Filename => filename;
 
     /// <summary>
     /// Number of bytes of audio in the data chunk
@@ -566,29 +566,25 @@ public class WaveFileWriter : Stream
     {
         if (disposing && !isDisposed)
         {
-            if (outStream != null)
+            try
             {
-                try
+                EnsureHeaderFinalized();
+                FinalizeFile();
+            }
+            finally
+            {
+                if (ownsStream)
                 {
-                    EnsureHeaderFinalized();
-                    FinalizeFile();
+                    // We opened the file (filename constructor), so we close it.
+                    outStream.Dispose();
                 }
-                finally
+                else
                 {
-                    if (ownsStream)
-                    {
-                        // We opened the file (filename constructor), so we close it.
-                        outStream.Dispose();
-                    }
-                    else
-                    {
-                        // The caller handed us the stream; finalize the file by flushing,
-                        // but leave the stream open for them to dispose.
-                        outStream.Flush();
-                    }
-                    outStream = null;
-                    isDisposed = true;
+                    // The caller handed us the stream; finalize the file by flushing,
+                    // but leave the stream open for them to dispose.
+                    outStream.Flush();
                 }
+                isDisposed = true;
             }
         }
         base.Dispose(disposing);

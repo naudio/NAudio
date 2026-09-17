@@ -11,11 +11,12 @@ namespace NAudio.Wave;
 public class WaveFileReader : WaveStream
 {
     private readonly WaveFormat waveFormat;
+    private bool disposed = false;
     private readonly bool ownInput;
     private readonly long dataPosition;
     private readonly long dataChunkLength;
     private readonly Lock lockObject = new();
-    private Stream waveStream;
+    private readonly Stream waveStream;
 
     /// <summary>Supports opening a WAV file</summary>
     /// <remarks>The WAV file format is a real mess, but we will only
@@ -42,10 +43,9 @@ public class WaveFileReader : WaveStream
     private WaveFileReader(Stream inputStream, bool ownInput)
     {
         this.waveStream = inputStream;
-        var chunkReader = new WaveFileChunkReader();
         try
         {
-            chunkReader.ReadWaveHeader(inputStream);
+            var chunkReader = WaveFileChunkReader.Create(inputStream);
             waveFormat = chunkReader.WaveFormat;
             if (waveFormat.BlockAlign <= 0)
             {
@@ -87,14 +87,14 @@ public class WaveFileReader : WaveStream
         if (disposing)
         {
             // Release managed resources.
-            if (waveStream != null)
+            if (!disposed)
             {
                 // only dispose our source if we created it
                 if (ownInput)
                 {
                     waveStream.Dispose();
                 }
-                waveStream = null;
+                disposed = true;
             }
         }
         else
@@ -196,7 +196,7 @@ public class WaveFileReader : WaveStream
     /// </summary>
     /// <returns>An array of samples, 1 for mono, 2 for stereo etc. Null indicates end of file reached
     /// </returns>
-    public float[] ReadNextSampleFrame()
+    public float[]? ReadNextSampleFrame()
     {
         switch (waveFormat.Encoding)
         {

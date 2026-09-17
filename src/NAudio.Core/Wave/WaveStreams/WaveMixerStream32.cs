@@ -20,7 +20,7 @@ public class WaveMixerStream32 : WaveStream
     private long length;
     private long position;
     private readonly int bytesPerSample;
-    private byte[] readBuffer;
+    private byte[]? readBuffer;
 
     /// <summary>
     /// Creates a new 32 bit WaveMixerStream

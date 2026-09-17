@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace NAudio.Sfz;
@@ -15,7 +16,7 @@ public sealed class SfzRegion
 {
     private readonly Dictionary<string, string> opcodes;
 
-    internal SfzRegion(Dictionary<string, string> opcodes, string sample)
+    internal SfzRegion(Dictionary<string, string> opcodes, string? sample)
     {
         this.opcodes = opcodes;
         Sample = sample;
@@ -27,7 +28,7 @@ public sealed class SfzRegion
     /// to forward slashes. Null if the region has no <c>sample</c> opcode.
     /// Resolving this to an absolute path and loading it is the loader's job.
     /// </summary>
-    public string Sample { get; }
+    public string? Sample { get; }
 
     /// <summary>The merged opcodes that apply to this region.</summary>
     public IReadOnlyDictionary<string, string> Opcodes => opcodes;
@@ -36,7 +37,8 @@ public sealed class SfzRegion
     public bool Has(string opcode) => opcodes.ContainsKey(opcode);
 
     /// <summary>The raw string value of an opcode, or <paramref name="fallback"/> if absent.</summary>
-    public string GetString(string opcode, string fallback = null) =>
+    [return: NotNullIfNotNull(nameof(fallback))]
+    public string? GetString(string opcode, string? fallback = null) =>
         opcodes.TryGetValue(opcode, out var value) ? value : fallback;
 
     /// <summary>

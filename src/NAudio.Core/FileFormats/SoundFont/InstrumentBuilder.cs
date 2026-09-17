@@ -9,7 +9,7 @@ namespace NAudio.SoundFont;
 /// </summary>
 internal class InstrumentBuilder : StructureBuilder<Instrument>
 {
-    private Instrument lastInstrument = null;
+    private Instrument? lastInstrument = null;
 
     public override Instrument Read(BinaryReader br)
     {

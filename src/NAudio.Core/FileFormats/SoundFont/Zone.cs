@@ -23,11 +23,11 @@ public class Zone
     /// <summary>
     /// Modulators for this Zone
     /// </summary>
-    public Modulator[] Modulators { get; set; }
+    public Modulator[]? Modulators { get; set; }
 
     /// <summary>
     /// Generators for this Zone
     /// </summary>
-    public Generator[] Generators { get; set; }
+    public Generator[]? Generators { get; set; }
 
 }

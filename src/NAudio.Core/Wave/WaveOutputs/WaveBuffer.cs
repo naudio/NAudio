@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
 
+#nullable disable
+
 /// <summary>
 /// WaveBuffer class use to store wave datas. Data can be manipulated with arrays
 /// (<see cref="ByteBuffer"/>,<see cref="FloatBuffer"/>,<see cref="ShortBuffer"/>,<see cref="IntBuffer"/> ) that are pointing to the

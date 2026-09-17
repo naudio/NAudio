@@ -79,6 +79,10 @@ public class MultiplexingWaveProvider : IWaveProvider
             }
             inputChannelCount += input.WaveFormat.Channels;
         }
+        if (WaveFormat == null)
+        {
+            throw new ArgumentException("No valid inputs provided");
+        }
         bytesPerSample = WaveFormat.BitsPerSample / 8;
 
         mappings = new List<int>();
@@ -91,7 +95,7 @@ public class MultiplexingWaveProvider : IWaveProvider
     /// <summary>
     /// persistent temporary buffer to prevent creating work for garbage collector
     /// </summary>
-    private byte[] inputBuffer;
+    private byte[]? inputBuffer;
 
     /// <summary>
     /// Reads data from this WaveProvider

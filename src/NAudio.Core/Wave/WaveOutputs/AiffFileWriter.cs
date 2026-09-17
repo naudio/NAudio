@@ -9,14 +9,15 @@ namespace NAudio.Wave;
 /// </summary>
 public class AiffFileWriter : Stream
 {
-    private Stream outStream;
+    private readonly Stream outStream;
     private readonly BinaryWriter writer;
     private long dataSizePos;
     private long commSampleCountPos;
     private long dataChunkSize = 8;
     private readonly WaveFormat format;
-    private readonly string filename;
+    private readonly string? filename;
     private readonly bool ownsStream;
+    private bool streamDisposed = false;
 
     /// <summary>
     /// Creates an Aiff file by reading all the data from a WaveProvider
@@ -118,7 +119,7 @@ public class AiffFileWriter : Stream
     /// <summary>
     /// The aiff file name or null if not applicable
     /// </summary>
-    public string Filename
+    public string? Filename
     {
         get { return filename; }
     }
@@ -385,7 +386,7 @@ public class AiffFileWriter : Stream
     {
         if (disposing)
         {
-            if (outStream != null)
+            if (!streamDisposed)
             {
                 try
                 {
@@ -406,7 +407,7 @@ public class AiffFileWriter : Stream
                         // but leave the stream open for them to dispose.
                         outStream.Flush();
                     }
-                    outStream = null;
+                    streamDisposed = true;
                 }
             }
         }

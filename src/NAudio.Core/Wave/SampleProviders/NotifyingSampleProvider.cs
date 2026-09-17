@@ -50,5 +50,5 @@ public class NotifyingSampleProvider : ISampleProvider, ISampleNotifier
     /// <summary>
     /// Sample notifier
     /// </summary>
-    public event EventHandler<SampleEventArgs> Sample;
+    public event EventHandler<SampleEventArgs>? Sample;
 }

@@ -18,7 +18,8 @@ public class AiffFileReader : WaveStream
     private readonly long dataPosition;
     private readonly int dataChunkLength;
     private readonly List<AiffChunk> chunks = new();
-    private Stream waveStream;
+    private readonly Stream waveStream;
+    private bool disposed = false;
     private readonly Lock lockObject = new();
 
     /// <summary>Supports opening a AIF file</summary>
@@ -61,7 +62,7 @@ public class AiffFileReader : WaveStream
     public static void ReadAiffHeader(Stream stream, out WaveFormat format, out long dataChunkPosition, out int dataChunkLength, List<AiffChunk> chunks)
     {
         dataChunkPosition = -1;
-        format = null;
+        WaveFormat? formatFound = null;
         BinaryReader br = new BinaryReader(stream);
 
         if (ReadChunkName(br) != "FORM")
@@ -93,7 +94,7 @@ public class AiffFileReader : WaveStream
                 short sampleSize = ConvertShort(br.ReadBytes(2));
                 double sampleRate = IEEE.ConvertFromIeeeExtended(br.ReadBytes(10));
 
-                format = new WaveFormat((int)sampleRate, sampleSize, numChannels);
+                formatFound = new WaveFormat((int)sampleRate, sampleSize, numChannels);
 
                 if (nextChunk.ChunkLength > 18 && formType == "AIFC")
                 {
@@ -133,7 +134,7 @@ public class AiffFileReader : WaveStream
 
         }
 
-        if (format == null)
+        if (formatFound == null)
         {
             throw new FormatException("Invalid AIFF file - No COMM chunk found.");
         }
@@ -141,6 +142,8 @@ public class AiffFileReader : WaveStream
         {
             throw new FormatException("Invalid AIFF file - No SSND chunk found.");
         }
+
+        format = formatFound;
     }
 
     /// <summary>
@@ -151,14 +154,14 @@ public class AiffFileReader : WaveStream
         if (disposing)
         {
             // Release managed resources.
-            if (waveStream != null)
+            if (!disposed)
             {
                 // only dispose our source if we created it
                 if (ownInput)
                 {
                     waveStream.Dispose();
                 }
-                waveStream = null;
+                disposed = true;
             }
         }
         else

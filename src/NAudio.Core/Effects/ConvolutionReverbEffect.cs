@@ -13,7 +13,7 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class ConvolutionReverbEffect : AudioEffect
 {
-    private float[][] impulseResponses;
+    private float[][]? impulseResponses;
     private PartitionedConvolver[] convolvers = Array.Empty<PartitionedConvolver>();
     private int partitionSize = 256;
 

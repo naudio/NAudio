@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
+    <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Core audio types, wave format and provider interfaces, sample providers, file readers/writers, DSP, and resampling for the NAudio audio library.</Description>
   </PropertyGroup>

@@ -12,13 +12,13 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class PanEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Pan", "", -1f, 1f, () => Pan, v => Pan = v)
-    };
+    ];
 
     private const float QuarterPi = MathF.PI / 4f;
 

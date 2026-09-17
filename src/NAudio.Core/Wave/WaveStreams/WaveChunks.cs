@@ -51,7 +51,7 @@ public sealed class WaveChunks : IReadOnlyList<RiffChunk>
     /// Returns the first chunk matching the given four-character identifier, or null if none is present.
     /// Comparison is case-insensitive.
     /// </summary>
-    public RiffChunk Find(string chunkId)
+    public RiffChunk? Find(string chunkId)
     {
         if (chunkId == null) throw new ArgumentNullException(nameof(chunkId));
         foreach (var chunk in chunks)
@@ -109,7 +109,7 @@ public sealed class WaveChunks : IReadOnlyList<RiffChunk>
     /// Runs the given interpreter over this chunk collection. Returns <c>default</c>
     /// if the interpreter's required chunks are not present.
     /// </summary>
-    public T Read<T>(IWaveChunkInterpreter<T> interpreter)
+    public T? Read<T>(IWaveChunkInterpreter<T> interpreter)
     {
         if (interpreter == null) throw new ArgumentNullException(nameof(interpreter));
         return interpreter.Interpret(this);

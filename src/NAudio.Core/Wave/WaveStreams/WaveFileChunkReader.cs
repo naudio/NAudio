@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using NAudio.Utils;
 
@@ -23,19 +24,26 @@ internal class WaveFileChunkReader
     /// <summary>
     /// Creates a new WaveFileChunkReader
     /// </summary>
-    public WaveFileChunkReader()
+    public static WaveFileChunkReader Create(Stream stream)
+    {
+        return new WaveFileChunkReader(stream);
+    }
+
+    private WaveFileChunkReader(Stream stream)
     {
         storeAllChunks = true;
         strictMode = false;
+        ReadWaveHeader(stream);
     }
 
     /// <summary>
     /// Read the WAV header
     /// </summary>
+    [MemberNotNull(nameof(waveFormat), nameof(riffChunks))]
     public void ReadWaveHeader(Stream stream)
     {
         this.dataChunkPosition = -1;
-        this.waveFormat = null;
+        this.waveFormat = null!;
         this.riffChunks = new List<RiffChunk>();
         this.dataChunkLength = 0;
 

@@ -49,7 +49,7 @@ public class Mp3Frame
     /// </summary>
     /// <param name="input">input stream</param>
     /// <returns>A valid MP3 frame, or null if none found</returns>
-    public static Mp3Frame LoadFromStream(Stream input)
+    public static Mp3Frame? LoadFromStream(Stream input)
     {
         return LoadFromStream(input, true);
     }
@@ -59,7 +59,7 @@ public class Mp3Frame
     /// also see http://www.codeproject.com/KB/audio-video/mpegaudioinfo.aspx
     /// </remarks>
     /// <returns>A valid MP3 frame, or null if none found</returns>
-    public static Mp3Frame LoadFromStream(Stream input, bool readData)
+    public static Mp3Frame? LoadFromStream(Stream input, bool readData)
     {
         Id3v2Tag.TrySkipTag(input);
 
@@ -173,7 +173,7 @@ public class Mp3Frame
     /// </summary>
     private Mp3Frame()
     {
-
+        RawData = null!; // TODO: larger refactor necessary
     }
 
     /// <summary>

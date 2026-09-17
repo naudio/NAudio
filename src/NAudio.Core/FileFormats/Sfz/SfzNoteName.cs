@@ -18,7 +18,7 @@ public static class SfzNoteName
     /// Tries to parse a key value (note number or note name) to a MIDI note
     /// number. Returns false if the text is neither.
     /// </summary>
-    public static bool TryParse(string text, out int note)
+    public static bool TryParse(string? text, out int note)
     {
         note = 0;
         if (string.IsNullOrEmpty(text)) return false;
@@ -54,6 +54,6 @@ public static class SfzNoteName
     /// Parses a key value to a MIDI note number, returning
     /// <paramref name="fallback"/> if it is neither a number nor a note name.
     /// </summary>
-    public static int Parse(string text, int fallback) =>
+    public static int Parse(string? text, int fallback) =>
         TryParse(text, out var note) ? note : fallback;
 }

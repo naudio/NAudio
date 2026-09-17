@@ -6,7 +6,7 @@ namespace NAudio.Wave.SampleProviders;
 internal class Stereo8SampleChunkConverter : ISampleChunkConverter
 {
     private int offset;
-    private byte[] sourceBuffer;
+    private byte[]? sourceBuffer;
     private int sourceBytes;
 
     public bool Supports(WaveFormat waveFormat)
@@ -26,7 +26,7 @@ internal class Stereo8SampleChunkConverter : ISampleChunkConverter
 
     public bool GetNextSample(out float sampleLeft, out float sampleRight)
     {
-        if (offset < sourceBytes)
+        if (sourceBuffer is not null && offset < sourceBytes)
         {
             sampleLeft = sourceBuffer[offset++] / 128f - 1.0f;
             sampleRight = sourceBuffer[offset++] / 128f - 1.0f;

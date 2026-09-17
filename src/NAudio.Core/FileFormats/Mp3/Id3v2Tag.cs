@@ -18,7 +18,7 @@ public class Id3v2Tag
     /// <summary>
     /// Reads an ID3v2 tag from a stream
     /// </summary>
-    public static Id3v2Tag ReadTag(Stream input)
+    public static Id3v2Tag? ReadTag(Stream input)
     {
         long tagStartPosition = input.Position;
         var reader = new BinaryReader(input);
@@ -42,7 +42,7 @@ public class Id3v2Tag
     /// <returns>A new ID3v2 tag</returns>
     public static Id3v2Tag Create(IEnumerable<KeyValuePair<string, string>> tags)
     {
-        return Id3v2Tag.ReadTag(CreateId3v2TagStream(tags));
+        return ReadTag(CreateId3v2TagStream(tags))!;
     }
 
     /// <summary>

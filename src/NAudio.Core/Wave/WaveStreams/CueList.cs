@@ -185,7 +185,7 @@ public class CueList
     /// </summary>
     /// <param name="cueChunkData">The data contained in the cue chunk</param>
     /// <param name="listChunkData">The data contained in the list chunk</param>
-    internal CueList(byte[] cueChunkData, byte[] listChunkData)
+    internal CueList(byte[] cueChunkData, byte[]? listChunkData)
     {
         int cueCount = BitConverter.ToInt32(cueChunkData, 0);
         Dictionary<int, int> cueIndex = new Dictionary<int, int>();
@@ -315,7 +315,7 @@ public class CueList
                 w.Write(ltxtChunkId);
                 w.Write(20);
                 w.Write(i);                     // dwIdentifier (cue id)
-                w.Write(this[i].Length.Value);  // dwSampleLength
+                w.Write(this[i].Length!.Value); // dwSampleLength
                 w.Write(0);                     // dwPurpose
                 w.Write((short)0);              // wCountry
                 w.Write((short)0);              // wLanguage
@@ -353,7 +353,7 @@ public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
     public static readonly CueListInterpreter Instance = new();
 
     /// <inheritdoc />
-    public CueList Interpret(WaveChunks chunks)
+    public CueList? Interpret(WaveChunks chunks)
     {
         if (chunks == null) return null;
         var cueChunk = chunks.Find("cue ");
@@ -361,7 +361,7 @@ public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
 
         // A WAV file may contain multiple LIST chunks (e.g. INFO metadata alongside adtl labels).
         // Only the adtl list carries cue labels, so we filter by list type.
-        byte[] listChunkData = null;
+        byte[]? listChunkData = null;
         foreach (var list in chunks.FindAll("LIST"))
         {
             if (list.Length < 4) continue;

@@ -11,11 +11,12 @@ namespace NAudio.Wave;
 /// </summary>
 public class BlockAlignReductionStream : WaveStream
 {
-    private WaveStream sourceStream;
+    private readonly WaveStream sourceStream;
     private long position;
     private readonly CircularBuffer circularBuffer;
     private long bufferStartPosition;
-    private byte[] sourceBuffer;
+    private byte[]? sourceBuffer;
+    private bool disposed = false;
     private readonly Lock lockObject = new();
 
     /// <summary>
@@ -112,8 +113,11 @@ public class BlockAlignReductionStream : WaveStream
     {
         if (disposing)
         {
-            sourceStream?.Dispose();
-            sourceStream = null;
+            if (!disposed)
+            {
+                sourceStream.Dispose();
+                disposed = true;
+            }
         }
         else
         {

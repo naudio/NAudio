@@ -107,7 +107,7 @@ public sealed class SfzMappedRegion
     public SfzRegion Region { get; private set; }
 
     /// <summary>The region's sample path (from <see cref="SfzRegion.Sample"/>).</summary>
-    public string Sample => Region.Sample;
+    public string? Sample => Region.Sample;
 
     /// <summary>Lowest MIDI key (inclusive) the region responds to (default 0).</summary>
     public int LoKey { get; private set; }
@@ -137,7 +137,7 @@ public sealed class SfzMappedRegion
     /// whose value does not parse are ignored; levels are clamped to 0…1.
     /// Resolve the full per-velocity curve with <see cref="BuildVelocityCurve"/>.
     /// </summary>
-    public IReadOnlyList<(int Velocity, float Level)> VelocityCurvePoints { get; private set; }
+    public IReadOnlyList<(int Velocity, float Level)>? VelocityCurvePoints { get; private set; }
 
     /// <summary>Amplitude-envelope delay in seconds (<c>ampeg_delay</c>).</summary>
     public float AmpegDelay { get; private set; }
@@ -221,7 +221,7 @@ public sealed class SfzMappedRegion
     /// <summary>High end of the random window (<c>hirand</c>, default 1).</summary>
     public float HighRandom { get; private set; } = 1f;
     /// <summary>CC value windows that must all hold for the region to sound (<c>loccN</c>/<c>hiccN</c>).</summary>
-    public IReadOnlyList<(int Controller, int Low, int High)> CcGates { get; private set; }
+    public IReadOnlyList<(int Controller, int Low, int High)>? CcGates { get; private set; }
 
     /// <summary>Key crossfade-in low/high (<c>xfin_lokey</c>/<c>xfin_hikey</c>), or −1.</summary>
     public int KeyFadeInLow { get; private set; } = -1;
@@ -253,11 +253,11 @@ public sealed class SfzMappedRegion
     /// <summary>CC value windows that <em>trigger</em> the region when the controller
     /// rises into them (<c>on_loccN</c>/<c>on_hiccN</c>); null when the region is
     /// not CC-triggered.</summary>
-    public IReadOnlyList<(int Controller, int Low, int High)> OnCcTriggers { get; private set; }
+    public IReadOnlyList<(int Controller, int Low, int High)>? OnCcTriggers { get; private set; }
     /// <summary>The EQ bands the region specifies (<c>eq1_*</c>/<c>eq2_*</c>/<c>eq3_*</c>),
     /// with unspecified members defaulted (centre frequency 50/500/5000 Hz by band,
     /// bandwidth 1 octave, gain 0); null when no EQ opcode is present.</summary>
-    public IReadOnlyList<SfzEqBand> EqBands { get; private set; }
+    public IReadOnlyList<SfzEqBand>? EqBands { get; private set; }
 
     /// <summary>Amplitude (tremolo) LFO (<c>amplfo_freq</c>/<c>amplfo_depth</c>/<c>amplfo_delay</c>; depth in dB).</summary>
     public SfzLfo AmpLfo { get; private set; }
@@ -407,9 +407,9 @@ public sealed class SfzMappedRegion
 
     // Collects the eqN_* opcodes into typed bands: a band appears when any of
     // its three opcodes is present, with the spec defaults for the rest.
-    private static IReadOnlyList<SfzEqBand> BuildEqBands(SfzRegion region)
+    private static IReadOnlyList<SfzEqBand>? BuildEqBands(SfzRegion region)
     {
-        List<SfzEqBand> bands = null;
+        List<SfzEqBand>? bands = null;
         AddEqBand(region, "eq1", 50f, ref bands);
         AddEqBand(region, "eq2", 500f, ref bands);
         AddEqBand(region, "eq3", 5000f, ref bands);
@@ -417,7 +417,7 @@ public sealed class SfzMappedRegion
     }
 
     private static void AddEqBand(SfzRegion region, string prefix, float defaultFreq,
-        ref List<SfzEqBand> bands)
+        ref List<SfzEqBand>? bands)
     {
         if (!region.Has(prefix + "_freq") && !region.Has(prefix + "_bw") && !region.Has(prefix + "_gain"))
             return;
@@ -429,9 +429,9 @@ public sealed class SfzMappedRegion
     }
 
     // Collects on_loccN/on_hiccN opcodes into per-controller trigger windows.
-    private static IReadOnlyList<(int Controller, int Low, int High)> BuildOnCcTriggers(SfzRegion region)
+    private static IReadOnlyList<(int Controller, int Low, int High)>? BuildOnCcTriggers(SfzRegion region)
     {
-        Dictionary<int, (int Low, int High)> triggers = null;
+        Dictionary<int, (int Low, int High)>? triggers = null;
         foreach (var pair in region.Opcodes)
         {
             bool low = pair.Key.StartsWith("on_locc");
@@ -456,10 +456,10 @@ public sealed class SfzMappedRegion
     // Collects amp_velcurve_N opcodes into sorted (velocity, level) points;
     // points with N outside 1..127 or an unparseable value are ignored, and
     // levels are clamped to the spec's 0..1.
-    private static IReadOnlyList<(int Velocity, float Level)> BuildVelocityCurvePoints(SfzRegion region)
+    private static IReadOnlyList<(int Velocity, float Level)>? BuildVelocityCurvePoints(SfzRegion region)
     {
         const string prefix = "amp_velcurve_";
-        List<(int Velocity, float Level)> points = null;
+        List<(int Velocity, float Level)>? points = null;
         foreach (var pair in region.Opcodes)
         {
             if (!pair.Key.StartsWith(prefix)) continue;
@@ -486,7 +486,7 @@ public sealed class SfzMappedRegion
     /// when the region defines no points; the resolved curve replaces the
     /// default velocity-squared term inside the <c>amp_veltrack</c> law.
     /// </summary>
-    public float[] BuildVelocityCurve()
+    public float[]? BuildVelocityCurve()
     {
         var points = VelocityCurvePoints;
         if (points == null) return null;
@@ -515,9 +515,9 @@ public sealed class SfzMappedRegion
     }
 
     // Collects loccN/hiccN opcodes into per-controller [low, high] windows.
-    private static IReadOnlyList<(int Controller, int Low, int High)> BuildCcGates(SfzRegion region)
+    private static IReadOnlyList<(int Controller, int Low, int High)>? BuildCcGates(SfzRegion region)
     {
-        Dictionary<int, (int Low, int High)> gates = null;
+        Dictionary<int, (int Low, int High)>? gates = null;
         foreach (var pair in region.Opcodes)
         {
             bool low = pair.Key.StartsWith("locc");
@@ -549,7 +549,7 @@ public sealed class SfzMappedRegion
     private static int Clamp(int v) => v < 0 ? 0 : v > 127 ? 127 : v;
     private static float Clamp(float v, float lo, float hi) => v < lo ? lo : v > hi ? hi : v;
 
-    private static SfzLoopMode ParseLoopMode(string value)
+    private static SfzLoopMode ParseLoopMode(string? value)
     {
         switch (value)
         {
@@ -560,7 +560,7 @@ public sealed class SfzMappedRegion
         }
     }
 
-    private static SfzTrigger ParseTrigger(string value)
+    private static SfzTrigger ParseTrigger(string? value)
     {
         switch (value)
         {
@@ -571,13 +571,13 @@ public sealed class SfzMappedRegion
         }
     }
 
-    private static SfzCrossfadeCurve ParseCrossfadeCurve(string value) =>
+    private static SfzCrossfadeCurve ParseCrossfadeCurve(string? value) =>
         value == "gain" ? SfzCrossfadeCurve.Linear : SfzCrossfadeCurve.Power;
 
-    private static SfzOffMode ParseOffMode(string value) =>
+    private static SfzOffMode ParseOffMode(string? value) =>
         value == "normal" ? SfzOffMode.Normal : SfzOffMode.Fast;
 
-    private static SfzFilterType ParseFilterType(string value)
+    private static SfzFilterType ParseFilterType(string? value)
     {
         if (string.IsNullOrEmpty(value)) return SfzFilterType.LowPass;
         if (value.StartsWith("hpf")) return SfzFilterType.HighPass;

@@ -14,7 +14,7 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class BitCrusherEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     // 0 = off (no sample-rate reduction); the rest are target rates in Hz.
     private static readonly int[] RateOptions =
@@ -24,12 +24,12 @@ public sealed class BitCrusherEffect : AudioEffect, IParameterized
         { "Off", "32 kHz", "22.05 kHz", "16 kHz", "11.025 kHz", "8 kHz", "6 kHz", "4 kHz" };
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Bit Depth", "bits", 1f, 32f, () => BitDepth, v => BitDepth = (int)MathF.Round(v)),
         EffectParameter.Choice("Sample Rate", RateLabels, RateChoiceIndex, i => TargetSampleRate = RateOptions[i]),
         EffectParameter.Toggle("Smooth", () => Smoothing, v => Smoothing = v)
-    };
+    ];
 
     private float[] held = Array.Empty<float>();
     private float[] smoothState = Array.Empty<float>();

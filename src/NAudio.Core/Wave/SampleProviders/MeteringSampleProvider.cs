@@ -24,7 +24,7 @@ public class MeteringSampleProvider : ISampleProvider
     /// <summary>
     /// Raised periodically to inform the user of the max volume
     /// </summary>
-    public event EventHandler<StreamVolumeEventArgs> StreamVolume;
+    public event EventHandler<StreamVolumeEventArgs>? StreamVolume;
 
     /// <summary>
     /// Initialises a new instance of MeteringSampleProvider that raises 10 stream volume
@@ -95,5 +95,5 @@ public class StreamVolumeEventArgs : EventArgs
     /// <summary>
     /// Max sample values array (one for each channel)
     /// </summary>
-    public float[] MaxSampleValues { get; set; }
+    public float[]? MaxSampleValues { get; set; }
 }

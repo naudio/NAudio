@@ -9,7 +9,7 @@ namespace NAudio.Wave.SampleProviders;
 public class StereoToMonoSampleProvider : ISampleProvider
 {
     private readonly ISampleProvider sourceProvider;
-    private float[] sourceBuffer;
+    private float[]? sourceBuffer;
 
     /// <summary>
     /// Creates a new mono ISampleProvider based on a stereo input

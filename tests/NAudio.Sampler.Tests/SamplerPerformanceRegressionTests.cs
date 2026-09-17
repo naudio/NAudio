@@ -47,10 +47,6 @@ public class SamplerPerformanceRegressionTests
     [Test]
     public void SteadyStateNoteCyclesDoNotAllocate()
     {
-#if DEBUG
-        Assert.Ignore("This test only runs in Release mode.");
-#endif
-
         var sampler = new SoundFontSampler(BuildBusyFont(), SampleRate, maxVoices: 32)
         {
             PercussionChannel = -1

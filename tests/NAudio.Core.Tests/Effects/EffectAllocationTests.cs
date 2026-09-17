@@ -31,10 +31,6 @@ public class EffectAllocationTests
     public void SteadyStateProcessDoesNotAllocate(
         [ValueSource(nameof(Representative))] AudioEffect effect)
     {
-#if DEBUG
-        Assert.Ignore("This test only runs in Release mode.");
-#endif
-
         effect.Configure(Mono);
 
         var buffer = new float[1024];

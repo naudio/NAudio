@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Utils;
 
 namespace NAudio.Midi;
@@ -74,11 +75,7 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
     /// <returns>The new track event list</returns>
     public IList<MidiEvent> AddTrack(IList<MidiEvent> initialEvents)
     {
-        List<MidiEvent> events = new List<MidiEvent>();
-        if (initialEvents != null)
-        {
-            events.AddRange(initialEvents);
-        }
+        List<MidiEvent> events = initialEvents is null ? [] : new(initialEvents);
         trackEvents.Add(events);
         return events;
     }
@@ -198,7 +195,12 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
 
     private void FlattenToOneTrack()
     {
-        bool eventsAdded = false;
+        if (trackEvents.Count <= 1)
+        {
+            return;
+        }
+
+        int originalEventCount = trackEvents[0].Count;
         for (int track = 1; track < trackEvents.Count; track++)
         {
             foreach (MidiEvent midiEvent in trackEvents[track])
@@ -206,7 +208,6 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
                 if (!MidiEvent.IsEndTrack(midiEvent))
                 {
                     trackEvents[0].Add(midiEvent);
-                    eventsAdded = true;
                 }
             }
         }
@@ -214,6 +215,7 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
         {
             RemoveTrack(track);
         }
+        bool eventsAdded = trackEvents[0].Count > originalEventCount;
         if (eventsAdded)
         {
             PrepareForExport();
@@ -225,15 +227,13 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
     /// </summary>
     public void PrepareForExport()
     {
-        var comparer = new MidiEventComparer();
         // 1. sort each track
         foreach (var list in trackEvents)
         {
-            MergeSort.Sort(list, comparer);
+            MergeSort.Sort(list, MidiEventComparer.Instance);
 
             // 2. remove all End track events except one at the very end
-            int index = 0;
-            while (index < list.Count - 1)
+            for (int index = 0; index < list.Count - 1;)
             {
                 if (MidiEvent.IsEndTrack(list[index]))
                 {
@@ -246,29 +246,25 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
             }
         }
 
-        int track = 0;
         // 3. remove empty tracks and add missing
-        while (track < trackEvents.Count)
+        for (int track = 0; track < trackEvents.Count;)
         {
             var list = trackEvents[track];
             if (list.Count == 0)
             {
                 RemoveTrack(track);
             }
+            else if (list.Count == 1 && MidiEvent.IsEndTrack(list[0]))
+            {
+                RemoveTrack(track);
+            }
             else
             {
-                if (list.Count == 1 && MidiEvent.IsEndTrack(list[0]))
+                if (!MidiEvent.IsEndTrack(list[^1]))
                 {
-                    RemoveTrack(track);
+                    list.Add(new MetaEvent(MetaEventType.EndTrack, 0, list[^1].AbsoluteTime));
                 }
-                else
-                {
-                    if (!MidiEvent.IsEndTrack(list[list.Count - 1]))
-                    {
-                        list.Add(new MetaEvent(MetaEventType.EndTrack, 0, list[list.Count - 1].AbsoluteTime));
-                    }
-                    track++;
-                }
+                track++;
             }
         }
     }

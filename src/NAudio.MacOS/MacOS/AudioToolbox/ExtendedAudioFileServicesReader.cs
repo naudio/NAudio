@@ -403,7 +403,11 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     // produces accurate results.
     public sealed override TimeSpan CurrentTime
     {
-        get => TimeSpan.FromSeconds(PositionInFrames / sourceAsbd.mSampleRate);
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return TimeSpan.FromSeconds(PositionInFrames / sourceAsbd.mSampleRate);
+        }
         // mdcdi1315: We are calling base.CurrentTime instead to ensure
         // that the clientReadBytes field is correctly updated.
         // The overriden getter can be kept as-is.
@@ -414,7 +418,13 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     /// <inheritdoc />
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
     public sealed override TimeSpan TotalTime
-        => TimeSpan.FromSeconds(LengthInFrames / sourceAsbd.mSampleRate);
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return TimeSpan.FromSeconds(LengthInFrames / sourceAsbd.mSampleRate);
+        }
+    }
 
     /// <summary>
     /// Disposes of any native data the reader has allocated. <br />

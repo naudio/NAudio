@@ -13,6 +13,7 @@ public static class ByteArrayExtensions
     /// </summary>
     public static bool IsEntirelyNull(byte[] buffer)
     {
+        ArgumentNullException.ThrowIfNull(buffer);
         return buffer.AsSpan().IndexOfAnyExcept((byte)0) == -1;
     }
 

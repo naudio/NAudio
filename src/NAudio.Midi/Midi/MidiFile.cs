@@ -59,13 +59,13 @@ public class MidiFile
         try
         {
             Span<byte> chunkHeader = stackalloc byte[4];
-            _ = br.Read(chunkHeader);
+            inputStream.ReadExactly(chunkHeader);
             if (chunkHeader.SequenceEqual("RIFF"u8))
             {
                 // RIFF-RMID wrapper: a standard MIDI file embedded in a RIFF container
                 // (issue #1236). Skip the wrapper so the inner SMF is read as normal.
                 SeekToRmidMidiData(br);
-                _ = br.Read(chunkHeader);
+                inputStream.ReadExactly(chunkHeader);
             }
             if (!chunkHeader.SequenceEqual("MThd"u8))
             {
@@ -96,22 +96,22 @@ public class MidiFile
                 {
                     absoluteTime = 0;
                 }
-                chunkHeader.Clear();
-                _ = br.Read(chunkHeader);
+
+                inputStream.ReadExactly(chunkHeader);
                 if (!chunkHeader.SequenceEqual("MTrk"u8))
                 {
                     throw new FormatException("Invalid chunk header");
                 }
                 chunkSize = SwapUInt32(br.ReadUInt32());
 
-                long startPos = br.BaseStream.Position;
+                long startPos = inputStream.Position;
                 MidiEvent me = null;
                 // Only channel-voice messages (NoteOn/Off, ControlChange, etc.) establish
                 // running status; meta and sysex events leave the running status anchor intact
                 // (issue #205).
                 MidiEvent runningStatus = null;
                 var outstandingNoteOns = new List<NoteOnEvent>();
-                while (br.BaseStream.Position < startPos + chunkSize)
+                while (inputStream.Position < startPos + chunkSize)
                 {
                     try
                     {
@@ -163,7 +163,7 @@ public class MidiFile
                             // some dodgy MIDI files have an event after end track
                             if (strictChecking)
                             {
-                                if (br.BaseStream.Position < startPos + chunkSize)
+                                if (inputStream.Position < startPos + chunkSize)
                                 {
                                     throw new FormatException(
                                         $"End Track event was not the last MIDI event on track {track}");
@@ -180,9 +180,9 @@ public class MidiFile
                             $"Note ons without note offs {outstandingNoteOns.Count} (file format {fileFormat})");
                     }
                 }
-                if (br.BaseStream.Position != startPos + chunkSize)
+                if (inputStream.Position != startPos + chunkSize)
                 {
-                    throw new FormatException($"Read too far {chunkSize}+{startPos}!={br.BaseStream.Position}");
+                    throw new FormatException($"Read too far {chunkSize}+{startPos}!={inputStream.Position}");
                 }
             }
         }
@@ -267,11 +267,12 @@ public class MidiFile
                 byte[] chunk = new byte[(int)Math.Min(toSkip, 8192)];
                 while (toSkip > 0)
                 {
-                    if (br.Read(chunk, 0, (int)Math.Min(chunk.Length, toSkip)) <= 0)
+                    int bytesRead = br.Read(chunk, 0, (int)Math.Min(chunk.Length, toSkip));
+                    if (bytesRead <= 0)
                     {
                         throw new FormatException("Not a MIDI file - RIFF-RMID 'data' chunk missing");
                     }
-                    toSkip -= chunk.Length;
+                    toSkip -= bytesRead;
                 }
             }
         }

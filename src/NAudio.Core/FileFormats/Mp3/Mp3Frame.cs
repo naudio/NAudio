@@ -65,7 +65,7 @@ public class Mp3Frame
 
         var frame = new Mp3Frame();
         frame.FileOffset = input.Position;
-        Span<byte> headerBytes = new byte[4];
+        Span<byte> headerBytes = stackalloc byte[4];
         int bytesRead = input.Read(headerBytes);
         if (bytesRead < headerBytes.Length)
         {

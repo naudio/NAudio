@@ -17,7 +17,7 @@ public class Preset
     /// <summary>
     /// Preset name
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Patch Number
@@ -33,7 +33,7 @@ public class Preset
     /// <summary>
     /// Zones
     /// </summary>
-    public Zone[] Zones { get; set; }
+    public Zone[]? Zones { get; set; }
 
     /// <summary>
     /// Flattens this preset into its fully-resolved, playable regions,

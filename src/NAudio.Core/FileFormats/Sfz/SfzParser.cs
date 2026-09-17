@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -40,7 +41,7 @@ public static partial class SfzParser
     /// Parses SFZ text. <paramref name="includeResolver"/> supplies the text
     /// of <c>#include</c>d files; if null, includes are skipped.
     /// </summary>
-    public static SfzInstrument Parse(string text, ISfzIncludeResolver includeResolver = null)
+    public static SfzInstrument Parse(string text, ISfzIncludeResolver? includeResolver = null)
     {
         if (text == null) throw new ArgumentNullException(nameof(text));
 
@@ -55,7 +56,7 @@ public static partial class SfzParser
     /// Loads and parses an SFZ file, resolving <c>#include</c>s and relative
     /// sample <c>default_path</c>s against the file's directory.
     /// </summary>
-    public static SfzInstrument ParseFile(string path)
+    public static SfzInstrument ParseFile(string? path)
     {
         if (path == null) throw new ArgumentNullException(nameof(path));
         var text = File.ReadAllText(path);
@@ -65,7 +66,7 @@ public static partial class SfzParser
 
     // ---- preprocessing: comments, #define/$var, #include ----
 
-    private static void Preprocess(string text, ISfzIncludeResolver resolver,
+    private static void Preprocess(string text, ISfzIncludeResolver? resolver,
         Dictionary<string, string> defines, int depth, StringBuilder output)
     {
         if (depth > MaxIncludeDepth)
@@ -122,14 +123,17 @@ public static partial class SfzParser
         var tokens = Tokenize(text);
 
         SfzHeader currentHeader = SfzHeader.Unknown;
-        string currentHeaderText = null;
-        Dictionary<string, string> currentOpcodes = null;
+        string? currentHeaderText = null;
+        Dictionary<string, string>? currentOpcodes = null;
         bool inSection = false;
 
         void Commit()
         {
             if (inSection)
+            {
+                Debug.Assert(currentHeaderText is not null && currentOpcodes is not null);
                 sections.Add(new SfzSection(currentHeader, currentHeaderText, currentOpcodes));
+            }
         }
 
         for (int i = 0; i < tokens.Count; i++)
@@ -168,6 +172,7 @@ public static partial class SfzParser
                 inSection = true;
             }
 
+            Debug.Assert(currentOpcodes is not null);
             currentOpcodes[key] = value.ToString();
         }
 
@@ -186,7 +191,7 @@ public static partial class SfzParser
     private static List<string> Tokenize(string text)
     {
         var tokens = new List<string>();
-        foreach (var chunk in text.Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var chunk in text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
         {
             int start = 0;
             for (int i = 0; i < chunk.Length; i++)
@@ -236,13 +241,13 @@ public static partial class SfzParser
     {
         var regions = new List<SfzRegion>();
         var global = new Dictionary<string, string>();
-        Dictionary<string, string> master = null;
-        Dictionary<string, string> group = null;
+        Dictionary<string, string>? master = null;
+        Dictionary<string, string>? group = null;
 
-        string defaultPath = null;
+        string? defaultPath = null;
         int noteOffset = 0;
         int octaveOffset = 0;
-        Dictionary<int, int> setCc = null;
+        Dictionary<int, int>? setCc = null;
 
         foreach (var section in sections)
         {
@@ -273,7 +278,7 @@ public static partial class SfzParser
             }
         }
 
-        List<(int Controller, int Value)> initialCc = null;
+        List<(int Controller, int Value)>? initialCc = null;
         if (setCc != null)
         {
             initialCc = new List<(int, int)>(setCc.Count);
@@ -287,7 +292,7 @@ public static partial class SfzParser
     // loccN/hiccN gate whose controller would otherwise default to 0. Later
     // control sections override earlier ones per controller; out-of-range
     // controller numbers are ignored and values clamp to the MIDI 0..127.
-    private static void CollectSetCc(IReadOnlyDictionary<string, string> opcodes, ref Dictionary<int, int> setCc)
+    private static void CollectSetCc(IReadOnlyDictionary<string, string> opcodes, ref Dictionary<int, int>? setCc)
     {
         const string prefix = "set_cc";
         foreach (var pair in opcodes)
@@ -305,9 +310,9 @@ public static partial class SfzParser
     }
 
     private static SfzRegion BuildRegion(
-        Dictionary<string, string> global, Dictionary<string, string> master,
-        Dictionary<string, string> group, IReadOnlyDictionary<string, string> region,
-        string defaultPath)
+        Dictionary<string, string> global, Dictionary<string, string>? master,
+        Dictionary<string, string>? group, IReadOnlyDictionary<string, string> region,
+        string? defaultPath)
     {
         // precedence: global < master < group < region
         var merged = new Dictionary<string, string>(global);
@@ -315,7 +320,7 @@ public static partial class SfzParser
         if (group != null) Merge(merged, group);
         Merge(merged, region);
 
-        string sample = null;
+        string? sample = null;
         if (merged.TryGetValue("sample", out var rawSample))
         {
             sample = rawSample.Replace('\\', '/');

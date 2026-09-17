@@ -11,7 +11,7 @@ public class SampleToWaveProvider24 : IWaveProvider
     private readonly ISampleProvider sourceProvider;
     private readonly WaveFormat waveFormat;
     private volatile float volume;
-    private float[] sourceBuffer;
+    private float[]? sourceBuffer;
 
     /// <summary>
     /// Converts from an ISampleProvider (IEEE float) to a 24 bit PCM IWaveProvider.

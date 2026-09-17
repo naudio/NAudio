@@ -11,14 +11,14 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class ComfortNoiseEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Level", "dB", -90f, -20f, () => LevelDb, v => LevelDb = v),
         EffectParameter.Continuous("Tone", "", 0f, 1f, () => Tone, v => Tone = v)
-    };
+    ];
 
     private const uint InitialRngState = 0x6D2B79F5;
 

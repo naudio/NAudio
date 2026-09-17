@@ -13,15 +13,15 @@ public class Instrument
     /// <summary>
     /// instrument name
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Zones
     /// </summary>
-    public Zone[] Zones { get; set; }
+    public Zone[]? Zones { get; set; }
 
     /// <summary>
     /// <see cref="Object.ToString"/>
     /// </summary>
-    public override string ToString() => Name;
+    public override string ToString() => Name ?? "Unnamed Instrument";
 }

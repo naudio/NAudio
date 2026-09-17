@@ -10,8 +10,8 @@ namespace NAudio.Sfz;
 public sealed class SfzInstrument
 {
     internal SfzInstrument(IReadOnlyList<SfzRegion> regions, IReadOnlyList<SfzSection> sections,
-        string defaultPath, int noteOffset, int octaveOffset,
-        IReadOnlyList<(int Controller, int Value)> initialControllerValues = null)
+        string? defaultPath, int noteOffset, int octaveOffset,
+        IReadOnlyList<(int Controller, int Value)>? initialControllerValues = null)
     {
         Regions = regions;
         Sections = sections;
@@ -32,7 +32,7 @@ public sealed class SfzInstrument
     /// (backslashes normalised to forward slashes), or null if none was set.
     /// Already applied to each region's <see cref="SfzRegion.Sample"/>.
     /// </summary>
-    public string DefaultPath { get; }
+    public string? DefaultPath { get; }
 
     /// <summary>The <c>note_offset</c> from <c>&lt;control&gt;</c> (default 0).</summary>
     public int NoteOffset { get; }
@@ -50,7 +50,7 @@ public sealed class SfzInstrument
     /// <em>changes</em> (so <c>on_loccN</c>/<c>on_hiccN</c> trigger regions
     /// must not fire from them).
     /// </summary>
-    public IReadOnlyList<(int Controller, int Value)> InitialControllerValues { get; }
+    public IReadOnlyList<(int Controller, int Value)>? InitialControllerValues { get; }
 
     /// <summary>
     /// Interprets every region's opcodes into typed

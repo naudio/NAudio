@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -12,19 +13,19 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class TremoloEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Depth", "", 0f, 1f, () => Depth, v => Depth = v),
         EffectParameter.Continuous("Rate", "Hz", 0.1f, 20f, () => RateHz, v => RateHz = v),
         EffectParameter.Choice("Waveform", new[] { "Sine", "Triangle", "Sawtooth", "Square", "Sample & Hold" },
             () => (int)Waveform, i => Waveform = (LfoWaveform)i),
         EffectParameter.Toggle("Auto-Pan", () => AutoPan, v => AutoPan = v)
-    };
+    ];
 
-    private Lfo lfo;
+    private Lfo? lfo;
     // Rounds the step edges of the Square / Sample-and-Hold LFO so amplitude
     // modulation doesn't click; ~3 ms barely touches the smooth waveforms at
     // LFO rates (corner ≈ 50 Hz, well above the 20 Hz max rate).
@@ -59,6 +60,8 @@ public sealed class TremoloEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(lfo is not null, "Configure must be called before ProcessBlock.");
+
         var channels = Channels;
         lfo.FrequencyHz = RateHz <= 0f ? 0.01f : RateHz;
         lfo.Waveform = Waveform;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -11,18 +12,18 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class ChorusEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Base Delay", "ms", 1f, 50f, () => BaseDelayMs, v => BaseDelayMs = v),
         EffectParameter.Continuous("Depth", "ms", 0f, 30f, () => DepthMs, v => DepthMs = v),
         EffectParameter.Continuous("Rate", "Hz", 0.05f, 10f, () => RateHz, v => RateHz = v),
         EffectParameter.Continuous("Feedback", "", 0f, 0.95f, () => Feedback, v => Feedback = v)
-    };
+    ];
 
-    private Lfo lfo;
+    private Lfo? lfo;
     private DelayLine[] lines = Array.Empty<DelayLine>();
 
     /// <summary>Centre delay in milliseconds. Default 15 ms.</summary>
@@ -64,6 +65,8 @@ public sealed class ChorusEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(lfo is not null, "Configure must be called before ProcessBlock.");
+
         var channels = Channels;
         lfo.FrequencyHz = RateHz <= 0f ? 0.01f : RateHz;
         var feedback = Math.Clamp(Feedback, 0f, 0.99f);

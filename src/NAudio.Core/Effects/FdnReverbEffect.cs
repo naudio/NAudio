@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -15,11 +16,11 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class FdnReverbEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Decay", "s", 0.1f, 10f, () => DecaySeconds, v => DecaySeconds = v),
         EffectParameter.Continuous("Size", "", 0.1f, 2f, () => Size, v => Size = v),
         EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
@@ -27,7 +28,7 @@ public sealed class FdnReverbEffect : AudioEffect, IParameterized
         EffectParameter.Continuous("Mod Rate", "Hz", 0.05f, 5f, () => ModulationRateHz, v => ModulationRateHz = v),
         EffectParameter.Continuous("Pre-Delay", "ms", 0f, 200f, () => PreDelayMs, v => PreDelayMs = v),
         EffectParameter.Continuous("Width", "", 0f, 1f, () => Width, v => Width = v)
-    };
+    ];
 
     private const int Lines = 8;
 
@@ -36,7 +37,7 @@ public sealed class FdnReverbEffect : AudioEffect, IParameterized
         { 29.7f, 34.1f, 37.3f, 41.1f, 43.7f, 47.3f, 53.9f, 59.3f };
 
     private DelayLine[] lines = Array.Empty<DelayLine>();
-    private DelayLine preDelay;
+    private DelayLine? preDelay;
     private Lfo[] modulators = Array.Empty<Lfo>();
     private readonly float[] damped = new float[Lines];
     private readonly float[] dampState = new float[Lines];
@@ -90,6 +91,8 @@ public sealed class FdnReverbEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(preDelay is not null, "Configure must be called before ProcessBlock.");
+
         var channels = Channels;
         var sr = SampleRate;
         var size = Math.Clamp(Size, 0.1f, 2f);

@@ -26,27 +26,27 @@ public sealed class BroadcastExtension
     /// <summary>
     /// Description (up to 256 bytes in the file).
     /// </summary>
-    public string Description { get; init; }
+    public string? Description { get; init; }
 
     /// <summary>
     /// Originator (up to 32 bytes in the file).
     /// </summary>
-    public string Originator { get; init; }
+    public string? Originator { get; init; }
 
     /// <summary>
     /// Originator Reference (up to 32 bytes in the file).
     /// </summary>
-    public string OriginatorReference { get; init; }
+    public string? OriginatorReference { get; init; }
 
     /// <summary>
     /// Origination date as stored in the file (10 ASCII characters — typically <c>yyyy-mm-dd</c>).
     /// </summary>
-    public string OriginationDate { get; init; }
+    public string? OriginationDate { get; init; }
 
     /// <summary>
     /// Origination time as stored in the file (8 ASCII characters — typically <c>hh:mm:ss</c>).
     /// </summary>
-    public string OriginationTime { get; init; }
+    public string? OriginationTime { get; init; }
 
     /// <summary>
     /// Time reference — sample count since midnight, little-endian 64-bit.
@@ -61,7 +61,7 @@ public sealed class BroadcastExtension
     /// <summary>
     /// SMPTE UMID (up to 64 bytes).
     /// </summary>
-    public string UniqueMaterialIdentifier { get; init; }
+    public string? UniqueMaterialIdentifier { get; init; }
 
     /// <summary>
     /// Integrated loudness value in LUFS × 100. Null for version 1 chunks.
@@ -91,7 +91,7 @@ public sealed class BroadcastExtension
     /// <summary>
     /// Coding history (variable-length ASCII string at the end of the chunk).
     /// </summary>
-    public string CodingHistory { get; init; }
+    public string? CodingHistory { get; init; }
 
     /// <summary>
     /// Serialises this instance into the body of a <c>bext</c> RIFF chunk
@@ -132,7 +132,7 @@ public sealed class BroadcastExtension
         return ms.ToArray();
     }
 
-    private static byte[] FixedAscii(string s, int length)
+    private static byte[] FixedAscii(string? s, int length)
     {
         var buffer = new byte[length];
         if (!string.IsNullOrEmpty(s))
@@ -156,7 +156,7 @@ public sealed class BextInterpreter : IWaveChunkInterpreter<BroadcastExtension>
     public static readonly BextInterpreter Instance = new();
 
     /// <inheritdoc />
-    public BroadcastExtension Interpret(WaveChunks chunks)
+    public BroadcastExtension? Interpret(WaveChunks chunks)
     {
         if (chunks == null) return null;
         var bextChunk = chunks.Find("bext");

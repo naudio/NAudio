@@ -12,13 +12,13 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class GainEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Gain", "dB", -60f, 24f, () => GainDb, v => GainDb = v)
-    };
+    ];
 
     private readonly ParameterSmoother gain = new();
     private float linearGain = 1f;

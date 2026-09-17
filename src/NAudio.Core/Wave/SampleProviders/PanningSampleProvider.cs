@@ -13,7 +13,7 @@ public class PanningSampleProvider : ISampleProvider
     private float leftMultiplier;
     private float rightMultiplier;
     private readonly WaveFormat waveFormat;
-    private float[] sourceBuffer;
+    private float[]? sourceBuffer;
     private IPanStrategy panStrategy;
 
     /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Dsp;
 
@@ -161,6 +162,7 @@ public sealed class InterpolatingSampleReader
     /// (e.g. sampler voices) that reuse one reader across many notes.
     /// </summary>
     /// <param name="source">The sample source to read from.</param>
+    [MemberNotNull(nameof(source), nameof(data))]
     public void Reset(SampleSource source)
     {
         this.source = source ?? throw new ArgumentNullException(nameof(source));

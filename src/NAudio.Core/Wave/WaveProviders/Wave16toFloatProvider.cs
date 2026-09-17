@@ -12,7 +12,7 @@ public class Wave16ToFloatProvider : IWaveProvider
     private readonly IWaveProvider sourceProvider;
     private readonly WaveFormat waveFormat;
     private volatile float volume;
-    private byte[] sourceBuffer;
+    private byte[]? sourceBuffer;
 
     /// <summary>
     /// Creates a new Wave16toFloatProvider

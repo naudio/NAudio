@@ -10,7 +10,7 @@ namespace NAudio.Wave;
 public class MonoToStereoProvider16 : IWaveProvider
 {
     private readonly IWaveProvider sourceProvider;
-    private byte[] sourceBuffer;
+    private byte[]? sourceBuffer;
 
     /// <summary>
     /// Creates a new stereo waveprovider based on a mono input

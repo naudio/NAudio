@@ -11,8 +11,9 @@ namespace NAudio.Wave;
 /// </summary>
 public class Wave32To16Stream : WaveStream
 {
-    private WaveStream sourceStream;
+    private readonly WaveStream sourceStream;
     private readonly WaveFormat waveFormat;
+    private bool disposed = false;
     private readonly long length;
     private long position;
     private bool clip;
@@ -22,7 +23,7 @@ public class Wave32To16Stream : WaveStream
     /// <summary>
     /// Reused between <c>Read</c> calls to avoid per-read allocations.
     /// </summary>
-    private byte[] sourceBuffer;
+    private byte[]? sourceBuffer;
 
     /// <summary>
     /// Creates a new Wave32To16Stream
@@ -167,8 +168,11 @@ public class Wave32To16Stream : WaveStream
     {
         if (disposing)
         {
-            sourceStream?.Dispose();
-            sourceStream = null;
+            if (!disposed)
+            {
+                sourceStream.Dispose();
+                disposed = true;
+            }
         }
         base.Dispose(disposing);
     }

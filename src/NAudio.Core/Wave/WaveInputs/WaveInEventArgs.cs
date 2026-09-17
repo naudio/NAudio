@@ -17,10 +17,10 @@ public class WaveInEventArgs : EventArgs
     // Exactly one of these is the canonical storage:
     //  - arrayBacking non-null: legacy (byte[], int bytes) ctor. bytesInArray is the valid length.
     //  - arrayBacking null:      memoryBacking is the canonical storage. Memory length == BytesRecorded.
-    private readonly byte[] arrayBacking;
+    private readonly byte[]? arrayBacking;
     private readonly int bytesInArray;
     private readonly ReadOnlyMemory<byte> memoryBacking;
-    private byte[] lazyMaterializedArray;
+    private byte[]? lazyMaterializedArray;
 
     /// <summary>
     /// Creates new event args backed by a byte array. The first <paramref name="bytes"/>

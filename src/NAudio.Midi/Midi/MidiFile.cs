@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using NAudio.Utils;
+using System.Buffers.Binary;
 
 namespace NAudio.Midi;
 

@@ -21,8 +21,8 @@ public static class OfflineMidiRenderer
     /// </summary>
     public static float[] Render(MidiFileSequence sequence, IMidiInstrument instrument, double tailSeconds = 2.0)
     {
-        if (sequence == null) throw new ArgumentNullException(nameof(sequence));
-        if (instrument == null) throw new ArgumentNullException(nameof(instrument));
+        ArgumentNullException.ThrowIfNull(sequence);
+        ArgumentNullException.ThrowIfNull(instrument);
 
         int sampleRate = instrument.WaveFormat.SampleRate;
         int channels = instrument.WaveFormat.Channels;
@@ -48,9 +48,9 @@ public static class OfflineMidiRenderer
     public static void RenderToWaveFile(MidiFileSequence sequence, IMidiInstrument instrument,
         string outputPath, double tailSeconds = 2.0)
     {
-        if (sequence == null) throw new ArgumentNullException(nameof(sequence));
-        if (instrument == null) throw new ArgumentNullException(nameof(instrument));
-        if (outputPath == null) throw new ArgumentNullException(nameof(outputPath));
+        ArgumentNullException.ThrowIfNull(sequence);
+        ArgumentNullException.ThrowIfNull(instrument);
+        ArgumentNullException.ThrowIfNull(outputPath);
 
         int sampleRate = instrument.WaveFormat.SampleRate;
         int channels = instrument.WaveFormat.Channels;
@@ -60,8 +60,7 @@ public static class OfflineMidiRenderer
         var block = new float[BlockFrames * channels];
 
         using var writer = new WaveFileWriter(outputPath, instrument.WaveFormat);
-        long done = 0;
-        while (done < totalFrames)
+        for (long done = 0; done < totalFrames;)
         {
             int n = (int)Math.Min(BlockFrames, totalFrames - done);
             player.Read(block.AsSpan(0, n * channels));

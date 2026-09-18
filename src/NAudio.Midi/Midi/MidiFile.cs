@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using NAudio.Utils;
+using System.Buffers.Binary;
 
 namespace NAudio.Midi;
 
@@ -278,12 +279,12 @@ public class MidiFile
 
     private static uint SwapUInt32(uint i)
     {
-        return ((i & 0xFF000000) >> 24) | ((i & 0x00FF0000) >> 8) | ((i & 0x0000FF00) << 8) | ((i & 0x000000FF) << 24);
+        return BinaryPrimitives.ReverseEndianness(i);
     }
 
     private static ushort SwapUInt16(ushort i)
     {
-        return (ushort)(((i & 0xFF00) >> 8) | ((i & 0x00FF) << 8));
+        return BinaryPrimitives.ReverseEndianness(i);
     }
 
     /// <summary>
@@ -334,7 +335,7 @@ public class MidiFile
             throw new ArgumentException("Can't export more than one track to a type 0 file");
         }
         using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
-        writer.Write(Encoding.UTF8.GetBytes("MThd"));
+        writer.Write("MThd"u8);
         writer.Write(SwapUInt32(6)); // chunk size
         writer.Write(SwapUInt16((ushort)events.MidiFileType));
         writer.Write(SwapUInt16((ushort)events.Tracks));
@@ -344,7 +345,7 @@ public class MidiFile
         {
             IList<MidiEvent> eventList = events[track];
 
-            writer.Write(Encoding.UTF8.GetBytes("MTrk"));
+            writer.Write("MTrk"u8);
             long trackSizePosition = writer.BaseStream.Position;
             writer.Write(SwapUInt32(0));
 
@@ -352,7 +353,7 @@ public class MidiFile
 
             // use a stable sort to preserve ordering of MIDI events whose
             // absolute times are the same
-            MergeSort.Sort(eventList, new MidiEventComparer());
+            MergeSort.Sort(eventList, MidiEventComparer.Instance);
             if (eventList.Count > 0)
             {
                 System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");

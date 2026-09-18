@@ -8,34 +8,34 @@ which is equivalent to `MediaFoundationReader`. Let's see what it offers.
 First of all, you need to reference the `NAudio.MacOS` package into your project.
 Note that it ships pre-release only while its API settles, so `--prerelease` is also required:
 
-~~~C#
+```c#
 dotnet add package NAudio.MacOS --prerelease
-~~~
+```
 
 ### Reading an audio file
 
 Let's assume that you want to read an MP3 file.
 With the reader of Extended Audio File Services, you can do it this way:
 
-~~~C#
+```c#
 using NAudio.Wave;
 
 using var reader = ExtendedAudioFileReaderFromURL.CreateFromFile(
     "/Users/user_name/a_file.mp3"
 );
-~~~
+```
 
 You can of course specify any file path; the path provided here is purely illustrative.
 
 It is possible to open a file from a .NET data stream as well:
 
-~~~C#
+```c#
 using NAudio.Wave;
 
 using var reader = new ExtendedAudioFileReaderFromStream(
     dataStream
 );
-~~~
+```
 
 > [!NOTE]
 The reader extends the `WaveStream` class, so you have a seekable
@@ -61,7 +61,7 @@ Which of those formats is actually supported and which not depends on
 the macOS version you use.
 You are able to query the supported file formats as MIME types at run-time:
 
-~~~C#
+```c#
 using System;
 using NAudio.MacOS.AudioToolbox;
 
@@ -69,7 +69,7 @@ foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
 {
     Console.WriteLine(mimeType);
 }
-~~~
+```
 
 ### Modifying the initialization behavior of the reader.
 
@@ -77,7 +77,7 @@ Both of these reader classes do accept a settings object that modifies
 how the reader should initialize. That settings class is the `ExtendedAudioFileReaderSettings`
 class, and it is located into `NAudio.MacOS.AudioToolbox`:
 
-~~~C#
+```c#
 using NAudio.Wave;
 
 namespace NAudio.MacOS.AudioToolbox;
@@ -90,7 +90,7 @@ public class ExtendedAudioFileReaderSettings
 
     public WaveFormat OutputFormat { get; set; }
 }
-~~~
+```
 
 #### The `RequestIeeeFloat` property
 
@@ -138,7 +138,7 @@ There is also an extended variant of this settings object, provided only
 for when you work with streams. This is the `ExtendedAudioFileReaderFromStreamSettings` class,
 and derives from `ExtendedAudioFileReaderSettings`, so it inherits all the properties from it:
 
-~~~C#
+```c#
 using NAudio.MacOS.AudioToolbox;
 
 namespace NAudio.Wave;
@@ -152,7 +152,7 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
         public string FileName { get; set; }
     }
 }
-~~~
+```
 
 #### The `MimeType` property
 
@@ -163,7 +163,7 @@ It is optional, and the reader does a decent job finding the audio file type of 
 
 The MIME types can be queried at run-time using this code:
 
-~~~C#
+```c#
 using System;
 using NAudio.MacOS.AudioToolbox;
 
@@ -171,7 +171,7 @@ foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
 {
     Console.WriteLine(mimeType);
 }
-~~~
+```
 
 > [!CAUTION]
 Try not to hardcode the MIME type given to the property as it subject to change
@@ -194,7 +194,7 @@ is a formal description of the data stream.
 
 The supported file types (by extension) can be also queried with this snippet:
 
-~~~C#
+```c#
 using System;
 using NAudio.MacOS.AudioToolbox;
 
@@ -202,7 +202,7 @@ foreach (var extension in AudioFileLibraryInformation.RecognizedFileExtensions)
 {
     Console.WriteLine(mimeType);
 }
-~~~
+```
 
 > [!CAUTION]
 The file extensions returned through the `RecognizedFileExtensions` property
@@ -218,7 +218,7 @@ Make sure to read the [`CoreAudioPlayer`](PlayAudioFileMacOS.md) document
 first to understand what the below does, if you have not.
 
 
-~~~C#
+```c#
 using NAudio.Wave;
 
 using var reader = ExtendedAudioFileReaderFromURL.CreateFromFile(
@@ -234,4 +234,4 @@ while (player.PlaybackState == PlaybackState.Playing)
 {
     System.Threading.Thread.Sleep(400);
 }
-~~~
+```

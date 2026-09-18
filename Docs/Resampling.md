@@ -10,7 +10,7 @@ Probably the most powerful resampler available with NAudio is the `MediaFoundati
 
 Here's a code sample that resamples an MP3 file (usually 44.1kHz) down to 16kHz. The `MediaFoundationResampler` takes an `IWaveProvider` as input, and a desired output `WaveFormat`:
 
-~~~c#
+```c#
 using NAudio.Wave;
 
 int outRate = 16000;
@@ -25,7 +25,7 @@ using var resampler = new MediaFoundationResampler(reader, outFormat);
 
 // resampler.ResamplerQuality = 60; // default is already 60 (best quality)
 WaveFileWriter.CreateWaveFile(outFile, resampler);
-~~~
+```
 
 ## Option 2: AudioConverter (macOS)
 
@@ -33,9 +33,9 @@ An equally powerful resampler as the `MediaFoundationResampler` that is provided
 in the new macOS wrappers package.
 Note that it ships pre-release only while its API settles, so `--prerelease` is also required:
 
-~~~C#
+```c#
 dotnet add package NAudio.MacOS --prerelease
-~~~
+```
 
 This resampler provides top-notch quality as the Windows Media resampler,
 but has a caveat: You cannot change any of the input stream format properties at any time.
@@ -43,7 +43,7 @@ but has a caveat: You cannot change any of the input stream format properties at
 However, it allows us to select a resampling algorithm, quality and dithering algorithm if we want to.
 Also, it supports mapping the input channels to different outputs, or even disable input channels:
 
-~~~C#
+```c#
 using NAudio.Wave;
 using NAudio.MacOS.AudioToolbox;
 
@@ -62,7 +62,7 @@ using var resampler = new MacAudioConverter(reader, outFormat);
 // resampler.Quality = AudioConverterQuality.Max; 
 
 WaveFileWriter.CreateWaveFile(outFile, resampler);
-~~~
+```
 
 As mentioned above, this requires running on macOS to be able to use this.
 

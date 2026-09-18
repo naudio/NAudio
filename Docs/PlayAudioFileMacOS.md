@@ -6,14 +6,14 @@ HAL. It is referenced explicitly (it is not part of the `NAudio`
 meta-package), and it ships pre-release only while its API settles, so
 `--prerelease` is required:
 
-~~~sh
+```sh
 dotnet add package NAudio.MacOS --prerelease
-~~~
+```
 
 `CoreAudioPlayer` can play any `IWaveProvider` you give to it. 
 For a WAV file, you can use `WaveFileReader` from the Core library:
 
-~~~C#
+```c#
 using NAudio.Wave;
 
 using (var audioFile = new WaveFileReader("any.wav"))
@@ -26,7 +26,7 @@ using (var outputDevice = new CoreAudioPlayer())   // default output device
         Thread.Sleep(200);
     }
 }
-~~~
+```
 
 > [!NOTE]
 The `CoreAudioPlayer` does not require any device format negotiation to be done
@@ -41,7 +41,7 @@ If you do not want to use the default output device to perform the playback,
 you can enumerate the available devices on the system by getting the `Devices`
 property on the HAL's audio system object:
 
-~~~C#
+```c#
 using NAudio.MacOS.CoreAudio;
 
 // Enumerate all the devices that provide output.
@@ -54,7 +54,7 @@ foreach (var device in AudioSystemObject.Instance.Devices)
 }
 // Once you have selected an audio device, you can give it to the player:
 // using var createdPlayer = new CoreAudioPlayer(chosenDevice);
-~~~
+```
 
 > [!NOTE]
 The `Devices` property returns all the devices installed to the system at the time of calling it.
@@ -73,9 +73,9 @@ that it uses to do playback by invoking the `Device` property.
 
 The device's volume can be changed by setting the `Volume` property on the `CoreAudioPlayer` instance:
 
-~~~C#
+```c#
 createdPlayer.Volume = 0.8f;
-~~~
+```
 
 > [!WARNING]
 Unlike many other `IWavePlayer` implementations, this implementation directly modifies the 
@@ -86,7 +86,7 @@ disrupting the user's value, use a `VolumeSampleProvider`.
 In some cases, you might be able to modify the volume of the device per-channel.
 To do this, retrieve the device's control list and enumerate through the controls:
 
-~~~C#
+```c#
 foreach (var control in createdPlayer.Device.ControlList)
 {
     if (control is AudioLevelControl lc && lc.Kind == AudioControlKind.VolumeControl)
@@ -95,4 +95,4 @@ foreach (var control in createdPlayer.Device.ControlList)
         lc.ScalarValue = 0.8f;
     }
 }
-~~~
+```

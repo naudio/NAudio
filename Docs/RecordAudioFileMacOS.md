@@ -24,7 +24,7 @@ It is not something you decide.
 
 An example creating a new wave file directly from recording:
 
-~~~C#
+```c#
 using System.Threading;
 
 using NAudio.Wave;
@@ -48,7 +48,7 @@ input.RecordingStopped += (sender, a) =>
 input.StartRecording();
 Thread.Sleep(5000);                          // record for 5 seconds
 input.StopRecording();
-~~~
+```
 
 > [!CAUTION]
 `audioData` is a `ReadOnlySpan<byte>` pointing at a buffer owned by the
@@ -58,7 +58,7 @@ HAL, so write or copy it to your own buffer before the handler returns
 Alternatively, `CaptureAsync` yields `CoreAudioCaptureBuffer` objects,
 each with its own `byte[] Buffer`, and initializes the recorder for you:
 
-~~~c#
+```c#
 using var input = new CoreAudioRecorder();
 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
@@ -66,7 +66,7 @@ await foreach (var buffer in input.CaptureAsync(cts.Token))
 {
     writer.Write(buffer.Buffer, 0, buffer.Buffer.Length);
 }
-~~~
+```
 
 > [!NOTE]
 Both recording forms hand you HAL timestamps (in seconds) for the start of
@@ -83,12 +83,12 @@ You can restart the recording, or completely abort it.
 
 If the application you are using this API has not explicitly been given permission to capture,
 macOS will prompt at the first time to capture from the device.
-Even if the user denies access to the device, HAL does automatically write silence to the provided
+Even if the user denies access to the device, the HAL does automatically write silence to the provided
 buffers for the duration of the recording.
 
 If you want to check that your application has access to the capture device, check
-in your macOS System Settings app -> go to Privacy &amp; Security -> scroll down to Microphone section and click it ->
-find your app.
+in your macOS System Settings app -&gt; find the Privacy &amp; Security tab on the left and click it -&gt;
+scroll down to Microphone section and click it -&gt; find your app.
 
 > [!NOTE]
 If you cannot find your app in the list, and you are using the terminal to run your app,
@@ -101,7 +101,7 @@ If you do not want to use the default input device to perform the capture,
 you can enumerate the available devices on the system by getting the `Devices`
 property on the HAL's audio system object:
 
-~~~C#
+```c#
 using NAudio.MacOS.CoreAudio;
 
 // Enumerate all the devices that provide input.
@@ -114,4 +114,4 @@ foreach (var device in AudioSystemObject.Instance.Devices)
 }
 // Once you have selected an audio device, you can give it to the recorder:
 // using var createdRecorder = new CoreAudioRecorder(chosenDevice);
-~~~
+```

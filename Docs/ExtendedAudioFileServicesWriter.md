@@ -8,9 +8,9 @@ which is equivalent to `MediaFoundationEncoder`. Let's see what it offers.
 First of all, you need to reference the `NAudio.MacOS` package into your project.
 Note that it ships pre-release only while its API settles, so `--prerelease` is also required:
 
-~~~C#
+```c#
 dotnet add package NAudio.MacOS --prerelease
-~~~
+```
 
 ### Writing an audio file
 
@@ -20,7 +20,7 @@ Let's also assume that we provide the data to write in 16 bit 44.1 kHz PCM with 
 
 Doing so is pretty much straightforward:
 
-~~~C#
+```c#
 using NAudio.Wave;
 using NAudio.MacOS.AudioToolbox;
 
@@ -36,7 +36,7 @@ var writer = ExtendedAudioFileWriter.CreateToFilePath(
 
 // Write the data you want to write. Use writer.Write(Span<byte>) to do so.
 // Close the writer with Dispose() so that the writer can patch and finalize the file for consumption.
-~~~
+```
 
 > [!NOTE]
 For plain uncompressed output, prefer `WaveFileWriter`: WAV is what

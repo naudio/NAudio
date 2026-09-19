@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 
 namespace NAudio.Utils;
 
@@ -10,11 +11,13 @@ namespace NAudio.Utils;
 public static class IEEE
 {
     #region Helper Methods
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static double UnsignedToFloat(ulong u)
     {
         return u;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static double Ldexp(double x, int exp)
     {
         return Math.ScaleB(x, exp);
@@ -31,6 +34,7 @@ public static class IEEE
         return Math.ScaleB(x, -exp);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong FloatToUnsigned(double f)
     {
         return (ulong)f;

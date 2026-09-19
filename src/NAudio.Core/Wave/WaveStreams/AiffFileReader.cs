@@ -68,23 +68,22 @@ public class AiffFileReader : WaveStream
         dataChunkPosition = -1;
         dataChunkLength = 0;
         chunks.Clear();
-        var br = new BinaryReader(stream);
 
-        if (ReadChunkName(br) != "FORM")
+        if (ReadChunkName(stream) != "FORM"u8)
         {
             throw new FormatException("Not an AIFF file - no FORM header.");
         }
 
         _ = ReadUInt(stream); // File size, not used here
-        ChunkName formType = ReadChunkName(br);
-        if (formType != "AIFC" && formType != "AIFF")
+        ChunkName formType = ReadChunkName(stream);
+        if (formType != "AIFC"u8 && formType != "AIFF"u8)
         {
             throw new FormatException("Not an AIFF file - no AIFF/AIFC header.");
         }
 
         while (stream.Position < stream.Length)
         {
-            AiffChunk nextChunk = ReadChunkHeader(br);
+            AiffChunk nextChunk = ReadChunkHeader(stream);
             if (nextChunk.ChunkName == "\0\0\0\0") break;
 
             if (stream.Position + nextChunk.ChunkLength > stream.Length)
@@ -96,15 +95,15 @@ public class AiffFileReader : WaveStream
                 short numChannels = ReadShort(stream);
                 uint numSampleFrames = ReadUInt(stream);
                 short sampleSize = ReadShort(stream);
-                double sampleRate = IEEE.ConvertFromIeeeExtended(br.ReadBytes(10));
+                double sampleRate = ReadIeeeExtended(stream);
 
                 format = new WaveFormat((int)sampleRate, sampleSize, numChannels);
 
-                if (nextChunk.ChunkLength > 18 && formType == "AIFC")
+                if (nextChunk.ChunkLength > 18 && formType == "AIFC"u8)
                 {
                     // In an AIFC file, the compression format is tacked on to the COMM chunk
-                    ChunkName compress = ReadChunkName(br);
-                    if (!compress.EqualsIgnoreCase("none")) throw new FormatException("Compressed AIFC is not supported.");
+                    ChunkName compress = ReadChunkName(stream);
+                    if (!compress.EqualsIgnoreCase("none"u8)) throw new FormatException("Compressed AIFC is not supported.");
                     stream.Position += (nextChunk.ChunkLength - 22);
                 }
                 else
@@ -341,44 +340,69 @@ public class AiffFileReader : WaveStream
     private struct ChunkName
     {
         public const int Length = 4;
-        public Span<char> Span => MemoryMarshal.CreateSpan(ref first, Length);
+        public int Value => Unsafe.As<byte, int>(ref first);
+        public Span<byte> Span => MemoryMarshal.CreateSpan(ref first, Length);
 
-        private char first;
+        private byte first;
 
-        public static bool operator ==(ChunkName name, string text)
+        public static bool operator ==(ChunkName name, ReadOnlySpan<byte> text)
         {
-            return name.Span.SequenceEqual(text.AsSpan());
+            return name.Span.SequenceEqual(text);
         }
 
-        public static bool operator !=(ChunkName name, string text)
+        public static bool operator !=(ChunkName name, ReadOnlySpan<byte> text)
         {
             return !(name == text);
         }
 
         public override string ToString()
         {
-            return new string(Span);
+            return string.Create(Length, this, (span, name) =>
+            {
+                ReadOnlySpan<byte> bytes = name.Span;
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    span[i] = (char)bytes[i];
+                }
+            });
         }
 
-        public bool EqualsIgnoreCase(ReadOnlySpan<char> text)
+        public bool EqualsIgnoreCase(ReadOnlySpan<byte> text)
         {
-            return MemoryExtensions.Equals(Span, text, StringComparison.OrdinalIgnoreCase);
+            for (int i = 0; i < Length; i++)
+            {
+                if (char.ToLowerInvariant((char)Span[i]) != char.ToLowerInvariant((char)text[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public override bool Equals([NotNullWhen(true)] object obj)
         {
-            return obj is ChunkName name && this == name.ToString();
+            return obj is ChunkName name && this.Value == name.Value;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Span[0], Span[1], Span[2], Span[3]);
+            return Value;
         }
     }
 
-    private static AiffChunk ReadChunkHeader(BinaryReader br)
+    private static AiffChunk ReadChunkHeader(Stream stream)
     {
-        return new AiffChunk((uint)br.BaseStream.Position, ReadChunkName(br).ToString(), ReadUInt(br.BaseStream));
+        return new AiffChunk((uint)stream.Position, ReadChunkName(stream).ToString(), ReadUInt(stream));
+    }
+
+    private static double ReadIeeeExtended(Stream stream)
+    {
+        Span<byte> buffer = stackalloc byte[10];
+        if (stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false) != buffer.Length)
+        {
+            throw new InvalidDataException("Incorrect length for IEEE extended.");
+        }
+        return IEEE.ConvertFromIeeeExtended(buffer);
     }
 
     private static uint ReadUInt(Stream stream)
@@ -401,10 +425,10 @@ public class AiffFileReader : WaveStream
         return BinaryPrimitives.ReadInt16BigEndian(buffer);
     }
 
-    private static ChunkName ReadChunkName(BinaryReader br)
+    private static ChunkName ReadChunkName(Stream stream)
     {
         ChunkName name = default;
-        if (br.Read(name.Span) != ChunkName.Length)
+        if (stream.ReadAtLeast(name, ChunkName.Length, throwOnEndOfStream: false) != ChunkName.Length)
         {
             throw new InvalidDataException("Incorrect length for chunk name.");
         }

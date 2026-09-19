@@ -118,7 +118,7 @@ public static class IEEE
         return ConvertFromIeeeExtended(bytes.AsSpan());
     }
 
-    private static double ConvertFromIeeeExtended(ReadOnlySpan<byte> bytes)
+    internal static double ConvertFromIeeeExtended(ReadOnlySpan<byte> bytes)
     {
         if (bytes.Length != 10)
         {

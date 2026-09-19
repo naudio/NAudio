@@ -1,6 +1,9 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.IO;
-using NAudio.Utils;
+using System.Runtime.CompilerServices;
 
 namespace NAudio.Wave;
 
@@ -66,9 +69,9 @@ public class AiffFileWriter : Stream
         this.ownsStream = ownsStream;
         this.format = format;
         this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
+        this.writer.Write("FORM"u8);
         this.writer.Write(0); // placeholder
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("AIFF"));
+        this.writer.Write("AIFF"u8);
 
         CreateCommChunk();
         WriteSsndChunkHeader();
@@ -87,31 +90,21 @@ public class AiffFileWriter : Stream
 
     private void WriteSsndChunkHeader()
     {
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("SSND"));
+        this.writer.Write("SSND"u8);
         dataSizePos = this.outStream.Position;
         this.writer.Write(0);  // placeholder
         this.writer.Write(0);  // zero offset
-        this.writer.Write(SwapEndian(format.BlockAlign));
-    }
-
-    private byte[] SwapEndian(short n)
-    {
-        return new byte[] { (byte)(n >> 8), (byte)(n & 0xff) };
-    }
-
-    private byte[] SwapEndian(int n)
-    {
-        return new byte[] { (byte)((n >> 24) & 0xff), (byte)((n >> 16) & 0xff), (byte)((n >> 8) & 0xff), (byte)(n & 0xff), };
+        this.writer.Write(BinaryPrimitives.ReverseEndianness(format.BlockAlign));
     }
 
     private void CreateCommChunk()
     {
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("COMM"));
-        this.writer.Write(SwapEndian(18));
-        this.writer.Write(SwapEndian((short)format.Channels));
-        commSampleCountPos = this.outStream.Position; ;
+        this.writer.Write("COMM"u8);
+        this.writer.Write(BinaryPrimitives.ReverseEndianness(18));
+        this.writer.Write(BinaryPrimitives.ReverseEndianness((short)format.Channels));
+        commSampleCountPos = this.outStream.Position;
         this.writer.Write(0);  // placeholder for total number of samples
-        this.writer.Write(SwapEndian((short)format.BitsPerSample));
+        this.writer.Write(BinaryPrimitives.ReverseEndianness((short)format.BitsPerSample));
         this.writer.Write(IEEE.ConvertToIeeeExtended(format.SampleRate));
     }
 
@@ -205,46 +198,61 @@ public class AiffFileWriter : Stream
     /// <param name="count">the number of bytes to write</param>
     public override void Write(byte[] data, int offset, int count)
     {
-        int bytesPerSample = format.BitsPerSample / 8;
+        Write(data.AsSpan(offset, count));
+    }
 
-        if (bytesPerSample <= 1)
+    /// <summary>
+    /// Appends bytes to the AiffFile (assumes they are already in the correct format)
+    /// </summary>
+    /// <param name="buffer">the buffer containing the wave data</param>
+    [SkipLocalsInit]
+    public override void Write(ReadOnlySpan<byte> buffer)
+    {
+        Span<byte> modified = stackalloc byte[512];
+        byte[] rented = null;
+        if (buffer.Length > 512)
         {
-            // AIFF 8-bit PCM is signed two's-complement, but the incoming bytes are unsigned
-            // (WAV-style, like every other path through Write, which converts WAV layout to
-            // AIFF layout). Flip the sign bit on the way out so the file is valid signed AIFF.
-            // Copy into a scratch buffer so the caller's array is not mutated. See issue #1178.
-            byte[] signedData = new byte[count];
-            for (int i = 0; i < count; i++)
-            {
-                signedData[i] = (byte)(data[offset + i] ^ 0x80);
-            }
-            outStream.Write(signedData, 0, count);
+            rented = ArrayPool<byte>.Shared.Rent(buffer.Length);
+            modified = rented;
         }
-        else
-        {
-            byte[] swappedData = new byte[count];
-            int completeSampleBytes = count - (count % bytesPerSample);
+        modified = modified[..buffer.Length];
 
-            for (int sampleStart = 0; sampleStart < completeSampleBytes; sampleStart += bytesPerSample)
+        try
+        {
+            int bytesPerSample = format.BitsPerSample / 8;
+            if (bytesPerSample <= 1)
             {
-                for (int b = 0; b < bytesPerSample; b++)
+                // AIFF 8-bit PCM is signed two's-complement, but the incoming bytes are unsigned
+                // (WAV-style, like every other path through Write, which converts WAV layout to
+                // AIFF layout). Flip the sign bit on the way out so the file is valid signed AIFF.
+                // Copy into a scratch buffer so the caller's array is not mutated. See issue #1178.
+                for (int i = 0; i < buffer.Length; i++)
                 {
-                    swappedData[sampleStart + b] = data[offset + sampleStart + (bytesPerSample - 1 - b)];
+                    modified[i] = (byte)(buffer[i] ^ 0x80);
+                }
+            }
+            else
+            {
+                buffer.CopyTo(modified);
+
+                int completeSampleBytes = buffer.Length - (buffer.Length % bytesPerSample);
+                for (int sampleStart = 0; sampleStart < completeSampleBytes; sampleStart += bytesPerSample)
+                {
+                    modified.Slice(sampleStart, bytesPerSample).Reverse();
                 }
             }
 
-            for (int i = completeSampleBytes; i < count; i++)
-            {
-                swappedData[i] = data[offset + i];
-            }
-
-            outStream.Write(swappedData, 0, count);
+            outStream.Write(modified);
+            dataChunkSize += buffer.Length;
         }
-
-        dataChunkSize += count;
+        finally
+        {
+            if (rented is not null)
+            {
+                ArrayPool<byte>.Shared.Return(rented);
+            }
+        }
     }
-
-    private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time
 
     /// <summary>
     /// Writes a single sample to the Aiff file
@@ -252,17 +260,12 @@ public class AiffFileWriter : Stream
     /// <param name="sample">the sample to write (assumed floating point with 1.0f as max value)</param>
     private static int ConvertFloatTo32BitPcm(float sample)
     {
-        if (sample >= 1.0f)
+        return sample switch
         {
-            return Int32.MaxValue;
-        }
-
-        if (sample <= -1.0f)
-        {
-            return Int32.MinValue;
-        }
-
-        return (int)(sample * 2147483647.0);
+            >= 1.0f => int.MaxValue,
+            <= -1.0f => int.MinValue,
+            _ => (int)(sample * 2147483647.0)
+        };
     }
 
     /// <summary>
@@ -273,29 +276,32 @@ public class AiffFileWriter : Stream
     {
         if (WaveFormat.BitsPerSample == 16)
         {
-            writer.Write(SwapEndian((Int16)(Int16.MaxValue * sample)));
+            writer.Write(BinaryPrimitives.ReverseEndianness((short)(short.MaxValue * sample)));
             dataChunkSize += 2;
         }
         else if (WaveFormat.BitsPerSample == 24)
         {
-            var value = BitConverter.GetBytes(ConvertFloatTo32BitPcm(sample));
-            value24[2] = value[1];
-            value24[1] = value[2];
-            value24[0] = value[3];
+            Span<byte> bytes = stackalloc byte[4];
+            Unsafe.WriteUnaligned(ref bytes[0], ConvertFloatTo32BitPcm(sample));
+
+            Span<byte> value24 = stackalloc byte[3];
+            value24[2] = bytes[1];
+            value24[1] = bytes[2];
+            value24[0] = bytes[3];
             writer.Write(value24);
             dataChunkSize += 3;
         }
-        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == NAudio.Wave.WaveFormatEncoding.Extensible)
+        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
         {
-            writer.Write(SwapEndian(ConvertFloatTo32BitPcm(sample)));
+            writer.Write(BinaryPrimitives.ReverseEndianness(ConvertFloatTo32BitPcm(sample)));
             dataChunkSize += 4;
         }
         else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
         {
-            var value = BitConverter.GetBytes(sample);
+            int value = BitConverter.SingleToInt32Bits(sample);
             if (BitConverter.IsLittleEndian)
             {
-                Array.Reverse(value);
+                value = BinaryPrimitives.ReverseEndianness(value);
             }
             writer.Write(value);
             dataChunkSize += 4;
@@ -329,37 +335,44 @@ public class AiffFileWriter : Stream
     /// <param name="count">The number of 16 bit samples to write</param>
     public void WriteSamples(short[] samples, int offset, int count)
     {
-        // 16 bit PCM data
-        if (WaveFormat.BitsPerSample == 16)
+        WriteSamples(samples.AsSpan(offset, count));
+    }
+
+    /// <summary>
+    /// Writes 16 bit samples to the Aiff file
+    /// </summary>
+    /// <param name="samples">The buffer containing the 16 bit samples</param>
+    public void WriteSamples(ReadOnlySpan<short> samples)
+    {
+        if (WaveFormat.BitsPerSample == 16) // 16 bit PCM data
         {
-            for (int sample = 0; sample < count; sample++)
+            for (int i = 0; i < samples.Length; i++)
             {
-                writer.Write(SwapEndian(samples[sample + offset]));
+                writer.Write(BinaryPrimitives.ReverseEndianness(samples[i]));
             }
-            dataChunkSize += (count * 2);
+            dataChunkSize += (samples.Length * 2);
         }
-        // 24 bit PCM data
-        else if (WaveFormat.BitsPerSample == 24)
+        else if (WaveFormat.BitsPerSample == 24) // 24 bit PCM data
         {
-            for (int sample = 0; sample < count; sample++)
+            Span<byte> value24 = stackalloc byte[3];
+            for (int i = 0; i < samples.Length; i++)
             {
-                int value = samples[sample + offset] << 8;
+                int value = samples[i] << 8;
                 value24[0] = (byte)((value >> 16) & 0xFF);
                 value24[1] = (byte)((value >> 8) & 0xFF);
                 value24[2] = (byte)(value & 0xFF);
                 writer.Write(value24);
             }
-            dataChunkSize += (count * 3);
+            dataChunkSize += (samples.Length * 3);
         }
-        // 32 bit PCM data
-        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible) // 32 bit PCM data
         {
-            for (int sample = 0; sample < count; sample++)
+            for (int i = 0; i < samples.Length; i++)
             {
-                int value = samples[sample + offset] << 16;
-                writer.Write(SwapEndian(value));
+                int value = samples[i] << 16;
+                writer.Write(BinaryPrimitives.ReverseEndianness(value));
             }
-            dataChunkSize += (count * 4);
+            dataChunkSize += (samples.Length * 4);
         }
         else
         {
@@ -420,7 +433,7 @@ public class AiffFileWriter : Stream
     {
         this.Flush();
         writer.Seek(4, SeekOrigin.Begin);
-        writer.Write(SwapEndian((int)(outStream.Length - 8)));
+        writer.Write(BinaryPrimitives.ReverseEndianness((int)(outStream.Length - 8)));
         UpdateCommChunk(writer);
         UpdateSsndChunk(writer);
     }
@@ -428,13 +441,13 @@ public class AiffFileWriter : Stream
     private void UpdateCommChunk(BinaryWriter writer)
     {
         writer.Seek((int)commSampleCountPos, SeekOrigin.Begin);
-        writer.Write(SwapEndian((int)(dataChunkSize * 8 / format.BitsPerSample / format.Channels)));
+        writer.Write(BinaryPrimitives.ReverseEndianness((int)(dataChunkSize * 8 / format.BitsPerSample / format.Channels)));
     }
 
     private void UpdateSsndChunk(BinaryWriter writer)
     {
         writer.Seek((int)dataSizePos, SeekOrigin.Begin);
-        writer.Write(SwapEndian((int)dataChunkSize));
+        writer.Write(BinaryPrimitives.ReverseEndianness((int)dataChunkSize));
     }
 
     /// <summary>

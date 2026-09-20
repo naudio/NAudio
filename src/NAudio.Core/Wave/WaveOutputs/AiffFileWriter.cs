@@ -66,9 +66,9 @@ public class AiffFileWriter : Stream
         this.ownsStream = ownsStream;
         this.format = format;
         this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
+        this.writer.Write("FORM"u8);
         this.writer.Write(0); // placeholder
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("AIFF"));
+        this.writer.Write("AIFF"u8);
 
         CreateCommChunk();
         WriteSsndChunkHeader();
@@ -87,7 +87,7 @@ public class AiffFileWriter : Stream
 
     private void WriteSsndChunkHeader()
     {
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("SSND"));
+        this.writer.Write("SSND"u8);
         dataSizePos = this.outStream.Position;
         this.writer.Write(0);  // placeholder
         this.writer.Write(0);  // zero offset
@@ -106,7 +106,7 @@ public class AiffFileWriter : Stream
 
     private void CreateCommChunk()
     {
-        this.writer.Write(System.Text.Encoding.UTF8.GetBytes("COMM"));
+        this.writer.Write("COMM"u8);
         this.writer.Write(SwapEndian(18));
         this.writer.Write(SwapEndian((short)format.Channels));
         commSampleCountPos = this.outStream.Position; ;

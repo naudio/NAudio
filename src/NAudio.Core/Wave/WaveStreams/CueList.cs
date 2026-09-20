@@ -110,7 +110,7 @@ public class Cue
 /// </remarks>
 public class CueList
 {
-    private readonly List<Cue> cues = new();
+    private readonly List<Cue> cues = [];
     /// <summary>
     /// Creates an empty cue list
     /// </summary>
@@ -200,8 +200,8 @@ public class CueList
 
         string[] labels = new string[cueCount];
         int?[] lengths = new int?[cueCount];
-        var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-        var ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
+        var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl"u8);
+        var ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt"u8);
 
         // Parse list chunk - properly handle all chunk types.
         // listChunkData may be null when the file has cue points but no adtl labels
@@ -264,7 +264,7 @@ public class CueList
     /// </summary>
     internal byte[] SerializeCueChunkData()
     {
-        int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
+        int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data"u8);
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
         w.Write(Count);
@@ -289,14 +289,15 @@ public class CueList
     /// </summary>
     internal byte[] SerializeAdtlListChunkData()
     {
-        int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-        int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
+        int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl"u8);
+        int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt"u8);
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
-        w.Write(Encoding.UTF8.GetBytes("adtl"));
+        w.Write("adtl"u8);
         for (int i = 0; i < Count; i++)
         {
-            var labelArray = Encoding.UTF8.GetBytes(this[i].Label ?? string.Empty);
+            string label = this[i].Label;
+            var labelArray = string.IsNullOrEmpty(label) ? [] : Encoding.UTF8.GetBytes(label);
             w.Write(labelChunkId);
             w.Write(labelArray.Length + 1 + 4); // dwIdentifier + text + null terminator
             w.Write(i);                         // dwIdentifier (the cue id)
@@ -366,7 +367,7 @@ public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
         {
             if (list.Length < 4) continue;
             var data = chunks.GetData(list);
-            if (data.Length >= 4 && data[0] == (byte)'a' && data[1] == (byte)'d' && data[2] == (byte)'t' && data[3] == (byte)'l')
+            if (data.AsSpan().StartsWith("adtl"u8))
             {
                 listChunkData = data;
                 break;

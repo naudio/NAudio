@@ -53,7 +53,7 @@ public sealed class WaveChunks : IReadOnlyList<RiffChunk>
     /// </summary>
     public RiffChunk Find(string chunkId)
     {
-        if (chunkId == null) throw new ArgumentNullException(nameof(chunkId));
+        ArgumentNullException.ThrowIfNull(chunkId);
         foreach (var chunk in chunks)
         {
             if (string.Equals(chunk.IdentifierAsString, chunkId, StringComparison.OrdinalIgnoreCase))
@@ -70,7 +70,7 @@ public sealed class WaveChunks : IReadOnlyList<RiffChunk>
     /// </summary>
     public IEnumerable<RiffChunk> FindAll(string chunkId)
     {
-        if (chunkId == null) throw new ArgumentNullException(nameof(chunkId));
+        ArgumentNullException.ThrowIfNull(chunkId);
         foreach (var chunk in chunks)
         {
             if (string.Equals(chunk.IdentifierAsString, chunkId, StringComparison.OrdinalIgnoreCase))
@@ -86,22 +86,23 @@ public sealed class WaveChunks : IReadOnlyList<RiffChunk>
     /// </summary>
     public byte[] GetData(RiffChunk chunk)
     {
-        if (chunk == null) throw new ArgumentNullException(nameof(chunk));
+        ArgumentNullException.ThrowIfNull(chunk);
         long oldPosition = stream.Position;
         stream.Position = chunk.StreamPosition;
         byte[] data = new byte[chunk.Length];
-        int read = 0;
-        while (read < data.Length)
+        try
         {
-            int n = stream.Read(data, read, data.Length - read);
-            if (n <= 0)
+            int bytesRead = stream.ReadAtLeast(data, data.Length, throwOnEndOfStream: false);
+            if (bytesRead < data.Length)
             {
                 throw new InvalidOperationException(
-                    $"Could not read chunk data: expected {data.Length} bytes, got {read}");
+                    $"Could not read chunk data: expected {data.Length} bytes, got {bytesRead}");
             }
-            read += n;
         }
-        stream.Position = oldPosition;
+        finally
+        {
+            stream.Position = oldPosition;
+        }
         return data;
     }
 
@@ -111,7 +112,7 @@ public sealed class WaveChunks : IReadOnlyList<RiffChunk>
     /// </summary>
     public T Read<T>(IWaveChunkInterpreter<T> interpreter)
     {
-        if (interpreter == null) throw new ArgumentNullException(nameof(interpreter));
+        ArgumentNullException.ThrowIfNull(interpreter);
         return interpreter.Interpret(this);
     }
 }

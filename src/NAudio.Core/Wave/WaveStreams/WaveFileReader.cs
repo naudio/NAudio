@@ -132,7 +132,7 @@ public class WaveFileReader : WaveStream
         {
             return waveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible or WaveFormatEncoding.IeeeFloat
                 ? dataChunkLength / BlockAlign
-                : throw new FormatException("Sample count is calculated only for the standard encodings.");
+                : throw new InvalidOperationException("Sample count is calculated only for the standard encodings.");
         }
     }
 
@@ -218,7 +218,10 @@ public class WaveFileReader : WaveStream
             {
                 return null; // end of file
             }
-            buffer = buffer[..bytesRead];
+            if (bytesRead < bytesToRead)
+            {
+                throw new InvalidDataException("Unexpected end of file");
+            }
 
             TransformSampleFrame(buffer, sampleFrame, waveFormat);
             return sampleFrame;

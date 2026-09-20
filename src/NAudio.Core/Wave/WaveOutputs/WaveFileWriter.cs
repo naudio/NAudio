@@ -240,6 +240,8 @@ public class WaveFileWriter : Stream
     /// <param name="position">Where in the file the chunk should be placed.</param>
     public void AddChunk(string chunkId, byte[] data, ChunkPosition position)
     {
+        ArgumentNullException.ThrowIfNull(chunkId);
+
         Span<byte> chunkIdBytes = stackalloc byte[4];
         if (Encoding.UTF8.GetBytes(chunkId, chunkIdBytes) != 4)
         {

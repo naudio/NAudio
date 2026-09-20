@@ -165,7 +165,7 @@ public class WaveFileWriterChunkTests
     {
         var ms = new MemoryStream();
         using var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format);
-        Assert.That(() => w.AddChunk(null, new byte[] { 1 }, ChunkPosition.AfterData),
+        Assert.That(() => w.AddChunk((string)null, new byte[] { 1 }, ChunkPosition.AfterData),
             Throws.ArgumentNullException);
     }
 

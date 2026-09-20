@@ -313,7 +313,12 @@ public partial class DirectSoundOut : IWavePlayer
             samplesFrameSize = MsToBytes(desiredLatency);
 
             // Fill BufferDescription for SecondaryBuffer
-            GCHandle handleOnWaveFormat = GCHandle.Alloc(waveFormat, GCHandleType.Pinned); // Ptr to waveFormat
+            // MarshalToPtr, not a pinned GCHandle on the managed object: WaveFormat has carried
+            // no [StructLayout] since #1432, so its Auto layout may reorder fields — the pinned
+            // instance handed to CreateSoundBuffer was not a valid WAVEFORMATEX (every format
+            // failed with DirectSoundException 0x80004001), and a WaveFormatExtraData pin throws
+            // ArgumentException outright because of its byte[] field.
+            IntPtr waveFormatPtr = WaveFormat.MarshalToPtr(waveFormat);
             IntPtr secondaryBufferPtr;
             try
             {
@@ -328,7 +333,7 @@ public partial class DirectSoundOut : IWavePlayer
                         | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS
                         | DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2,
                     dwReserved = 0,
-                    lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(), // Ptr to waveFormat
+                    lpwfxFormat = waveFormatPtr,
                     guidAlgo = Guid.Empty,
                 };
 
@@ -337,7 +342,7 @@ public partial class DirectSoundOut : IWavePlayer
             }
             finally
             {
-                handleOnWaveFormat.Free();
+                Marshal.FreeHGlobal(waveFormatPtr);
             }
             try
             {

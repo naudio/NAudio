@@ -1,11 +1,11 @@
-// This interop definition was derived from the file AudioConverter.h of the Audio Toolbox Framework.
+﻿// This interop definition was derived from the file AudioConverter.h of the Audio Toolbox Framework.
 // See https://developer.apple.com/documentation/audiotoolbox for more information.
 
 namespace NAudio.MacOS.AudioToolbox;
 
 /// <summary>
 /// Quality constants for audio converters <br />
-/// Constants to be used with <see cref="Wave.MacAudioConverter.Quality"/> property.
+/// Constants to be used with the <see cref="Wave.MacAudioConverter.Quality"/> property.
 /// </summary>
 public enum AudioConverterQuality : uint
 {

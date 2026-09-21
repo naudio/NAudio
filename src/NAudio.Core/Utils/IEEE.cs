@@ -12,12 +12,6 @@ public static class IEEE
 {
     #region Helper Methods
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double UnsignedToFloat(ulong u)
-    {
-        return u;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static double Ldexp(double x, int exp)
     {
         return Math.ScaleB(x, exp);
@@ -32,12 +26,6 @@ public static class IEEE
         }
         exp = Math.ILogB(x) + 1;
         return Math.ScaleB(x, -exp);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong FloatToUnsigned(double f)
-    {
-        return (ulong)f;
     }
     #endregion
 
@@ -83,10 +71,10 @@ public static class IEEE
                 expon |= sign;
                 fMant = Ldexp(fMant, 32);
                 double fsMant = Math.Floor(fMant);
-                hiMant = FloatToUnsigned(fsMant);
+                hiMant = (ulong)fsMant;
                 fMant = Ldexp(fMant - fsMant, 32);
                 fsMant = Math.Floor(fMant);
-                loMant = FloatToUnsigned(fsMant);
+                loMant = (ulong)fsMant;
             }
         }
 
@@ -141,8 +129,8 @@ public static class IEEE
         else
         {
             expon -= 16383;
-            result = Ldexp(UnsignedToFloat(hiMant), expon -= 31);
-            result += Ldexp(UnsignedToFloat(loMant), expon -= 32);
+            result = Ldexp(hiMant, expon -= 31);
+            result += Ldexp(loMant, expon -= 32);
         }
 
         return (bytes[0] & 0x80) != 0 ? -result : result;

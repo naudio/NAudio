@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace NAudio.Utils;
 
@@ -64,6 +65,34 @@ public class ByteEncoding : Encoding
             chars[charIndex + n] = (char)b;
         }
         return byteCount;
+    }
+
+    /// <inheritdoc/>
+    public override string GetString(byte[] bytes)
+    {
+        return GetStringImpl(bytes.AsSpan());
+    }
+
+    /// <inheritdoc/>
+    public override string GetString(byte[] bytes, int index, int count)
+    {
+        return GetStringImpl(bytes.AsSpan(index, count));
+    }
+
+    private string GetStringImpl(ReadOnlySpan<byte> bytes)
+    {
+        int nullTerminatorIndex = bytes.IndexOf((byte)0);
+        if (nullTerminatorIndex != -1)
+        {
+            bytes = bytes[..nullTerminatorIndex];
+        }
+        return string.Create(bytes.Length, bytes, static (span, bytes) =>
+        {
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                span[i] = (char)bytes[i];
+            }
+        });
     }
 
     /// <summary>

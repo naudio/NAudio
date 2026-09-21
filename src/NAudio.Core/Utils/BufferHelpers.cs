@@ -11,7 +11,7 @@ public static class BufferHelpers
     /// <param name="buffer"></param>
     /// <param name="bytesRequired"></param>
     /// <returns></returns>
-    public static byte[] Ensure(byte[] buffer, int bytesRequired)
+    public static byte[] Ensure(byte[]? buffer, int bytesRequired)
     {
         if (buffer == null || buffer.Length < bytesRequired)
         {
@@ -26,7 +26,7 @@ public static class BufferHelpers
     /// <param name="buffer"></param>
     /// <param name="samplesRequired"></param>
     /// <returns></returns>
-    public static float[] Ensure(float[] buffer, int samplesRequired)
+    public static float[] Ensure(float[]? buffer, int samplesRequired)
     {
         if (buffer == null || buffer.Length < samplesRequired)
         {

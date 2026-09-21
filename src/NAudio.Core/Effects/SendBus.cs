@@ -17,7 +17,7 @@ namespace NAudio.Effects;
 public sealed class SendBus
 {
     private readonly IAudioEffect effect;
-    private float[] buffer;
+    private float[]? buffer;
     private int channels;
     // frames of effect tail left to flush since the last written input; a
     // fresh bus has no tail, so it idles until something is sent

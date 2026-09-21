@@ -24,7 +24,7 @@ public class XingHeader
     private int tocOffset = -1;
     private int framesOffset = -1;
     private int bytesOffset = -1;
-    private Mp3Frame frame;
+    private readonly Mp3Frame frame;
 
     private static int ReadBigEndian(byte[] buffer, int offset)
     {
@@ -55,10 +55,9 @@ public class XingHeader
     /// </summary>
     /// <param name="frame">Frame</param>
     /// <returns>Xing Header</returns>
-    public static XingHeader LoadXingHeader(Mp3Frame frame)
+    public static XingHeader? LoadXingHeader(Mp3Frame frame)
     {
-        XingHeader xingHeader = new XingHeader();
-        xingHeader.frame = frame;
+        XingHeader xingHeader = new XingHeader(frame);
         int offset = 0;
 
         if (frame.MpegVersion == MpegVersion.Version1)
@@ -132,8 +131,9 @@ public class XingHeader
     /// <summary>
     /// Sees if a frame contains a Xing header
     /// </summary>
-    private XingHeader()
+    private XingHeader(Mp3Frame frame)
     {
+        this.frame = frame;
     }
 
     /// <summary>

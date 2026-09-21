@@ -19,8 +19,8 @@ public sealed class SoundFontRegion
 
     internal SoundFontRegion(SampleHeader sample, SoundFontGenerators generators,
         byte lowKey, byte highKey, byte lowVelocity, byte highVelocity,
-        IReadOnlyList<Modulator> instrumentModulators = null,
-        IReadOnlyList<Modulator> presetModulators = null)
+        IReadOnlyList<Modulator>? instrumentModulators = null,
+        IReadOnlyList<Modulator>? presetModulators = null)
     {
         Sample = sample;
         Generators = generators;

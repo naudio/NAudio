@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NAudio.Wave.SampleProviders;
 
@@ -81,7 +81,7 @@ internal static class SampleProviderConverters
     /// Returns the standard PCM or IEEE float WaveFormat equivalent to an extensible format,
     /// or null if the SubFormat is neither PCM nor IEEE float.
     /// </summary>
-    private static WaveFormat ToStandardWaveFormat(WaveFormat waveFormat)
+    private static WaveFormat? ToStandardWaveFormat(WaveFormat waveFormat)
     {
         // A WaveFormatExtensible (e.g. built in code) exposes the SubFormat directly,
         // whereas reading from a file (WaveFileReader) yields a WaveFormatExtraData whose

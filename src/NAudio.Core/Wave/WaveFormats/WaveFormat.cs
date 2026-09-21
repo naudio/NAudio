@@ -187,7 +187,7 @@ public class WaveFormat
         {
             waveFormat = new WaveFormatExtraData(OpenBlob(blob));
         }
-        return waveFormat;
+        return waveFormat!;
     }
 
     /// <summary>
@@ -377,7 +377,7 @@ public class WaveFormat
     /// </summary>
     /// <param name="obj">Object to compare to</param>
     /// <returns>True if the objects are the same</returns>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         var other = obj as WaveFormat;
         if (other != null)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -24,11 +25,11 @@ public enum DetectorMode
 /// </summary>
 public sealed class CompressorEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Threshold", "dB", -60f, 0f, () => ThresholdDb, v => ThresholdDb = v),
         EffectParameter.Continuous("Ratio", "", 1f, 20f, () => Ratio, v => Ratio = v),
         EffectParameter.Continuous("Knee", "dB", 0f, 24f, () => KneeDb, v => KneeDb = v),
@@ -37,9 +38,9 @@ public sealed class CompressorEffect : AudioEffect, IParameterized
         EffectParameter.Continuous("Make-up", "dB", 0f, 24f, () => MakeUpGainDb, v => MakeUpGainDb = v),
         EffectParameter.Choice("Detector", new[] { "Peak", "RMS" }, () => (int)Detector, i => Detector = (DetectorMode)i),
         EffectParameter.Meter("Gain Reduction", "dB", 0f, 24f, () => GainReductionDb)
-    };
+    ];
 
-    private EnvelopeFollower reductionFollower;
+    private EnvelopeFollower? reductionFollower;
     private float msEnvelope;
     private float rmsCoefficient;
     private float rmsWindowMs = 10f;
@@ -161,6 +162,7 @@ public sealed class CompressorEffect : AudioEffect, IParameterized
                 reduction = (1f - 1f / ratio) * x * x / (2f * knee);
             }
 
+            Debug.Assert(reductionFollower is not null, "Configure must be called before ProcessBlock.");
             var smoothed = reductionFollower.ProcessRectified(reduction);
             GainReductionDb = smoothed;
             var gain = DbToLinear(-smoothed) * makeUp;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -14,15 +15,15 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class ReverbEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Room Size", "", 0f, 1f, () => RoomSize, v => RoomSize = v),
         EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
         EffectParameter.Continuous("Width", "", 0f, 1f, () => Width, v => Width = v)
-    };
+    ];
 
     private const float FixedGain = 0.015f;
     private const float ScaleRoom = 0.28f;
@@ -34,8 +35,8 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
         { 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617 };
     private static readonly int[] AllpassTuning = { 556, 441, 341, 225 };
 
-    private Comb[,] combs;       // [bank, 8]
-    private Allpass[,] allpasses; // [bank, 4]
+    private Comb[,]? combs;       // [bank, 8]
+    private Allpass[,]? allpasses; // [bank, 4]
 
     /// <summary>Room size, 0 (small) to 1 (large). Default 0.5.</summary>
     public float RoomSize { get; set; } = 0.5f;
@@ -114,7 +115,7 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
     public override void Reset()
     {
         base.Reset();
-        if (combs == null)
+        if (combs == null || allpasses == null)
             return;
         for (var bank = 0; bank < 2; bank++)
         {
@@ -127,6 +128,8 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
 
     private float ProcessBank(int bank, float input, float feedback, float damp1)
     {
+        Debug.Assert(combs is not null && allpasses is not null, "Configure must be called before ProcessBlock.");
+
         var output = 0f;
         for (var i = 0; i < CombTuning.Length; i++)
             output += combs[bank, i].Process(input, feedback, damp1);

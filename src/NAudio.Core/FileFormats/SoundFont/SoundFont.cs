@@ -37,21 +37,21 @@ public class SoundFont
                 {
                     throw new InvalidDataException($"Not a SoundFont ({formHeader})");
                 }
-                RiffChunk list = riff.GetNextSubChunk();
-                if (list.ChunkID == "LIST")
+                RiffChunk? list = riff.GetNextSubChunk();
+                if (list is { ChunkID: "LIST" })
                 {
                     //RiffChunk r = list.GetNextSubChunk();
                     info = new InfoChunk(list);
 
-                    RiffChunk r = riff.GetNextSubChunk();
-                    sampleData = new SampleDataChunk(r);
+                    RiffChunk? r = riff.GetNextSubChunk();
+                    sampleData = new SampleDataChunk(r ?? throw new InvalidDataException($"No sample data found ({list.ChunkID})"));
 
                     r = riff.GetNextSubChunk();
-                    presetsChunk = new PresetsChunk(r);
+                    presetsChunk = new PresetsChunk(r ?? throw new InvalidDataException($"No presets found ({list.ChunkID})"));
                 }
                 else
                 {
-                    throw new InvalidDataException($"No info list found ({list.ChunkID})");
+                    throw new InvalidDataException($"No info list found ({list?.ChunkID})");
                 }
             }
             else
@@ -98,7 +98,7 @@ public class SoundFont
     /// 16-bit sample in <see cref="SampleData"/>; combine as
     /// <c>(smpl16 &lt;&lt; 8) | sm24</c>, or use <see cref="ReadSampleDataFloat"/>.
     /// </summary>
-    public byte[] SampleData24 => sampleData.SampleData24;
+    public byte[]? SampleData24 => sampleData.SampleData24;
 
     /// <summary>
     /// Whether this SoundFont carries 24-bit sample data (an sm24 sub-chunk).
@@ -117,7 +117,7 @@ public class SoundFont
     public float[] ReadSampleDataFloat()
     {
         byte[] data = sampleData.SampleData;
-        byte[] low = sampleData.SampleData24;
+        byte[]? low = sampleData.SampleData24;
         int count = data.Length / 2;
         var samples = new float[count];
 

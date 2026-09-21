@@ -13,13 +13,13 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class StereoWidthEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Width", "", 0f, 2f, () => Width, v => Width = v)
-    };
+    ];
 
     private readonly ParameterSmoother width = new();
     private float widthValue = 1f;

@@ -7,7 +7,7 @@ namespace NAudio.Wave.SampleProviders;
 internal class Stereo16SampleChunkConverter : ISampleChunkConverter
 {
     private int sourceSample;
-    private byte[] sourceBuffer;
+    private byte[]? sourceBuffer;
     private int sourceSamples;
 
     public bool Supports(WaveFormat waveFormat)

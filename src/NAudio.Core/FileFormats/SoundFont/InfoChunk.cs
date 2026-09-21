@@ -11,28 +11,24 @@ public class InfoChunk
 {
     internal InfoChunk(RiffChunk chunk)
     {
-        bool ifilPresent = false;
-        bool inamPresent = false;
         if (chunk.ReadChunkID() != "INFO")
         {
             throw new InvalidDataException("Not an INFO chunk");
         }
         //this.chunk = chunk;
-        RiffChunk c;
+        RiffChunk? c;
         while ((c = chunk.GetNextSubChunk()) != null)
         {
             switch (c.ChunkID)
             {
                 case "ifil":
-                    ifilPresent = true;
                     SoundFontVersion = c.GetDataAsStructure(new SFVersionBuilder());
                     break;
                 case "isng":
                     WaveTableSoundEngine = c.GetDataAsString();
                     break;
                 case "INAM":
-                    inamPresent = true;
-                    BankName = c.GetDataAsString();
+                    BankName = c.GetDataAsString()!;
                     break;
                 case "irom":
                     DataROM = c.GetDataAsString();
@@ -65,12 +61,12 @@ public class InfoChunk
                     break;
             }
         }
-        if (!ifilPresent)
+        if (SoundFontVersion is null)
         {
             throw new InvalidDataException("Missing SoundFont version information");
         }
         // n.b. issue #150 - it is valid for isng not to be present
-        if (!inamPresent)
+        if (BankName is null)
         {
             throw new InvalidDataException("Missing SoundFont name information");
         }
@@ -84,7 +80,7 @@ public class InfoChunk
     /// <summary>
     /// WaveTable sound engine
     /// </summary>
-    public string WaveTableSoundEngine { get; set; }
+    public string? WaveTableSoundEngine { get; set; }
 
     /// <summary>
     /// Bank name
@@ -95,43 +91,43 @@ public class InfoChunk
     /// Data ROM
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public string DataROM { get; set; }
+    public string? DataROM { get; set; }
 
     /// <summary>
     /// Creation Date
     /// </summary>
-    public string CreationDate { get; set; }
+    public string? CreationDate { get; set; }
 
     /// <summary>
     /// Author
     /// </summary>
-    public string Author { get; set; }
+    public string? Author { get; set; }
 
     /// <summary>
     /// Target Product
     /// </summary>
-    public string TargetProduct { get; set; }
+    public string? TargetProduct { get; set; }
 
     /// <summary>
     /// Copyright
     /// </summary>
-    public string Copyright { get; set; }
+    public string? Copyright { get; set; }
 
     /// <summary>
     /// Comments
     /// </summary>
-    public string Comments { get; set; }
+    public string? Comments { get; set; }
 
     /// <summary>
     /// Tools
     /// </summary>
-    public string Tools { get; set; }
+    public string? Tools { get; set; }
 
     /// <summary>
     /// ROM Version
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public SFVersion ROMVersion { get; set; }
+    public SFVersion? ROMVersion { get; set; }
 
     /// <summary>
     /// <see cref="Object.ToString"/>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NAudio.Dsp;
 
 namespace NAudio.Wave.SampleProviders;
@@ -121,7 +121,7 @@ public class AdsrSampleProvider : ISampleProvider
     /// Fires on the thread that calls <see cref="Read"/> (i.e. the audio thread during playback),
     /// in the same manner as <see cref="MixingSampleProvider.MixerInputEnded"/>.
     /// </summary>
-    public event EventHandler EnvelopeCompleted;
+    public event EventHandler? EnvelopeCompleted;
 
     /// <summary>
     /// Triggers note-on, entering the attack phase. Can be used to retrigger a note that has

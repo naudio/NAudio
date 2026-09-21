@@ -160,8 +160,8 @@ public class NoteEvent : MidiEvent
             }
             else
             {
-                int octave = noteNumber / 12;
-                return $"{NoteNames[noteNumber % 12]}{octave}";
+                (int octave, int noteIndex) = Math.DivRem(noteNumber, 12);
+                return $"{NoteNames[noteIndex]}{octave}";
             }
         }
     }

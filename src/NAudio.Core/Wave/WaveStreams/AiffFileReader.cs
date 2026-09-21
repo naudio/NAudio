@@ -1,7 +1,11 @@
-﻿using System;
-using System.IO;
+﻿using NAudio.Utils;
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
-using NAudio.Utils;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 // ReSharper disable once CheckNamespace
@@ -17,7 +21,7 @@ public class AiffFileReader : WaveStream
     private readonly bool ownInput;
     private readonly long dataPosition;
     private readonly int dataChunkLength;
-    private readonly List<AiffChunk> chunks = new();
+    private readonly List<AiffChunk> chunks = [];
     private Stream waveStream;
     private readonly Lock lockObject = new();
 
@@ -26,7 +30,7 @@ public class AiffFileReader : WaveStream
     /// This supports basic reading of uncompressed PCM AIF files,
     /// with 8, 16, 24 and 32 bit PCM data.
     /// </remarks>
-    public AiffFileReader(String aiffFile) :
+    public AiffFileReader(string aiffFile) :
         this(File.OpenRead(aiffFile))
     {
         ownInput = true;
@@ -60,54 +64,57 @@ public class AiffFileReader : WaveStream
     /// <param name="chunks">Additional chunks found</param>
     public static void ReadAiffHeader(Stream stream, out WaveFormat format, out long dataChunkPosition, out int dataChunkLength, List<AiffChunk> chunks)
     {
-        dataChunkPosition = -1;
         format = null;
-        BinaryReader br = new BinaryReader(stream);
+        dataChunkPosition = -1;
+        dataChunkLength = 0;
+        chunks.Clear();
 
-        if (ReadChunkName(br) != "FORM")
+        if (ReadChunkName(stream) != "FORM"u8)
         {
             throw new FormatException("Not an AIFF file - no FORM header.");
         }
-        uint fileSize = ConvertInt(br.ReadBytes(4));
-        string formType = ReadChunkName(br);
-        if (formType != "AIFC" && formType != "AIFF")
+
+        _ = ReadUInt(stream); // File size, not used here
+        ChunkName formType = ReadChunkName(stream);
+        if (formType != "AIFC"u8 && formType != "AIFF"u8)
         {
             throw new FormatException("Not an AIFF file - no AIFF/AIFC header.");
         }
 
-        dataChunkLength = 0;
-
-        while (br.BaseStream.Position < br.BaseStream.Length)
+        while (stream.Position < stream.Length)
         {
-            AiffChunk nextChunk = ReadChunkHeader(br);
+            AiffChunk nextChunk = ReadChunkHeader(stream);
             if (nextChunk.ChunkName == "\0\0\0\0") break;
 
-            if (br.BaseStream.Position + nextChunk.ChunkLength > br.BaseStream.Length)
+            if (stream.Position + nextChunk.ChunkLength > stream.Length)
             {
                 break;
             }
             if (nextChunk.ChunkName == "COMM")
             {
-                short numChannels = ConvertShort(br.ReadBytes(2));
-                uint numSampleFrames = ConvertInt(br.ReadBytes(4));
-                short sampleSize = ConvertShort(br.ReadBytes(2));
-                double sampleRate = IEEE.ConvertFromIeeeExtended(br.ReadBytes(10));
+                short numChannels = ReadShort(stream);
+                uint numSampleFrames = ReadUInt(stream);
+                short sampleSize = ReadShort(stream);
+                double sampleRate = ReadIeeeExtended(stream);
 
                 format = new WaveFormat((int)sampleRate, sampleSize, numChannels);
 
-                if (nextChunk.ChunkLength > 18 && formType == "AIFC")
+                if (nextChunk.ChunkLength > 18 && formType == "AIFC"u8)
                 {
                     // In an AIFC file, the compression format is tacked on to the COMM chunk
-                    string compress = new string(br.ReadChars(4)).ToLower();
-                    if (compress != "none") throw new FormatException("Compressed AIFC is not supported.");
-                    br.ReadBytes((int)nextChunk.ChunkLength - 22);
+                    ChunkName compress = ReadChunkName(stream);
+                    if (!compress.EqualsIgnoreCase("none"u8)) throw new FormatException("Compressed AIFC is not supported.");
+                    stream.Position += (nextChunk.ChunkLength - 22);
                 }
-                else br.ReadBytes((int)nextChunk.ChunkLength - 18);
+                else
+                {
+                    stream.Position += (nextChunk.ChunkLength - 18);
+                }
             }
             else if (nextChunk.ChunkName == "SSND")
             {
-                uint offset = ConvertInt(br.ReadBytes(4));
-                uint blockSize = ConvertInt(br.ReadBytes(4));
+                uint offset = ReadUInt(stream);
+                uint blockSize = ReadUInt(stream);
                 // The offset field is a run of pad bytes sitting between the SSND header and
                 // the first sample frame (used to block-align the sound data), so it counts
                 // against the chunk length as well as advancing the start. A file declaring a
@@ -122,15 +129,13 @@ public class AiffFileReader : WaveStream
                 }
                 dataChunkPosition = nextChunk.ChunkStart + 16 + offset;
                 dataChunkLength = soundDataLength > 0 ? (int)soundDataLength : 0;
-                br.BaseStream.Position += (nextChunk.ChunkLength - 8);
+                stream.Position += (nextChunk.ChunkLength - 8);
             }
             else
             {
-                chunks?.Add(nextChunk);
-                br.BaseStream.Position += nextChunk.ChunkLength;
+                chunks.Add(nextChunk);
+                stream.Position += nextChunk.ChunkLength;
             }
-
-
         }
 
         if (format == null)
@@ -188,16 +193,9 @@ public class AiffFileReader : WaveStream
     {
         get
         {
-            if (waveFormat.Encoding == WaveFormatEncoding.Pcm ||
-                waveFormat.Encoding == WaveFormatEncoding.Extensible ||
-                waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-            {
-                return dataChunkLength / BlockAlign;
-            }
-            else
-            {
-                throw new FormatException("Sample count is calculated only for the standard encodings");
-            }
+            return waveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible or WaveFormatEncoding.IeeeFloat
+                ? dataChunkLength / BlockAlign
+                : throw new FormatException("Sample count is calculated only for the standard encodings.");
         }
     }
 
@@ -237,6 +235,7 @@ public class AiffFileReader : WaveStream
             throw new ArgumentException(
                 $"Must read complete blocks: requested {count}, block align is {WaveFormat.BlockAlign}");
         }
+
         lock (lockObject)
         {
             // sometimes there is more junk at the end of the file past the data chunk
@@ -254,49 +253,48 @@ public class AiffFileReader : WaveStream
             // (network, deflate and crypto streams all do this), so keep asking until the
             // buffer is full or the source runs out - the byte-swap loops below step a whole
             // sample at a time and would run off the end of a partial frame.
-            var dest = buffer.Slice(0, count);
-            int length = waveStream.ReadAtLeast(dest, count, throwOnEndOfStream: false);
+            buffer = buffer.Slice(0, count);
+            int length = waveStream.ReadAtLeast(buffer, count, throwOnEndOfStream: false);
             length -= length % waveFormat.BlockAlign;
-            var read = dest.Slice(0, length);
-
-            int bytesPerSample = WaveFormat.BitsPerSample / 8;
-            switch (WaveFormat.BitsPerSample)
-            {
-                case 8:
-                    // AIFF 8-bit PCM is signed two's-complement, whereas the shared
-                    // Pcm8BitToSampleProvider (and WAV) treat 8-bit as unsigned. There is no
-                    // endianness to swap, but flipping the sign bit converts the signed source
-                    // byte to the unsigned value the downstream converter expects. See issue #1178.
-                    for (int i = 0; i < read.Length; i++)
-                    {
-                        read[i] ^= 0x80;
-                    }
-                    break;
-                case 16:
-                    for (int i = 0; i < read.Length; i += bytesPerSample)
-                    {
-                        (read[i], read[i + 1]) = (read[i + 1], read[i]);
-                    }
-                    break;
-                case 24:
-                    for (int i = 0; i < read.Length; i += bytesPerSample)
-                    {
-                        (read[i], read[i + 2]) = (read[i + 2], read[i]);
-                    }
-                    break;
-                case 32:
-                    for (int i = 0; i < read.Length; i += bytesPerSample)
-                    {
-                        (read[i], read[i + 3]) = (read[i + 3], read[i]);
-                        (read[i + 1], read[i + 2]) = (read[i + 2], read[i + 1]);
-                    }
-                    break;
-                default:
-                    throw new FormatException("Unsupported PCM format.");
-            }
-
-            return length;
+            buffer = buffer.Slice(0, length);
         }
+
+        switch (WaveFormat.BitsPerSample)
+        {
+            case 8:
+                // AIFF 8-bit PCM is signed two's-complement, whereas the shared
+                // Pcm8BitToSampleProvider (and WAV) treat 8-bit as unsigned. There is no
+                // endianness to swap, but flipping the sign bit converts the signed source
+                // byte to the unsigned value the downstream converter expects. See issue #1178.
+                for (int i = 0; i < buffer.Length; i++)
+                {
+                    buffer[i] ^= 0x80;
+                }
+                break;
+            case 16:
+                for (int i = 0; i < buffer.Length; i += 2)
+                {
+                    (buffer[i], buffer[i + 1]) = (buffer[i + 1], buffer[i]);
+                }
+                break;
+            case 24:
+                for (int i = 0; i < buffer.Length; i += 3)
+                {
+                    (buffer[i], buffer[i + 2]) = (buffer[i + 2], buffer[i]);
+                }
+                break;
+            case 32:
+                for (int i = 0; i < buffer.Length; i += 4)
+                {
+                    (buffer[i], buffer[i + 3]) = (buffer[i + 3], buffer[i]);
+                    (buffer[i + 1], buffer[i + 2]) = (buffer[i + 2], buffer[i + 1]);
+                }
+                break;
+            default:
+                throw new FormatException("Unsupported PCM format.");
+        }
+
+        return buffer.Length;
     }
 
     /// <summary>
@@ -305,21 +303,6 @@ public class AiffFileReader : WaveStream
     /// </summary>
     public override int Read(byte[] array, int offset, int count)
         => Read(array.AsSpan(offset, count));
-
-    #region Endian Helpers
-    private static uint ConvertInt(byte[] buffer)
-    {
-        if (buffer.Length != 4) throw new InvalidDataException("Incorrect length for long.");
-        return (uint)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-    }
-
-    private static short ConvertShort(byte[] buffer)
-    {
-        if (buffer.Length != 2) throw new InvalidDataException("Incorrect length for int.");
-        return (short)((buffer[0] << 8) | buffer[1]);
-    }
-    #endregion
-
 
     #region AiffChunk
     /// <summary>
@@ -353,15 +336,103 @@ public class AiffFileReader : WaveStream
         }
     }
 
-    private static AiffChunk ReadChunkHeader(BinaryReader br)
+    [InlineArray(Length)]
+    private struct ChunkName
     {
-        var chunk = new AiffChunk((uint)br.BaseStream.Position, ReadChunkName(br), ConvertInt(br.ReadBytes(4)));
-        return chunk;
+        public const int Length = 4;
+        public int Value => Unsafe.As<byte, int>(ref first);
+        public Span<byte> Span => MemoryMarshal.CreateSpan(ref first, Length);
+
+        private byte first;
+
+        public static bool operator ==(ChunkName name, ReadOnlySpan<byte> text)
+        {
+            return name.Span.SequenceEqual(text);
+        }
+
+        public static bool operator !=(ChunkName name, ReadOnlySpan<byte> text)
+        {
+            return !(name == text);
+        }
+
+        public override string ToString()
+        {
+            return string.Create(Length, this, (span, name) =>
+            {
+                ReadOnlySpan<byte> bytes = name.Span;
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    span[i] = (char)bytes[i];
+                }
+            });
+        }
+
+        public bool EqualsIgnoreCase(ReadOnlySpan<byte> text)
+        {
+            for (int i = 0; i < Length; i++)
+            {
+                if (char.ToLowerInvariant((char)Span[i]) != char.ToLowerInvariant((char)text[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public override bool Equals([NotNullWhen(true)] object obj)
+        {
+            return obj is ChunkName name && this.Value == name.Value;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value;
+        }
     }
 
-    private static string ReadChunkName(BinaryReader br)
+    private static AiffChunk ReadChunkHeader(Stream stream)
     {
-        return new string(br.ReadChars(4));
+        return new AiffChunk((uint)stream.Position, ReadChunkName(stream).ToString(), ReadUInt(stream));
+    }
+
+    private static double ReadIeeeExtended(Stream stream)
+    {
+        Span<byte> buffer = stackalloc byte[10];
+        if (stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false) != buffer.Length)
+        {
+            throw new InvalidDataException("Incorrect length for IEEE extended.");
+        }
+        return IEEE.ConvertFromIeeeExtended(buffer);
+    }
+
+    private static uint ReadUInt(Stream stream)
+    {
+        Span<byte> buffer = stackalloc byte[4];
+        if (stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false) != buffer.Length)
+        {
+            throw new InvalidDataException("Incorrect length for int.");
+        }
+        return BinaryPrimitives.ReadUInt32BigEndian(buffer);
+    }
+
+    private static short ReadShort(Stream stream)
+    {
+        Span<byte> buffer = stackalloc byte[2];
+        if (stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false) != buffer.Length)
+        {
+            throw new InvalidDataException("Incorrect length for short.");
+        }
+        return BinaryPrimitives.ReadInt16BigEndian(buffer);
+    }
+
+    private static ChunkName ReadChunkName(Stream stream)
+    {
+        ChunkName name = default;
+        if (stream.ReadAtLeast(name, ChunkName.Length, throwOnEndOfStream: false) != ChunkName.Length)
+        {
+            throw new InvalidDataException("Incorrect length for chunk name.");
+        }
+        return name;
     }
     #endregion
 }

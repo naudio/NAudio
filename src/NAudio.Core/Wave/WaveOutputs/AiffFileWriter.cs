@@ -210,7 +210,7 @@ public class AiffFileWriter : Stream
     public override void Write(ReadOnlySpan<byte> buffer)
     {
         Span<byte> modified = stackalloc byte[512];
-        byte[] rented = null;
+        byte[]? rented = null;
         if (buffer.Length > 512)
         {
             rented = ArrayPool<byte>.Shared.Rent(buffer.Length);

@@ -382,7 +382,7 @@ public class AiffFileReader : WaveStream
             return true;
         }
 
-        public override bool Equals([NotNullWhen(true)] object obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is ChunkName name && this.Value == name.Value;
         }

@@ -1,4 +1,6 @@
-﻿namespace NAudio.Codecs;
+﻿using System;
+
+namespace NAudio.Codecs;
 
 /// <summary>
 /// mu-law encoder
@@ -10,7 +12,7 @@ public static class MuLawEncoder
     private const int cBias = 0x84;
     private const int cClip = 32635;
 
-    private static readonly byte[] MuLawCompressTable = new byte[256]
+    private static ReadOnlySpan<byte> MuLawCompressTable => new byte[256]
     {
          0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,
          4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,

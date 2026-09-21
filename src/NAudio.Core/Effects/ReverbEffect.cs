@@ -30,9 +30,12 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
     private const float ScaleDamp = 0.4f;
     private const int StereoSpread = 23;
 
-    private static readonly int[] CombTuning =
-        { 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617 };
-    private static readonly int[] AllpassTuning = { 556, 441, 341, 225 };
+    private const int CombCount = 8;
+    private const int AllpassCount = 4;
+
+    private static ReadOnlySpan<int> CombTuning =>
+        [1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617];
+    private static ReadOnlySpan<int> AllpassTuning => [556, 441, 341, 225];
 
     private Comb[,] combs;       // [bank, 8]
     private Allpass[,] allpasses; // [bank, 4]
@@ -58,14 +61,14 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
     protected override void OnConfigure(WaveFormat format)
     {
         var scale = format.SampleRate / 44100f;
-        combs = new Comb[2, CombTuning.Length];
-        allpasses = new Allpass[2, AllpassTuning.Length];
+        combs = new Comb[2, CombCount];
+        allpasses = new Allpass[2, AllpassCount];
         for (var bank = 0; bank < 2; bank++)
         {
             var spread = bank == 1 ? StereoSpread : 0;
-            for (var i = 0; i < CombTuning.Length; i++)
+            for (var i = 0; i < CombCount; i++)
                 combs[bank, i] = new Comb(Math.Max(1, (int)((CombTuning[i] + spread) * scale)));
-            for (var i = 0; i < AllpassTuning.Length; i++)
+            for (var i = 0; i < AllpassCount; i++)
                 allpasses[bank, i] = new Allpass(Math.Max(1, (int)((AllpassTuning[i] + spread) * scale)));
         }
     }
@@ -128,9 +131,9 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
     private float ProcessBank(int bank, float input, float feedback, float damp1)
     {
         var output = 0f;
-        for (var i = 0; i < CombTuning.Length; i++)
+        for (var i = 0; i < CombCount; i++)
             output += combs[bank, i].Process(input, feedback, damp1);
-        for (var i = 0; i < AllpassTuning.Length; i++)
+        for (var i = 0; i < AllpassCount; i++)
             output = allpasses[bank, i].Process(output);
         return output;
     }

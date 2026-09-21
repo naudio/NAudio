@@ -17,8 +17,8 @@ public sealed class BitCrusherEffect : AudioEffect, IParameterized
     private IReadOnlyList<EffectParameter> parameters;
 
     // 0 = off (no sample-rate reduction); the rest are target rates in Hz.
-    private static readonly int[] RateOptions =
-        { 0, 32000, 22050, 16000, 11025, 8000, 6000, 4000 };
+    private static ReadOnlySpan<int> RateOptions =>
+        [0, 32000, 22050, 16000, 11025, 8000, 6000, 4000];
 
     private static readonly string[] RateLabels =
         { "Off", "32 kHz", "22.05 kHz", "16 kHz", "11.025 kHz", "8 kHz", "6 kHz", "4 kHz" };

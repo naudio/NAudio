@@ -1,4 +1,6 @@
-﻿namespace NAudio.Codecs;
+﻿using System;
+
+namespace NAudio.Codecs;
 
 /// <summary>
 /// A-law encoder
@@ -7,7 +9,7 @@ public static class ALawEncoder
 {
     private const int cBias = 0x84;
     private const int cClip = 32635;
-    private static readonly byte[] ALawCompressTable = new byte[128]
+    private static ReadOnlySpan<byte> ALawCompressTable => new byte[128]
     {
          1,1,2,2,3,3,3,3,
          4,4,4,4,4,4,4,4,

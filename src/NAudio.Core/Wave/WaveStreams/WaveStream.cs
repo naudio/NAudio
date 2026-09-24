@@ -68,13 +68,12 @@ public abstract class WaveStream : Stream, IWaveProvider
     /// </summary>
     public override long Seek(long offset, SeekOrigin origin)
     {
-        if (origin == SeekOrigin.Begin)
-            Position = offset;
-        else if (origin == SeekOrigin.Current)
-            Position += offset;
-        else
-            Position = Length + offset;
-        return Position;
+        return Position = origin switch
+        {
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => Position + offset,
+            _ => Length + offset
+        };
     }
 
     /// <summary>
@@ -107,12 +106,7 @@ public abstract class WaveStream : Stream, IWaveProvider
     public void Skip(int seconds)
     {
         long newPosition = Position + WaveFormat.AverageBytesPerSecond * seconds;
-        if (newPosition > Length)
-            Position = Length;
-        else if (newPosition < 0)
-            Position = 0;
-        else
-            Position = newPosition;
+        Position = Math.Clamp(newPosition, 0, Length);
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -193,10 +194,12 @@ public class WaveFileReader : WaveStream
     /// </summary>
     /// <returns>An array of samples, 1 for mono, 2 for stereo etc. Null indicates end of file reached
     /// </returns>
+    [SkipLocalsInit]
     public float[] ReadNextSampleFrame()
     {
         if (waveFormat.Encoding is not WaveFormatEncoding.Pcm and not WaveFormatEncoding.IeeeFloat and not WaveFormatEncoding.Extensible)
         {
+            // RE: Extensible - n.b. not necessarily PCM, should probably write more code to handle this case
             throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
         }
 
@@ -208,6 +211,7 @@ public class WaveFileReader : WaveStream
         if (bytesToRead > buffer.Length)
         {
             rented = ArrayPool<byte>.Shared.Rent(bytesToRead);
+            buffer = rented;
         }
         buffer = buffer[..bytesToRead];
 

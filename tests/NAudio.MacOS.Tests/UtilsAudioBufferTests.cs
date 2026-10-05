@@ -27,7 +27,7 @@ public class UtilsAudioBufferTests
         var sampleBuffer = new float[sampleCount];
         var read = signal.Read(sampleBuffer.AsSpan());
         Assert.That(read, Is.EqualTo(sampleBuffer.Length));
-        return MemoryMarshal.Cast<float, byte>(sampleBuffer);
+        return MemoryMarshal.Cast<float, byte>(sampleBuffer.AsSpan());
     }
 
     [Test]

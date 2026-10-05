@@ -67,12 +67,12 @@ public class AudioDeinterleaverUtilsTests
         deinterleaver.Channels = nChannels;
         deinterleaver.BytesPerFrame = sizeof(float) * nChannels;
 
-        deinterleaver.FillFromInterleaved(MemoryMarshal.Cast<float, byte>(originalInterleaved));
+        deinterleaver.FillFromInterleaved(MemoryMarshal.Cast<float, byte>(originalInterleaved.AsSpan()));
 
         for (int I = 0; I < nChannels; I++)
         {
             float[] retrievedBuffer = new float[deinterleaved[I].Length];
-            int read = deinterleaver.GetChannelBytes(I, MemoryMarshal.Cast<float, byte>(retrievedBuffer));
+            int read = deinterleaver.GetChannelBytes(I, MemoryMarshal.Cast<float, byte>(retrievedBuffer.AsSpan()));
             Assert.That(read, Is.EqualTo(retrievedBuffer.Length * sizeof(float)), "Number of read bytes must be equal to the size of the buffer.");
             Assert.That(retrievedBuffer.AsSpan().SequenceEqual(deinterleaved[I]), "The produced deinterleaved buffer contents are not the expected.");
         }
@@ -108,14 +108,14 @@ public class AudioDeinterleaverUtilsTests
         deinterleaver.Channels = deinterleaved.Length;
         deinterleaver.BytesPerFrame = sizeof(float) * deinterleaved.Length;
 
-        deinterleaver.FillFromInterleaved(MemoryMarshal.Cast<float, byte>(originalInterleaved));
+        deinterleaver.FillFromInterleaved(MemoryMarshal.Cast<float, byte>(originalInterleaved.AsSpan()));
 
         while (totalBytes > 0)
         {
             for (int channel = 0; channel < deinterleaved.Length; channel++)
             {
                 Span<byte> byteSpan = MemoryMarshal.Cast<float, byte>(
-                    decodedBuffers[channel] ??= new float[deinterleaved[channel].Length]
+                    (decodedBuffers[channel] ??= new float[deinterleaved[channel].Length]).AsSpan()
                 );
                 int read = deinterleaver.GetChannelBytes(
                     channel,

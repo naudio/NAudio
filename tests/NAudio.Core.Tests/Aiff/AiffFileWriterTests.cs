@@ -192,6 +192,22 @@ public class AiffFileWriterTests
     }
 
     // Locates the SSND chunk's sound data within a written AIFF file.
+    [Test]
+    public void LargeWriteRoundTripsThroughWriterAndReader()
+    {
+        // Larger than the writer's stack buffer, so this exercises the pooled-buffer path
+        var sourceData = new byte[4096];
+        for (int i = 0; i < sourceData.Length; i++)
+        {
+            sourceData[i] = (byte)(i * 7);
+        }
+        var format = new WaveFormat(44100, 16, 2);
+
+        var roundTripped = WriteAndRead(format, writer => writer.Write(sourceData, 0, sourceData.Length));
+
+        Assert.That(roundTripped, Is.EqualTo(sourceData));
+    }
+
     private static byte[] ExtractSsndSoundData(byte[] aiff)
     {
         for (int i = 0; i + 16 <= aiff.Length; i++)

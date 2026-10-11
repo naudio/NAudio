@@ -10,6 +10,8 @@ namespace NAudio.Wave;
 /// </summary>
 public sealed class WaveFileWriterOptions
 {
+    internal static WaveFileWriterOptions Default { get; } = new();
+
     /// <summary>
     /// When true, the writer reserves a 28-byte <c>JUNK</c> placeholder immediately after
     /// the RIFF/WAVE header so it can promote the file to RF64 at close time if the data

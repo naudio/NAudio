@@ -43,7 +43,7 @@ internal class WaveFileChunkReader
         ReadRiffHeader(br);
         this.riffSize = br.ReadUInt32(); // read the file size (minus 8 bytes)
 
-        if (br.ReadInt32() != ChunkIdentifier.ChunkIdentifierToInt32("WAVE"))
+        if (br.ReadInt32() != ChunkIdentifier.ChunkIdentifierToInt32("WAVE"u8))
         {
             throw new FormatException("Not a WAVE file - no WAVE header");
         }
@@ -53,8 +53,8 @@ internal class WaveFileChunkReader
             ReadDs64Chunk(br);
         }
 
-        int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
-        int formatChunkId = ChunkIdentifier.ChunkIdentifierToInt32("fmt ");
+        int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data"u8);
+        int formatChunkId = ChunkIdentifier.ChunkIdentifierToInt32("fmt "u8);
 
         // sometimes a file has more data than is specified after the RIFF header
         long stopPosition = Math.Min(riffSize + 8, stream.Length);
@@ -148,7 +148,7 @@ internal class WaveFileChunkReader
     /// </summary>
     private void ReadDs64Chunk(BinaryReader reader)
     {
-        int ds64ChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ds64");
+        int ds64ChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ds64"u8);
         int chunkId = reader.ReadInt32();
         if (chunkId != ds64ChunkId)
         {
@@ -185,11 +185,11 @@ internal class WaveFileChunkReader
     private void ReadRiffHeader(BinaryReader br)
     {
         int header = br.ReadInt32();
-        if (header == ChunkIdentifier.ChunkIdentifierToInt32("RF64"))
+        if (header == ChunkIdentifier.ChunkIdentifierToInt32("RF64"u8))
         {
             this.isRf64 = true;
         }
-        else if (header != ChunkIdentifier.ChunkIdentifierToInt32("RIFF"))
+        else if (header != ChunkIdentifier.ChunkIdentifierToInt32("RIFF"u8))
         {
             throw new FormatException("Not a WAVE file - no RIFF header");
         }

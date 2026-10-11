@@ -280,4 +280,20 @@ public class WaveChunksTests
             return chunks;
         }
     }
+    [Test]
+    public void GetDataRestoresReaderPositionWhenReadFails()
+    {
+        var bytes = WaveFileBuilder.Build(DefaultFormat, SampleAudio, new WaveFileBuilder.Chunk("test", new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
+        var ms = new MemoryStream();
+        ms.Write(bytes);
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        reader.Position = 2;
+
+        // Truncate the trailing chunk after the reader has parsed it
+        ms.SetLength(ms.Length - 4);
+
+        Assert.Throws<InvalidOperationException>(() => reader.Chunks.GetData(reader.Chunks[0]));
+        Assert.That(reader.Position, Is.EqualTo(2));
+    }
 }

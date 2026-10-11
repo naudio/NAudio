@@ -106,12 +106,13 @@ public abstract class WaveStream : Stream, IWaveProvider
     /// <exception cref="ObjectDisposedException">The wave stream is disposed.</exception>
     public override long Seek(long offset, SeekOrigin origin)
     {
-        if (origin == SeekOrigin.Begin)
-            Position = offset;
-        else if (origin == SeekOrigin.Current)
-            Position += offset;
-        else
-            Position = Length + offset;
+        Position = origin switch
+        {
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => Position + offset,
+            _ => Length + offset
+        };
+        // Read back rather than returning the assigned value: subclasses may clamp or block-align in the setter
         return Position;
     }
 
@@ -142,14 +143,8 @@ public abstract class WaveStream : Stream, IWaveProvider
     /// <exception cref="ObjectDisposedException">The wave stream is disposed.</exception>
     public void Skip(int seconds)
     {
-        long length = Length;
         long newPosition = Position + WaveFormat.AverageBytesPerSecond * seconds;
-        if (newPosition > length)
-            newPosition = length;
-        else if (newPosition < 0L)
-            newPosition = 0L;
-
-        Position = newPosition;
+        Position = Math.Clamp(newPosition, 0, Length);
     }
 
     /// <summary>

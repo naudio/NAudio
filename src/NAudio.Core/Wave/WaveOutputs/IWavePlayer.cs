@@ -5,8 +5,7 @@ using System;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Represents a hardware audio device that can play any <see cref="IWaveProvider"/> 
-/// instance provided to its <see cref="Init" /> method. <br />
+/// Plays the audio from the <see cref="IWaveProvider"/> passed to its <see cref="Init" /> method on an output device. <br />
 /// This interface is implemented by NAudio's audio output classes, which wrap a platform audio API such as WASAPI on Windows. <br />
 /// You are expected to release the acquired audio hardware 
 /// (by calling <see cref="IDisposable.Dispose" />) once you are finished using it.
@@ -21,15 +20,7 @@ public interface IWavePlayer : IDisposable
     /// <summary>Stop playback</summary>
     void Stop();
 
-    /// <summary>Pause Playback</summary>
-    /// <remarks>
-    /// The way this method works is that during the Pause state,
-    /// the buffers of the driver are not yet cleared, but the
-    /// playback has been stopped. As such, later resuming playback
-    /// is faster than doing <see cref="Stop"/>, then <see cref="Play"/>. <br />
-    /// Note that not all drivers do necessarily implement this
-    /// because it depends on the programming model the driver is using.
-    /// </remarks>
+    /// <summary>Pause playback. Call <see cref="Play"/> to resume.</summary>
     void Pause();
 
     /// <summary>
@@ -43,11 +34,11 @@ public interface IWavePlayer : IDisposable
     /// Allows to modify the gain (volume) of the output audio. <br />
     /// 1.0f is full scale, while 0.0f is silence.
     /// </summary>
-    /// <returns>
+    /// <value>
     /// A value indicating the gain (volume) of the output audio. <br />
     /// Implementations are permitted to always return 1f if the driver does
     /// not have gain controls.
-    /// </returns>
+    /// </value>
     /// <remarks>
     /// Not all implementations do necessarily support getting/setting a volume value. <br />
     /// In some drivers, this modifies the stream's volume, and in some others the global or the device's hardware volume.
@@ -59,10 +50,10 @@ public interface IWavePlayer : IDisposable
     /// <summary>
     /// Queries the current state of the playback.
     /// </summary>
-    /// <returns>
+    /// <value>
     /// A value from the <see cref="Wave.PlaybackState"/> 
     /// enumeration that indicates the state of the playback.
-    /// </returns>
+    /// </value>
     PlaybackState PlaybackState { get; }
 
     /// <summary>

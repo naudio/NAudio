@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace NAudio.Utils;
 
@@ -64,6 +65,31 @@ public class ByteEncoding : Encoding
             chars[charIndex + n] = (char)b;
         }
         return byteCount;
+    }
+
+    /// <inheritdoc/>
+    public override string GetString(byte[] bytes)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        return GetStringImpl(bytes);
+    }
+
+    /// <inheritdoc/>
+    public override string GetString(byte[] bytes, int index, int count)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        return GetStringImpl(bytes.AsSpan(index, count));
+    }
+
+    private static string GetStringImpl(ReadOnlySpan<byte> bytes)
+    {
+        int nullTerminatorIndex = bytes.IndexOf((byte)0);
+        if (nullTerminatorIndex != -1)
+        {
+            bytes = bytes[..nullTerminatorIndex];
+        }
+        // Each byte maps directly to the char with the same value, which is exactly Latin-1
+        return Encoding.Latin1.GetString(bytes);
     }
 
     /// <summary>

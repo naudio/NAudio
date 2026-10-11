@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 
 namespace NAudio.Sfz;
 
@@ -12,7 +13,7 @@ namespace NAudio.Sfz;
 public static class SfzNoteName
 {
     // semitone offset within an octave for each natural note letter
-    private static readonly int[] LetterSemitone = { 9, 11, 0, 2, 4, 5, 7 }; // a b c d e f g
+    private static ReadOnlySpan<int> LetterSemitone => [9, 11, 0, 2, 4, 5, 7]; // a b c d e f g
 
     /// <summary>
     /// Tries to parse a key value (note number or note name) to a MIDI note

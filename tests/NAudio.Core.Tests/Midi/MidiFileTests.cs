@@ -437,6 +437,69 @@ public class MidiFileTests
         public override void Write(byte[] buffer, int offset, int count) => inner.Write(buffer, offset, count);
     }
 
+    [Test]
+    public void ReadsFileFromStreamThatReturnsShortReads()
+    {
+        var track = new byte[]
+        {
+            0x00, 0x90, 0x3C, 0x64,
+            0x0A, 0x80, 0x3C, 0x40,
+            0x00, 0xFF, 0x2F, 0x00
+        };
+        var midi = CreateMidiFileBytes(1, 120, track, track);
+
+        using var stream = new ShortReadStream(midi, maxBytesPerRead: 1);
+        var midiFile = new MidiFile(stream, true);
+
+        Assert.That(midiFile.Tracks, Is.EqualTo(2));
+        Assert.That(midiFile.Events[1].Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void ReadsRiffRmidFromStreamThatReturnsShortReads()
+    {
+        var track = new byte[]
+        {
+            0x00, 0x90, 0x3C, 0x64,
+            0x0A, 0x80, 0x3C, 0x40,
+            0x00, 0xFF, 0x2F, 0x00
+        };
+        var midi = CreateMidiFileBytes(0, 480, track);
+        var rmid = WrapInRiffRmid(midi, ("IART", Encoding.ASCII.GetBytes("abc")));
+
+        using var stream = new ShortReadStream(rmid, maxBytesPerRead: 1);
+        var midiFile = new MidiFile(stream, true);
+
+        Assert.That(midiFile.DeltaTicksPerQuarterNote, Is.EqualTo(480));
+        Assert.That(midiFile.Events[0].Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void TruncatedInputThrowsFormatException()
+    {
+        // Shorter than a chunk ID
+        using (var stream = new MemoryStream(Encoding.ASCII.GetBytes("MT")))
+        {
+            Assert.Throws<FormatException>(() => new MidiFile(stream, true));
+        }
+
+        // RIFF wrapper that ends before the RMID form type
+        var truncatedRiff = new byte[] { (byte)'R', (byte)'I', (byte)'F', (byte)'F', 0x10, 0, 0, 0, (byte)'R', (byte)'M' };
+        using (var stream = new MemoryStream(truncatedRiff))
+        {
+            Assert.Throws<FormatException>(() => new MidiFile(stream, true));
+        }
+
+        // Header declares two tracks but the file ends after the first
+        var track = new byte[] { 0x00, 0xFF, 0x2F, 0x00 };
+        var oneTrack = CreateMidiFileBytes(1, 120, track);
+        oneTrack[11] = 2;
+        using (var stream = new MemoryStream(oneTrack))
+        {
+            Assert.Throws<FormatException>(() => new MidiFile(stream, true));
+        }
+    }
+
     private static byte[] CreateMidiFileBytes(ushort format, ushort division, params byte[][] tracks)
     {
         using var stream = new MemoryStream();
@@ -499,5 +562,40 @@ public class MidiFileTests
         writer.Write((byte)((value >> 16) & 0xFF));
         writer.Write((byte)((value >> 8) & 0xFF));
         writer.Write((byte)(value & 0xFF));
+    }
+    // A seekable stream that never satisfies a read in full, the way network, deflate and
+    // crypto streams behave.
+    private sealed class ShortReadStream : Stream
+    {
+        private readonly MemoryStream inner;
+        private readonly int maxBytesPerRead;
+
+        public ShortReadStream(byte[] data, int maxBytesPerRead)
+        {
+            inner = new MemoryStream(data);
+            this.maxBytesPerRead = maxBytesPerRead;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => inner.Position = value;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+            => inner.Read(buffer, offset, Math.Min(count, maxBytesPerRead));
+
+        public override int Read(Span<byte> buffer)
+            => inner.Read(buffer.Slice(0, Math.Min(buffer.Length, maxBytesPerRead)));
+
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

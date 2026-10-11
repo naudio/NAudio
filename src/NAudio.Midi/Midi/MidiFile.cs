@@ -59,7 +59,7 @@ public class MidiFile
         try
         {
             Span<byte> chunkHeader = stackalloc byte[4];
-            if (!TryReadChunkId(inputStream, chunkHeader))
+            if (!TryReadChunkId(br, chunkHeader))
             {
                 throw new FormatException("Not a MIDI file - header chunk missing");
             }
@@ -68,7 +68,7 @@ public class MidiFile
                 // RIFF-RMID wrapper: a standard MIDI file embedded in a RIFF container
                 // (issue #1236). Skip the wrapper so the inner SMF is read as normal.
                 SeekToRmidMidiData(br);
-                if (!TryReadChunkId(inputStream, chunkHeader))
+                if (!TryReadChunkId(br, chunkHeader))
                 {
                     throw new FormatException("Not a MIDI file - header chunk missing");
                 }
@@ -103,7 +103,7 @@ public class MidiFile
                     absoluteTime = 0;
                 }
 
-                if (!TryReadChunkId(inputStream, chunkHeader) || !chunkHeader.SequenceEqual("MTrk"u8))
+                if (!TryReadChunkId(br, chunkHeader) || !chunkHeader.SequenceEqual("MTrk"u8))
                 {
                     throw new FormatException("Invalid chunk header");
                 }
@@ -241,8 +241,8 @@ public class MidiFile
     /// Reads a four-byte chunk ID, looping over partial reads. Returns false (rather than
     /// throwing) if the stream ends first, so callers can report a <see cref="FormatException"/>.
     /// </summary>
-    private static bool TryReadChunkId(Stream stream, Span<byte> id)
-        => stream.ReadAtLeast(id, id.Length, throwOnEndOfStream: false) == id.Length;
+    private static bool TryReadChunkId(BinaryReader br, Span<byte> id)
+        => br.BaseStream.ReadAtLeast(id, id.Length, throwOnEndOfStream: false) == id.Length;
 
     private static void SeekToRmidMidiData(BinaryReader br)
     {
@@ -252,13 +252,13 @@ public class MidiFile
         // (e.g. 'INFO' metadata or an embedded 'DLS ' soundbank) are skipped.
         br.ReadUInt32(); // overall RIFF size - not needed
         Span<byte> idBytes = stackalloc byte[4];
-        if (!TryReadChunkId(br.BaseStream, idBytes) || !idBytes.SequenceEqual("RMID"u8))
+        if (!TryReadChunkId(br, idBytes) || !idBytes.SequenceEqual("RMID"u8))
         {
             throw new FormatException($"Not a MIDI file - unsupported RIFF form type '{Encoding.UTF8.GetString(idBytes)}'");
         }
         while (true)
         {
-            if (!TryReadChunkId(br.BaseStream, idBytes))
+            if (!TryReadChunkId(br, idBytes))
             {
                 throw new FormatException("Not a MIDI file - RIFF-RMID 'data' chunk missing");
             }

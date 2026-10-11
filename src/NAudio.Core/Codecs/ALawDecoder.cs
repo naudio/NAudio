@@ -12,7 +12,7 @@ public class ALawDecoder
     /// <summary>
     /// only 512 bytes required, so just use a lookup
     /// </summary>
-    private static readonly short[] ALawDecompressTable = new short[256]
+    private static ReadOnlySpan<short> ALawDecompressTable => new short[256]
     {
          -5504, -5248, -6016, -5760, -4480, -4224, -4992, -4736,
          -7552, -7296, -8064, -7808, -6528, -6272, -7040, -6784,

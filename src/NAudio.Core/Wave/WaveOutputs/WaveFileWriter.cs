@@ -438,9 +438,9 @@ public class WaveFileWriter : Stream
             writer.Write(value24);
             dataChunkSize += 3;
         }
-        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible)
         {
-            // A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
+            // Plain 32-bit PCM is integer. A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
             // distinguished by its SubFormat GUID (NAudio defaults 32-bit extensible to IEEE
             // float). AsStandardWaveFormat resolves the subformat for both WaveFormatExtensible
             // and WaveFormatExtraData, so honour it rather than assuming PCM.
@@ -513,8 +513,8 @@ public class WaveFileWriter : Stream
             }
             dataChunkSize += (count * 3);
         }
-        // 32 bit PCM or IEEE float data
-        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+        // 32 bit PCM, or extensible PCM or IEEE float data
+        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible)
         {
             // As in WriteSample, a 32-bit extensible format may carry an IEEE-float subformat,
             // in which case the 16-bit samples must be normalised to float rather than written

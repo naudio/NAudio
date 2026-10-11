@@ -229,6 +229,47 @@ public class WaveFileWriterTests
     }
 
     [Test]
+    public void WriteSampleTo32BitPcmRoundTripsCorrectly()
+    {
+        // Plain (non-extensible) 32-bit integer PCM used to throw from WriteSample
+        var samples = new[] { 0f, 0.5f, -0.25f, -1f };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 1)))
+        {
+            writer.WriteSamples(samples, 0, samples.Length);
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.WaveFormat.Encoding, Is.EqualTo(WaveFormatEncoding.Pcm), "Encoding");
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+        foreach (var expected in samples)
+        {
+            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(expected).Within(0.0001f));
+        }
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
+    }
+
+    [Test]
+    public void WriteShortSamplesTo32BitPcmRoundTripsCorrectly()
+    {
+        var samples = new short[] { 0, 16384, -16384 };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 1)))
+        {
+            writer.WriteSamples(samples, 0, samples.Length);
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+        foreach (var sample in samples)
+        {
+            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(sample / 32768f).Within(0.0001f));
+        }
+    }
+
+    [Test]
     public void WriteShortSamplesTo32BitExtensibleFloatRoundTripsCorrectly()
     {
         // The WriteSamples(short[]) path shared the WriteSample bug: it wrote integer PCM into a

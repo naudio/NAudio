@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using NAudio.Wave.SampleProviders;
 
@@ -61,39 +61,13 @@ public class WaveFileWriter : Stream
     private readonly List<BufferedChunk> afterDataChunks = [];
     private CueList bufferedCues;
 
-    private readonly struct BufferedChunk
+    // Chunk IDs are stored as their little-endian FOURCC value; BinaryWriter.Write(int) writes the same four bytes back out
+    private readonly record struct BufferedChunk(int Id, byte[] Data)
     {
         public BufferedChunk(ReadOnlySpan<byte> id, byte[] data)
-            : this(new ChunkId(id), data)
+            : this(BinaryPrimitives.ReadInt32LittleEndian(id), data)
         {
         }
-
-        public BufferedChunk(ChunkId id, byte[] data)
-        {
-            Id = id;
-            Data = data;
-        }
-
-        public ChunkId Id { get; }
-        public byte[] Data { get; }
-    }
-
-    [InlineArray(Length)]
-    private struct ChunkId
-    {
-        public const int Length = 4;
-        public Span<byte> Span => MemoryMarshal.CreateSpan(ref first, Length);
-
-        public ChunkId(ReadOnlySpan<byte> text)
-        {
-            ArgumentOutOfRangeException.ThrowIfNotEqual(text.Length, Length, nameof(text));
-            Span[0] = text[0];
-            Span[1] = text[1];
-            Span[2] = text[2];
-            Span[3] = text[3];
-        }
-
-        private byte first;
     }
 
     /// <summary>
@@ -348,7 +322,7 @@ public class WaveFileWriter : Stream
 
     private void WriteFramedChunk(BufferedChunk chunk)
     {
-        writer.Write(chunk.Id.Span);
+        writer.Write(chunk.Id);
         writer.Write(chunk.Data.Length);
         writer.Write(chunk.Data);
         if ((chunk.Data.Length & 1) == 1) writer.Write((byte)0);

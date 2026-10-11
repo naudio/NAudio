@@ -81,20 +81,15 @@ public class ByteEncoding : Encoding
         return GetStringImpl(bytes.AsSpan(index, count));
     }
 
-    private string GetStringImpl(ReadOnlySpan<byte> bytes)
+    private static string GetStringImpl(ReadOnlySpan<byte> bytes)
     {
         int nullTerminatorIndex = bytes.IndexOf((byte)0);
         if (nullTerminatorIndex != -1)
         {
             bytes = bytes[..nullTerminatorIndex];
         }
-        return string.Create(bytes.Length, bytes, static (span, bytes) =>
-        {
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                span[i] = (char)bytes[i];
-            }
-        });
+        // Each byte maps directly to the char with the same value, which is exactly Latin-1
+        return Encoding.Latin1.GetString(bytes);
     }
 
     /// <summary>

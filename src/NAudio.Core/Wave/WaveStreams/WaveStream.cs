@@ -28,7 +28,7 @@ namespace NAudio.Wave;
 /// audio - that is, audio whose samples are not changed and their
 /// exact count is known once the object is initialized.
 /// File format readers is a primary example. <br />
-/// Instead, <see cref="IWaveProvider"/> is the interface that its implementation wraps
+/// By contrast, <see cref="IWaveProvider"/> suits a component that wraps
 /// another <see cref="IWaveProvider"/> and manipulates the audio samples in some way. <br />
 /// Using <see cref="IWaveProvider"/> is also suitable when building any signal generator.
 /// </para>
@@ -176,7 +176,7 @@ public abstract class WaveStream : Stream, IWaveProvider
                 // This is special-cased in the if statement below.
                 length = Length;
             }
-            catch
+            catch (NotSupportedException)
             {
                 length = 0L;
             }

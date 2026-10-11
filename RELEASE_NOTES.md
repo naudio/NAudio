@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Changed the `WaveStream.CurrentTime` setter to clamp to the bounds of the stream, and corrected the XML documentation for the core audio interfaces (#1441)
  * **macOS support (preview)** - A new wrappers library is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. The `NAudio.MacOS` package ships pre-release only (`X.Y.Z-preview.N`) while its API settles, so it stays pre-release alongside stable releases of the other packages. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
 
 ### 3.1.0 (7 Sep 2026)

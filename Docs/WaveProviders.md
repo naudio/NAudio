@@ -8,7 +8,7 @@ This article explains the three main base interfaces and classes you will encoun
 `WaveStream` was the first base class in NAudio, inherits from `System.IO.Stream`,
 and implements `IWaveProvider` in newer versions.
 It represents a stream of audio data, and its format can be determined by querying the `WaveFormat` property.
-Typically, it is also seekable (repositionable), which it means that it is possible to get any sample of the stream at will.
+Typically, it is also seekable (repositionable), which means that it is possible to get any sample of the stream at will.
 
 Seeking (reposition) is implemented through the `System.IO.Stream` `Length` and `Position` properties. 
 These properties are both measured in terms of bytes, not samples.
@@ -72,7 +72,7 @@ just doing any signal processing suddenly becomes one of the hardest tasks to do
 
 For these reasons, the `ISampleProvider` interface was created.
 
-This particular interface makes it easy to process the samples because it's `Read` 
+This particular interface makes it easy to process the samples because its `Read` 
 method provides 32-bit IEEE floating-point samples:
 
 ```c#

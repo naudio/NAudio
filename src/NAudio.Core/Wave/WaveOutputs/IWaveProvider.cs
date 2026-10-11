@@ -6,7 +6,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// The <see cref="IWaveProvider" /> interface is the lowest-level primitive in NAudio that is an audio source -
 /// either that comes from a file that contains the samples, or from a signal generator
-/// generating audio on the fly, or even by wrapping another provider that manipulates it's samples. <br />
+/// generating audio on the fly, or even by wrapping another provider that manipulates its samples. <br />
 /// Instances of this interface can form an audio pipeline that gets samples from a file (or generating them),
 /// optionally modifying them in a way, and then are fed to a native player API that can be used to listen to the
 /// processed result, or even storing them to a file for long-term access.

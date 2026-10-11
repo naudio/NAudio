@@ -6,8 +6,8 @@ namespace NAudio.Wave;
 
 /// <summary>
 /// Represents a hardware audio device that can play any <see cref="IWaveProvider"/> 
-/// instance provided to it's <see cref="Init" /> method. <br />
-/// This interface is typically implemented by audio drivers, such as WASAPI on Windows. <br />
+/// instance provided to its <see cref="Init" /> method. <br />
+/// This interface is implemented by NAudio's audio output classes, which wrap a platform audio API such as WASAPI on Windows. <br />
 /// You are expected to release the acquired audio hardware 
 /// (by calling <see cref="IDisposable.Dispose" />) once you are finished using it.
 /// </summary>
@@ -37,7 +37,6 @@ public interface IWavePlayer : IDisposable
     /// provider that provides the samples to play.
     /// </summary>
     /// <param name="waveProvider">The wave provider to be played.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="waveProvider" /> is <see langword="null" />.</exception>
     void Init(IWaveProvider waveProvider);
 
     /// <summary>
@@ -77,7 +76,7 @@ public interface IWavePlayer : IDisposable
     WaveFormat OutputWaveFormat { get; }
 
     /// <summary>
-    /// Event that is dispatching when playback has been stopped. <br />
+    /// Event that is raised when playback has stopped. <br />
     /// Playback can be stopped due to any of the following three reasons: <br />
     /// <list type="bullet">
     ///     <item>
@@ -87,12 +86,12 @@ public interface IWavePlayer : IDisposable
     ///     </item>
     ///     <item>
     ///         The provided <see cref="IWaveProvider"/> instance
-    ///         has reached it's end (no more samples to play). <br />
+    ///         has reached its end (no more samples to play). <br />
     ///         In this case, the event args object 
     ///         <see cref="StoppedEventArgs.Exception" /> property is <see langword="null" />.
     ///     </item>
     ///     <item>
-    ///         An error/exception has been occurred either by calling <see cref="IWaveProvider.Read(Span{byte})" />,
+    ///         An error/exception occurred either by calling <see cref="IWaveProvider.Read(Span{byte})" />,
     ///         or the driver has encountered a failure which it forced to stop playback. <br />
     ///         In this case, the event args object 
     ///         <see cref="StoppedEventArgs.Exception" /> property is <em>not</em> <see langword="null" />.

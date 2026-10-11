@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -194,7 +193,6 @@ public class WaveFileReader : WaveStream
     /// </summary>
     /// <returns>An array of samples, 1 for mono, 2 for stereo etc. Null indicates end of file reached
     /// </returns>
-    [SkipLocalsInit]
     public float[] ReadNextSampleFrame()
     {
         if (waveFormat.Encoding is not WaveFormatEncoding.Pcm and not WaveFormatEncoding.IeeeFloat and not WaveFormatEncoding.Extensible)
@@ -206,14 +204,12 @@ public class WaveFileReader : WaveStream
         var sampleFrame = new float[waveFormat.Channels];
         int bytesToRead = waveFormat.Channels * (waveFormat.BitsPerSample / 8);
 
-        Span<byte> buffer = stackalloc byte[512];
+        // A frame is channels * bytes per sample (typically 4-8 bytes), so it almost always fits on the stack
+        const int MaxStackBytes = 512;
         byte[] rented = null;
-        if (bytesToRead > buffer.Length)
-        {
-            rented = ArrayPool<byte>.Shared.Rent(bytesToRead);
-            buffer = rented;
-        }
-        buffer = buffer[..bytesToRead];
+        Span<byte> buffer = bytesToRead <= MaxStackBytes
+            ? stackalloc byte[bytesToRead]
+            : (rented = ArrayPool<byte>.Shared.Rent(bytesToRead)).AsSpan(0, bytesToRead);
 
         try
         {

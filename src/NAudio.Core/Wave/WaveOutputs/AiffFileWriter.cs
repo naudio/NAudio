@@ -205,17 +205,13 @@ public class AiffFileWriter : Stream
     /// Appends bytes to the AiffFile (assumes they are already in the correct format)
     /// </summary>
     /// <param name="buffer">the buffer containing the wave data</param>
-    [SkipLocalsInit]
     public override void Write(ReadOnlySpan<byte> buffer)
     {
-        Span<byte> modified = stackalloc byte[512];
+        const int MaxStackBytes = 512;
         byte[] rented = null;
-        if (buffer.Length > 512)
-        {
-            rented = ArrayPool<byte>.Shared.Rent(buffer.Length);
-            modified = rented;
-        }
-        modified = modified[..buffer.Length];
+        Span<byte> modified = buffer.Length <= MaxStackBytes
+            ? stackalloc byte[buffer.Length]
+            : (rented = ArrayPool<byte>.Shared.Rent(buffer.Length)).AsSpan(0, buffer.Length);
 
         try
         {

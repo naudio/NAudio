@@ -85,6 +85,11 @@ so existing third-party decoders such as NLayer keep working).
 The abstract base classes changed to match: `WaveProvider32` now overrides
 `Read(Span<float>)` and `WaveProvider16` overrides `Read(Span<short>)`.
 
+If you are on **VB.NET**, which cannot name a `Span<T>` in a method signature, derive from
+`SampleProviderBase` or `WaveProviderBase` instead — they keep the NAudio 2
+`Read(buffer, offset, count)` signature and bridge to the span interfaces for you. See
+[Using NAudio from VB.NET](UsingNAudioFromVB.md) for the full picture.
+
 One related overload was dropped: **`Init(IWavePlayer, ISampleProvider, bool convertTo16Bit)`
 is removed**. Use `Init(IWavePlayer, ISampleProvider)`, which always initialises with IEEE
 float, or convert upstream with `SampleToWaveProvider16` if you specifically need 16-bit:

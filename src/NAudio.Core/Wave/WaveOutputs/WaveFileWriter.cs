@@ -157,9 +157,9 @@ public class WaveFileWriter : Stream
         this.rf64PromotionThreshold = options.Rf64PromotionThreshold;
         writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
 
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
+        writer.Write("RIFF"u8);
         writer.Write(0); // placeholder
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
+        writer.Write("WAVE"u8);
 
         if (this.enableRf64)
         {
@@ -167,12 +167,12 @@ public class WaveFileWriter : Stream
             // Reserve a JUNK chunk of the same size; at close time, if the file exceeds
             // the RF64 promotion threshold, this slot is overwritten with a real ds64 chunk.
             junkChunkPos = outStream.Position;
-            writer.Write(System.Text.Encoding.UTF8.GetBytes("JUNK"));
+            writer.Write("JUNK"u8);
             writer.Write(28);
             writer.Write(new byte[28]);
         }
 
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
+        writer.Write("fmt "u8);
         format.Serialize(writer);
     }
 
@@ -287,13 +287,13 @@ public class WaveFileWriter : Stream
 
         if (HasFactChunk())
         {
-            writer.Write(System.Text.Encoding.UTF8.GetBytes("fact"));
+            writer.Write("fact"u8);
             writer.Write(4);
             factSampleCountPos = outStream.Position;
             writer.Write(0);
         }
 
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
+        writer.Write("data"u8);
         dataSizePos = outStream.Position;
         writer.Write(0);
         headerFinalized = true;
@@ -643,13 +643,13 @@ public class WaveFileWriter : Stream
 
         // overwrite RIFF -> RF64 and set the top-level RIFF size to 0xFFFFFFFF
         outStream.Position = 0;
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("RF64"));
+        writer.Write("RF64"u8);
         writer.Write(unchecked((int)0xFFFFFFFF));
         // WAVE is at offset 8 and is unchanged
 
         // overwrite JUNK placeholder with ds64 chunk
         outStream.Position = junkChunkPos;
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("ds64"));
+        writer.Write("ds64"u8);
         writer.Write(28);
         writer.Write(totalLength - 8);  // RIFF size (64-bit)
         writer.Write(dataChunkSize);      // data chunk size (64-bit)

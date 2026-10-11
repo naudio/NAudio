@@ -137,9 +137,9 @@ public class Id3v2Tag
     private static byte[] CreateId3v2TagHeader(int size)
     {
         byte[] tagHeader = ByteArrayExtensions.Concat(
-            Encoding.UTF8.GetBytes("ID3"),
-            new byte[] { 3, 0 }, // version
-            new byte[] { 0 }, // flags
+            [.. "ID3"u8],
+            [3, 0], // version
+            [0],    // flags
             GetId3TagHeaderSize(size));
         return tagHeader;
     }

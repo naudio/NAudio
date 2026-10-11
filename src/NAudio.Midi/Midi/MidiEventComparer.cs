@@ -9,6 +9,7 @@ namespace NAudio.Midi;
 public class MidiEventComparer : IComparer<MidiEvent>
 {
     #region IComparer<MidiEvent> Members
+    internal static readonly MidiEventComparer Instance = new();
 
     /// <summary>
     /// Compares two MidiEvents

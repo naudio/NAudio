@@ -35,11 +35,19 @@
     <VersionSuffix Condition="'$(VersionSuffix)' == ''">preview.0</VersionSuffix>
   </PropertyGroup>
 
-  <!-- needed for perfomance profiling unit tests -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <DebugType>full</DebugType>
-	  <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
+  <!--
+    Do not set <DebugType>full</DebugType> here. On Windows that selects the
+    legacy Windows PDB writer, which records using-aliases in debug info by
+    serialising the aliased type's name — and GlobalUsings.cs aliases
+    function pointer types, which that format cannot express. The result is
+    a Debug-only, Windows-only "CSC : error CS8911: Using a function pointer
+    type in this context is not supported", with no file or line because it
+    comes out of the emit layer rather than the binder. CI never saw it: it
+    builds Release, where the condition did not apply. Other platforms never
+    saw it either, as csc silently falls back to a portable PDB when the
+    native writer is unavailable. The SDK default (portable) carries the
+    same debug information.
+  -->
 
   <!-- Provide assembly attributes here -->
   <ItemGroup>

@@ -121,7 +121,7 @@ public sealed class InfoMetadata : IEnumerable<KeyValuePair<string, string>>
     {
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
-        w.Write(Encoding.ASCII.GetBytes("INFO"));
+        w.Write("INFO"u8);
         foreach (var kv in entries)
         {
             var idBytes = Encoding.ASCII.GetBytes(kv.Key);

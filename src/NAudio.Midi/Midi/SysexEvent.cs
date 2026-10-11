@@ -10,6 +10,8 @@ namespace NAudio.Midi;
 /// </summary>
 public class SysexEvent : MidiEvent
 {
+    private const byte EndByte = 0xF7;
+
     private byte[] data;
 
     /// <summary>
@@ -18,7 +20,7 @@ public class SysexEvent : MidiEvent
     public SysexEvent()
         : base(0, 1, MidiCommandCode.Sysex)
     {
-        data = Array.Empty<byte>();
+        data = [];
     }
 
     /// <summary>
@@ -30,11 +32,7 @@ public class SysexEvent : MidiEvent
     public SysexEvent(long absoluteTime, byte[] data)
         : base(absoluteTime, 1, MidiCommandCode.Sysex)
     {
-        if (data == null)
-        {
-            throw new ArgumentNullException("data");
-        }
-
+        ArgumentNullException.ThrowIfNull(data);
         this.data = (byte[])data.Clone();
     }
 
@@ -43,7 +41,7 @@ public class SysexEvent : MidiEvent
     /// (the same form the constructor accepts). Returns a copy, so mutating it does not affect
     /// this event.
     /// </summary>
-    public byte[] Data => (byte[])(data ?? Array.Empty<byte>()).Clone();
+    public byte[] Data => (byte[])(data ?? []).Clone();
 
     /// <summary>
     /// Reads a sysex message from a MIDI stream
@@ -57,18 +55,15 @@ public class SysexEvent : MidiEvent
         //se.data = br.ReadBytes(se.length);
 
         var sysexData = new List<byte>();
-        bool loop = true;
-        while (loop)
+        while (true)
         {
             byte b = br.ReadByte();
-            if (b == 0xF7)
+            if (b == EndByte)
             {
-                loop = false;
+                break;
             }
-            else
-            {
-                sysexData.Add(b);
-            }
+
+            sysexData.Add(b);
         }
 
         se.data = sysexData.ToArray();
@@ -92,7 +87,7 @@ public class SysexEvent : MidiEvent
     /// <returns>A string describing the sysex message</returns>
     public override string ToString()
     {
-        var sysexData = data ?? Array.Empty<byte>();
+        var sysexData = data ?? [];
         var sb = new StringBuilder();
         foreach (byte b in sysexData)
         {
@@ -111,8 +106,8 @@ public class SysexEvent : MidiEvent
         base.Export(ref absoluteTime, writer);
         //WriteVarInt(writer,length);
         //writer.Write(data, 0, data.Length);
-        var sysexData = data ?? Array.Empty<byte>();
+        var sysexData = data ?? [];
         writer.Write(sysexData, 0, sysexData.Length);
-        writer.Write((byte)0xF7);
+        writer.Write(EndByte);
     }
 }

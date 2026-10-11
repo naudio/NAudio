@@ -49,7 +49,7 @@ public sealed class MidiFileSequence
     /// <summary>Builds a sequence from an already-parsed <see cref="MidiFile"/>.</summary>
     public static MidiFileSequence FromMidiFile(MidiFile midiFile)
     {
-        if (midiFile == null) throw new ArgumentNullException(nameof(midiFile));
+        ArgumentNullException.ThrowIfNull(midiFile);
         int ppq = midiFile.DeltaTicksPerQuarterNote;
         if (ppq <= 0) throw new ArgumentException("MIDI file has an invalid PPQ.", nameof(midiFile));
 

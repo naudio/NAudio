@@ -208,5 +208,11 @@ public class ReaderTests
         Assert.Throws<ObjectDisposedException>(() => _ = reader.Length);
 
         Assert.Throws<ObjectDisposedException>(() => reader.Position = 0L);
+
+        Assert.Throws<ObjectDisposedException>(() => _ = reader.CurrentTime);
+
+        Assert.Throws<ObjectDisposedException>(() => reader.CurrentTime = TimeSpan.Zero);
+
+        Assert.Throws<ObjectDisposedException>(() => _ = reader.TotalTime);
     }
 }

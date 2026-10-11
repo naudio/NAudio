@@ -293,7 +293,7 @@ public class CueList
         int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
-        w.Write(Encoding.UTF8.GetBytes("adtl"));
+        w.Write("adtl"u8);
         for (int i = 0; i < Count; i++)
         {
             var labelArray = Encoding.UTF8.GetBytes(this[i].Label ?? string.Empty);

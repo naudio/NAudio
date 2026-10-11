@@ -12,7 +12,7 @@ public static class MuLawDecoder
     /// <summary>
     /// only 512 bytes required, so just use a lookup
     /// </summary>
-    private static readonly short[] MuLawDecompressTable = new short[256]
+    private static ReadOnlySpan<short> MuLawDecompressTable => new short[256]
     {
          -32124,-31100,-30076,-29052,-28028,-27004,-25980,-24956,
          -23932,-22908,-21884,-20860,-19836,-18812,-17788,-16764,
@@ -29,7 +29,7 @@ public static class MuLawDecoder
            -372,  -356,  -340,  -324,  -308,  -292,  -276,  -260,
            -244,  -228,  -212,  -196,  -180,  -164,  -148,  -132,
            -120,  -112,  -104,   -96,   -88,   -80,   -72,   -64,
-            -56,   -48,   -40,   -32,   -24,   -16,    -8,     -1,
+            -56,   -48,   -40,   -32,   -24,   -16,    -8,    -1,
           32124, 31100, 30076, 29052, 28028, 27004, 25980, 24956,
           23932, 22908, 21884, 20860, 19836, 18812, 17788, 16764,
           15996, 15484, 14972, 14460, 13948, 13436, 12924, 12412,

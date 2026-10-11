@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using NAudio.Utils;
+using System.Buffers.Binary;
 
 namespace NAudio.Midi;
 
@@ -58,15 +59,22 @@ public class MidiFile
         var br = new BinaryReader(inputStream);
         try
         {
-            string chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
-            if (chunkHeader == "RIFF")
+            Span<byte> chunkHeader = stackalloc byte[4];
+            if (!TryReadChunkId(br, chunkHeader))
+            {
+                throw new FormatException("Not a MIDI file - header chunk missing");
+            }
+            if (chunkHeader.SequenceEqual("RIFF"u8))
             {
                 // RIFF-RMID wrapper: a standard MIDI file embedded in a RIFF container
                 // (issue #1236). Skip the wrapper so the inner SMF is read as normal.
                 SeekToRmidMidiData(br);
-                chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
+                if (!TryReadChunkId(br, chunkHeader))
+                {
+                    throw new FormatException("Not a MIDI file - header chunk missing");
+                }
             }
-            if (chunkHeader != "MThd")
+            if (!chunkHeader.SequenceEqual("MThd"u8))
             {
                 throw new FormatException("Not a MIDI file - header chunk missing");
             }
@@ -95,21 +103,21 @@ public class MidiFile
                 {
                     absoluteTime = 0;
                 }
-                chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
-                if (chunkHeader != "MTrk")
+
+                if (!TryReadChunkId(br, chunkHeader) || !chunkHeader.SequenceEqual("MTrk"u8))
                 {
                     throw new FormatException("Invalid chunk header");
                 }
                 chunkSize = SwapUInt32(br.ReadUInt32());
 
-                long startPos = br.BaseStream.Position;
+                long startPos = inputStream.Position;
                 MidiEvent me = null;
                 // Only channel-voice messages (NoteOn/Off, ControlChange, etc.) establish
                 // running status; meta and sysex events leave the running status anchor intact
                 // (issue #205).
                 MidiEvent runningStatus = null;
                 var outstandingNoteOns = new List<NoteOnEvent>();
-                while (br.BaseStream.Position < startPos + chunkSize)
+                while (inputStream.Position < startPos + chunkSize)
                 {
                     try
                     {
@@ -161,7 +169,7 @@ public class MidiFile
                             // some dodgy MIDI files have an event after end track
                             if (strictChecking)
                             {
-                                if (br.BaseStream.Position < startPos + chunkSize)
+                                if (inputStream.Position < startPos + chunkSize)
                                 {
                                     throw new FormatException(
                                         $"End Track event was not the last MIDI event on track {track}");
@@ -178,9 +186,9 @@ public class MidiFile
                             $"Note ons without note offs {outstandingNoteOns.Count} (file format {fileFormat})");
                     }
                 }
-                if (br.BaseStream.Position != startPos + chunkSize)
+                if (inputStream.Position != startPos + chunkSize)
                 {
-                    throw new FormatException($"Read too far {chunkSize}+{startPos}!={br.BaseStream.Position}");
+                    throw new FormatException($"Read too far {chunkSize}+{startPos}!={inputStream.Position}");
                 }
             }
         }
@@ -230,6 +238,13 @@ public class MidiFile
         }
     }
 
+    /// <summary>
+    /// Reads a four-byte chunk ID, looping over partial reads. Returns false (rather than
+    /// throwing) if the stream ends first, so callers can report a <see cref="FormatException"/>.
+    /// </summary>
+    private static bool TryReadChunkId(BinaryReader br, Span<byte> id)
+        => br.BaseStream.ReadAtLeast(id, id.Length, throwOnEndOfStream: false) == id.Length;
+
     private static void SeekToRmidMidiData(BinaryReader br)
     {
         // "RIFF" has already been consumed. Layout:
@@ -237,20 +252,19 @@ public class MidiFile
         // The standard MIDI file lives in the 'data' sub-chunk; any other chunks
         // (e.g. 'INFO' metadata or an embedded 'DLS ' soundbank) are skipped.
         br.ReadUInt32(); // overall RIFF size - not needed
-        string formType = Encoding.UTF8.GetString(br.ReadBytes(4));
-        if (formType != "RMID")
+        Span<byte> idBytes = stackalloc byte[4];
+        if (!TryReadChunkId(br, idBytes) || !idBytes.SequenceEqual("RMID"u8))
         {
-            throw new FormatException($"Not a MIDI file - unsupported RIFF form type '{formType}'");
+            throw new FormatException($"Not a MIDI file - unsupported RIFF form type '{Encoding.UTF8.GetString(idBytes)}'");
         }
         while (true)
         {
-            byte[] idBytes = br.ReadBytes(4);
-            if (idBytes.Length < 4)
+            if (!TryReadChunkId(br, idBytes))
             {
                 throw new FormatException("Not a MIDI file - RIFF-RMID 'data' chunk missing");
             }
             uint subChunkSize = br.ReadUInt32(); // RIFF sizes are little-endian
-            if (Encoding.UTF8.GetString(idBytes) == "data")
+            if (idBytes.SequenceEqual("data"u8))
             {
                 // The embedded standard MIDI file (starting with 'MThd') begins here.
                 return;
@@ -263,14 +277,15 @@ public class MidiFile
             }
             else
             {
+                byte[] chunk = new byte[(int)Math.Min(toSkip, 8192)];
                 while (toSkip > 0)
                 {
-                    int chunk = (int)Math.Min(toSkip, 8192);
-                    if (br.Read(new byte[chunk], 0, chunk) <= 0)
+                    int bytesRead = br.Read(chunk, 0, (int)Math.Min(chunk.Length, toSkip));
+                    if (bytesRead <= 0)
                     {
                         throw new FormatException("Not a MIDI file - RIFF-RMID 'data' chunk missing");
                     }
-                    toSkip -= chunk;
+                    toSkip -= bytesRead;
                 }
             }
         }
@@ -278,12 +293,12 @@ public class MidiFile
 
     private static uint SwapUInt32(uint i)
     {
-        return ((i & 0xFF000000) >> 24) | ((i & 0x00FF0000) >> 8) | ((i & 0x0000FF00) << 8) | ((i & 0x000000FF) << 24);
+        return BinaryPrimitives.ReverseEndianness(i);
     }
 
     private static ushort SwapUInt16(ushort i)
     {
-        return (ushort)(((i & 0xFF00) >> 8) | ((i & 0x00FF) << 8));
+        return BinaryPrimitives.ReverseEndianness(i);
     }
 
     /// <summary>
@@ -334,7 +349,7 @@ public class MidiFile
             throw new ArgumentException("Can't export more than one track to a type 0 file");
         }
         using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
-        writer.Write(Encoding.UTF8.GetBytes("MThd"));
+        writer.Write("MThd"u8);
         writer.Write(SwapUInt32(6)); // chunk size
         writer.Write(SwapUInt16((ushort)events.MidiFileType));
         writer.Write(SwapUInt16((ushort)events.Tracks));
@@ -344,7 +359,7 @@ public class MidiFile
         {
             IList<MidiEvent> eventList = events[track];
 
-            writer.Write(Encoding.UTF8.GetBytes("MTrk"));
+            writer.Write("MTrk"u8);
             long trackSizePosition = writer.BaseStream.Position;
             writer.Write(SwapUInt32(0));
 
@@ -352,7 +367,7 @@ public class MidiFile
 
             // use a stable sort to preserve ordering of MIDI events whose
             // absolute times are the same
-            MergeSort.Sort(eventList, new MidiEventComparer());
+            MergeSort.Sort(eventList, MidiEventComparer.Instance);
             if (eventList.Count > 0)
             {
                 System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");

@@ -238,12 +238,14 @@ public class WaveFileWriter : Stream
     /// <param name="chunkId">Four-character chunk identifier (e.g. <c>"bext"</c>).</param>
     /// <param name="data">Chunk payload. Word-alignment padding is handled by the writer.</param>
     /// <param name="position">Where in the file the chunk should be placed.</param>
+    // Preferred over the span overload so that AddChunk(null, ...) binds here and throws ArgumentNullException
+    [OverloadResolutionPriority(1)]
     public void AddChunk(string chunkId, byte[] data, ChunkPosition position)
     {
         ArgumentNullException.ThrowIfNull(chunkId);
 
         Span<byte> chunkIdBytes = stackalloc byte[4];
-        if (Encoding.UTF8.GetBytes(chunkId, chunkIdBytes) != 4)
+        if (!Encoding.UTF8.TryGetBytes(chunkId, chunkIdBytes, out int bytesWritten) || bytesWritten != 4)
         {
             throw new ArgumentException("Chunk id must be exactly four characters", nameof(chunkId));
         }
@@ -258,7 +260,6 @@ public class WaveFileWriter : Stream
     /// <param name="chunkId">Four-character chunk identifier (e.g. <c>"bext"</c>).</param>
     /// <param name="data">Chunk payload. Word-alignment padding is handled by the writer.</param>
     /// <param name="position">Where in the file the chunk should be placed.</param>
-    [OverloadResolutionPriority(1)]
     public void AddChunk(ReadOnlySpan<byte> chunkId, byte[] data, ChunkPosition position)
     {
         ThrowIfDisposed();
@@ -732,7 +733,7 @@ public class WaveFileWriter : Stream
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(isDisposed, nameof(WaveFileWriter));
+        ObjectDisposedException.ThrowIf(isDisposed, this);
     }
     #endregion
 }

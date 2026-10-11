@@ -165,7 +165,7 @@ public class WaveFileWriterChunkTests
     {
         var ms = new MemoryStream();
         using var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format);
-        Assert.That(() => w.AddChunk((string)null, new byte[] { 1 }, ChunkPosition.AfterData),
+        Assert.That(() => w.AddChunk(null, new byte[] { 1 }, ChunkPosition.AfterData),
             Throws.ArgumentNullException);
     }
 
@@ -349,5 +349,34 @@ public class WaveFileWriterChunkTests
             Called = true;
             writer.Write(payload);
         }
+    }
+    [Test]
+    public void AddChunkSpanOverloadRoundTrips()
+    {
+        var payload = new byte[] { 9, 8, 7 };
+        using var reader = WriteThenRead(w =>
+        {
+            w.AddChunk("span"u8, payload, ChunkPosition.AfterData);
+            w.Write(Audio, 0, Audio.Length);
+        });
+        Assert.That(reader.Chunks.GetData(reader.Chunks.Find("span")), Is.EqualTo(payload));
+    }
+
+    [Test]
+    public void AddChunkSpanOverloadThrowsOnInvalidIdLength()
+    {
+        var ms = new MemoryStream();
+        using var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format);
+        Assert.That(() => w.AddChunk("abc"u8, new byte[] { 1 }, ChunkPosition.AfterData),
+            Throws.ArgumentException);
+    }
+
+    [Test]
+    public void DisposedWriterReportsItsTypeName()
+    {
+        var w = new WaveFileWriter(new IgnoreDisposeStream(new MemoryStream()), Format);
+        w.Dispose();
+        var ex = Assert.Throws<ObjectDisposedException>(() => w.AddChunk("test", new byte[] { 1 }, ChunkPosition.AfterData));
+        Assert.That(ex.ObjectName, Is.EqualTo(typeof(WaveFileWriter).FullName));
     }
 }

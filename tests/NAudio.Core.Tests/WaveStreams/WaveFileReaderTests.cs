@@ -389,4 +389,76 @@ public class WaveFileReaderTests
         Assert.That(buffer, Is.EqualTo(audio));
         Assert.That(reader.Read(buffer, 0, buffer.Length), Is.EqualTo(0));
     }
+    [Test]
+    [Category("UnitTest")]
+    public void SeekReturnsBlockAlignedPosition()
+    {
+        // 16-bit stereo: BlockAlign = 4
+        using var reader = CreateReader(new WaveFormat(8000, 16, 2), 4000);
+
+        long result = reader.Seek(1001, SeekOrigin.Begin);
+
+        Assert.That(result, Is.EqualTo(1000));
+        Assert.That(result, Is.EqualTo(reader.Position));
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void SeekPastEndReturnsLength()
+    {
+        using var reader = CreateReader(new WaveFormat(8000, 16, 2), 4000);
+
+        long result = reader.Seek(reader.Length + 100, SeekOrigin.Begin);
+
+        Assert.That(result, Is.EqualTo(reader.Length));
+        Assert.That(result, Is.EqualTo(reader.Position));
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void CanAccessSamplesIndividuallyInAStereoIeeeFloatFile()
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)))
+        {
+            writer.WriteSamples(new[] { 0.1f, -0.2f, 0.3f, -0.4f }, 0, 4);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.ReadNextSampleFrame(), Is.EqualTo(new[] { 0.1f, -0.2f }));
+        Assert.That(reader.ReadNextSampleFrame(), Is.EqualTo(new[] { 0.3f, -0.4f }));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void CanAccessSamplesIndividuallyInAStereo32BitPcmFile()
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 2)))
+        {
+            // WriteSample doesn't support plain 32-bit integer PCM, so write the raw samples
+            var samples = new[] { int.MaxValue / 2 + 1, int.MinValue / 4 };
+            var bytes = new byte[samples.Length * 4];
+            Buffer.BlockCopy(samples, 0, bytes, 0, bytes.Length);
+            writer.Write(bytes, 0, bytes.Length);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var frame = reader.ReadNextSampleFrame();
+        Assert.That(frame[0], Is.EqualTo(0.5f).Within(0.0001f));
+        Assert.That(frame[1], Is.EqualTo(-0.25f).Within(0.0001f));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
+    }
+
+    private static WaveFileReader CreateReader(WaveFormat format, int dataBytes)
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), format))
+        {
+            writer.Write(new byte[dataBytes], 0, dataBytes);
+        }
+        ms.Position = 0;
+        return new WaveFileReader(ms);
+    }
 }

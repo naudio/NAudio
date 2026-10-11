@@ -121,9 +121,9 @@ public sealed class ReverbEffect : AudioEffect, IParameterized
             return;
         for (var bank = 0; bank < 2; bank++)
         {
-            for (var i = 0; i < CombTuning.Length; i++)
+            for (var i = 0; i < CombCount; i++)
                 combs[bank, i].Reset();
-            for (var i = 0; i < AllpassTuning.Length; i++)
+            for (var i = 0; i < AllpassCount; i++)
                 allpasses[bank, i].Reset();
         }
     }

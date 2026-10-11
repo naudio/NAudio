@@ -70,12 +70,14 @@ public class ByteEncoding : Encoding
     /// <inheritdoc/>
     public override string GetString(byte[] bytes)
     {
-        return GetStringImpl(bytes.AsSpan());
+        ArgumentNullException.ThrowIfNull(bytes);
+        return GetStringImpl(bytes);
     }
 
     /// <inheritdoc/>
     public override string GetString(byte[] bytes, int index, int count)
     {
+        ArgumentNullException.ThrowIfNull(bytes);
         return GetStringImpl(bytes.AsSpan(index, count));
     }
 

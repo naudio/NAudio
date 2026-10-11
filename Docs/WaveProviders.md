@@ -23,7 +23,7 @@ int Read(Span<byte> buffer);
 
 This method is also inherited from `System.IO.Stream`, and works in the standard way. 
 The `buffer` parameter is the buffer into which audio is expected to be written. 
-It's `Length` property denotes how many bytes are expected to be written to it.
+Its `Length` property denotes how many bytes are expected to be written to it.
 
 The return value of the `Read` method must provide the number of bytes that were read. 
 This should never be more than `buffer.Length` bytes and can only be less if the end of the audio stream is reached. 

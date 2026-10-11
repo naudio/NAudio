@@ -247,10 +247,10 @@ public class WaveFileReader : WaveStream
         }
         else if (waveFormat.BitsPerSample == 24)
         {
-            ReadOnlySpan<Value24> value24s = MemoryMarshal.Cast<byte, Value24>(data);
             for (int i = 0; i < sampleFrame.Length; i++)
             {
-                sampleFrame[i] = (((sbyte)value24s[i].Byte2 << 16) | (value24s[i].Byte1 << 8) | value24s[i].Byte0) / 8388608f;
+                int o = i * 3;
+                sampleFrame[i] = (((sbyte)data[o + 2] << 16) | (data[o + 1] << 8) | data[o]) / 8388608f;
             }
         }
         else if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
@@ -271,7 +271,4 @@ public class WaveFileReader : WaveStream
             throw new InvalidOperationException("Unsupported bit depth");
         }
     }
-
-    [StructLayout(LayoutKind.Sequential, Size = 3)]
-    private readonly record struct Value24(byte Byte0, byte Byte1, byte Byte2);
 }

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 157 142">
+  <!-- NAudio icon: curly braces around a peak meter.
+       Each brace is a single outline of straight lines and quarter arcs with a
+       flat vertical cusp tip; the right brace is drawn mirrored. The bottom arm
+       of each brace runs into the bottom bar of the outer meter columns. -->
+  <g fill="#3A3A3C">
+    <path d="M24.58 29.53H35.06V36.9H28.49A5.91 10.63 0 0 0 22.58 47.53V66.29A18.35 18.45 0 0 1 11.72 83.13A18.35 18.45 0 0 1 22.58 99.98V117.51A1.88 8.4 0 0 0 24.47 125.91H40V136.99H23.86A11.94 13.42 0 0 1 11.92 123.57V100.44A13.01 14.07 0 0 0 0.98 86.55V79.72A13.01 14.07 0 0 0 11.92 65.83V43.85A12.65 14.32 0 0 1 24.58 29.53Z"/>
+    <path transform="matrix(-1 0 0 1 157 0)" d="M23.82 29.36H35.11V36.16H28.26A5.75 7.93 0 0 0 22.51 44.1V66.05A18.39 18.33 0 0 1 11.77 82.71A18.39 18.33 0 0 1 22.51 99.37V116.19A1.89 9.7 0 0 0 24.4 125.89H40V136.92H24.67A12.71 14.02 0 0 1 11.96 122.9V101.65A10.98 15.28 0 0 0 1.11 86.37V79.06A10.98 15.28 0 0 0 11.96 63.78V42.99A11.85 13.64 0 0 1 23.82 29.36Z"/>
+    <rect x="33.76" y="84.08" width="25.86" height="11.06"/>
+    <rect x="33.76" y="104.94" width="25.86" height="11.06"/>
+    <rect x="33.76" y="125.91" width="25.86" height="11.09"/>
+    <rect x="64.83" y="104.94" width="25.88" height="11.06"/>
+    <rect x="64.83" y="125.89" width="25.88" height="11.11"/>
+    <rect x="96.74" y="63.1" width="25.87" height="11.08"/>
+    <rect x="96.74" y="84.08" width="25.87" height="11.06"/>
+    <rect x="96.74" y="104.94" width="25.87" height="11.06"/>
+    <rect x="96.74" y="125.89" width="25.87" height="11.03"/>
+  </g>
+  <g fill="#E51F25">
+    <rect x="33.76" y="63.1" width="25.86" height="11.08"/>
+    <rect x="64.83" y="84.08" width="25.89" height="11.06"/>
+    <rect x="96.59" y="43.01" width="25.84" height="11.08"/>
+  </g>
+</svg>

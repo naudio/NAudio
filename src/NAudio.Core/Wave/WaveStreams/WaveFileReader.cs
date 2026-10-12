@@ -193,6 +193,12 @@ public class WaveFileReader : WaveStream
     /// </summary>
     /// <returns>An array of samples, 1 for mono, 2 for stereo etc. Null indicates end of file reached
     /// </returns>
+    /// <remarks>
+    /// Obsolete: use <see cref="WaveExtensionMethods.ToSampleProvider"/> and read into a reusable
+    /// <see cref="float"/> buffer instead. That supports every format this reader can produce, including
+    /// 8-bit PCM and 32-bit extensible float, and doesn't allocate a new array for every sample frame.
+    /// </remarks>
+    [Obsolete("Use ToSampleProvider() and read samples into a reusable float buffer instead. ReadNextSampleFrame will be removed in a future major version.")]
     public float[] ReadNextSampleFrame()
     {
         if (waveFormat.Encoding is not WaveFormatEncoding.Pcm and not WaveFormatEncoding.IeeeFloat and not WaveFormatEncoding.Extensible)

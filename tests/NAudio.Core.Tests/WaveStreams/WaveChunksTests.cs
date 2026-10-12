@@ -263,11 +263,12 @@ public class WaveChunksTests
     {
         using var reader = Open(new WaveFileBuilder.Chunk("test", new byte[] { 1, 2, 3, 4 }));
         // read one sample frame, grab chunk data, then read the next frame — both should succeed
-        var first = reader.ReadNextSampleFrame();
+        var frame = new byte[reader.BlockAlign];
+        var firstRead = reader.Read(frame, 0, frame.Length);
         var chunkData = reader.Chunks.GetData(reader.Chunks[0]);
-        var second = reader.ReadNextSampleFrame();
-        Assert.That(first, Is.Not.Null);
-        Assert.That(second, Is.Not.Null);
+        var secondRead = reader.Read(frame, 0, frame.Length);
+        Assert.That(firstRead, Is.EqualTo(frame.Length));
+        Assert.That(secondRead, Is.EqualTo(frame.Length));
         Assert.That(chunkData, Is.EqualTo(new byte[] { 1, 2, 3, 4 }));
     }
 

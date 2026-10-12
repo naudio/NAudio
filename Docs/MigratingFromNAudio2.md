@@ -1,4 +1,4 @@
-# Migrating from NAudio 2 to NAudio 3
+﻿# Migrating from NAudio 2 to NAudio 3
 
 NAudio 3 is a major release. The single `NAudio` assembly has been split into
 focused packages, the minimum target framework is now `net9.0`, the core is
@@ -451,7 +451,7 @@ replacement on the same class, so the fix is mechanical.
 | --- | --- |
 | `WaveFileWriter.WriteData(byte[], int, int)` | `Write(byte[], int, int)` — or the new `Write(ReadOnlySpan<byte>)` |
 | `WaveFileWriter.WriteData(short[], int, int)` | `WriteSamples(short[], int, int)` |
-| `WaveFileReader.TryReadFloat(out float)` | `ReadNextSampleFrame()` |
+| `WaveFileReader.TryReadFloat(out float)` | `ToSampleProvider()`, then `Read` into a `float[]` |
 | `AcmStream.Convert(int)` | `Convert(int bytesToConvert, out int sourceBytesConverted)` |
 | `WaveFormatConversionStream.SourceToDest(int)` | *(no replacement — see below)* |
 | `WaveFormatConversionStream.DestToSource(int)` | *(no replacement — see below)* |
@@ -470,15 +470,18 @@ writer.WriteSamples(shortSamples, 0, count);
 ```
 
 **`TryReadFloat` silently dropped channels.** It returned only the first sample of each
-frame, so on stereo it read at half rate and discarded the right channel. `ReadNextSampleFrame`
-returns the whole frame:
+frame, so on stereo it read at half rate and discarded the right channel. Convert the reader to an
+`ISampleProvider` instead, which returns interleaved samples for every channel and supports more
+formats (`ReadNextSampleFrame` also works, but is obsolete as of 3.2):
 
 ```csharp
 // before — mono only, silently wrong on stereo
 while (reader.TryReadFloat(out var sample)) { ... }
 // after
-float[] frame;
-while ((frame = reader.ReadNextSampleFrame()) != null) { /* frame[0], frame[1], ... */ }
+var samples = reader.ToSampleProvider();
+var buffer = new float[reader.WaveFormat.SampleRate * reader.WaveFormat.Channels];
+int read;
+while ((read = samples.Read(buffer)) > 0) { /* interleaved: buffer[0], buffer[1], ... */ }
 ```
 
 **`AcmStream.Convert(int)` threw when the driver didn't consume everything.** It called the

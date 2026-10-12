@@ -14,6 +14,7 @@ limit and fails the release build if exceeded.
 -->
 
  * Deprecated `WaveFileReader.ReadNextSampleFrame` in favour of `ToSampleProvider()`, which supports more formats and doesn't allocate an array per sample frame
+ * Fixed `WaveFileWriter.WriteSample` and `WriteSamples(short[])` throwing for plain (non-extensible) 32-bit integer PCM formats
  * `WaveFileReader.ReadNextSampleFrame` now throws `InvalidDataException` for a WAV header with an invalid channel count or bit depth
  * Reduced allocations when reading and writing WAV files, added `ReadOnlySpan<byte>` overloads of `WaveFileWriter.AddChunk` and `ChunkIdentifier.ChunkIdentifierToInt32`, and fixed `WaveChunks.GetData` leaving the stream position changed when a read fails. `ChunkIdentifierToInt32` now throws `ArgumentOutOfRangeException` for identifiers that aren't four bytes (#1457)
  * Changed the `WaveStream.CurrentTime` setter to clamp to the bounds of the stream, and corrected the XML documentation for the core audio interfaces (#1441)

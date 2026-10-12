@@ -229,6 +229,47 @@ public class WaveFileWriterTests
     }
 
     [Test]
+    public void WriteSampleTo32BitPcmRoundTripsCorrectly()
+    {
+        // Plain (non-extensible) 32-bit integer PCM used to throw from WriteSample
+        var samples = new[] { 0f, 0.5f, -0.25f, -1f };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 1)))
+        {
+            writer.WriteSamples(samples, 0, samples.Length);
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.WaveFormat.Encoding, Is.EqualTo(WaveFormatEncoding.Pcm), "Encoding");
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+        var readBack = new float[samples.Length + 1];
+        Assert.That(reader.ToSampleProvider().Read(readBack), Is.EqualTo(samples.Length), "Samples read");
+        Assert.That(readBack[..samples.Length], Is.EqualTo(samples).Within(0.0001f));
+    }
+
+    [Test]
+    public void WriteShortSamplesTo32BitPcmRoundTripsCorrectly()
+    {
+        var samples = new short[] { 0, 16384, -16384 };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 1)))
+        {
+            writer.WriteSamples(samples, 0, samples.Length);
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+        var readBack = new float[samples.Length];
+        Assert.That(reader.ToSampleProvider().Read(readBack), Is.EqualTo(samples.Length), "Samples read");
+        for (int n = 0; n < samples.Length; n++)
+        {
+            Assert.That(readBack[n], Is.EqualTo(samples[n] / 32768f).Within(0.0001f), $"Sample {n}");
+        }
+    }
+
+    [Test]
     public void WriteShortSamplesTo32BitExtensibleFloatRoundTripsCorrectly()
     {
         // The WriteSamples(short[]) path shared the WriteSample bug: it wrote integer PCM into a

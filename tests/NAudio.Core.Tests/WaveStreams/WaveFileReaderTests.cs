@@ -437,7 +437,7 @@ public class WaveFileReaderTests
         var ms = new MemoryStream();
         using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 2)))
         {
-            // WriteSample doesn't support plain 32-bit integer PCM, so write the raw samples
+            // Write raw samples so this test doesn't depend on WaveFileWriter's float conversion
             var samples = new[] { int.MaxValue / 2 + 1, int.MinValue / 4 };
             var bytes = new byte[samples.Length * 4];
             Buffer.BlockCopy(samples, 0, bytes, 0, bytes.Length);

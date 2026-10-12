@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Runtime.CompilerServices;
 
@@ -122,5 +122,41 @@ public static class CoreAudioFunctions
             NativeMethods.AudioDeviceGetCurrentTime(device.objectId, ref stamp)
         );
         return MacUtils.TimeStampToSeconds(stamp, intermediateFormat);
+    }
+
+    /// <summary>
+    /// Gets the maximum number of frames that may be contained in all of the I/O buffers of an audio device. 
+    /// Computation is done at a best-effort basis, if the device object is misbehaving.
+    /// </summary>
+    /// <remarks>
+    /// Note that this is just a plain suggestion value and might not reflect the actual maximum
+    /// size of the I/O buffers, but it is suitable to be used for ensuring that your buffers
+    /// are big enough to avoid array resizes.
+    /// </remarks>
+    /// <param name="device">The <see cref="AudioDevice"/> to query the maximum number of frames from.</param>
+    /// <returns>A suggested, maximum number of frames that each I/O buffer in the device can contain.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
+    public static int GetMaximumIOBufferSizeInFrames(AudioDevice device)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        var ret = (int)device.UsesVariableBufferFrameSizes;
+        if (ret > 0)
+        {
+            // Choose the maximum of UsesVariableBufferFrameSizes and BufferFrameSize
+            // to ensure that the UsesVariableBufferFrameSizes property is not misbehaving.
+            return Math.Max(
+                ret,
+                (int)device.BufferFrameSize
+            );
+        }
+        else
+        {
+            // Choose the maximum of BufferFrameSizeRange and BufferFrameSize
+            // to ensure that the BufferFrameSizeRange property is not misbehaving.
+            return Math.Max(
+                (int)device.BufferFrameSizeRange.max,
+                (int)device.BufferFrameSize
+            );
+        }
     }
 }

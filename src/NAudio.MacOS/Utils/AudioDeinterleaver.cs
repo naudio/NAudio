@@ -43,6 +43,18 @@ internal sealed class AudioDeinterleaver
     }
 
     /// <summary>
+    /// Ensures that there can be placed <paramref name="bytesPerChannel"/> bytes in each channel buffer.
+    /// </summary>
+    /// <param name="bytesPerChannel">The number of bytes to ensure for each channel buffer.</param>
+    public void PreEnsureBytes(int bytesPerChannel)
+    {
+        foreach (var channel in channels)
+        {
+            channel.EnsureBytes(bytesPerChannel);
+        }
+    }
+
+    /// <summary>
     /// Deinterleaves the audio data provided in <paramref name="interleavedBuffer"/>.
     /// </summary>
     /// <param name="interleavedBuffer">The buffer to deinterleave and store it's samples to internal buffers</param>

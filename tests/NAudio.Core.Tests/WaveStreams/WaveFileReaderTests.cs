@@ -464,4 +464,22 @@ public class WaveFileReaderTests
         ms.Position = 0;
         return new WaveFileReader(ms);
     }
+    [TestCase((short)-16)]
+    [TestCase((short)0)]
+    [Category("UnitTest")]
+    public void ReadNextSampleFrameRejectsInvalidBitsPerSample(short bitsPerSample)
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 2)))
+        {
+            writer.Write(new byte[64], 0, 64);
+        }
+        var bytes = ms.ToArray();
+        // Corrupt the fmt chunk's wBitsPerSample field (offset 34 in a canonical WAV header).
+        // A negative value used to produce a negative stackalloc length, crashing the process
+        BitConverter.GetBytes(bitsPerSample).CopyTo(bytes, 34);
+
+        using var reader = new WaveFileReader(new MemoryStream(bytes));
+        Assert.Throws<InvalidDataException>(() => reader.ReadNextSampleFrame());
+    }
 }

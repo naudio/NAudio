@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using NAudio.Utils;
 using NAudio.Wave;
 using NAudio.Tests.Shared;
@@ -206,6 +207,27 @@ public class AiffFileWriterTests
         var roundTripped = WriteAndRead(format, writer => writer.Write(sourceData, 0, sourceData.Length));
 
         Assert.That(roundTripped, Is.EqualTo(sourceData));
+    }
+
+    [Test]
+    public void SuccessiveWritesOfDifferentSizesRoundTrip()
+    {
+        // The writer reuses its scratch buffer, so a small write after a large one must only use the requested length
+        var large = new byte[4096];
+        for (int i = 0; i < large.Length; i++)
+        {
+            large[i] = (byte)(i * 3);
+        }
+        var small = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+        var format = new WaveFormat(44100, 16, 2);
+
+        var roundTripped = WriteAndRead(format, writer =>
+        {
+            writer.Write(large, 0, large.Length);
+            writer.Write(small, 0, small.Length);
+        });
+
+        Assert.That(roundTripped, Is.EqualTo(large.Concat(small).ToArray()));
     }
 
     private static byte[] ExtractSsndSoundData(byte[] aiff)

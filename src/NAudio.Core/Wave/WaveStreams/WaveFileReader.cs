@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -207,38 +206,27 @@ public class WaveFileReader : WaveStream
             throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
         }
 
-        var sampleFrame = new float[waveFormat.Channels];
+        // Channels and BitsPerSample come from the file header, so guard against a malformed one
         int bytesToRead = waveFormat.Channels * (waveFormat.BitsPerSample / 8);
-
-        // A frame is channels * bytes per sample (typically 4-8 bytes), so it almost always fits on the stack
-        const int MaxStackBytes = 512;
-        byte[] rented = null;
-        Span<byte> buffer = bytesToRead <= MaxStackBytes
-            ? stackalloc byte[bytesToRead]
-            : (rented = ArrayPool<byte>.Shared.Rent(bytesToRead)).AsSpan(0, bytesToRead);
-
-        try
+        if (bytesToRead <= 0)
         {
-            int bytesRead = Read(buffer);
-            if (bytesRead == 0)
-            {
-                return null; // end of file
-            }
-            if (bytesRead < bytesToRead)
-            {
-                throw new InvalidDataException("Unexpected end of file");
-            }
+            throw new InvalidDataException($"Invalid sample frame size ({waveFormat.Channels} channels, {waveFormat.BitsPerSample} bits per sample)");
+        }
 
-            TransformSampleFrame(buffer, sampleFrame, waveFormat);
-            return sampleFrame;
-        }
-        finally
+        var sampleFrame = new float[waveFormat.Channels];
+        var frameBytes = new byte[bytesToRead];
+        int bytesRead = Read(frameBytes, 0, bytesToRead);
+        if (bytesRead == 0)
         {
-            if (rented is not null)
-            {
-                ArrayPool<byte>.Shared.Return(rented);
-            }
+            return null; // end of file
         }
+        if (bytesRead < bytesToRead)
+        {
+            throw new InvalidDataException("Unexpected end of file");
+        }
+
+        TransformSampleFrame(frameBytes, sampleFrame, waveFormat);
+        return sampleFrame;
     }
 
     private static void TransformSampleFrame(ReadOnlySpan<byte> data, Span<float> sampleFrame, WaveFormat waveFormat)

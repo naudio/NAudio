@@ -90,7 +90,7 @@ public class AudioDeinterleaverUtilsTests
         AudioDeinterleaver deinterleaver = new();
 
         deinterleaver.Channels = nChannels;
-        deinterleaver.BytesPerFrame = sizeof(float);
+        deinterleaver.BytesPerFrame = sizeof(float) * nChannels;
 
         // Ensure 100 bytes for each buffer.
         // This allocation should typically succeed on test machines,

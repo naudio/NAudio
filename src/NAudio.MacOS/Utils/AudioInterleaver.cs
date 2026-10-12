@@ -169,7 +169,7 @@ internal sealed class AudioInterleaver
 
         foreach (var buffer in remainderSamples)
         {
-            int count = buffer.Count;
+            int count = buffer?.Count ?? 0;
             if (count > maxSingleBuffer) { maxSingleBuffer = count; }
         }
 
@@ -190,6 +190,7 @@ internal sealed class AudioInterleaver
 
             foreach (var buffer in remainderSamples)
             {
+                if (buffer is null) { continue; } // Skip non-initialized buffers.
                 int bytesCopied = 0;
                 int buildingBufferCopied = 0;
                 int bufferIndex = (channel++) * blockAlign;

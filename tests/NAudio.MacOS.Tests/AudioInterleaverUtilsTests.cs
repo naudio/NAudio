@@ -92,6 +92,31 @@ public sealed class AudioInterleaverUtilsTests
         );
     }
 
+    // Ensures that the Drain method succeeds.
+    // Previously, the method failed with NullReferenceException, which caused the recorder (which uses this) to fail
+    // on Stop if the procedure had not provided any data.
+    [TestCase(2)]
+    [TestCase(4)]
+    [TestCase(5)]
+    [TestCase(7)]
+    [TestCase(10)]
+    public void VerifyThatDrainDoesNotThrowOnEmptyInterleaver(int nChannels)
+    {
+        AudioInterleaver interleaver = new();
+
+        interleaver.Channels = nChannels;
+        interleaver.BytesPerFrame = sizeof(float);
+
+        Assert.DoesNotThrow(() =>
+        {
+            // Simulate drain.
+            while (interleaver.Drain())
+            {
+                _ = interleaver.GetBuffer();
+            }
+        });
+    }
+
     /**
      * To assert that the interleaver can correctly handle cases under streaming (which is the typical use case),
      * we will use a random source to roll the number of bytes to copy for putting operations.

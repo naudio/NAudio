@@ -49,7 +49,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAMonoFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 1)))
         {
             writer.WriteSample(0.1f);
             writer.WriteSample(0.2f);
@@ -70,7 +70,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAStereoFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 2)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 2)))
         {
             writer.WriteSample(0.1f);
             writer.WriteSample(0.2f);
@@ -94,7 +94,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAStereo24BitFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 24, 2)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(44100, 24, 2)))
         {
             writer.WriteSample(0.1f);
             writer.WriteSample(0.2f);
@@ -166,7 +166,7 @@ public class WaveFileReaderTests
     public void ChunksPropertyIsAlwaysNonNullForValidWav()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 1)))
         {
             writer.WriteSample(0.5f);
         }
@@ -419,7 +419,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAStereoIeeeFloatFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)))
+        using (var writer = new WaveFileWriter(ms, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)))
         {
             writer.WriteSamples(new[] { 0.1f, -0.2f, 0.3f, -0.4f }, 0, 4);
         }
@@ -435,7 +435,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAStereo32BitPcmFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 2)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(44100, 32, 2)))
         {
             // Write raw samples so this test doesn't depend on WaveFileWriter's float conversion
             var samples = new[] { int.MaxValue / 2 + 1, int.MinValue / 4 };
@@ -454,7 +454,7 @@ public class WaveFileReaderTests
     private static WaveFileReader CreateReader(WaveFormat format, int dataBytes)
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new WaveFileWriter(ms, format))
         {
             writer.Write(new byte[dataBytes], 0, dataBytes);
         }
@@ -467,7 +467,7 @@ public class WaveFileReaderTests
     public void ReadNextSampleFrameRejectsInvalidBitsPerSample(short bitsPerSample)
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 2)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 2)))
         {
             writer.Write(new byte[64], 0, 64);
         }

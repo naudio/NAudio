@@ -47,6 +47,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// When recording, fires whenever recorded audio is available
     /// </summary>
+    [Obsolete("Use AsioDevice.InitRecording or AsioDevice.InitDuplex instead (see Docs/AsioMigration.md). AsioOut's recording support will be removed in a future major version.")]
     public event EventHandler<AsioAudioAvailableEventArgs> AudioAvailable;
 
     /// <summary>
@@ -123,7 +124,13 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <returns>
     ///     <c>true</c> if ASIO is supported; otherwise, <c>false</c>.
     /// </returns>
-    public static bool isSupported() => GetDriverNames().Length > 0;
+    public static bool IsSupported() => GetDriverNames().Length > 0;
+
+    /// <summary>
+    /// Determines whether ASIO is supported.
+    /// </summary>
+    [Obsolete("Use IsSupported() instead. isSupported() will be removed in a future major version.")]
+    public static bool isSupported() => IsSupported();
 
     /// <summary>
     /// Determines whether this driver supports the specified sample rate.
@@ -197,7 +204,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <param name="waveProvider">Source audio source</param>
     public void Init(IWaveProvider waveProvider)
     {
-        InitRecordAndPlayback(waveProvider, 0, -1);
+        InitCore(waveProvider, 0, -1);
     }
 
     /// <summary>
@@ -206,7 +213,13 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <param name="waveProvider">Source audio source - set to null for record only</param>
     /// <param name="recordChannels">Number of channels to record</param>
     /// <param name="recordOnlySampleRate">Specify sample rate here if only recording, ignored otherwise</param>
+    [Obsolete("Use AsioDevice.InitRecording (record only) or AsioDevice.InitDuplex (record and play) instead (see Docs/AsioMigration.md). AsioOut's recording support will be removed in a future major version.")]
     public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
+    {
+        InitCore(waveProvider, recordChannels, recordOnlySampleRate);
+    }
+
+    private void InitCore(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
     {
         if (isInitialized)
         {
@@ -281,6 +294,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     {
         if (this.NumberOfInputChannels > 0)
         {
+#pragma warning disable CS0618 // the legacy recording path is obsolete but still supported until it's removed
             var audioAvailable = AudioAvailable;
             if (audioAvailable != null)
             {
@@ -290,6 +304,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
                 if (args.WrittenToOutputBuffers)
                     return;
             }
+#pragma warning restore CS0618
         }
 
         if (this.NumberOfOutputChannels > 0)

@@ -6,6 +6,7 @@ namespace NAudio.Wave.Compression;
 /// Summary description for WaveFilter.
 /// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+[System.Obsolete("ACM wave filter drivers are no longer shipped with Windows. WaveFilter will be removed in a future major version.")]
 public class WaveFilter
 {
     /// <summary>

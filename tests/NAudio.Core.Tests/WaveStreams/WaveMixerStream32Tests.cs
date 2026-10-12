@@ -17,7 +17,7 @@ public class WaveMixerStream32Tests
     private static WaveFileReader CreateConstantFloatStream(float sampleValue, int frames, int sampleRate = 44100)
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms),
+        using (var writer = new WaveFileWriter(ms,
                    WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2)))
         {
             for (int i = 0; i < frames; i++)

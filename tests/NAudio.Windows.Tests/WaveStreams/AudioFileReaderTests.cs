@@ -137,7 +137,7 @@ public class AudioFileReaderTests
     private static byte[] Build16BitMonoPcmWav(int sampleCount = 4096, int sampleRate = 44100)
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(sampleRate, 16, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(sampleRate, 16, 1)))
         {
             for (int i = 0; i < sampleCount; i++)
             {

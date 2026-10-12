@@ -70,6 +70,7 @@ public class AcmStream : IDisposable
     /// <param name="driverId">the driver identifier</param>
     /// <param name="sourceFormat">the source format</param>
     /// <param name="waveFilter">the wave filter</param>
+    [Obsolete("ACM wave filter drivers are no longer shipped with Windows. This constructor will be removed in a future major version.")]
     public AcmStream(IntPtr driverId, WaveFormat sourceFormat, WaveFilter waveFilter)
     {
         int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);

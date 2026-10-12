@@ -1,4 +1,4 @@
-namespace NAudioDemo.MidiInDemo
+﻿namespace NAudioDemo.MidiInDemo
 {
     partial class MidiInPanel
     {
@@ -35,7 +35,7 @@ namespace NAudioDemo.MidiInDemo
             this.labelDevice = new System.Windows.Forms.Label();
             this.buttonMonitor = new System.Windows.Forms.Button();
             this.checkBoxFilterAutoSensing = new System.Windows.Forms.CheckBox();
-            this.progressLog1 = new NAudio.Utils.ProgressLog();
+            this.progressLog1 = new LogBox();
             this.buttonClearLog = new System.Windows.Forms.Button();
             this.buttonRefreshDevices = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -206,7 +206,7 @@ namespace NAudioDemo.MidiInDemo
         private System.Windows.Forms.ComboBox comboBoxMidiInDevices;
         private System.Windows.Forms.Label labelDevice;
         private System.Windows.Forms.Button buttonMonitor;
-        private NAudio.Utils.ProgressLog progressLog1;
+        private LogBox progressLog1;
         private System.Windows.Forms.CheckBox checkBoxFilterAutoSensing;
         private System.Windows.Forms.Button buttonClearLog;
         private System.Windows.Forms.Button buttonRefreshDevices;

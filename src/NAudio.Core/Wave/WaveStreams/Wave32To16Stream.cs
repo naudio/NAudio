@@ -9,6 +9,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// WaveStream that converts 32 bit audio back down to 16 bit, clipping if necessary
 /// </summary>
+[Obsolete("Use ToSampleProvider().ToWaveProvider16() (SampleToWaveProvider16) instead. Wave32To16Stream will be removed in a future major version.")]
 public class Wave32To16Stream : WaveStream
 {
     private WaveStream sourceStream;

@@ -28,6 +28,7 @@ internal interface IDirectSoundFXEcho
 /// <summary>
 /// Dmo Echo Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.DelayEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoEcho : IDmoEffector<DmoEcho.Params>
 {
     private static readonly Guid Id_Echo = new("EF3E932C-D40B-4F51-8CCF-3F98F1B29D5D");

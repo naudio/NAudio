@@ -5,6 +5,9 @@ using NAudio.Wave;
 using NAudio.Wave.Asio;
 using NUnit.Framework;
 
+// These tests pin AsioOut's legacy recording surface, which is obsolete but kept until it's removed
+#pragma warning disable CS0618
+
 namespace NAudio.Windows.Tests.Asio;
 
 [TestFixture]

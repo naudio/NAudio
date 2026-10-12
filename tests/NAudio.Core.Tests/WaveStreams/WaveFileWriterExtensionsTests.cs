@@ -17,7 +17,7 @@ public class WaveFileWriterExtensionsTests
     private static WaveFileReader WriteThenRead(Action<WaveFileWriter> configure)
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             configure(w);
         }
@@ -142,7 +142,7 @@ public class WaveFileWriterExtensionsTests
     public void WriteBroadcastExtensionPlacesBextBeforeData()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.WriteBroadcastExtension(new BroadcastExtension { Description = "D" });
             w.Write(Audio, 0, Audio.Length);
@@ -165,7 +165,7 @@ public class WaveFileWriterExtensionsTests
     public void WriteBroadcastExtensionThrowsOnNullBext()
     {
         var ms = new MemoryStream();
-        using var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format);
+        using var w = new WaveFileWriter(ms, Format);
         Assert.That(() => w.WriteBroadcastExtension(null), Throws.ArgumentNullException);
     }
 

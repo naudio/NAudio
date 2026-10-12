@@ -16,7 +16,7 @@ public class WaveFileWriterTests
     {
         var ms = new MemoryStream();
         var testSequence = new byte[] { 0x1, 0x2, 0xFF, 0xFE };
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(16000, 24, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(16000, 24, 1)))
         {
             writer.Write(testSequence, 0, testSequence.Length);
         }
@@ -43,7 +43,7 @@ public class WaveFileWriterTests
         var ms = new MemoryStream();
         var testSequence = new byte[] { 0x1, 0x2, 0xFF, 0xFE };
         var testSequence2 = new byte[] { 0x3, 0x4, 0x5 };
-        var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(16000, 24, 1));
+        var writer = new WaveFileWriter(ms, new WaveFormat(16000, 24, 1));
         writer.Write(testSequence, 0, testSequence.Length);
         writer.Flush();
         // BUT NOT DISPOSED
@@ -165,7 +165,7 @@ public class WaveFileWriterTests
         Assert.That(format.SubFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT), "Sanity: default 32-bit extensible is IEEE float");
 
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new WaveFileWriter(ms, format))
         {
             foreach (var sample in samples)
             {
@@ -199,7 +199,7 @@ public class WaveFileWriterTests
         var samples = new[] { 0.0f, 0.5f, -0.5f, 1.0f, -1.0f };
 
         var firstPass = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(firstPass), new WaveFormatExtensible(44100, 32, 1)))
+        using (var writer = new WaveFileWriter(firstPass, new WaveFormatExtensible(44100, 32, 1)))
         {
             foreach (var sample in samples) writer.WriteSample(sample);
         }
@@ -212,7 +212,7 @@ public class WaveFileWriterTests
 
         // Reuse the read-back (WaveFormatExtraData) format to write a fresh file.
         var secondPass = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(secondPass), readBackFormat))
+        using (var writer = new WaveFileWriter(secondPass, readBackFormat))
         {
             foreach (var sample in samples) writer.WriteSample(sample);
         }
@@ -234,7 +234,7 @@ public class WaveFileWriterTests
         // Plain (non-extensible) 32-bit integer PCM used to throw from WriteSample
         var samples = new[] { 0f, 0.5f, -0.25f, -1f };
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(44100, 32, 1)))
         {
             writer.WriteSamples(samples, 0, samples.Length);
         }
@@ -253,7 +253,7 @@ public class WaveFileWriterTests
     {
         var samples = new short[] { 0, 16384, -16384 };
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 32, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(44100, 32, 1)))
         {
             writer.WriteSamples(samples, 0, samples.Length);
         }
@@ -276,7 +276,7 @@ public class WaveFileWriterTests
         // 32-bit extensible format even when that format's subformat is IEEE float.
         var samples = new short[] { 0, 16384, -16384, short.MaxValue, short.MinValue };
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormatExtensible(44100, 32, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormatExtensible(44100, 32, 1)))
         {
             writer.WriteSamples(samples, 0, samples.Length);
         }

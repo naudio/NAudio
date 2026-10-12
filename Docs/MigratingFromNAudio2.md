@@ -1,4 +1,4 @@
-# Migrating from NAudio 2 to NAudio 3
+﻿# Migrating from NAudio 2 to NAudio 3
 
 NAudio 3 is a major release. The single `NAudio` assembly has been split into
 focused packages, the minimum target framework is now `net9.0`, the core is
@@ -307,6 +307,12 @@ New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
   but `DmoMp3FrameDecompressor` remains the class you want for high-level MP3 decoding.
 - For new code, prefer `MediaFoundationResampler` over `ResamplerDmoStream`, and
   `WasapiPlayerBuilder` over `DirectSoundOut`.
+- **As of 3.2, the DMO resampler and DMO effects are obsolete.** `ResamplerDmoStream` and
+  `DmoResampler` → `MediaFoundationResampler` (the same Windows resampler) or the
+  cross-platform `WdlResamplingSampleProvider`. `DmoEffectWaveProvider` and the `Dmo*`
+  effects → the managed [`NAudio.Effects`](AudioEffects.md) (`DelayEffect`, `ChorusEffect`,
+  `CompressorEffect`, `ReverbEffect`, …) wrapped in an `EffectSampleProvider`. They still
+  work, but will be removed in a future major version.
 
 ## Effects (removed types and replacements)
 
@@ -345,7 +351,7 @@ Previously the stream constructor disposed the caller's stream unconditionally, 
 why `IgnoreDisposeStream` was needed to write to a `MemoryStream` you wanted to keep
 (`new WaveFileWriter(new IgnoreDisposeStream(ms), format)`). That wrapper is no longer
 necessary — passing the stream directly leaves it open. (`IgnoreDisposeStream` still
-exists and existing code that uses it keeps working.)
+exists so existing code keeps working, but it is obsolete as of 3.2.)
 
 **What to check when upgrading.** The one case that changes behaviour is passing a
 *throwaway* stream you didn't keep a reference to and relying on the writer to close it,

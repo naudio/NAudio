@@ -7,6 +7,9 @@ using System.Diagnostics;
 using System;
 using NAudio.Core.Tests.Utils;
 
+// ReadNextSampleFrame is obsolete but still covered here until it's removed
+#pragma warning disable CS0618
+
 namespace NAudio.Core.Tests.WaveStreams;
 
 [TestFixture]

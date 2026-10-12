@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+// This effect is obsolete; its internal interop types use the effect's obsolete parameter enums
+#pragma warning disable CS0618
+
 namespace NAudio.Dmo.Effect;
 
 internal struct DsFxEcho

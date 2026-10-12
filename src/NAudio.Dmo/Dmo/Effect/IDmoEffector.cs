@@ -6,6 +6,7 @@ namespace NAudio.Dmo.Effect;
 /// Interface of DMO Effectors
 /// </summary>
 /// <typeparam name="TParameters">Parameters of the effect to be used</typeparam>
+[System.Obsolete("Only used by the obsolete DMO effects. Use the managed effects in NAudio.Effects instead. This type will be removed in a future major version.")]
 public interface IDmoEffector<out TParameters> : IDisposable
 {
     /// <summary>

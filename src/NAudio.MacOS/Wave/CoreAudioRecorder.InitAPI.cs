@@ -155,7 +155,10 @@ public partial class CoreAudioRecorder
                     virtualFormat.mSampleRate != streamAsbd.mSampleRate ||
                     virtualFormat.mBitsPerChannel != streamAsbd.mBitsPerChannel ||
                     virtualFormat.mFormatFlags != streamAsbd.mFormatFlags ||
-                    virtualFormat.mChannelsPerFrame != streamAsbd.mChannelsPerFrame ||
+                    // The channel interleaver cannot support buffers with multiple channels, so for now make it to throw explicitly.
+                    // mdcdi1315: I might revisit this at some day, probably when I will have a proper device to test this on,
+                    // or think a better way to implement it.
+                    streamAsbd.mChannelsPerFrame != 1 ||
                     virtualFormat.mBytesPerFrame != streamAsbd.mBytesPerFrame
                 )
                 {

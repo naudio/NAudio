@@ -104,10 +104,11 @@ public partial class CoreAudioPlayer
                 deinterleaver.Channels = (int)asbd.mChannelsPerFrame;
                 deinterleaver.BytesPerFrame = (int)asbd.mBytesPerFrame;
                 nonInterleavedStride = asbd.mBytesPerFrame / asbd.mChannelsPerFrame;
-                deinterleaver.PreEnsureBytes((int)(MaximumIOBufferSizeInFrames * nonInterleavedStride));
+                int maxSizeInFrames = CoreAudioFunctions.GetMaximumIOBufferSizeInFrames(Device);
+                deinterleaver.PreEnsureBytes((int)(maxSizeInFrames * nonInterleavedStride));
                 // Resize the temporary buffer in the maximum number of frames.
                 // We will increase the size of this buffer if so required.
-                ResizeTemporaryBuffer((int)(MaximumIOBufferSizeInFrames * asbd.mBytesPerFrame));
+                ResizeTemporaryBuffer((int)(maxSizeInFrames * asbd.mBytesPerFrame));
                 base.Source = value;
             }
         }

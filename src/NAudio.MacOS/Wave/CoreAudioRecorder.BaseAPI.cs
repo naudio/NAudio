@@ -164,12 +164,19 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         try
         {
             state = CaptureState.Stopping;
-            if (flags.HasFlag(CoreAudioRecorderStateFlags.EventHandleWasRegistered))
+            try
             {
-                ioProcedure.Event -= FireDataAvailableEvent;
-                ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
+                ioProcedure.Stop();
+                ioProcedure.DrainBuffers();
             }
-            ioProcedure.Stop();
+            finally
+            {
+                if (flags.HasFlag(CoreAudioRecorderStateFlags.EventHandleWasRegistered))
+                {
+                    ioProcedure.Event -= FireDataAvailableEvent;
+                    ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
+                }
+            }
             if (dispatchRecordingStopped)
             {
                 // Dispatch the recording stopped event if appropriate

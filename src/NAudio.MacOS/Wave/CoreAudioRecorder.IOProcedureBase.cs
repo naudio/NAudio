@@ -99,8 +99,7 @@ public partial class CoreAudioRecorder
         private void InvokeStoppedEvent() => RecordingStopped?.Invoke(this, new(exception));
 
         // Drains any buffered samples remaining in the recorder's buffers
-        // Currently, it is only used by the non-interleaved procedure implementation,
-        // and it is only used in async mode.
+        // Currently, it is only used by the non-interleaved procedure implementation.
         public virtual void DrainBuffers() { }
 
         public Exception Exception
@@ -113,35 +112,6 @@ public partial class CoreAudioRecorder
                 var e = exception;
                 exception = null;
                 return e;
-            }
-        }
-
-        // Gets the maximum per-channel I/O buffer size in frames that the HAL may provide.
-        // This computation is done at best effort and ensures that it represents
-        // a realistic value.
-        public int MaximumIOBufferSizeInFrames
-        {
-            get
-            {
-                var ret = (int)Device.UsesVariableBufferFrameSizes;
-                if (ret > 0)
-                {
-                    // Choose the maximum of UsesVariableBufferFrameSizes and BufferFrameSize
-                    // to ensure that the UsesVariableBufferFrameSizes property is not misbehaving.
-                    return Math.Max(
-                        ret,
-                        (int)Device.BufferFrameSize
-                    );
-                }
-                else
-                {
-                    // Choose the maximum of BufferFrameSizeRange and BufferFrameSize
-                    // to ensure that the BufferFrameSizeRange property is not misbehaving.
-                    return Math.Max(
-                        (int)Device.BufferFrameSizeRange.max,
-                        (int)Device.BufferFrameSize
-                    );
-                }
             }
         }
 

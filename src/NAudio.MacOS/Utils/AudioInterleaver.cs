@@ -165,13 +165,16 @@ internal sealed class AudioInterleaver
     {
         PrepareNewBuffer();
 
+        int maxSingleBuffer = 0;
+
         foreach (var buffer in remainderSamples)
         {
             int count = buffer.Count;
-            if (count < minSingleBuffer) { minSingleBuffer = count; }
+            if (count > maxSingleBuffer) { maxSingleBuffer = count; }
         }
 
-        BuildNewBuffer();
+        totalBytes = maxSingleBuffer * remainderSamples.Length;
+        SetBuildingBufferCapacity(totalBytes);
 
         if (totalBytes > 0)
         {
@@ -190,11 +193,11 @@ internal sealed class AudioInterleaver
                 int bytesCopied = 0;
                 int buildingBufferCopied = 0;
                 int bufferIndex = (channel++) * blockAlign;
-                int bytesToCopy = Math.Min(buffer.Count, minSingleBuffer);
+                int bytesToCopy = Math.Min(buffer.Count, maxSingleBuffer);
 
                 for (
                      ;
-                     bytesCopied < bytesToCopy && buildingBufferCopied < minSingleBuffer;
+                     bytesCopied < bytesToCopy && buildingBufferCopied < maxSingleBuffer;
                      bufferIndex += buildingBufferBlockAlign,
                      bytesCopied += blockAlign,
                      buildingBufferCopied += blockAlign

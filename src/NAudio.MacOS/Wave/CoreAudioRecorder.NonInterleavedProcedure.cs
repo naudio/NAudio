@@ -67,7 +67,7 @@ public partial class CoreAudioRecorder
                 // when the new buffer is being built.
                 interleaver.SetBuildingBufferCapacity(
                     (int)((isNonInterleaved ? value.mChannelsPerFrame : 1U) * value.mBytesPerFrame)
-                    * MaximumIOBufferSizeInFrames
+                    * CoreAudioFunctions.GetMaximumIOBufferSizeInFrames(Device)
                 );
                 base.VirtualFormat = value;
             }

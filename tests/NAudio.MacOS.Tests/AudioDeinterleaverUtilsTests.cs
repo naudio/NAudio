@@ -78,6 +78,26 @@ public class AudioDeinterleaverUtilsTests
         }
     }
 
+    // Ensures that the PreEnsureBytes method succeeds.
+    // Previously, the method failed with NullReferenceException, which caused the player (which uses this) to fail.
+    [TestCase(2)]
+    [TestCase(4)]
+    [TestCase(5)]
+    [TestCase(7)]
+    [TestCase(10)]
+    public void VerifyThatPreEnsureBytesDoesNotFail(int nChannels)
+    {
+        AudioDeinterleaver deinterleaver = new();
+
+        deinterleaver.Channels = nChannels;
+        deinterleaver.BytesPerFrame = sizeof(float);
+
+        // Ensure 100 bytes for each buffer.
+        // This allocation should typically succeed on test machines,
+        // as it is trivial.
+        Assert.DoesNotThrow(() => deinterleaver.PreEnsureBytes(100));
+    }
+
     /**
      * To assert that the deinterleaver can correctly handle cases under streaming (which is the typical use case),
      * we will use a random source to roll the number of bytes to copy for get operations.

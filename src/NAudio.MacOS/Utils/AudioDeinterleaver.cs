@@ -48,9 +48,9 @@ internal sealed class AudioDeinterleaver
     /// <param name="bytesPerChannel">The number of bytes to ensure for each channel buffer.</param>
     public void PreEnsureBytes(int bytesPerChannel)
     {
-        foreach (var channel in channels)
+        for (int I = 0; I < channels.Length; I++)
         {
-            channel.EnsureBytes(bytesPerChannel);
+            (channels[I] ??= new()).EnsureBytes(bytesPerChannel);
         }
     }
 

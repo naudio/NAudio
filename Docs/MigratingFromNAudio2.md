@@ -481,7 +481,11 @@ while (reader.TryReadFloat(out var sample)) { ... }
 var samples = reader.ToSampleProvider();
 var buffer = new float[reader.WaveFormat.SampleRate * reader.WaveFormat.Channels];
 int read;
-while ((read = samples.Read(buffer)) > 0) { /* interleaved: buffer[0], buffer[1], ... */ }
+while ((read = samples.Read(buffer)) > 0)
+{
+    // buffer[0] to buffer[read - 1] hold the samples just read (the last read is usually
+    // shorter than the buffer). Channels are interleaved: for stereo, [0] = left, [1] = right, ...
+}
 ```
 
 **`AcmStream.Convert(int)` threw when the driver didn't consume everything.** It called the

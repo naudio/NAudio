@@ -243,11 +243,9 @@ public class WaveFileWriterTests
         using var reader = new WaveFileReader(ms);
         Assert.That(reader.WaveFormat.Encoding, Is.EqualTo(WaveFormatEncoding.Pcm), "Encoding");
         Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
-        foreach (var expected in samples)
-        {
-            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(expected).Within(0.0001f));
-        }
-        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
+        var readBack = new float[samples.Length + 1];
+        Assert.That(reader.ToSampleProvider().Read(readBack), Is.EqualTo(samples.Length), "Samples read");
+        Assert.That(readBack[..samples.Length], Is.EqualTo(samples).Within(0.0001f));
     }
 
     [Test]
@@ -263,9 +261,11 @@ public class WaveFileWriterTests
         ms.Position = 0;
         using var reader = new WaveFileReader(ms);
         Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
-        foreach (var sample in samples)
+        var readBack = new float[samples.Length];
+        Assert.That(reader.ToSampleProvider().Read(readBack), Is.EqualTo(samples.Length), "Samples read");
+        for (int n = 0; n < samples.Length; n++)
         {
-            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(sample / 32768f).Within(0.0001f));
+            Assert.That(readBack[n], Is.EqualTo(samples[n] / 32768f).Within(0.0001f), $"Sample {n}");
         }
     }
 

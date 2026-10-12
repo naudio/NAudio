@@ -84,9 +84,19 @@ internal sealed class AudioInterleaver
         // To avoid this issue, we will use the minimum bytes of all AddBufferBytes calls.
         // The remainderSamples buffers will then handle any extraneous samples.
         totalBytes = minSingleBuffer * remainderSamples.Length;
-        if (buildingBuffer is null || totalBytes > buildingBuffer.Length)
+        SetBuildingBufferCapacity(totalBytes);
+    }
+
+    /// <summary>
+    /// Makes sure that the buffer that is built through 
+    /// <see cref="BuildNewBuffer"/> and <see cref="AddBufferBytes(int, int)"/> has enough space.
+    /// </summary>
+    /// <param name="newCapacity"># of bytes to ensure.</param>
+    public void SetBuildingBufferCapacity(int newCapacity)
+    {
+        if (buildingBuffer is null || newCapacity > buildingBuffer.Length)
         {
-            buildingBuffer = new byte[totalBytes];
+            buildingBuffer = GC.AllocateUninitializedArray<byte>(newCapacity);
         }
     }
 

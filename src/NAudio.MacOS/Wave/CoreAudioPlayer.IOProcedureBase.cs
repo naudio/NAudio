@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 
@@ -140,6 +140,35 @@ public partial class CoreAudioPlayer
         {
             firstSampleTime = double.NaN;
             lastPlayedFrames = 0d;
+        }
+
+        // Gets the maximum per-channel I/O buffer size in frames that the HAL may provide.
+        // This computation is done at best effort and ensures that it represents
+        // a realistic value.
+        public int MaximumIOBufferSizeInFrames
+        {
+            get
+            {
+                var ret = (int)Device.UsesVariableBufferFrameSizes;
+                if (ret > 0)
+                {
+                    // Choose the maximum of UsesVariableBufferFrameSizes and BufferFrameSize
+                    // to ensure that the UsesVariableBufferFrameSizes property is not misbehaving.
+                    return Math.Max(
+                        ret,
+                        (int)Device.BufferFrameSize
+                    );
+                }
+                else
+                {
+                    // Choose the maximum of BufferFrameSizeRange and BufferFrameSize
+                    // to ensure that the BufferFrameSizeRange property is not misbehaving.
+                    return Math.Max(
+                        (int)Device.BufferFrameSizeRange.max,
+                        (int)Device.BufferFrameSize
+                    );
+                }
+            }
         }
 
         // source is only settable, it's value is provided by the player implementation.

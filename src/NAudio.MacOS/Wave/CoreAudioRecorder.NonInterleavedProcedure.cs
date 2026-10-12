@@ -45,6 +45,14 @@ public partial class CoreAudioRecorder
             OnDataAvailable(interleaver.GetBuffer());
         }
 
+        public override void DrainBuffers()
+        {
+            while (interleaver.Drain())
+            {
+                OnDataAvailable(interleaver.GetBuffer());
+            }
+        }
+
         public override AudioStreamBasicDescription VirtualFormat
         {
             set
@@ -54,6 +62,13 @@ public partial class CoreAudioRecorder
                     ? value.mBytesPerFrame
                     : value.mBytesPerFrame / value.mChannelsPerFrame);
                 interleaver.Channels = (int)value.mChannelsPerFrame;
+                // Pre-size the building buffer to avoid as many resizes as possible.
+                // If there is the need, however, at some time to do so, it is done by the interleaver
+                // when the new buffer is being built.
+                interleaver.SetBuildingBufferCapacity(
+                    (int)((isNonInterleaved ? value.mChannelsPerFrame : 1U) * value.mBytesPerFrame)
+                    * MaximumIOBufferSizeInFrames
+                );
                 base.VirtualFormat = value;
             }
         }

@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Diagnostics;
 
@@ -206,7 +206,10 @@ public partial class CoreAudioPlayer
                     asbdToUse.mSampleRate != streamAsbd.mSampleRate ||
                     asbdToUse.mBitsPerChannel != streamAsbd.mBitsPerChannel ||
                     asbdToUse.mFormatFlags != streamAsbd.mFormatFlags ||
-                    asbdToUse.mChannelsPerFrame != streamAsbd.mChannelsPerFrame ||
+                    // The channel deinterleaver cannot support buffers with multiple channels, so for now make it to throw explicitly.
+                    // mdcdi1315: I might revisit this at some day, probably when I will have a proper device to test this on,
+                    // or think a better way to implement it.
+                    streamAsbd.mChannelsPerFrame != 1 ||
                     asbdToUse.mBytesPerFrame != streamAsbd.mBytesPerFrame
                 )
                 {

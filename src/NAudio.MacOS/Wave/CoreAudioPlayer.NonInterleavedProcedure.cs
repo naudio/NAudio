@@ -35,6 +35,10 @@ public partial class CoreAudioPlayer
                     continue;
                 }
                 // Compute number of frames to put into the HAL buffer.
+                // Note that we are doing a max frames run because
+                // we want to fill the HAL buffers as much as possible.
+                // If we didn't had that target the buffers wouldn't be completely filled,
+                // and as such, at the end of each buffer there would be silence instead of valid samples.
                 var fs = (int)(buffer.mDataByteSize / nonInterleavedStride / buffer.mNumberChannels);
 
                 if (fs > framesToFill) { framesToFill = fs; }
@@ -56,18 +60,9 @@ public partial class CoreAudioPlayer
                     // Unused stream, move to the next one
                     continue;
                 }
-                if (buffer.mNumberChannels == 1U)
-                {
-                    _ = deinterleaver.GetChannelBytes(C++, buffer.GetSpan());
-                }
-                else
-                {
-                    // The deinterleaver works only with single-channel buffers
-                    for (uint M = 0U; M < buffer.mNumberChannels; M++, C++)
-                    {
-                        deinterleaver.ClearChannelBuffer(C);
-                    }
-                }
+                // Since we have excluded from the initialization stage
+                // the multiple-channel buffers, we can go ahead and read the channel's bytes directly.
+                _ = deinterleaver.GetChannelBytes(C++, buffer.GetSpan());
             }
 
             return false;
@@ -109,9 +104,9 @@ public partial class CoreAudioPlayer
                 deinterleaver.Channels = (int)asbd.mChannelsPerFrame;
                 deinterleaver.BytesPerFrame = (int)asbd.mBytesPerFrame;
                 nonInterleavedStride = asbd.mBytesPerFrame / asbd.mChannelsPerFrame;
-                // Allocate 15 samples for each channel.
+                // Resize the temporary buffer in the maximum number of frames.
                 // We will increase the size of this buffer if so required.
-                ResizeTemporaryBuffer(15 * deinterleaver.BytesPerFrame);
+                ResizeTemporaryBuffer((int)(MaximumIOBufferSizeInFrames * asbd.mBytesPerFrame));
                 base.Source = value;
             }
         }

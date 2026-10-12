@@ -1,4 +1,4 @@
-
+﻿
 using System;
 
 using NAudio.Utils;
@@ -188,7 +188,6 @@ public partial class CoreAudioRecorder
         }
 
         selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
-        ioProcedure.StreamLatency = selectedDevice.BufferFrameSize;
         ioProcedure.VirtualFormat = virtualFormat;
         virtualFormatChanged = streams[selectedIndex].ConstructVirtualFormatChangedEvent();
         virtualFormatChanged.Event += OnVirtualFormatChanged;

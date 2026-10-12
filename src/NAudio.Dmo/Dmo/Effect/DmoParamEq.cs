@@ -26,6 +26,7 @@ internal interface IDirectSoundFxParamEq
 /// <summary>
 /// DMO Parametric Equalizer Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.Equalizer (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoParamEq : IDmoEffector<DmoParamEq.Params>
 {
     private static readonly Guid Id_ParamEq = new("120CED89-3BF4-4173-A132-3CB406CF3231");

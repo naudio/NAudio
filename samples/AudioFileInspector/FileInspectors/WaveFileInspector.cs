@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
 using NAudio.Wave;
-using NAudio.Utils;
 using System.ComponentModel.Composition;
 
 namespace AudioFileInspector;
@@ -59,13 +58,13 @@ public class WaveFileInspector : IAudioFileInspector
                 break;
             default:
                 {
-                    if (ByteArrayExtensions.IsEntirelyNull(data))
+                    if (data.AsSpan().IndexOfAnyExcept((byte)0) == -1)
                     {
                         stringBuilder.AppendFormat("{0} null bytes\r\n", data.Length);
                     }
                     else
                     {
-                        stringBuilder.AppendFormat("{0}\r\n", ByteArrayExtensions.DescribeAsHex(data, " ", 32));
+                        stringBuilder.AppendFormat("{0}\r\n", DescribeAsHex(data, " ", 32));
                     }
                 }
                 break;
@@ -75,15 +74,15 @@ public class WaveFileInspector : IAudioFileInspector
     private static void DescribeBext(StringBuilder sb, byte[] data)
     {
         int offset = 0;
-        sb.AppendFormat("Description: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, 0, 256, ASCIIEncoding.ASCII));
+        sb.AppendFormat("Description: {0}\r\n", DecodeAsString(data, 0, 256, ASCIIEncoding.ASCII));
         offset += 256;
-        sb.AppendFormat("Originator: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 32, ASCIIEncoding.ASCII));
+        sb.AppendFormat("Originator: {0}\r\n", DecodeAsString(data, offset, 32, ASCIIEncoding.ASCII));
         offset += 32;
-        sb.AppendFormat("Originator Reference: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 32, ASCIIEncoding.ASCII));
+        sb.AppendFormat("Originator Reference: {0}\r\n", DecodeAsString(data, offset, 32, ASCIIEncoding.ASCII));
         offset += 32;
-        sb.AppendFormat("Origination Date: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 10, ASCIIEncoding.ASCII));
+        sb.AppendFormat("Origination Date: {0}\r\n", DecodeAsString(data, offset, 10, ASCIIEncoding.ASCII));
         offset += 10;
-        sb.AppendFormat("Origination Time: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 8, ASCIIEncoding.ASCII));
+        sb.AppendFormat("Origination Time: {0}\r\n", DecodeAsString(data, offset, 8, ASCIIEncoding.ASCII));
         offset += 8;
         sb.AppendFormat("Time Reference Low: {0}\r\n", BitConverter.ToUInt32(data, offset));
         offset += 4;
@@ -91,7 +90,7 @@ public class WaveFileInspector : IAudioFileInspector
         offset += 4;
         sb.AppendFormat("Version: {0}\r\n", BitConverter.ToUInt16(data, offset));
         offset += 2;
-        sb.AppendFormat("SMPTE UMID: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 64, Encoding.ASCII));
+        sb.AppendFormat("SMPTE UMID: {0}\r\n", DecodeAsString(data, offset, 64, Encoding.ASCII));
         //byte[] smpteumid = 64 bytes;
         offset += 64;
         sb.AppendFormat("Loudness Value: {0}\r\n", BitConverter.ToUInt16(data, offset));
@@ -106,7 +105,7 @@ public class WaveFileInspector : IAudioFileInspector
         offset += 2;
         //byte[] reserved = 180 bytes;
         offset += 180;
-        sb.AppendFormat("Coding History: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, data.Length - offset, Encoding.ASCII));
+        sb.AppendFormat("Coding History: {0}\r\n", DecodeAsString(data, offset, data.Length - offset, Encoding.ASCII));
 
     }
 
@@ -142,5 +141,26 @@ public class WaveFileInspector : IAudioFileInspector
             stringBuilder.AppendFormat("Pos: {2},{3} unknown: {0},{4}\r\n",
                 unknown1, uniqueId1, samplePosition, samplePos2, unknown5, uniqueId2);
         }
+    }
+
+    private static string DescribeAsHex(byte[] buffer, string separator, int bytesPerLine)
+    {
+        var sb = new StringBuilder();
+        for (int n = 0; n < buffer.Length; n++)
+        {
+            sb.AppendFormat("{0:X2}{1}", buffer[n], separator);
+            if ((n + 1) % bytesPerLine == 0)
+                sb.Append("\r\n");
+        }
+        sb.Append("\r\n");
+        return sb.ToString();
+    }
+
+    // Decodes the bytes, stopping at the first null
+    private static string DecodeAsString(byte[] buffer, int offset, int length, Encoding encoding)
+    {
+        ReadOnlySpan<byte> bytes = buffer.AsSpan(offset, length);
+        int nullIndex = bytes.IndexOf((byte)0);
+        return encoding.GetString(nullIndex == -1 ? bytes : bytes[..nullIndex]);
     }
 }

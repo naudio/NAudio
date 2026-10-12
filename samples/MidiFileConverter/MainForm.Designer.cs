@@ -1,4 +1,4 @@
-namespace MarkHeath.MidiUtils
+﻿namespace MarkHeath.MidiUtils
 {
     partial class MainForm
     {
@@ -58,7 +58,7 @@ namespace MarkHeath.MidiUtils
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.checkBoxUseFilename = new System.Windows.Forms.CheckBox();
             this.checkBoxApplyNamingRules = new System.Windows.Forms.CheckBox();
-            this.progressLog1 = new NAudio.Utils.ProgressLog();
+            this.progressLog1 = new LogBox();
             this.menuStrip1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -439,7 +439,7 @@ namespace MarkHeath.MidiUtils
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.CheckBox checkBoxUseFilename;
         private System.Windows.Forms.CheckBox checkBoxApplyNamingRules;
-        private NAudio.Utils.ProgressLog progressLog1;
+        private LogBox progressLog1;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem clearLogToolStripMenuItem;

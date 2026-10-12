@@ -27,6 +27,7 @@ internal interface IDirectSoundFXWavesReverb
 /// <summary>
 /// DMO Reverb Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.ReverbEffect or FdnReverbEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoWavesReverb : IDmoEffector<DmoWavesReverb.Params>
 {
     private static readonly Guid Id_WavesReverb = new("87FC0268-9A55-4360-95AA-004A1D9DE26C");

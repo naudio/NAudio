@@ -13,6 +13,7 @@ namespace NAudio.Wave;
 /// </summary>
 /// <typeparam name="TDmoEffector">Types of DMO effectors to use</typeparam>
 /// <typeparam name="TEffectorParam">Parameters of the effect to be used</typeparam>
+[System.Obsolete("Use the managed effects in NAudio.Effects (e.g. DelayEffect, ChorusEffect, CompressorEffect, ReverbEffect) with an EffectSampleProvider instead. DmoEffectWaveProvider will be removed in a future major version.")]
 public class DmoEffectWaveProvider<TDmoEffector, TEffectorParam> : IWaveProvider, IDisposable
     where TDmoEffector : IDmoEffector<TEffectorParam>, new()
 {

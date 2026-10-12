@@ -7,6 +7,7 @@ namespace NAudio.Dmo;
 /// <summary>
 /// DMO Resampler
 /// </summary>
+[System.Obsolete("Use MediaFoundationResampler or WdlResamplingSampleProvider instead. DmoResampler will be removed in a future major version.")]
 public class DmoResampler : IDisposable
 {
     // CLSID_CResamplerMediaObject — wmcodecdsp.h

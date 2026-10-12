@@ -1,4 +1,4 @@
-# Migrating from `AsioOut` to `AsioDevice`
+﻿# Migrating from `AsioOut` to `AsioDevice`
 
 NAudio 3 introduces a redesigned ASIO API, `AsioDevice`. The legacy `AsioOut` class is preserved with a byte-for-byte identical public surface and is now implemented as a thin facade over `AsioDevice` — so existing code keeps working without changes. This article shows how to move new code (and selectively migrate existing code) to `AsioDevice` to gain access to features the old `AsioOut` API can't express.
 
@@ -14,7 +14,7 @@ Stay on `AsioOut` if all of these are true:
 
 Move to `AsioDevice` if any of these are true:
 
-- You record or do duplex DSP — the new API replaces the awkward `InitRecordAndPlayback` overload.
+- You record or do duplex DSP — the new API replaces the awkward `InitRecordAndPlayback` overload. As of 3.2, `AsioOut`'s recording path (`InitRecordAndPlayback`, the `AudioAvailable` event and `AsioAudioAvailableEventArgs`) is obsolete; `AsioOut` playback is unaffected.
 - You need non-contiguous channel selection like `[0, 3, 5]` — `AsioOut.ChannelOffset` only supports contiguous ranges.
 - You want `Span<float>` access to recorded audio without writing `unsafe` code.
 - You want a supported `Reinitialize` path for handling sample-rate changes from the driver's control panel.

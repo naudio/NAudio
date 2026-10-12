@@ -156,7 +156,7 @@ public class AiffFileWriterTests
         var format = new WaveFormat(8000, 8, 1);
         var unsignedInput = new byte[] { 0x80, 0x8A, 0x00, 0xFF }; // 128 (silence), 138, 0, 255
 
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             writer.Write(unsignedInput, 0, unsignedInput.Length);
         }
@@ -173,7 +173,7 @@ public class AiffFileWriterTests
         var input = new byte[] { 0x80, 0x8A, 0x00, 0xFF };
         var original = (byte[])input.Clone();
 
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             writer.Write(input, 0, input.Length);
         }
@@ -249,7 +249,7 @@ public class AiffFileWriterTests
     {
         var ms = new MemoryStream();
 
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             writeAction(writer);
         }

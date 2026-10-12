@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Deprecated legacy APIs that have modern replacements: `Wave16ToFloatProvider`, `WaveFloatTo16Provider` and `Wave32To16Stream` (use `ToSampleProvider()` / `ToWaveProvider16()`), `IgnoreDisposeStream` (no longer needed), `ByteArrayExtensions` (use the BCL), `MidiMessage` (use the typed MIDI events), `ResamplerDmoStream`/`DmoResampler` (use `MediaFoundationResampler` or `WdlResamplingSampleProvider`), `DmoEffectWaveProvider` and the `Dmo*` effects (use `NAudio.Effects`), `AsioOut`'s recording path (use `AsioDevice`), `WaveFilter`, and `ProgressLog`. Added `AsioOut.IsSupported()` and deprecated the lowercase `isSupported()`
  * Deprecated `WaveFileReader.ReadNextSampleFrame` in favour of `ToSampleProvider()`, which supports more formats and doesn't allocate an array per sample frame
  * Fixed `WaveFileWriter.WriteSample` and `WriteSamples(short[])` throwing for plain (non-extensible) 32-bit integer PCM formats
  * `WaveFileReader.ReadNextSampleFrame` now throws `InvalidDataException` for a WAV header with an invalid channel count or bit depth

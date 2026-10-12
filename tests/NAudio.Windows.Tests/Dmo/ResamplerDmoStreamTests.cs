@@ -3,6 +3,9 @@ using NAudio.Wave;
 using NAudio.Tests.Shared;
 using NAudio.Windows.Tests.Utils;
 
+// These tests cover the DMO APIs, which are obsolete but still supported until they're removed
+#pragma warning disable CS0618
+
 namespace NAudio.Windows.Tests.Dmo;
 
 [TestFixture]

@@ -47,6 +47,7 @@ internal interface IDirectSoundFXI3DL2Reverb
 /// <summary>
 /// DMO I3DL2Reverb Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.ReverbEffect or FdnReverbEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoI3DL2Reverb : IDmoEffector<DmoI3DL2Reverb.Params>
 {
     private static readonly Guid Id_I3DL2Reverb = new("EF985E71-D5C7-42D4-BA4D-2D073E2E96F4");

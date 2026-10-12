@@ -8,6 +8,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// Wave Stream for converting between sample rates
 /// </summary>
+[System.Obsolete("Use MediaFoundationResampler (the same Windows resampler) or the cross-platform WdlResamplingSampleProvider instead. ResamplerDmoStream will be removed in a future major version.")]
 public class ResamplerDmoStream : WaveStream
 {
     private readonly IWaveProvider inputProvider;

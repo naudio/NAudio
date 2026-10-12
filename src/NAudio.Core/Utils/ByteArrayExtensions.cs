@@ -4,8 +4,9 @@ using System.Text;
 namespace NAudio.Utils;
 
 /// <summary>
-/// these will become extension methods once we move to .NET 3.5
+/// Legacy byte array helpers
 /// </summary>
+[Obsolete("Use the BCL instead: span.IndexOfAnyExcept((byte)0) == -1, Convert.ToHexString, Encoding.GetString on a span sliced at the first null, or collection expressions to concatenate. ByteArrayExtensions will be removed in a future major version.")]
 public static class ByteArrayExtensions
 {
     /// <summary>

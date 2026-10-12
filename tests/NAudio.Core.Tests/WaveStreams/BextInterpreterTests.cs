@@ -17,7 +17,7 @@ public class BextInterpreterTests
     private static WaveFileReader OpenWithBext(BroadcastExtension bext)
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.WriteBroadcastExtension(bext);
             w.Write(Audio, 0, Audio.Length);

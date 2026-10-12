@@ -2,7 +2,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using NAudio.Utils;
 
 namespace NAudio.Wave;
 
@@ -17,7 +16,6 @@ public class WaveFileReader : WaveStream
     private readonly long dataPosition;
     private readonly long dataChunkLength;
     private readonly Lock lockObject = new();
-    private byte[] frameBuffer;
     private Stream waveStream;
 
     /// <summary>Supports opening a WAV file</summary>
@@ -210,8 +208,8 @@ public class WaveFileReader : WaveStream
         }
 
         var sampleFrame = new float[waveFormat.Channels];
-        frameBuffer = BufferHelpers.Ensure(frameBuffer, bytesToRead);
-        int bytesRead = Read(frameBuffer, 0, bytesToRead);
+        var frameBytes = new byte[bytesToRead];
+        int bytesRead = Read(frameBytes, 0, bytesToRead);
         if (bytesRead == 0)
         {
             return null; // end of file
@@ -221,7 +219,7 @@ public class WaveFileReader : WaveStream
             throw new InvalidDataException("Unexpected end of file");
         }
 
-        TransformSampleFrame(frameBuffer.AsSpan(0, bytesToRead), sampleFrame, waveFormat);
+        TransformSampleFrame(frameBytes, sampleFrame, waveFormat);
         return sampleFrame;
     }
 

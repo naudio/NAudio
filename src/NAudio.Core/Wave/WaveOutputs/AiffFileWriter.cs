@@ -1,6 +1,5 @@
 ﻿using NAudio.Utils;
 using System;
-using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -20,6 +19,7 @@ public class AiffFileWriter : Stream
     private readonly WaveFormat format;
     private readonly string filename;
     private readonly bool ownsStream;
+    private byte[] writeBuffer;
 
     /// <summary>
     /// Creates an Aiff file by reading all the data from a WaveProvider
@@ -207,47 +207,35 @@ public class AiffFileWriter : Stream
     /// <param name="buffer">the buffer containing the wave data</param>
     public override void Write(ReadOnlySpan<byte> buffer)
     {
-        const int MaxStackBytes = 512;
-        byte[] rented = null;
-        Span<byte> modified = buffer.Length <= MaxStackBytes
-            ? stackalloc byte[buffer.Length]
-            : (rented = ArrayPool<byte>.Shared.Rent(buffer.Length)).AsSpan(0, buffer.Length);
+        // Reused across calls so writing doesn't allocate once the buffer is big enough
+        writeBuffer = BufferHelpers.Ensure(writeBuffer, buffer.Length);
+        Span<byte> modified = writeBuffer.AsSpan(0, buffer.Length);
 
-        try
+        int bytesPerSample = format.BitsPerSample / 8;
+        if (bytesPerSample <= 1)
         {
-            int bytesPerSample = format.BitsPerSample / 8;
-            if (bytesPerSample <= 1)
+            // AIFF 8-bit PCM is signed two's-complement, but the incoming bytes are unsigned
+            // (WAV-style, like every other path through Write, which converts WAV layout to
+            // AIFF layout). Flip the sign bit on the way out so the file is valid signed AIFF.
+            // Copy into a scratch buffer so the caller's array is not mutated. See issue #1178.
+            for (int i = 0; i < buffer.Length; i++)
             {
-                // AIFF 8-bit PCM is signed two's-complement, but the incoming bytes are unsigned
-                // (WAV-style, like every other path through Write, which converts WAV layout to
-                // AIFF layout). Flip the sign bit on the way out so the file is valid signed AIFF.
-                // Copy into a scratch buffer so the caller's array is not mutated. See issue #1178.
-                for (int i = 0; i < buffer.Length; i++)
-                {
-                    modified[i] = (byte)(buffer[i] ^ 0x80);
-                }
-            }
-            else
-            {
-                buffer.CopyTo(modified);
-
-                int completeSampleBytes = buffer.Length - (buffer.Length % bytesPerSample);
-                for (int sampleStart = 0; sampleStart < completeSampleBytes; sampleStart += bytesPerSample)
-                {
-                    modified.Slice(sampleStart, bytesPerSample).Reverse();
-                }
-            }
-
-            outStream.Write(modified);
-            dataChunkSize += buffer.Length;
-        }
-        finally
-        {
-            if (rented is not null)
-            {
-                ArrayPool<byte>.Shared.Return(rented);
+                modified[i] = (byte)(buffer[i] ^ 0x80);
             }
         }
+        else
+        {
+            buffer.CopyTo(modified);
+
+            int completeSampleBytes = buffer.Length - (buffer.Length % bytesPerSample);
+            for (int sampleStart = 0; sampleStart < completeSampleBytes; sampleStart += bytesPerSample)
+            {
+                modified.Slice(sampleStart, bytesPerSample).Reverse();
+            }
+        }
+
+        outStream.Write(modified);
+        dataChunkSize += buffer.Length;
     }
 
     /// <summary>

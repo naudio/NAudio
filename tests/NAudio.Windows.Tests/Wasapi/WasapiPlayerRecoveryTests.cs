@@ -4,7 +4,6 @@ using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudio.Windows.Tests.Utils;
 
 namespace NAudio.Windows.Tests.Wasapi;
 
@@ -26,7 +25,6 @@ public class WasapiPlayerRecoveryTests
     [SetUp]
     public void SetUp()
     {
-        OSUtils.RequireVista();
 
         using var enumerator = new MMDeviceEnumerator();
         if (!enumerator.TryGetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia, out var device))

@@ -1,6 +1,5 @@
 ﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
@@ -15,12 +14,6 @@ namespace NAudio.Windows.Tests.Wasapi;
 [Category("IntegrationTest")]
 public class AudioClientTests
 {
-    [SetUp]
-    public void SetUp()
-    {
-        OSUtils.RequireVista();
-    }
-
     [Test]
     public void CanGetMixFormat()
     {

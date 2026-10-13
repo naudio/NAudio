@@ -2,7 +2,6 @@
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using System.Diagnostics;
-using NAudio.Windows.Tests.Utils;
 
 namespace NAudio.Windows.Tests.Wasapi;
 
@@ -12,16 +11,14 @@ namespace NAudio.Windows.Tests.Wasapi;
 public class MMDeviceEnumeratorTests
 {
     [Test]
-    public void CanCreateMMDeviceEnumeratorInVista()
+    public void CanCreateMMDeviceEnumerator()
     {
-        OSUtils.RequireVista();
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
     }
 
     [Test]
-    public void CanEnumerateDevicesInVista()
+    public void CanEnumerateDevices()
     {
-        OSUtils.RequireVista();
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         var devices = enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All);
 
@@ -41,7 +38,6 @@ public class MMDeviceEnumeratorTests
     [Test]
     public void CanEnumerateCaptureDevices()
     {
-        OSUtils.RequireVista();
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.All);
 
@@ -61,7 +57,6 @@ public class MMDeviceEnumeratorTests
     [Test]
     public void CanGetDefaultAudioEndpoint()
     {
-        OSUtils.RequireVista();
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
         Assert.That(defaultAudioEndpoint, Is.Not.Null);
@@ -70,7 +65,6 @@ public class MMDeviceEnumeratorTests
     [Test]
     public void CanActivateDefaultAudioEndpoint()
     {
-        OSUtils.RequireVista();
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
         AudioClient audioClient = defaultAudioEndpoint.CreateAudioClient();
@@ -83,7 +77,6 @@ public class MMDeviceEnumeratorTests
         // Reading a property-backed value (DeviceFriendlyName) lazily opens the
         // device's property store. Dispose must release it, and be safe to call
         // more than once. Regression cover for #1145.
-        OSUtils.RequireVista();
         var enumerator = new MMDeviceEnumerator();
         foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.Active))
         {
@@ -95,16 +88,8 @@ public class MMDeviceEnumeratorTests
     }
 
     [Test]
-    public void ThrowsNotSupportedExceptionInXP()
-    {
-        OSUtils.RequireXP();
-        Assert.Throws<NotSupportedException>(() => new MMDeviceEnumerator());
-    }
-
-    [Test]
     public void CanGetAudioClockClient()
     {
-        OSUtils.RequireVista();
         var enumerator = new MMDeviceEnumerator();
 
         var captureClient = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console).CreateAudioClient();

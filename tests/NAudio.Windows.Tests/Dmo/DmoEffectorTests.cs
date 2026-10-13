@@ -1,7 +1,6 @@
 ﻿using NAudio.Dmo;
 using NAudio.Dmo.Effect;
 using NAudio.Tests.Shared;
-using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
@@ -16,12 +15,6 @@ namespace NAudio.Windows.Tests.Dmo;
 [TestFixture]
 public class DmoEffectorTests
 {
-    [SetUp]
-    public void SetUp()
-    {
-        OSUtils.RequireVista();
-    }
-
     [Test]
     [Category("IntegrationTest")]
     public void CanCreateDmoGargle()

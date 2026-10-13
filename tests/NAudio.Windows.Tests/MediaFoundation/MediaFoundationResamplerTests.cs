@@ -1,6 +1,5 @@
 ﻿using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.IO;
@@ -16,7 +15,6 @@ public class MediaFoundationResamplerTests
     [SetUp]
     public void SetUp()
     {
-        OSUtils.RequireVista();
         RequireMediaFoundationResampler();
     }
 

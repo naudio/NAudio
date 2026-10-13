@@ -54,7 +54,7 @@ The tag push triggers `release.yml`, which:
 - Validates `RELEASE_NOTES.md` has a matching `### 3.0.0` section, and that it fits NuGet's 35,000-character `PackageReleaseNotes` limit.
 - Packs all 14 NAudio packages (+ matching `.snupkg` symbol packages), `NAudio.MacOS` pre-release and the rest stable.
 - Pushes everything to NuGet via trusted publishing.
-- Creates a GitHub Release titled `NAudio 3.0.0` with body extracted from the `RELEASE_NOTES.md` section, with the 13 `.nupkg` files attached as release assets (symbol packages are not attached — they go to NuGet's symbol server).
+- Creates a GitHub Release titled `NAudio 3.0.0` with body extracted from the `RELEASE_NOTES.md` section, with the 14 `.nupkg` files (including the pre-release `NAudio.MacOS`) attached as release assets (symbol packages are not attached — they go to NuGet's symbol server).
 
 No further action required for the publish itself. Both validations are fail-fast — if `VersionPrefix` or release notes don't match the tag, the workflow errors before packing.
 

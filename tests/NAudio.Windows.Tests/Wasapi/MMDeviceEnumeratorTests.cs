@@ -11,13 +11,13 @@ namespace NAudio.Windows.Tests.Wasapi;
 public class MMDeviceEnumeratorTests
 {
     [Test]
-    public void CanCreateMMDeviceEnumeratorInVista()
+    public void CanCreateMMDeviceEnumerator()
     {
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
     }
 
     [Test]
-    public void CanEnumerateDevicesInVista()
+    public void CanEnumerateDevices()
     {
         MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         var devices = enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All);

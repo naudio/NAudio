@@ -23,6 +23,7 @@ limit and fails the release build if exceeded.
  * Fixed `WasapiPlayer` and `WasapiOut` being stranded in the `Playing` state, unable to play again, when the source's `Read` threw or the source ended before the first buffer was filled (#1442)
  * **macOS support (preview)** - A new wrappers library is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. The `NAudio.MacOS` package ships pre-release only (`X.Y.Z-preview.N`) while its API settles, so it stays pre-release alongside stable releases of the other packages. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
  * **VB.NET support** - Added `SampleProviderBase` and `WaveProviderBase`, base classes that keep the NAudio 2 `Read(buffer, offset, count)` signature for languages that cannot name a `Span<T>` in a method signature, and a [Using NAudio from VB.NET](Docs/UsingNAudioFromVB.md) guide covering playback, recording and custom providers from VB (#1426)
+ * Refreshed the NuGet package icon, now rendered from the new SVG version of the NAudio logo as a sharper, square 256×256 PNG (#1467)
 
 ### 3.1.0 (7 Sep 2026)
 

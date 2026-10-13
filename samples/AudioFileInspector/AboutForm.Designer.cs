@@ -45,7 +45,7 @@
             this.linkLabelWebsite.Size = new System.Drawing.Size(168, 13);
             this.linkLabelWebsite.TabIndex = 0;
             this.linkLabelWebsite.TabStop = true;
-            this.linkLabelWebsite.Text = "http://www.codeplex.com/naudio";
+            this.linkLabelWebsite.Text = "https://github.com/naudio/NAudio";
             this.linkLabelWebsite.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabelWebsite_LinkClicked);
             // 
             // buttonOK

@@ -31,7 +31,7 @@ internal class WasapiOutPlugin : IOutputDevicePlugin
 
     public string Name => "WasapiOut (legacy)";
 
-    public bool IsAvailable => Environment.OSVersion.Version.Major >= 6;
+    public bool IsAvailable => true;
 
     public int Priority => 2;
 }

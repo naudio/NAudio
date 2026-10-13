@@ -7,7 +7,7 @@
              d:DesignHeight="400" d:DesignWidth="600">
     <Grid>
         <Button Content="Encode" Command="{Binding EncodeCommand}" HorizontalAlignment="Left" Margin="129,292,0,0" VerticalAlignment="Top" Width="75"/>
-        <TextBlock Text="Demonstrates using Media Foundation to Encode audio from PCM. Requires Windows Vista and above, and depends on the necessary encoders being installed on your PC. Currently a work in progress, do not rely on this." 
+        <TextBlock Text="Demonstrates using Media Foundation to Encode audio from PCM. Depends on the necessary encoders being installed on your PC. Currently a work in progress, do not rely on this." 
                    HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="57" TextWrapping="Wrap" />
         <ComboBox Margin="129,135,49,0" VerticalAlignment="Top" ItemsSource="{Binding OutputFormats}" SelectedItem="{Binding SelectedOutputFormat, Mode=TwoWay}">
             <ComboBox.ItemTemplate>

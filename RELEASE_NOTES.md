@@ -25,6 +25,7 @@ limit and fails the release build if exceeded.
  * Reworked the macOS `CoreAudioPlayer` and `CoreAudioRecorder` non-interleaved path, used for devices that expose one mono stream per channel; the recorder now also drains buffered audio when stopped, and non-interleaved streams carrying more than one channel are rejected explicitly (preview) (#1461)
  * `ExtendedAudioFileServicesReader.CurrentTime` and `TotalTime` on macOS now throw `ObjectDisposedException` after the reader is disposed, rather than a native exception (preview) (#1451)
  * **VB.NET support** - Added `SampleProviderBase` and `WaveProviderBase`, base classes that keep the NAudio 2 `Read(buffer, offset, count)` signature for languages that cannot name a `Span<T>` in a method signature, and a [Using NAudio from VB.NET](Docs/UsingNAudioFromVB.md) guide covering playback, recording and custom providers from VB (#1426)
+ * Fixed the Help and About links in the AudioFileInspector, MidiFileConverter and MixDiff sample apps, which threw on .NET 9 instead of opening the help page or browser, and pointed the links and help pages at GitHub rather than CodePlex
  * Refreshed the NuGet package icon, now rendered from the new SVG version of the NAudio logo as a sharper, square 256×256 PNG (#1467)
 
 ### 3.1.0 (7 Sep 2026)

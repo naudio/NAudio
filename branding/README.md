@@ -6,11 +6,16 @@ the parameters that define the wordmark, so the logo can be rebuilt or tweaked.
 | File | What it is |
 |---|---|
 | `naudio-icon.svg` | The icon: curly braces around a peak meter. |
-| `naudio-logo.svg` | Icon + wordmark, **weight 500, tracking −0.010em**. The current logo. |
-| `naudio-logo-original.svg` | Icon + wordmark exactly as in the original artwork (weight 300, tracking 0). |
-| `naudio-icon.png`, `naudio-logo.png` | The original raster artwork. The icon PNG is the NuGet package icon. |
+| `naudio-logo.svg` | The **2026 logo**: icon + wordmark at weight 500, tracking −0.010em. |
+| `naudio-logo-dark.svg`, `naudio-icon-dark.svg` | The 2026 logo and the icon for dark backgrounds (grey `#EDEDED`). |
+| `naudio-logo-2015.svg` | The **2015 logo**: an exact vector recreation of the original artwork (weight 300, tracking 0). |
+| `naudio-icon.png`, `naudio-logo.png` | The original 2015 raster artwork. The icon PNG is the NuGet package icon. |
 
-Colours: grey `#3A3A3C`, red `#E51F25`. All SVGs have a transparent background.
+Colours: grey `#3A3A3C` (`#EDEDED` on dark backgrounds), red `#E51F25`.
+All SVGs have a transparent background.
+
+The 2015 logo was commissioned shortly after NAudio moved to GitHub in
+February 2015; `naudio-logo.png` was added to this repository in 2017.
 
 ## Rebuilding or tweaking the logo
 
@@ -18,15 +23,18 @@ Colours: grey `#3A3A3C`, red `#E51F25`. All SVGs have a transparent background.
 repository root:
 
 ```
-python branding/build_logo.py -o naudio-logo.svg                                   # current logo
-python branding/build_logo.py --weight 300 --tracking 0 -o naudio-logo-original.svg  # original
+python branding/build_logo.py -o naudio-logo.svg                                        # 2026 logo
+python branding/build_logo.py --ink "#EDEDED" -o naudio-logo-dark.svg                   # 2026, dark
+python branding/build_logo.py --icon-only --ink "#EDEDED" -o naudio-icon-dark.svg       # icon, dark
+python branding/build_logo.py --preset 2015 -o naudio-logo-2015.svg                     # 2015 logo
 ```
 
 | Option | Meaning |
 |---|---|
-| `--weight` | Stroke weight. 300 is the original artwork; each +100 thickens every stroke by 1.2 px (0.6 px per side). Default 500. |
-| `--tracking` | Extra letter spacing in em (the em is 136 logo units, twice the x-height). Default −0.010. |
-| `--ink`, `--accent` | Colours of the grey and red parts, e.g. `--ink "#F2F2F2"` for a dark-background variant. |
+| `--preset` | `2026` (default: weight 500, tracking −0.010) or `2015` (weight 300, tracking 0). |
+| `--weight` | Overrides the preset's stroke weight. 300 is the original artwork; each +100 thickens every stroke by 1.2 px (0.6 px per side). |
+| `--tracking` | Overrides the preset's extra letter spacing, in em (the em is 136 logo units, twice the x-height). |
+| `--ink`, `--accent` | Colours of the grey and red parts, e.g. `--ink "#EDEDED"` for a dark-background variant. |
 | `--icon-only` | Write just the icon, recoloured with `--ink` / `--accent`. |
 
 The icon part of the logo is read from `naudio-icon.svg`, so edits to the icon

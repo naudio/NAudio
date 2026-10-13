@@ -9,7 +9,8 @@ the parameters that define the wordmark, so the logo can be rebuilt or tweaked.
 | `naudio-logo.svg` | The **2026 logo**: icon + wordmark at weight 500, tracking −0.010em. |
 | `naudio-logo-dark.svg`, `naudio-icon-dark.svg` | The 2026 logo and the icon for dark backgrounds (grey `#EDEDED`). |
 | `naudio-logo-2015.svg` | The **2015 logo**: an exact vector recreation of the original artwork (weight 300, tracking 0). |
-| `naudio-icon.png`, `naudio-logo.png` | The original 2015 raster artwork. The icon PNG is the NuGet package icon. |
+| `naudio-icon.png` | The NuGet package icon (and docs-site favicon): the icon rendered at 256 × 256 on white, so it stays visible in dark themes. NuGet doesn't accept SVG icons. |
+| `naudio-logo.png` | The original 2015 raster artwork, kept as the reference the wordmark was fitted to. |
 
 Colours: grey `#3A3A3C` (`#EDEDED` on dark backgrounds), red `#E51F25`.
 All SVGs have a transparent background.
@@ -19,14 +20,15 @@ February 2015; `naudio-logo.png` was added to this repository in 2017.
 
 ## Rebuilding or tweaking the logo
 
-`build_logo.py` needs only the Python standard library. Run it from the
-repository root:
+`build_logo.py` needs only the Python standard library, plus `cairosvg`
+(`pip install cairosvg`) for PNG output. Run it from the repository root:
 
 ```
 python branding/build_logo.py -o naudio-logo.svg                                        # 2026 logo
 python branding/build_logo.py --ink "#EDEDED" -o naudio-logo-dark.svg                   # 2026, dark
 python branding/build_logo.py --icon-only --ink "#EDEDED" -o naudio-icon-dark.svg       # icon, dark
 python branding/build_logo.py --preset 2015 -o naudio-logo-2015.svg                     # 2015 logo
+python branding/build_logo.py --icon-only --size 256 --background white -o naudio-icon.png  # NuGet icon
 ```
 
 | Option | Meaning |
@@ -36,9 +38,19 @@ python branding/build_logo.py --preset 2015 -o naudio-logo-2015.svg             
 | `--tracking` | Overrides the preset's extra letter spacing, in em (the em is 136 logo units, twice the x-height). |
 | `--ink`, `--accent` | Colours of the grey and red parts, e.g. `--ink "#EDEDED"` for a dark-background variant. |
 | `--icon-only` | Write just the icon, recoloured with `--ink` / `--accent`. |
+| `--size`, `--background` | PNG output only: the icon's side (or the logo's width) in px, and a background colour (default transparent). |
 
 The icon part of the logo is read from `naudio-icon.svg`, so edits to the icon
 carry through to every generated logo.
+
+## Where the logo is used
+
+- **README.md** shows `naudio-logo.svg`, or `naudio-logo-dark.svg` when GitHub is
+  in dark mode (a `<picture>` element with a `prefers-color-scheme` source).
+- **The docs site** (DocFX) uses `naudio-icon.svg` in the navbar;
+  `docfx/templates/naudio/public/main.js` swaps in `naudio-icon-dark.svg` when the
+  site's theme is dark. The favicon is `naudio-icon.png`.
+- **NuGet packages** use `naudio-icon.png` as the package icon.
 
 ## How the wordmark is built
 

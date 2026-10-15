@@ -202,7 +202,8 @@ public struct PropVariant
     public T[] GetBlobAsArrayOf<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>()
     {
         var blobByteLength = blobVal.Length;
-        var singleInstance = (T)Activator.CreateInstance(typeof(T));
+        // CreateInstance only returns null for Nullable<T>, which is not a meaningful struct type here
+        var singleInstance = (T)Activator.CreateInstance(typeof(T))!;
         var structSize = Marshal.SizeOf(singleInstance);
         if (blobByteLength % structSize != 0)
         {
@@ -212,8 +213,8 @@ public struct PropVariant
         var array = new T[items];
         for (int n = 0; n < items; n++)
         {
-            array[n] = (T)Activator.CreateInstance(typeof(T));
-            Marshal.PtrToStructure(new IntPtr((long)blobVal.Data + n * structSize), array[n]);
+            array[n] = (T)Activator.CreateInstance(typeof(T))!;
+            Marshal.PtrToStructure(new IntPtr((long)blobVal.Data + n * structSize), array[n]!);
         }
         return array;
     }
@@ -224,9 +225,9 @@ public struct PropVariant
     public VarType DataType => (VarType)(ushort)vt;
 
     /// <summary>
-    /// Property value
+    /// Property value, or null for an empty (VT_EMPTY) value
     /// </summary>
-    public object Value
+    public object? Value
     {
         get
         {

@@ -10,7 +10,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioRenderClient : IDisposable
 {
-    private IAudioRenderClient audioRenderClientInterface;
+    private IAudioRenderClient? audioRenderClientInterface;
+
+    private IAudioRenderClient RenderClient => audioRenderClientInterface ?? throw new ObjectDisposedException(nameof(AudioRenderClient));
 
     internal AudioRenderClient(IntPtr nativePointer)
     {
@@ -32,7 +34,7 @@ public class AudioRenderClient : IDisposable
     /// <returns>Pointer to the buffer</returns>
     public IntPtr GetBuffer(int numFramesRequested)
     {
-        CoreAudioException.ThrowIfFailed(audioRenderClientInterface.GetBuffer(numFramesRequested, out var bufferPointer));
+        CoreAudioException.ThrowIfFailed(RenderClient.GetBuffer(numFramesRequested, out var bufferPointer));
         return bufferPointer;
     }
 
@@ -46,7 +48,7 @@ public class AudioRenderClient : IDisposable
     /// <returns>A lease that provides a writable Span and releases the buffer on dispose</returns>
     public RenderBufferLease GetBufferLease(int numFramesRequested, int bytesPerFrame)
     {
-        CoreAudioException.ThrowIfFailed(audioRenderClientInterface.GetBuffer(numFramesRequested, out var bufferPointer));
+        CoreAudioException.ThrowIfFailed(RenderClient.GetBuffer(numFramesRequested, out var bufferPointer));
         return new RenderBufferLease(this, bufferPointer, numFramesRequested, bytesPerFrame);
     }
 
@@ -57,7 +59,7 @@ public class AudioRenderClient : IDisposable
     /// <param name="bufferFlags">Buffer flags</param>
     public void ReleaseBuffer(int numFramesWritten, AudioClientBufferFlags bufferFlags)
     {
-        CoreAudioException.ThrowIfFailed(audioRenderClientInterface.ReleaseBuffer(numFramesWritten, bufferFlags));
+        CoreAudioException.ThrowIfFailed(RenderClient.ReleaseBuffer(numFramesWritten, bufferFlags));
     }
 
     /// <summary>
@@ -87,7 +89,7 @@ public class AudioRenderClient : IDisposable
 /// </summary>
 public ref struct RenderBufferLease
 {
-    private AudioRenderClient owner;
+    private AudioRenderClient? owner;
     private readonly int frameCount;
 
     /// <summary>

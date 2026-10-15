@@ -1,4 +1,7 @@
-﻿using NAudio.CoreAudioApi;
+﻿// TODO: remove once this file is annotated (nullable reference types, #825)
+#nullable disable
+
+using NAudio.CoreAudioApi;
 using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;

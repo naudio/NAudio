@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 
@@ -9,7 +10,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class PropertyStore : IDisposable
 {
-    private IPropertyStore storeInterface;
+    private IPropertyStore? storeInterface;
+
+    private IPropertyStore Store => storeInterface ?? throw new ObjectDisposedException(nameof(PropertyStore));
 
     /// <summary>
     /// Property Count
@@ -18,7 +21,7 @@ public class PropertyStore : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(storeInterface.GetCount(out var result));
+            CoreAudioException.ThrowIfFailed(Store.GetCount(out var result));
             return result;
         }
     }
@@ -54,7 +57,7 @@ public class PropertyStore : IDisposable
     /// <param name="obj">The value of the property wrapped in a type cast</param>
     /// <typeparam name="T">The type to cast the property as</typeparam>
     /// <returns>True if found</returns>
-    public bool TryGetValue<T>(PropertyKey key, out T obj)
+    public bool TryGetValue<T>(PropertyKey key, [MaybeNullWhen(false)] out T obj)
     {
         if (TryReadProperty(key, (in PropertyKey _, in PropVariant pv) => pv.Value, out var value) && value != null)
         {
@@ -85,7 +88,7 @@ public class PropertyStore : IDisposable
     /// <returns>Property key</returns>
     public PropertyKey Get(int index)
     {
-        CoreAudioException.ThrowIfFailed(storeInterface.GetAt(index, out var key));
+        CoreAudioException.ThrowIfFailed(Store.GetAt(index, out var key));
         return key;
     }
 
@@ -113,7 +116,7 @@ public class PropertyStore : IDisposable
         unsafe
         {
             PropVariant local = value;
-            CoreAudioException.ThrowIfFailed(storeInterface.SetValue(in key, (IntPtr)(&local)));
+            CoreAudioException.ThrowIfFailed(Store.SetValue(in key, (IntPtr)(&local)));
         }
     }
 
@@ -122,7 +125,7 @@ public class PropertyStore : IDisposable
     /// </summary>
     public void Commit()
     {
-        CoreAudioException.ThrowIfFailed(storeInterface.Commit());
+        CoreAudioException.ThrowIfFailed(Store.Commit());
     }
 
     /// <summary>
@@ -158,7 +161,7 @@ public class PropertyStore : IDisposable
         {
             PropVariant buffer = default;
             IntPtr ptr = (IntPtr)(&buffer);
-            CoreAudioException.ThrowIfFailed(storeInterface.GetValue(in key, ptr));
+            CoreAudioException.ThrowIfFailed(Store.GetValue(in key, ptr));
             try
             {
                 return project(in key, in buffer);
@@ -170,13 +173,13 @@ public class PropertyStore : IDisposable
         }
     }
 
-    private bool TryReadProperty<T>(PropertyKey key, PropVariantProjection<T> project, out T result)
+    private bool TryReadProperty<T>(PropertyKey key, PropVariantProjection<T> project, [MaybeNullWhen(false)] out T result)
     {
         unsafe
         {
             PropVariant buffer = default;
             IntPtr ptr = (IntPtr)(&buffer);
-            int hr = storeInterface.GetValue(in key, ptr);
+            int hr = Store.GetValue(in key, ptr);
             try
             {
                 if (hr < 0)

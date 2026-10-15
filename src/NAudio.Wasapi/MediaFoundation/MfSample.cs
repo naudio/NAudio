@@ -11,7 +11,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 internal class MfSample : IDisposable
 {
-    private Interfaces.IMFSample sampleInterface;
+    private Interfaces.IMFSample? sampleInterface;
+
+    private Interfaces.IMFSample Sample => sampleInterface ?? throw new ObjectDisposedException(nameof(MfSample));
     private IntPtr nativePointer;
 
     internal MfSample(Interfaces.IMFSample sampleInterface, IntPtr nativePointer)
@@ -32,10 +34,10 @@ internal class MfSample : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(sampleInterface.GetSampleTime(out var time));
+            MediaFoundationException.ThrowIfFailed(Sample.GetSampleTime(out var time));
             return time;
         }
-        set => MediaFoundationException.ThrowIfFailed(sampleInterface.SetSampleTime(value));
+        set => MediaFoundationException.ThrowIfFailed(Sample.SetSampleTime(value));
     }
 
     /// <summary>
@@ -45,10 +47,10 @@ internal class MfSample : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(sampleInterface.GetSampleDuration(out var duration));
+            MediaFoundationException.ThrowIfFailed(Sample.GetSampleDuration(out var duration));
             return duration;
         }
-        set => MediaFoundationException.ThrowIfFailed(sampleInterface.SetSampleDuration(value));
+        set => MediaFoundationException.ThrowIfFailed(Sample.SetSampleDuration(value));
     }
 
     /// <summary>
@@ -58,10 +60,10 @@ internal class MfSample : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(sampleInterface.GetSampleFlags(out var flags));
+            MediaFoundationException.ThrowIfFailed(Sample.GetSampleFlags(out var flags));
             return flags;
         }
-        set => MediaFoundationException.ThrowIfFailed(sampleInterface.SetSampleFlags(value));
+        set => MediaFoundationException.ThrowIfFailed(Sample.SetSampleFlags(value));
     }
 
     /// <summary>
@@ -71,7 +73,7 @@ internal class MfSample : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(sampleInterface.GetBufferCount(out var count));
+            MediaFoundationException.ThrowIfFailed(Sample.GetBufferCount(out var count));
             return count;
         }
     }
@@ -83,7 +85,7 @@ internal class MfSample : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(sampleInterface.GetTotalLength(out var length));
+            MediaFoundationException.ThrowIfFailed(Sample.GetTotalLength(out var length));
             return length;
         }
     }
@@ -95,7 +97,7 @@ internal class MfSample : IDisposable
     /// <returns>The buffer at the specified index.</returns>
     public MfMediaBuffer GetBufferByIndex(int index)
     {
-        MediaFoundationException.ThrowIfFailed(sampleInterface.GetBufferByIndex(index, out var bufferPtr));
+        MediaFoundationException.ThrowIfFailed(Sample.GetBufferByIndex(index, out var bufferPtr));
         var bufferInterface = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
             bufferPtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaBuffer(bufferInterface, bufferPtr);
@@ -107,7 +109,7 @@ internal class MfSample : IDisposable
     /// <param name="buffer">The buffer to add.</param>
     public void AddBuffer(MfMediaBuffer buffer)
     {
-        MediaFoundationException.ThrowIfFailed(sampleInterface.AddBuffer(buffer.NativePointer));
+        MediaFoundationException.ThrowIfFailed(Sample.AddBuffer(buffer.NativePointer));
     }
 
     /// <summary>
@@ -116,7 +118,7 @@ internal class MfSample : IDisposable
     /// <returns>A contiguous buffer containing all sample data.</returns>
     public MfMediaBuffer ConvertToContiguousBuffer()
     {
-        MediaFoundationException.ThrowIfFailed(sampleInterface.ConvertToContiguousBuffer(out var bufferPtr));
+        MediaFoundationException.ThrowIfFailed(Sample.ConvertToContiguousBuffer(out var bufferPtr));
         var bufferInterface = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
             bufferPtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaBuffer(bufferInterface, bufferPtr);
@@ -128,7 +130,7 @@ internal class MfSample : IDisposable
     /// <param name="buffer">The destination buffer.</param>
     public void CopyToBuffer(MfMediaBuffer buffer)
     {
-        MediaFoundationException.ThrowIfFailed(sampleInterface.CopyToBuffer(buffer.NativePointer));
+        MediaFoundationException.ThrowIfFailed(Sample.CopyToBuffer(buffer.NativePointer));
     }
 
     /// <summary>
@@ -137,7 +139,7 @@ internal class MfSample : IDisposable
     /// <param name="index">Zero-based index of the buffer to remove.</param>
     public void RemoveBufferByIndex(int index)
     {
-        MediaFoundationException.ThrowIfFailed(sampleInterface.RemoveBufferByIndex(index));
+        MediaFoundationException.ThrowIfFailed(Sample.RemoveBufferByIndex(index));
     }
 
     /// <summary>
@@ -145,7 +147,7 @@ internal class MfSample : IDisposable
     /// </summary>
     public void RemoveAllBuffers()
     {
-        MediaFoundationException.ThrowIfFailed(sampleInterface.RemoveAllBuffers());
+        MediaFoundationException.ThrowIfFailed(Sample.RemoveAllBuffers());
     }
 
     /// <summary>

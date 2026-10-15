@@ -33,7 +33,8 @@ IActivateAudioInterfaceCompletionHandler, IAgileObject
             activateOperation.GetActivateResult(out int hr, out var unkPtr);
             if (hr != 0)
             {
-                tcs.TrySetException(Marshal.GetExceptionForHR(hr, new IntPtr(-1)));
+                tcs.TrySetException(Marshal.GetExceptionForHR(hr, new IntPtr(-1))
+                    ?? new InvalidOperationException($"Audio interface activation failed with HRESULT 0x{hr:X8}"));
                 return;
             }
 

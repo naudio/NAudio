@@ -44,6 +44,10 @@ public class AcmMp3FrameDecompressor : IMp3FrameDecompressor
         {
             throw new ArgumentNullException(nameof(frame), "You must provide a non-null Mp3Frame to decompress");
         }
+        if (frame.RawData == null)
+        {
+            throw new ArgumentException("The Mp3Frame was read without its data", nameof(frame));
+        }
         frame.RawData.AsSpan(0, frame.FrameLength).CopyTo(conversionStream.SourceBuffer);
         int converted = conversionStream.Convert(frame.FrameLength, out int sourceBytesConverted);
         if (sourceBytesConverted != frame.FrameLength)

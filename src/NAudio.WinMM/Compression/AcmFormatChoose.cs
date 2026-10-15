@@ -50,7 +50,7 @@ internal struct AcmFormatChoose
     /// n.b. can be written into
     /// </summary>
     [MarshalAs(UnmanagedType.LPTStr)]
-    public string name;
+    public string? name;
     /// <summary>
     /// DWORD cchName
     /// Should be at least 128 unless name is zero
@@ -72,7 +72,7 @@ internal struct AcmFormatChoose
     /// LPCTSTR pszTemplateName; 
     /// </summary>
     [MarshalAs(UnmanagedType.LPTStr)]
-    public string templateName;
+    public string? templateName;
     /// <summary>
     /// LPARAM lCustData; 
     /// </summary>

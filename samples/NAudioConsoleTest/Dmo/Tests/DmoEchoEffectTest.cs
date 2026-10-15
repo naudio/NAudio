@@ -4,6 +4,9 @@ using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
+// This sample exercises the obsolete DMO API, kept for manual testing until it's removed
+#pragma warning disable CS0618
+
 namespace NAudioConsoleTest.Dmo.Tests;
 
 internal sealed class DmoEchoEffectTest : IConsoleTest

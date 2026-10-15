@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,7 +93,7 @@ public class CoreAudioRecorderTests
         Assert.DoesNotThrow(() =>
         {
             var cf = recorder.CaptureFormat;
-            Assert.IsNotNull(cf, "Capture format cannot be null!");
+            Assert.That(cf, Is.Not.Null, "Capture format cannot be null!");
             if (cf is WaveFormatExtensible extFormat)
             {
                 System.Console.WriteLine(

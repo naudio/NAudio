@@ -11,12 +11,6 @@ namespace NAudio.Windows.Tests.Dmo;
 [TestFixture]
 public class DmoMp3FrameDecompressorTests
 {
-    [SetUp]
-    public void SetUp()
-    {
-        OSUtils.RequireVista();
-    }
-
     [Test]
     [Category("IntegrationTest")]
     public void CanCreateDmoMp3FrameDecompressor()

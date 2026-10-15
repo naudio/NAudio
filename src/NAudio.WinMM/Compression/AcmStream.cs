@@ -70,6 +70,7 @@ public class AcmStream : IDisposable
     /// <param name="driverId">the driver identifier</param>
     /// <param name="sourceFormat">the source format</param>
     /// <param name="waveFilter">the wave filter</param>
+    [Obsolete("ACM filter (same-format effect) drivers are effectively obsolete and NAudio provides no way to enumerate them. To use a codec that isn't installed, use AcmDriver.AddLocalDriver. This constructor will be removed in a future major version.")]
     public AcmStream(IntPtr driverId, WaveFormat sourceFormat, WaveFilter waveFilter)
     {
         int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);

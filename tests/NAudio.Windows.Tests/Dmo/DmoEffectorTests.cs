@@ -1,24 +1,20 @@
 ﻿using NAudio.Dmo;
 using NAudio.Dmo.Effect;
 using NAudio.Tests.Shared;
-using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using NAudio.Wave;
 
+// These tests cover the DMO APIs, which are obsolete but still supported until they're removed
+#pragma warning disable CS0618
+
 namespace NAudio.Windows.Tests.Dmo;
 
 [TestFixture]
 public class DmoEffectorTests
 {
-    [SetUp]
-    public void SetUp()
-    {
-        OSUtils.RequireVista();
-    }
-
     [Test]
     [Category("IntegrationTest")]
     public void CanCreateDmoGargle()

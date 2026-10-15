@@ -3,6 +3,9 @@ using NAudio.Wave.Asio;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
+// This sample demonstrates AsioOut's obsolete recording path for comparison with AsioDevice; kept until it's removed
+#pragma warning disable CS0618
+
 namespace NAudioConsoleTest.Asio.Tests;
 
 /// <summary>

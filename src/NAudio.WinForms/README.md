@@ -1,4 +1,4 @@
-# NAudio.WinForms
+﻿# NAudio.WinForms
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.WinForms)](https://www.nuget.org/packages/NAudio.WinForms/)
 
@@ -13,7 +13,7 @@ A handful of reusable GUI controls useful when building audio apps with WinForms
 - `PanSlider` — pan control
 - `Pot` — rotary knob
 - `WaveViewer` — render a `WaveStream` as a waveform
-- `ProgressLog` — progress/log text control
+- `ProgressLog` — progress/log text control (obsolete as of 3.2; use a `RichTextBox`)
 
 ## When to use it
 

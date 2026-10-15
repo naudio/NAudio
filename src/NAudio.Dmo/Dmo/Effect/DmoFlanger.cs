@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+// This effect is obsolete; its internal interop types use the effect's obsolete parameter enums
+#pragma warning disable CS0618
+
 namespace NAudio.Dmo.Effect;
 
 internal struct DsFxFlanger
@@ -30,6 +33,7 @@ internal interface IDirectSoundFXFlanger
 /// <summary>
 /// DMO Flanger Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.FlangerEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoFlanger : IDmoEffector<DmoFlanger.Params>
 {
     private static readonly Guid Id_Flanger = new("EFCA3D92-DFD8-4672-A603-7420894BAD98");

@@ -4,8 +4,9 @@ using System.Text;
 namespace NAudio.Utils;
 
 /// <summary>
-/// these will become extension methods once we move to .NET 3.5
+/// Legacy byte array helpers
 /// </summary>
+[Obsolete("Use the BCL instead: span.IndexOfAnyExcept((byte)0) == -1, Convert.ToHexString, Encoding.GetString on a span sliced at the first null, or collection expressions to concatenate. ByteArrayExtensions will be removed in a future major version.")]
 public static class ByteArrayExtensions
 {
     /// <summary>
@@ -13,10 +14,8 @@ public static class ByteArrayExtensions
     /// </summary>
     public static bool IsEntirelyNull(byte[] buffer)
     {
-        foreach (byte b in buffer)
-            if (b != 0)
-                return false;
-        return true;
+        ArgumentNullException.ThrowIfNull(buffer);
+        return buffer.AsSpan().IndexOfAnyExcept((byte)0) == -1;
     }
 
     /// <summary>
@@ -41,12 +40,15 @@ public static class ByteArrayExtensions
     /// </summary>
     public static string DecodeAsString(byte[] buffer, int offset, int length, Encoding encoding)
     {
-        for (int n = 0; n < length; n++)
+        ReadOnlySpan<byte> bytes = buffer.AsSpan(offset, length);
+
+        int nullIndex = bytes.IndexOf((byte)0);
+        if (nullIndex != -1)
         {
-            if (buffer[offset + n] == 0)
-                length = n;
+            bytes = bytes.Slice(0, nullIndex);
         }
-        return encoding.GetString(buffer, offset, length);
+
+        return encoding.GetString(bytes);
     }
 
     /// <summary>

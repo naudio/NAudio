@@ -6,6 +6,7 @@ namespace NAudio.Utils;
 /// <summary>
 /// A thread-safe Progress Log Control
 /// </summary>
+[System.Obsolete("ProgressLog is a general-purpose log control with nothing audio-specific. Use a RichTextBox or your own control instead. ProgressLog will be removed in a future major version.")]
 public partial class ProgressLog : UserControl
 {
     /// <summary>

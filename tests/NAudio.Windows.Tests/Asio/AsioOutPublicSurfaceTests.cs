@@ -5,6 +5,9 @@ using System.Reflection;
 using NAudio.Wave;
 using NUnit.Framework;
 
+// These tests pin AsioOut's legacy recording surface, which is obsolete but kept until it's removed
+#pragma warning disable CS0618
+
 namespace NAudio.Windows.Tests.Asio;
 
 /// <summary>
@@ -153,6 +156,7 @@ public class AsioOutPublicSurfaceTests
     {
         Method(nameof(AsioOut.GetDriverNames),            typeof(string[])),
         Method("isSupported",                             typeof(bool)),
+        Method(nameof(AsioOut.IsSupported),               typeof(bool)),
     };
 
     private static IEnumerable<TestCaseData> ExpectedProperties() => new[]

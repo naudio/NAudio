@@ -1,4 +1,4 @@
-# Migrating from NAudio 2 to NAudio 3
+﻿# Migrating from NAudio 2 to NAudio 3
 
 NAudio 3 is a major release. The single `NAudio` assembly has been split into
 focused packages, the minimum target framework is now `net9.0`, the core is
@@ -307,6 +307,12 @@ New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
   but `DmoMp3FrameDecompressor` remains the class you want for high-level MP3 decoding.
 - For new code, prefer `MediaFoundationResampler` over `ResamplerDmoStream`, and
   `WasapiPlayerBuilder` over `DirectSoundOut`.
+- **As of 3.2, the DMO resampler and DMO effects are obsolete.** `ResamplerDmoStream` and
+  `DmoResampler` → `MediaFoundationResampler` (the same Windows resampler) or the
+  cross-platform `WdlResamplingSampleProvider`. `DmoEffectWaveProvider` and the `Dmo*`
+  effects → the managed [`NAudio.Effects`](AudioEffects.md) (`DelayEffect`, `ChorusEffect`,
+  `CompressorEffect`, `ReverbEffect`, …) wrapped in an `EffectSampleProvider`. They still
+  work, but will be removed in a future major version.
 
 ## Effects (removed types and replacements)
 
@@ -345,7 +351,7 @@ Previously the stream constructor disposed the caller's stream unconditionally, 
 why `IgnoreDisposeStream` was needed to write to a `MemoryStream` you wanted to keep
 (`new WaveFileWriter(new IgnoreDisposeStream(ms), format)`). That wrapper is no longer
 necessary — passing the stream directly leaves it open. (`IgnoreDisposeStream` still
-exists and existing code that uses it keeps working.)
+exists so existing code keeps working, but it is obsolete as of 3.2.)
 
 **What to check when upgrading.** The one case that changes behaviour is passing a
 *throwaway* stream you didn't keep a reference to and relying on the writer to close it,
@@ -451,7 +457,7 @@ replacement on the same class, so the fix is mechanical.
 | --- | --- |
 | `WaveFileWriter.WriteData(byte[], int, int)` | `Write(byte[], int, int)` — or the new `Write(ReadOnlySpan<byte>)` |
 | `WaveFileWriter.WriteData(short[], int, int)` | `WriteSamples(short[], int, int)` |
-| `WaveFileReader.TryReadFloat(out float)` | `ReadNextSampleFrame()` |
+| `WaveFileReader.TryReadFloat(out float)` | `ToSampleProvider()`, then `Read` into a `float[]` |
 | `AcmStream.Convert(int)` | `Convert(int bytesToConvert, out int sourceBytesConverted)` |
 | `WaveFormatConversionStream.SourceToDest(int)` | *(no replacement — see below)* |
 | `WaveFormatConversionStream.DestToSource(int)` | *(no replacement — see below)* |
@@ -470,15 +476,22 @@ writer.WriteSamples(shortSamples, 0, count);
 ```
 
 **`TryReadFloat` silently dropped channels.** It returned only the first sample of each
-frame, so on stereo it read at half rate and discarded the right channel. `ReadNextSampleFrame`
-returns the whole frame:
+frame, so on stereo it read at half rate and discarded the right channel. Convert the reader to an
+`ISampleProvider` instead, which returns interleaved samples for every channel and supports more
+formats (`ReadNextSampleFrame` also works, but is obsolete as of 3.2):
 
 ```csharp
 // before — mono only, silently wrong on stereo
 while (reader.TryReadFloat(out var sample)) { ... }
 // after
-float[] frame;
-while ((frame = reader.ReadNextSampleFrame()) != null) { /* frame[0], frame[1], ... */ }
+var samples = reader.ToSampleProvider();
+var buffer = new float[reader.WaveFormat.SampleRate * reader.WaveFormat.Channels];
+int read;
+while ((read = samples.Read(buffer)) > 0)
+{
+    // buffer[0] to buffer[read - 1] hold the samples just read (the last read is usually
+    // shorter than the buffer). Channels are interleaved: for stereo, [0] = left, [1] = right, ...
+}
 ```
 
 **`AcmStream.Convert(int)` threw when the driver didn't consume everything.** It called the

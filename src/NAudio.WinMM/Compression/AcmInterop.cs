@@ -198,6 +198,8 @@ internal class AcmInterop
     }
 
     // http://msdn.microsoft.com/en-us/library/dd742928%28VS.85%29.aspx
+    // The WaveFilter parameter is obsolete, but AcmStream also calls this with a null filter
+#pragma warning disable CS0618
     [DllImport("Msacm32.dll", EntryPoint = "acmStreamOpen")]
     private static extern MmResult Native_acmStreamOpen2(
         out IntPtr hAcmStream,
@@ -221,6 +223,7 @@ internal class AcmInterop
     {
         lock (AcmLock) return Native_acmStreamOpen2(out hAcmStream, hAcmDriver, sourceFormatPointer, destFormatPointer, waveFilter, callback, instance, openFlags);
     }
+#pragma warning restore CS0618
 
     // http://msdn.microsoft.com/en-us/library/dd742923%28VS.85%29.aspx
     [DllImport("Msacm32.dll", EntryPoint = "acmStreamClose")]

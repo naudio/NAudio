@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -155,7 +155,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         // Here, the direct virtual format from the selected stream suffices.
         return (
             selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Input) +
-            ioProcedure.StreamLatency
+            selectedDevice.BufferFrameSize
         ) / ioProcedure.VirtualFormat.mSampleRate;
     }
 
@@ -164,12 +164,19 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         try
         {
             state = CaptureState.Stopping;
-            if (flags.HasFlag(CoreAudioRecorderStateFlags.EventHandleWasRegistered))
+            try
             {
-                ioProcedure.Event -= FireDataAvailableEvent;
-                ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
+                ioProcedure.Stop();
+                ioProcedure.DrainBuffers();
             }
-            ioProcedure.Stop();
+            finally
+            {
+                if (flags.HasFlag(CoreAudioRecorderStateFlags.EventHandleWasRegistered))
+                {
+                    ioProcedure.Event -= FireDataAvailableEvent;
+                    ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
+                }
+            }
             if (dispatchRecordingStopped)
             {
                 // Dispatch the recording stopped event if appropriate
@@ -376,6 +383,15 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
                 // Wait for half the average latency.
                 await Task.Delay(averageLatency, cancellationToken);
             }
+            // Recording has finished.
+
+            // Now, drain any buffers.
+            try
+            {
+                ioProcedure.Stop();
+                ioProcedure.DrainBuffers();
+            }
+            catch { } // This is cleanup code - we cannot throw here.
             // Make sure that the buffer queue does not contain any buffers that we did not submitted
             while ((buffer = queue.Dequeue()) is not null) { yield return buffer; }
         }
@@ -384,6 +400,8 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             state = CaptureState.Stopping;
             try
             {
+                // It is okay to call Stop a second time - this remains here only and only
+                // to handle stop when an exception has been occurred.
                 ioProcedure.Stop();
                 ioProcedure.Event -= queue.EnqueueFromHandler;
             }

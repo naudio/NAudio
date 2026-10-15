@@ -18,7 +18,7 @@ public class CueListInterpreterTests
     private static WaveFileReader OpenWithCues(params (int pos, string label)[] cues)
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             foreach (var (pos, label) in cues) w.AddCue(pos, label);
             w.WriteSamples(new short[] { 1, 2, 3, 4 }, 0, 4);
@@ -38,7 +38,7 @@ public class CueListInterpreterTests
     public void ReturnsNullWhenNoCueChunk()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.WriteSamples(new short[] { 1, 2 }, 0, 2);
         }
@@ -54,7 +54,7 @@ public class CueListInterpreterTests
         // The cue must still be returned, with an empty label.
         var cueBytes = BuildOrphanCueChunkBody(cueId: 1, samplePosition: 100);
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
             w.WriteSamples(new short[] { 1, 2 }, 0, 2);
@@ -78,7 +78,7 @@ public class CueListInterpreterTests
         info.Set("INAM", "Title");
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
             w.WriteInfoMetadata(info);
@@ -115,7 +115,7 @@ public class CueListInterpreterTests
         info.Set("INAM", "Title");
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddCue(1000, "TheLabel");
             w.WriteInfoMetadata(info);
@@ -135,7 +135,7 @@ public class CueListInterpreterTests
         // RIFF treats LIST/list as the same chunk; our writer emits "LIST" but readers
         // must accept "list" too. Hand-built to exercise that.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddCue(42, "lower");
             w.WriteSamples(new short[] { 1, 2 }, 0, 2);
@@ -190,7 +190,7 @@ public class CueListInterpreterTests
             (cueId: 2, label: "Region", sampleLength: 50));
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
             w.AddChunk("LIST", adtlBytes, ChunkPosition.AfterData);
@@ -213,7 +213,7 @@ public class CueListInterpreterTests
     public void RoundTripsCueLengthViaWaveFileWriter()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddCue(100, "Point");
             w.AddCue(200, "Region", 50);
@@ -243,7 +243,7 @@ public class CueListInterpreterTests
             (cueId: 999, label: null, sampleLength: 12345));
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
             w.AddChunk("LIST", adtlBytes, ChunkPosition.AfterData);
@@ -271,7 +271,7 @@ public class CueListInterpreterTests
         var adtlBytes = BuildAdtlListChunkBodyWithRawSize("labl", chunkSize);
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
             w.AddChunk("LIST", adtlBytes, ChunkPosition.AfterData);

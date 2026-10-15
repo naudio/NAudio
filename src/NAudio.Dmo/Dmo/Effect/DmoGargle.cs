@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+// This effect is obsolete; its internal interop types use the effect's obsolete parameter enums
+#pragma warning disable CS0618
+
 namespace NAudio.Dmo.Effect;
 
 internal struct DsFxGargle
@@ -25,6 +28,7 @@ internal interface IDirectSoundFXGargle
 /// <summary>
 /// DMO Gargle Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.TremoloEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoGargle : IDmoEffector<DmoGargle.Params>
 {
     private static readonly Guid Id_Gargle = new("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+// This effect is obsolete; its internal interop types use the effect's obsolete parameter enums
+#pragma warning disable CS0618
+
 namespace NAudio.Dmo.Effect;
 
 internal struct DsFxChorus
@@ -30,6 +33,7 @@ internal interface IDirectSoundFXChorus
 /// <summary>
 /// DMO Chorus Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.ChorusEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoChorus : IDmoEffector<DmoChorus.Params>
 {
     private static readonly Guid Id_Chorus = new("EFE6629C-81F7-4281-BD91-C9D604A95AF6");

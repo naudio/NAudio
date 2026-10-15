@@ -292,7 +292,7 @@ public partial class MainForm : Form
         string helpFilePath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "midi_file_converter.html");
         try
         {
-            System.Diagnostics.Process.Start(helpFilePath);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(helpFilePath) { UseShellExecute = true });
         }
         catch (Win32Exception)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace NAudio.Wave;
@@ -26,7 +27,7 @@ public class WaveFileReader : WaveStream
     /// this class, email it to the NAudio project and we will probably
     /// fix this reader to support it
     /// </remarks>
-    public WaveFileReader(String waveFile) :
+    public WaveFileReader(string waveFile) :
         this(File.OpenRead(waveFile), true)
     {
     }
@@ -128,14 +129,9 @@ public class WaveFileReader : WaveStream
     {
         get
         {
-            if (waveFormat.Encoding == WaveFormatEncoding.Pcm ||
-                waveFormat.Encoding == WaveFormatEncoding.Extensible ||
-                waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-            {
-                return dataChunkLength / BlockAlign;
-            }
-            // n.b. if there is a fact chunk, you can use that to get the number of samples
-            throw new InvalidOperationException("Sample count is calculated only for the standard encodings");
+            return waveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible or WaveFormatEncoding.IeeeFloat
+                ? dataChunkLength / BlockAlign
+                : throw new InvalidOperationException("Sample count is calculated only for the standard encodings.");
         }
     }
 
@@ -196,51 +192,77 @@ public class WaveFileReader : WaveStream
     /// </summary>
     /// <returns>An array of samples, 1 for mono, 2 for stereo etc. Null indicates end of file reached
     /// </returns>
+    /// <remarks>
+    /// Obsolete: use <see cref="WaveExtensionMethods.ToSampleProvider"/> and read into a reusable
+    /// <see cref="float"/> buffer instead. That supports every format this reader can produce, including
+    /// 8-bit PCM and 32-bit extensible float, and doesn't allocate a new array for every sample frame.
+    /// </remarks>
+    [Obsolete("Use ToSampleProvider() and read samples into a reusable float buffer instead. ReadNextSampleFrame will be removed in a future major version.")]
     public float[]? ReadNextSampleFrame()
     {
-        switch (waveFormat.Encoding)
+        if (waveFormat.Encoding is not WaveFormatEncoding.Pcm and not WaveFormatEncoding.IeeeFloat and not WaveFormatEncoding.Extensible)
         {
-            case WaveFormatEncoding.Pcm:
-            case WaveFormatEncoding.IeeeFloat:
-            case WaveFormatEncoding.Extensible: // n.b. not necessarily PCM, should probably write more code to handle this case
-                break;
-            default:
-                throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+            // RE: Extensible - n.b. not necessarily PCM, should probably write more code to handle this case
+            throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
         }
-        var sampleFrame = new float[waveFormat.Channels];
+
+        // Channels and BitsPerSample come from the file header, so guard against a malformed one
         int bytesToRead = waveFormat.Channels * (waveFormat.BitsPerSample / 8);
-        byte[] raw = new byte[bytesToRead];
-        int bytesRead = Read(raw, 0, bytesToRead);
-        if (bytesRead == 0) return null; // end of file
-        if (bytesRead < bytesToRead) throw new InvalidDataException("Unexpected end of file");
-        int offset = 0;
-        for (int channel = 0; channel < waveFormat.Channels; channel++)
+        if (bytesToRead <= 0)
         {
-            if (waveFormat.BitsPerSample == 16)
+            throw new InvalidDataException($"Invalid sample frame size ({waveFormat.Channels} channels, {waveFormat.BitsPerSample} bits per sample)");
+        }
+
+        var sampleFrame = new float[waveFormat.Channels];
+        var frameBytes = new byte[bytesToRead];
+        int bytesRead = Read(frameBytes, 0, bytesToRead);
+        if (bytesRead == 0)
+        {
+            return null; // end of file
+        }
+        if (bytesRead < bytesToRead)
+        {
+            throw new InvalidDataException("Unexpected end of file");
+        }
+
+        TransformSampleFrame(frameBytes, sampleFrame, waveFormat);
+        return sampleFrame;
+    }
+
+    private static void TransformSampleFrame(ReadOnlySpan<byte> data, Span<float> sampleFrame, WaveFormat waveFormat)
+    {
+        if (waveFormat.BitsPerSample == 16)
+        {
+            ReadOnlySpan<short> shorts = MemoryMarshal.Cast<byte, short>(data);
+            for (int i = 0; i < sampleFrame.Length; i++)
             {
-                sampleFrame[channel] = BitConverter.ToInt16(raw, offset) / 32768f;
-                offset += 2;
-            }
-            else if (waveFormat.BitsPerSample == 24)
-            {
-                sampleFrame[channel] = (((sbyte)raw[offset + 2] << 16) | (raw[offset + 1] << 8) | raw[offset]) / 8388608f;
-                offset += 3;
-            }
-            else if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-            {
-                sampleFrame[channel] = BitConverter.ToSingle(raw, offset);
-                offset += 4;
-            }
-            else if (waveFormat.BitsPerSample == 32)
-            {
-                sampleFrame[channel] = BitConverter.ToInt32(raw, offset) / (Int32.MaxValue + 1f);
-                offset += 4;
-            }
-            else
-            {
-                throw new InvalidOperationException("Unsupported bit depth");
+                sampleFrame[i] = shorts[i] / 32768f;
             }
         }
-        return sampleFrame;
+        else if (waveFormat.BitsPerSample == 24)
+        {
+            for (int i = 0; i < sampleFrame.Length; i++)
+            {
+                int o = i * 3;
+                sampleFrame[i] = (((sbyte)data[o + 2] << 16) | (data[o + 1] << 8) | data[o]) / 8388608f;
+            }
+        }
+        else if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+        {
+            ReadOnlySpan<float> floats = MemoryMarshal.Cast<byte, float>(data);
+            floats.CopyTo(sampleFrame);
+        }
+        else if (waveFormat.BitsPerSample == 32)
+        {
+            ReadOnlySpan<int> ints = MemoryMarshal.Cast<byte, int>(data);
+            for (int i = 0; i < sampleFrame.Length; i++)
+            {
+                sampleFrame[i] = ints[i] / (int.MaxValue + 1f);
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException("Unsupported bit depth");
+        }
     }
 }

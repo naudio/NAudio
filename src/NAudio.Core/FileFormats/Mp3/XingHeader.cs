@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 
 namespace NAudio.Wave;
 
@@ -16,7 +17,6 @@ public class XingHeader
         VbrScale = 8
     }
 
-    private static readonly int[] sr_table = { 44100, 48000, 32000, 99999 };
     private int vbrScale = -1;
     private int startOffset;
     private int endOffset;
@@ -28,26 +28,13 @@ public class XingHeader
 
     private static int ReadBigEndian(byte[] buffer, int offset)
     {
-        int x;
-        // big endian extract
-        x = buffer[offset + 0];
-        x <<= 8;
-        x |= buffer[offset + 1];
-        x <<= 8;
-        x |= buffer[offset + 2];
-        x <<= 8;
-        x |= buffer[offset + 3];
-
-        return x;
+        ReadOnlySpan<byte> bytes = buffer.AsSpan(offset, 4);
+        return BinaryPrimitives.ReadInt32BigEndian(bytes);
     }
 
     private void WriteBigEndian(byte[] buffer, int offset, int value)
     {
-        byte[] littleEndian = BitConverter.GetBytes(value);
-        for (int n = 0; n < 4; n++)
-        {
-            buffer[offset + 3 - n] = littleEndian[n];
-        }
+        BinaryPrimitives.WriteInt32BigEndian(buffer.AsSpan(offset, 4), value);
     }
 
     /// <summary>

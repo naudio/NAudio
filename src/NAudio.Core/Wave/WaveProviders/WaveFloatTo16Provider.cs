@@ -7,6 +7,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// Converts IEEE float to 16 bit PCM, optionally clipping and adjusting volume along the way
 /// </summary>
+[Obsolete("Use ToSampleProvider().ToWaveProvider16() (SampleToWaveProvider16) instead, which clips and has the same Volume property. WaveFloatTo16Provider will be removed in a future major version.")]
 public class WaveFloatTo16Provider : IWaveProvider
 {
     private readonly IWaveProvider sourceProvider;

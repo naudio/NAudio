@@ -17,7 +17,7 @@ public sealed class SingleSampleSampler : SamplerEngine
     // instrument's edit stamp changes; a fresh array per rebuild keeps the
     // region-list identity in step with its contents (the engine's region
     // index is cached by list identity)
-    private SamplerRegion[] regions;
+    private SamplerRegion[] regions = [];
     private int builtVersion = -1;
 
     /// <summary>Creates a sampler for a single-sample instrument.</summary>

@@ -1,4 +1,6 @@
-﻿namespace NAudio.Sampler;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace NAudio.Sampler;
 
 /// <summary>
 /// A format-neutral reference to a region's sample: the float buffer to read
@@ -10,12 +12,13 @@
 internal sealed class SampleData
 {
     /// <summary>The sample buffer (mono, or the left channel of a stereo sample; -1..1). May be shared by many regions (SF2 pool).</summary>
-    public float[] Data { get; init; }
+    public required float[] Data { get; init; }
 
     /// <summary>The right channel of a stereo sample, or null for mono. Same bounds/loop as <see cref="Data"/>.</summary>
-    public float[] DataRight { get; init; }
+    public float[]? DataRight { get; init; }
 
     /// <summary>Whether this is a stereo sample (has a right channel).</summary>
+    [MemberNotNullWhen(true, nameof(DataRight))]
     public bool IsStereo => DataRight != null;
 
     /// <summary>First sample index (inclusive) of the region within <see cref="Data"/>.</summary>

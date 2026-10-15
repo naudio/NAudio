@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using NAudio.Dsp;
 using NAudio.SoundFont;
 
@@ -33,17 +34,21 @@ internal enum SamplerOffMode
 /// </summary>
 internal sealed class SamplerRegion
 {
+    // Sample and Generators are always set by the projectors. They are not
+    // `required` because tests build sample-less regions to exercise the
+    // selection logic (key/velocity/CC gates, round-robin), which never reads them.
+
     /// <summary>The sample to play.</summary>
-    public SampleData Sample { get; init; }
+    public SampleData Sample { get; init; } = null!;
 
     /// <summary>The resolved synthesis parameters, in SoundFont generator units.</summary>
-    public SoundFontGenerators Generators { get; init; }
+    public SoundFontGenerators Generators { get; init; } = null!;
 
     /// <summary>
     /// The SF2 modulator list (defaults + file modulators). For formats that
-    /// do not use SF2 modulators (e.g. SFZ Tier 1) this is empty.
+    /// do not use SF2 modulators (e.g. SFZ Tier 1) this is null.
     /// </summary>
-    public ModulatorSet Modulators { get; init; }
+    public ModulatorSet? Modulators { get; init; }
 
     /// <summary>
     /// Velocity-to-amplitude tracking as a percentage (SFZ <c>amp_veltrack</c>).
@@ -59,7 +64,7 @@ internal sealed class SamplerRegion
     /// the <see cref="VelocityTrackingPercent"/> law; baked once at
     /// projection time so note-on stays allocation-free.
     /// </summary>
-    public float[] VelocityCurve { get; init; }
+    public float[]? VelocityCurve { get; init; }
 
     /// <summary>
     /// A static linear gain multiplied into every voice this region starts
@@ -152,21 +157,22 @@ internal sealed class SamplerRegion
     public float HighRandom { get; init; }
 
     /// <summary>CC value windows that must all be satisfied for the region to sound
-    /// (SFZ <c>loccN</c>/<c>hiccN</c>); empty = ungated.</summary>
-    public IReadOnlyList<(int Controller, int Low, int High)> CcGates { get; init; }
+    /// (SFZ <c>loccN</c>/<c>hiccN</c>); null = ungated.</summary>
+    public IReadOnlyList<(int Controller, int Low, int High)>? CcGates { get; init; }
 
     /// <summary>Release-trigger decay in dB per second of held time (SFZ <c>rt_decay</c>); 0 = none.</summary>
     public float ReleaseDecayDbPerSecond { get; init; }
 
     /// <summary>CC windows that <em>trigger</em> the region when the CC rises into them
     /// (SFZ <c>on_loccN</c>/<c>on_hiccN</c>); null = key-triggered as usual.</summary>
-    public IReadOnlyList<(int Controller, int Low, int High)> OnCcTriggers { get; init; }
+    public IReadOnlyList<(int Controller, int Low, int High)>? OnCcTriggers { get; init; }
 
     /// <summary>Whether this region is triggered by a CC rather than by a key.</summary>
+    [MemberNotNullWhen(true, nameof(OnCcTriggers))]
     public bool IsCcTriggered => OnCcTriggers != null;
 
     /// <summary>Peaking-EQ bands applied to the voice (SFZ <c>eqN_*</c>); null = flat.</summary>
-    public IReadOnlyList<SamplerEqBand> EqBands { get; init; }
+    public IReadOnlyList<SamplerEqBand>? EqBands { get; init; }
 
     // ---- Tier-2 key/velocity crossfades (SFZ xfin_*/xfout_*); -1 = no fade on that edge ----
 
@@ -201,15 +207,15 @@ internal sealed class SamplerRegion
     // state. null sourceLeft after building means the addressing is unusable
     // (e.g. a ROM-based SoundFont region) and the region plays nothing.
     private bool sourcesBuilt;
-    private SampleSource sourceLeft;
-    private SampleSource sourceRight; // null for mono
+    private SampleSource? sourceLeft;
+    private SampleSource? sourceRight; // null for mono
 
     /// <summary>
     /// The cached <see cref="SampleSource"/>s for this region (left/mono and,
     /// for a stereo sample, right), built lazily on first use. Returns false
     /// when the region's sample addressing is unusable.
     /// </summary>
-    internal bool TryGetSampleSources(out SampleSource left, out SampleSource right)
+    internal bool TryGetSampleSources([NotNullWhen(true)] out SampleSource? left, out SampleSource? right)
     {
         if (!sourcesBuilt)
         {

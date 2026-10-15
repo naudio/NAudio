@@ -17,7 +17,7 @@ namespace NAudio.Sampler;
 public sealed class SingleSampleInstrument
 {
     private readonly float[] data;
-    private readonly float[] dataRight;
+    private readonly float[]? dataRight;
     private readonly int sampleRate;
 
     // backing fields for the editable settings; every write bumps Version so
@@ -60,7 +60,7 @@ public sealed class SingleSampleInstrument
     /// <param name="sampleRate">The sample's recording rate in Hz.</param>
     /// <param name="rootKey">The MIDI key that plays it at recorded pitch (default 60).</param>
     /// <param name="dataRight">The right channel of a stereo sample, or null for mono.</param>
-    public SingleSampleInstrument(float[] data, int sampleRate, int rootKey = 60, float[] dataRight = null)
+    public SingleSampleInstrument(float[] data, int sampleRate, int rootKey = 60, float[]? dataRight = null)
     {
         this.data = data ?? throw new ArgumentNullException(nameof(data));
         if (data.Length == 0) throw new ArgumentException("Sample is empty", nameof(data));

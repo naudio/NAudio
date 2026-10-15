@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using NAudio.SoundFile;
 
@@ -21,7 +22,7 @@ public interface ISfzSampleLoader
     /// <c>loop_mode</c> default to <c>loop_continuous</c>.
     /// Returns false if the sample cannot be found or decoded.
     /// </summary>
-    bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+    bool TryLoad(string path, [NotNullWhen(true)] out float[]? left, out float[]? right, out int sampleRate,
         out SampleLoop? embeddedLoop);
 }
 
@@ -37,13 +38,13 @@ public sealed class FileSfzSampleLoader : ISfzSampleLoader
     private readonly string baseDirectory;
 
     /// <summary>Creates a loader rooted at the given base directory.</summary>
-    public FileSfzSampleLoader(string baseDirectory)
+    public FileSfzSampleLoader(string? baseDirectory)
     {
         this.baseDirectory = baseDirectory ?? "";
     }
 
     /// <inheritdoc />
-    public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+    public bool TryLoad(string path, [NotNullWhen(true)] out float[]? left, out float[]? right, out int sampleRate,
         out SampleLoop? embeddedLoop)
     {
         left = null;

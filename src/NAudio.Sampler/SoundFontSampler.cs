@@ -24,7 +24,7 @@ public sealed class SoundFontSampler : SamplerEngine
     private readonly float[] samplePool;
 
     // projected, playable regions per preset key (bank<<16 | program)
-    private readonly Dictionary<int, IReadOnlyList<SamplerRegion>> regionCache = new();
+    private readonly Dictionary<int, IReadOnlyList<SamplerRegion>?> regionCache = new();
 
     /// <summary>
     /// Creates a sampler for the given SoundFont.
@@ -102,7 +102,7 @@ public sealed class SoundFontSampler : SamplerEngine
     public bool TreatGsXgDrumBanksAsPercussion { get; set; } = true;
 
     /// <inheritdoc />
-    private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state)
+    private protected override IReadOnlyList<SamplerRegion>? GetRegionsForNoteOn(int channel, MidiChannelState state)
     {
         // GM channel 10 is always percussion: force bank 128 so a stray
         // bank-select on the drum track can't drop it onto a melodic preset.
@@ -122,16 +122,16 @@ public sealed class SoundFontSampler : SamplerEngine
 
         var preset = percussion ? FindPercussionPreset(state.Program) : FindPreset(bank, state.Program);
         var resolved = preset?.ResolveRegions();
-        IReadOnlyList<SamplerRegion> regions = resolved == null ? null : Project(resolved);
+        IReadOnlyList<SamplerRegion>? regions = resolved == null ? null : Project(resolved);
         regionCache[key] = regions;
         return regions;
     }
 
     // a percussion kit must come from the percussion bank — never fall back to
     // a melodic preset. Prefer the requested kit, else the Standard Kit (program 0).
-    private Preset FindPercussionPreset(int program)
+    private Preset? FindPercussionPreset(int program)
     {
-        Preset standardKit = null;
+        Preset? standardKit = null;
         foreach (var p in soundFont.Presets)
         {
             if (p.Bank != PercussionBank) continue;
@@ -189,10 +189,10 @@ public sealed class SoundFontSampler : SamplerEngine
 
     // a melodic program in a missing bank falls back to bank 0 (GS-style
     // capital tone), else any other melodic bank — never to a percussion kit
-    private Preset FindPreset(int bank, int program)
+    private Preset? FindPreset(int bank, int program)
     {
-        Preset bankZero = null;
-        Preset fallback = null;
+        Preset? bankZero = null;
+        Preset? fallback = null;
         foreach (var p in soundFont.Presets)
         {
             if (p.PatchNumber != program) continue;

@@ -240,8 +240,9 @@ internal sealed class ModulatorSet
     // whether both sources are fixed for the lifetime of a note (velocity,
     // key number, "no controller" constants); unknown/unsupported sources
     // never get here — Build rejects their modulators outright (§7.4)
+    // Build admits only the defaults (both sources set) and modulators passing IsUsable, so both sources are non-null
     private static bool IsStaticModulator(Modulator m) =>
-        IsStaticSource(m.SourceModulationData) && IsStaticSource(m.SourceModulationAmount);
+        IsStaticSource(m.SourceModulationData!) && IsStaticSource(m.SourceModulationAmount!);
 
     private static bool IsStaticSource(ModulatorType source)
     {
@@ -386,8 +387,9 @@ internal sealed class ModulatorSet
         int destination = (int)m.DestinationGenerator;
         if ((uint)destination >= (uint)byDestination.Length) return; // unsupported destination
 
-        double primary = SourceValue(m.SourceModulationData, channel, velocity, key);
-        double secondary = SourceValue(m.SourceModulationAmount, channel, velocity, key);
+        // Build admits only the defaults (both sources set) and modulators passing IsUsable, so both sources are non-null
+        double primary = SourceValue(m.SourceModulationData!, channel, velocity, key);
+        double secondary = SourceValue(m.SourceModulationAmount!, channel, velocity, key);
         double value = m.Amount * primary * secondary;
         if (m.SourceTransform == TransformEnum.AbsoluteValue) value = Math.Abs(value);
         byDestination[destination] += value;

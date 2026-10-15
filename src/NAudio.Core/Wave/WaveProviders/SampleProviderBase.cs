@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
@@ -72,6 +73,7 @@ public abstract class SampleProviderBase : ISampleProvider, IWaveProvider
     /// </summary>
     /// <param name="sampleRate">Sample rate in Hz.</param>
     /// <param name="channels">Number of channels.</param>
+    [MemberNotNull(nameof(WaveFormat))]
     public void SetWaveFormat(int sampleRate, int channels)
     {
         WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);

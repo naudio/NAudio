@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
@@ -32,6 +33,7 @@ public abstract class WaveProvider16 : IWaveProvider
     /// Allows you to specify the sample rate and channels for this WaveProvider
     /// (should be initialised before you pass it to a wave player)
     /// </summary>
+    [MemberNotNull(nameof(waveFormat))]
     public void SetWaveFormat(int sampleRate, int channels)
     {
         this.waveFormat = new WaveFormat(sampleRate, 16, channels);

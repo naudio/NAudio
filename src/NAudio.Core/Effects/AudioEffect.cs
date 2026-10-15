@@ -20,7 +20,7 @@ namespace NAudio.Effects;
 public abstract class AudioEffect : IAudioEffect
 {
     private readonly ParameterSmoother mixSmoother = new();
-    private WaveFormat waveFormat;
+    private WaveFormat? waveFormat;
     private float[] dryBuffer = Array.Empty<float>();
     private float mix = 1f;
     private bool bypass;
@@ -52,17 +52,17 @@ public abstract class AudioEffect : IAudioEffect
     /// The format the effect was configured with, or null before
     /// <see cref="Configure"/> has been called.
     /// </summary>
-    protected WaveFormat WaveFormat => waveFormat;
+    protected WaveFormat? WaveFormat => waveFormat;
 
     /// <summary>
     /// Channel count from the configured format.
     /// </summary>
-    protected int Channels => waveFormat.Channels;
+    protected int Channels => waveFormat is null ? throw new InvalidOperationException("Configure must be called before accessing Channels.") : waveFormat.Channels;
 
     /// <summary>
     /// Sample rate from the configured format.
     /// </summary>
-    protected int SampleRate => waveFormat.SampleRate;
+    protected int SampleRate => waveFormat is null ? throw new InvalidOperationException("Configure must be called before accessing SampleRate.") : waveFormat.SampleRate;
 
     /// <inheritdoc />
     public virtual int LatencySamples => 0;

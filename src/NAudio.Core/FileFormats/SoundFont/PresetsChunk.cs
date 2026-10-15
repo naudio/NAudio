@@ -27,7 +27,7 @@ public class PresetsChunk
             throw new InvalidDataException($"Not a presets data chunk ({header})");
         }
 
-        RiffChunk c;
+        RiffChunk? c;
         while ((c = chunk.GetNextSubChunk()) != null)
         {
             switch (c.ChunkID)

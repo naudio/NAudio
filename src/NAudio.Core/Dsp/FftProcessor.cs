@@ -41,7 +41,7 @@ public sealed class FftProcessor
     private readonly int fftSize;
     private readonly int halfSize;
     private readonly int mHalf;                 // log2(halfSize) — the m parameter for the inner N/2-point FFT
-    private readonly float[] windowTable;       // null if FftWindowType.None
+    private readonly float[]? windowTable;      // null if FftWindowType.None
     private readonly float[] realTwiddleCos;    // cos(-2πk/N) for k = 0..halfSize
     private readonly float[] realTwiddleSin;    // sin(-2πk/N) for k = 0..halfSize
     private readonly Complex[] halfSpectrum;    // reusable scratch for the N/2-point complex FFT

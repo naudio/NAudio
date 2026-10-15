@@ -5,7 +5,7 @@ namespace NAudio.SoundFont;
 
 internal class ZoneBuilder : StructureBuilder<Zone>
 {
-    private Zone lastZone = null;
+    private Zone? lastZone = null;
 
     public override Zone Read(BinaryReader br)
     {

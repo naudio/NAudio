@@ -131,7 +131,6 @@ public class IgnoreDisposeStream : Stream
         if (!IgnoreDispose)
         {
             SourceStream.Dispose();
-            SourceStream = null;
         }
         base.Dispose(disposing);
     }

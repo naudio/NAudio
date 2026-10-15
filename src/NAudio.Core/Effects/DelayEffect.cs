@@ -13,7 +13,7 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class DelayEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     private static readonly string[] DivisionLabels =
     {
@@ -23,8 +23,8 @@ public sealed class DelayEffect : AudioEffect, IParameterized
     };
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Delay", "ms", 1f, 2000f, () => DelayMs, v => DelayMs = v),
         EffectParameter.Continuous("Feedback", "", 0f, 0.99f, () => Feedback, v => Feedback = v),
         EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
@@ -34,7 +34,7 @@ public sealed class DelayEffect : AudioEffect, IParameterized
             () => (int)Division, i => Division = (NoteDivision)i),
         EffectParameter.Toggle("Ping-Pong", () => PingPong, v => PingPong = v),
         EffectParameter.Meter("Actual Delay", "ms", 0f, 5000f, () => EffectiveDelayMs)
-    };
+    ];
 
     private const double MaxDelaySeconds = 5.0;
 

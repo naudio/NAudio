@@ -8,7 +8,7 @@ public class SampleHeader
     /// <summary>
     /// The sample name
     /// </summary>
-    public string SampleName { get; set; }
+    public string? SampleName { get; set; }
     /// <summary>
     /// Start offset
     /// </summary>
@@ -49,5 +49,5 @@ public class SampleHeader
     /// <summary>
     /// <see cref="object.ToString"/>
     /// </summary>
-    public override string ToString() => SampleName;
+    public override string? ToString() => SampleName;
 }

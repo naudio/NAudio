@@ -8,7 +8,7 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveRecorder : IWaveProvider, IDisposable
 {
-    private WaveFileWriter writer;
+    private WaveFileWriter? writer;
     private readonly IWaveProvider source;
 
     /// <summary>
@@ -27,6 +27,11 @@ public class WaveRecorder : IWaveProvider, IDisposable
     /// </summary>
     public int Read(Span<byte> buffer)
     {
+        if (writer == null)
+        {
+            throw new ObjectDisposedException(nameof(WaveRecorder));
+        }
+
         int bytesRead = source.Read(buffer);
         writer.Write(buffer.Slice(0, bytesRead));
         return bytesRead;

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics.Tensors;
 using System.Threading;
 using NAudio.Utils;
@@ -16,7 +18,7 @@ public class MixingSampleProvider : ISampleProvider
     // publicly by MixerInputs, so locking on it means anyone holding that
     // reference shares the mixer's own lock.
     private readonly Lock inputsLock = new();
-    private float[] sourceBuffer;
+    private float[]? sourceBuffer;
     private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
     /// <summary>
@@ -49,6 +51,7 @@ public class MixingSampleProvider : ISampleProvider
         {
             throw new ArgumentException("Must provide at least one input in this constructor");
         }
+        Debug.Assert(WaveFormat is not null);
     }
 
     /// <summary>
@@ -69,6 +72,7 @@ public class MixingSampleProvider : ISampleProvider
     /// Adds a new mixer input
     /// </summary>
     /// <param name="mixerInput">Mixer input</param>
+    [MemberNotNull(nameof(WaveFormat))]
     public void AddMixerInput(ISampleProvider mixerInput)
     {
         // we'll just call the lock around add since we are protecting against an AddMixerInput at
@@ -104,7 +108,7 @@ public class MixingSampleProvider : ISampleProvider
     /// <summary>
     /// Raised when a mixer input has been removed because it has ended
     /// </summary>
-    public event EventHandler<SampleProviderEventArgs> MixerInputEnded;
+    public event EventHandler<SampleProviderEventArgs>? MixerInputEnded;
 
     /// <summary>
     /// Removes a mixer input

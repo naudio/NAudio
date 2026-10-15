@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -14,15 +15,15 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class MonoMakerEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Frequency", "Hz", 20f, 1000f, () => Frequency, v => Frequency = v)
-    };
+    ];
 
-    private CrossfadingBiQuadFilter sideLowPass;
+    private CrossfadingBiQuadFilter? sideLowPass;
     private float frequency = 120f;
 
     /// <summary>
@@ -57,6 +58,8 @@ public sealed class MonoMakerEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(sideLowPass is not null, "Configure must be called before ProcessBlock.");
+
         if (Channels != 2)
             return;
 

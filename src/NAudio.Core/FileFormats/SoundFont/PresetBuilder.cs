@@ -6,7 +6,7 @@ namespace NAudio.SoundFont;
 
 internal class PresetBuilder : StructureBuilder<Preset>
 {
-    private Preset lastPreset = null;
+    private Preset? lastPreset = null;
 
     public override Preset Read(BinaryReader br)
     {

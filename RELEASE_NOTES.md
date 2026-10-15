@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * **Nullable reference types in NAudio.Core** - `NAudio.Core` is now compiled with nullable reference types enabled, so its public API carries nullability annotations (e.g. `WaveFileReader.ReadNextSampleFrame` and `Mp3Frame.LoadFromStream` return nullable types, and `Mp3Frame.RawData` is `byte[]?` when a frame is read without its data). This is a source-level change only: there are no binary breaks, but projects with nullable enabled may see new warnings, and overrides of NAudio.Core virtual members may need matching annotations. `XingHeader.LoadXingHeader` now returns `null` for a frame read without its data instead of throwing. Thanks to @Seb-stian (#1452)
+
 ### 3.2.0 (15 Oct 2026)
 
 A feature and tidy-up release. Its headline is a first preview of macOS

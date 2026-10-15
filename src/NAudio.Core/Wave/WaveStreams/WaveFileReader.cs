@@ -12,11 +12,12 @@ namespace NAudio.Wave;
 public class WaveFileReader : WaveStream
 {
     private readonly WaveFormat waveFormat;
+    private bool disposed = false;
     private readonly bool ownInput;
     private readonly long dataPosition;
     private readonly long dataChunkLength;
     private readonly Lock lockObject = new();
-    private Stream waveStream;
+    private readonly Stream waveStream;
 
     /// <summary>Supports opening a WAV file</summary>
     /// <remarks>The WAV file format is a real mess, but we will only
@@ -43,10 +44,9 @@ public class WaveFileReader : WaveStream
     private WaveFileReader(Stream inputStream, bool ownInput)
     {
         this.waveStream = inputStream;
-        var chunkReader = new WaveFileChunkReader();
         try
         {
-            chunkReader.ReadWaveHeader(inputStream);
+            var chunkReader = WaveFileChunkReader.Create(inputStream);
             waveFormat = chunkReader.WaveFormat;
             if (waveFormat.BlockAlign <= 0)
             {
@@ -88,14 +88,14 @@ public class WaveFileReader : WaveStream
         if (disposing)
         {
             // Release managed resources.
-            if (waveStream != null)
+            if (!disposed)
             {
                 // only dispose our source if we created it
                 if (ownInput)
                 {
                     waveStream.Dispose();
                 }
-                waveStream = null;
+                disposed = true;
             }
         }
         else
@@ -198,7 +198,7 @@ public class WaveFileReader : WaveStream
     /// 8-bit PCM and 32-bit extensible float, and doesn't allocate a new array for every sample frame.
     /// </remarks>
     [Obsolete("Use ToSampleProvider() and read samples into a reusable float buffer instead. ReadNextSampleFrame will be removed in a future major version.")]
-    public float[] ReadNextSampleFrame()
+    public float[]? ReadNextSampleFrame()
     {
         if (waveFormat.Encoding is not WaveFormatEncoding.Pcm and not WaveFormatEncoding.IeeeFloat and not WaveFormatEncoding.Extensible)
         {

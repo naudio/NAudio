@@ -13,8 +13,9 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveChannel32 : WaveStream, ISampleNotifier
 {
-    private WaveStream sourceStream;
+    private readonly WaveStream sourceStream;
     private readonly WaveFormat waveFormat;
+    private bool disposed = false;
     private readonly long length;
     private readonly int destBytesPerSample;
     private readonly int sourceBytesPerSample;
@@ -241,8 +242,11 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     {
         if (disposing)
         {
-            sourceStream?.Dispose();
-            sourceStream = null;
+            if (!disposed)
+            {
+                sourceStream.Dispose();
+                disposed = true;
+            }
         }
         else
         {
@@ -254,7 +258,7 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     /// <summary>
     /// Sample
     /// </summary>
-    public event EventHandler<SampleEventArgs> Sample;
+    public event EventHandler<SampleEventArgs>? Sample;
 
     // reuse the same object every time to avoid making lots of work for the garbage collector
     private readonly SampleEventArgs sampleEventArgs = new(0, 0);
@@ -266,6 +270,6 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     {
         sampleEventArgs.Left = left;
         sampleEventArgs.Right = right;
-        Sample(this, sampleEventArgs);
+        Sample?.Invoke(this, sampleEventArgs);
     }
 }

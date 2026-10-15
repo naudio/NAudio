@@ -24,7 +24,8 @@ public class XingHeader
     private int tocOffset = -1;
     private int framesOffset = -1;
     private int bytesOffset = -1;
-    private Mp3Frame frame;
+    private readonly Mp3Frame frame;
+    private readonly byte[] rawData;
 
     private static int ReadBigEndian(byte[] buffer, int offset)
     {
@@ -42,10 +43,13 @@ public class XingHeader
     /// </summary>
     /// <param name="frame">Frame</param>
     /// <returns>Xing Header</returns>
-    public static XingHeader LoadXingHeader(Mp3Frame frame)
+    public static XingHeader? LoadXingHeader(Mp3Frame frame)
     {
-        XingHeader xingHeader = new XingHeader();
-        xingHeader.frame = frame;
+        if (frame.RawData is not { } rawData)
+        {
+            return null; // frame was loaded without its data
+        }
+        XingHeader xingHeader = new XingHeader(frame, rawData);
         int offset = 0;
 
         if (frame.MpegVersion == MpegVersion.Version1)
@@ -68,18 +72,18 @@ public class XingHeader
             // throw new FormatException("Unsupported MPEG Version");
         }
 
-        if ((frame.RawData[offset + 0] == 'X') &&
-            (frame.RawData[offset + 1] == 'i') &&
-            (frame.RawData[offset + 2] == 'n') &&
-            (frame.RawData[offset + 3] == 'g'))
+        if ((rawData[offset + 0] == 'X') &&
+            (rawData[offset + 1] == 'i') &&
+            (rawData[offset + 2] == 'n') &&
+            (rawData[offset + 3] == 'g'))
         {
             xingHeader.startOffset = offset;
             offset += 4;
         }
-        else if ((frame.RawData[offset + 0] == 'I') &&
-                 (frame.RawData[offset + 1] == 'n') &&
-                 (frame.RawData[offset + 2] == 'f') &&
-                 (frame.RawData[offset + 3] == 'o'))
+        else if ((rawData[offset + 0] == 'I') &&
+                 (rawData[offset + 1] == 'n') &&
+                 (rawData[offset + 2] == 'f') &&
+                 (rawData[offset + 3] == 'o'))
         {
             xingHeader.startOffset = offset;
             offset += 4;
@@ -89,7 +93,7 @@ public class XingHeader
             return null;
         }
 
-        XingHeaderOptions flags = (XingHeaderOptions)ReadBigEndian(frame.RawData, offset);
+        XingHeaderOptions flags = (XingHeaderOptions)ReadBigEndian(rawData, offset);
         offset += 4;
 
         if ((flags & XingHeaderOptions.Frames) != 0)
@@ -109,7 +113,7 @@ public class XingHeader
         }
         if ((flags & XingHeaderOptions.VbrScale) != 0)
         {
-            xingHeader.vbrScale = ReadBigEndian(frame.RawData, offset);
+            xingHeader.vbrScale = ReadBigEndian(rawData, offset);
             offset += 4;
         }
         xingHeader.endOffset = offset;
@@ -119,8 +123,10 @@ public class XingHeader
     /// <summary>
     /// Sees if a frame contains a Xing header
     /// </summary>
-    private XingHeader()
+    private XingHeader(Mp3Frame frame, byte[] rawData)
     {
+        this.frame = frame;
+        this.rawData = rawData;
     }
 
     /// <summary>
@@ -132,13 +138,13 @@ public class XingHeader
         {
             if (framesOffset == -1)
                 return -1;
-            return ReadBigEndian(frame.RawData, framesOffset);
+            return ReadBigEndian(rawData, framesOffset);
         }
         set
         {
             if (framesOffset == -1)
                 throw new InvalidOperationException("Frames flag is not set");
-            WriteBigEndian(frame.RawData, framesOffset, value);
+            WriteBigEndian(rawData, framesOffset, value);
         }
     }
 
@@ -151,13 +157,13 @@ public class XingHeader
         {
             if (bytesOffset == -1)
                 return -1;
-            return ReadBigEndian(frame.RawData, bytesOffset);
+            return ReadBigEndian(rawData, bytesOffset);
         }
         set
         {
             if (framesOffset == -1)
                 throw new InvalidOperationException("Bytes flag is not set");
-            WriteBigEndian(frame.RawData, bytesOffset, value);
+            WriteBigEndian(rawData, bytesOffset, value);
         }
     }
 

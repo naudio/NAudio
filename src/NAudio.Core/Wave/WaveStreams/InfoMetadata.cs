@@ -58,7 +58,7 @@ public sealed class InfoMetadata : IEnumerable<KeyValuePair<string, string>>
     /// Gets the value for the given four-character INFO subchunk id (e.g. <c>INAM</c>),
     /// or <c>null</c> if not present. Case-insensitive.
     /// </summary>
-    public string this[string id] => id != null && entries.TryGetValue(id.ToUpperInvariant(), out var value) ? value : null;
+    public string? this[string id] => id != null && entries.TryGetValue(id.ToUpperInvariant(), out var value) ? value : null;
 
     /// <summary>
     /// Returns true if the given four-character INFO subchunk id is present. Case-insensitive.
@@ -66,46 +66,46 @@ public sealed class InfoMetadata : IEnumerable<KeyValuePair<string, string>>
     public bool Contains(string id) => id != null && entries.ContainsKey(id.ToUpperInvariant());
 
     /// <summary>Title / Name (<c>INAM</c>).</summary>
-    public string Title => this["INAM"];
+    public string? Title => this["INAM"];
 
     /// <summary>Artist (<c>IART</c>).</summary>
-    public string Artist => this["IART"];
+    public string? Artist => this["IART"];
 
     /// <summary>Album / Product (<c>IPRD</c>).</summary>
-    public string Product => this["IPRD"];
+    public string? Product => this["IPRD"];
 
     /// <summary>Comments (<c>ICMT</c>).</summary>
-    public string Comments => this["ICMT"];
+    public string? Comments => this["ICMT"];
 
     /// <summary>Copyright (<c>ICOP</c>).</summary>
-    public string Copyright => this["ICOP"];
+    public string? Copyright => this["ICOP"];
 
     /// <summary>Creation date (<c>ICRD</c>).</summary>
-    public string CreationDate => this["ICRD"];
+    public string? CreationDate => this["ICRD"];
 
     /// <summary>Engineer (<c>IENG</c>).</summary>
-    public string Engineer => this["IENG"];
+    public string? Engineer => this["IENG"];
 
     /// <summary>Genre (<c>IGNR</c>).</summary>
-    public string Genre => this["IGNR"];
+    public string? Genre => this["IGNR"];
 
     /// <summary>Keywords (<c>IKEY</c>).</summary>
-    public string Keywords => this["IKEY"];
+    public string? Keywords => this["IKEY"];
 
     /// <summary>Software that created this file (<c>ISFT</c>).</summary>
-    public string Software => this["ISFT"];
+    public string? Software => this["ISFT"];
 
     /// <summary>Source (<c>ISRC</c>).</summary>
-    public string Source => this["ISRC"];
+    public string? Source => this["ISRC"];
 
     /// <summary>Technician (<c>ITCH</c>).</summary>
-    public string Technician => this["ITCH"];
+    public string? Technician => this["ITCH"];
 
     /// <summary>Subject (<c>ISBJ</c>).</summary>
-    public string Subject => this["ISBJ"];
+    public string? Subject => this["ISBJ"];
 
     /// <summary>Track number (<c>ITRK</c>).</summary>
-    public string TrackNumber => this["ITRK"];
+    public string? TrackNumber => this["ITRK"];
 
     /// <inheritdoc />
     public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => entries.GetEnumerator();
@@ -152,7 +152,7 @@ public sealed class InfoListInterpreter : IWaveChunkInterpreter<InfoMetadata>
     public static readonly InfoListInterpreter Instance = new();
 
     /// <inheritdoc />
-    public InfoMetadata Interpret(WaveChunks chunks)
+    public InfoMetadata? Interpret(WaveChunks chunks)
     {
         if (chunks == null) return null;
 

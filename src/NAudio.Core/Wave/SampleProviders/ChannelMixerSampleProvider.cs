@@ -17,7 +17,7 @@ public class ChannelMixerSampleProvider : ISampleProvider
     private readonly int inputChannels;
     private readonly int outputChannels;
 
-    private float[] sourceBuffer;
+    private float[]? sourceBuffer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChannelMixerSampleProvider"/> class. The
@@ -36,14 +36,8 @@ public class ChannelMixerSampleProvider : ISampleProvider
     /// </exception>
     public ChannelMixerSampleProvider(ISampleProvider source, float[,] matrix)
     {
-        if (source == null)
-            throw new ArgumentNullException(nameof(source));
-
-        if (matrix == null)
-            throw new ArgumentNullException(nameof(matrix));
-
-        this.source = source;
-        this.matrix = matrix;
+        this.source = source ?? throw new ArgumentNullException(nameof(source));
+        this.matrix = matrix ?? throw new ArgumentNullException(nameof(matrix));
         this.inputChannels = matrix.GetLength(0);
         this.outputChannels = matrix.GetLength(1);
 

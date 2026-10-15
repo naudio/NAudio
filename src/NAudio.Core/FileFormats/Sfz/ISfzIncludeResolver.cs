@@ -13,7 +13,7 @@ public interface ISfzIncludeResolver
     /// Returns the text of an included file, or null if it cannot be found.
     /// <paramref name="path"/> is the include path as written in the file.
     /// </summary>
-    string Resolve(string path);
+    string? Resolve(string path);
 }
 
 /// <summary>
@@ -25,13 +25,13 @@ public sealed class FileSfzIncludeResolver : ISfzIncludeResolver
     private readonly string baseDirectory;
 
     /// <summary>Creates a resolver rooted at the given base directory.</summary>
-    public FileSfzIncludeResolver(string baseDirectory)
+    public FileSfzIncludeResolver(string? baseDirectory)
     {
         this.baseDirectory = baseDirectory ?? "";
     }
 
     /// <inheritdoc />
-    public string Resolve(string path)
+    public string? Resolve(string path)
     {
         // SFZ paths use backslashes by convention; accept either separator
         var normalised = path.Replace('\\', Path.DirectorySeparatorChar)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -22,16 +23,17 @@ internal class Mp3Index
 public class Mp3FileReaderBase : WaveStream
 {
     private readonly WaveFormat waveFormat;
-    private Stream mp3Stream;
+    private readonly Stream mp3Stream;
     private readonly long mp3DataLength;
     private readonly long dataStartPosition;
+    private bool disposed = false;
 
     /// <summary>
     /// The MP3 wave format (n.b. NOT the output format of this stream - see the WaveFormat property)
     /// </summary>
     public Mp3WaveFormat Mp3WaveFormat { get; private set; }
 
-    private readonly XingHeader xingHeader;
+    private readonly XingHeader? xingHeader;
     private readonly bool ownInputStream;
 
     private List<Mp3Index> tableOfContents;
@@ -48,7 +50,7 @@ public class Mp3FileReaderBase : WaveStream
     private readonly int bytesPerSample;
     private readonly int bytesPerDecodedFrame;
 
-    private IMp3FrameDecompressor decompressor;
+    private readonly IMp3FrameDecompressor decompressor;
 
     private readonly byte[] decompressBuffer;
     private int decompressBufferOffset;
@@ -181,7 +183,8 @@ public class Mp3FileReaderBase : WaveStream
     /// <returns>An MP3 Frame decompressor</returns>
     public delegate IMp3FrameDecompressor FrameDecompressorBuilder(WaveFormat mp3Format);
 
-    private void SeedTableOfContents(Mp3Frame firstAudioFrame)
+    [MemberNotNull(nameof(tableOfContents))]
+    private void SeedTableOfContents(Mp3Frame? firstAudioFrame)
     {
         tableOfContents = new List<Mp3Index>();
         tocIndex = 0;
@@ -239,7 +242,7 @@ public class Mp3FileReaderBase : WaveStream
             while (scannedToSamplePosition <= targetSamplePosition)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Mp3Frame frame;
+                Mp3Frame? frame;
                 try
                 {
                     frame = Mp3Frame.LoadFromStream(mp3Stream, readData: false);
@@ -314,19 +317,19 @@ public class Mp3FileReaderBase : WaveStream
     /// ID3v2 tag if present
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public Id3v2Tag Id3v2Tag { get; }
+    public Id3v2Tag? Id3v2Tag { get; }
 
     /// <summary>
     /// ID3v1 tag if present
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public byte[] Id3v1Tag { get; }
+    public byte[]? Id3v1Tag { get; }
 
     /// <summary>
     /// Reads the next mp3 frame
     /// </summary>
     /// <returns>Next mp3 frame, or null if EOF</returns>
-    public Mp3Frame ReadNextFrame()
+    public Mp3Frame? ReadNextFrame()
     {
         lock (repositionLock)
         {
@@ -341,9 +344,9 @@ public class Mp3FileReaderBase : WaveStream
     /// Reads the next mp3 frame
     /// </summary>
     /// <returns>Next mp3 frame, or null if EOF</returns>
-    private Mp3Frame ReadNextFrame(bool readData)
+    private Mp3Frame? ReadNextFrame(bool readData)
     {
-        Mp3Frame frame = null;
+        Mp3Frame? frame = null;
         try
         {
             frame = Mp3Frame.LoadFromStream(mp3Stream, readData);
@@ -471,7 +474,7 @@ public class Mp3FileReaderBase : WaveStream
             samplePosition = target / bytesPerSample;
         }
 
-        Mp3Index mp3Index = null;
+        Mp3Index? mp3Index = null;
         for (int index = 0; index < tableOfContents.Count; index++)
         {
             if (tableOfContents[index].SamplePosition + tableOfContents[index].SampleCount > samplePosition)
@@ -568,7 +571,7 @@ public class Mp3FileReaderBase : WaveStream
 
             while (bytesRead < numBytes)
             {
-                Mp3Frame frame = ReadNextFrame(true); // internal read - should not advance position
+                Mp3Frame? frame = ReadNextFrame(true); // internal read - should not advance position
                 if (frame != null)
                 {
                     int decompressed = decompressor.DecompressFrame(frame, decompressBuffer.AsSpan());
@@ -630,7 +633,7 @@ public class Mp3FileReaderBase : WaveStream
     /// <summary>
     /// Xing header if present
     /// </summary>
-    public XingHeader XingHeader => xingHeader;
+    public XingHeader? XingHeader => xingHeader;
 
     /// <summary>
     /// Disposes this WaveStream
@@ -639,17 +642,15 @@ public class Mp3FileReaderBase : WaveStream
     {
         if (disposing)
         {
-            if (mp3Stream != null)
+            if (!disposed)
             {
                 if (ownInputStream)
                 {
                     mp3Stream.Dispose();
                 }
-                mp3Stream = null;
+                decompressor.Dispose();
+                disposed = true;
             }
-
-            decompressor?.Dispose();
-            decompressor = null;
         }
         base.Dispose(disposing);
     }

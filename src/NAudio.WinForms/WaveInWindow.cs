@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NAudio.Mixer;
@@ -20,7 +21,7 @@ public class WaveInWindow : IWaveIn, IWaveLatency
     private readonly WaveCallbackHost callbackHost;
     private IntPtr waveInHandle;
     private volatile bool recording;
-    private WaveInBuffer[] buffers;
+    private WaveInBuffer[]? buffers;
     private int nextBufferIndex;
     private bool isDisposed;
     // Stopwatch ticks of the most recently delivered buffer. long.MinValue = none yet.
@@ -29,12 +30,12 @@ public class WaveInWindow : IWaveIn, IWaveLatency
     /// <summary>
     /// Indicates recorded data is available.
     /// </summary>
-    public event EventHandler<WaveInEventArgs> DataAvailable;
+    public event EventHandler<WaveInEventArgs>? DataAvailable;
 
     /// <summary>
     /// Indicates that all recorded data has now been received.
     /// </summary>
-    public event EventHandler<StoppedEventArgs> RecordingStopped;
+    public event EventHandler<StoppedEventArgs>? RecordingStopped;
 
     /// <summary>
     /// Creates a <see cref="WaveInWindow"/> that owns a hidden callback window. Must be
@@ -132,6 +133,7 @@ public class WaveInWindow : IWaveIn, IWaveLatency
         }
     }
 
+    [MemberNotNull(nameof(buffers))]
     private void CreateBuffers()
     {
         int bufferSize = BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000;
@@ -140,13 +142,15 @@ public class WaveInWindow : IWaveIn, IWaveLatency
             bufferSize -= bufferSize % WaveFormat.BlockAlign;
         }
 
-        buffers = new WaveInBuffer[NumberOfBuffers];
-        for (int n = 0; n < buffers.Length; n++)
+        var newBuffers = new WaveInBuffer[NumberOfBuffers];
+        for (int n = 0; n < newBuffers.Length; n++)
         {
-            buffers[n] = new WaveInBuffer(waveInHandle, bufferSize);
+            newBuffers[n] = new WaveInBuffer(waveInHandle, bufferSize);
         }
+        buffers = newBuffers;
     }
 
+    [MemberNotNull(nameof(buffers))]
     private void OpenWaveInDevice()
     {
         CloseWaveInDevice();
@@ -184,14 +188,14 @@ public class WaveInWindow : IWaveIn, IWaveLatency
         }
         OpenWaveInDevice();
         nextBufferIndex = 0;
-        EnqueueBuffers();
+        EnqueueBuffers(buffers);
         MmException.Try(WaveInterop.waveInStart(waveInHandle), "waveInStart");
         recording = true;
     }
 
-    private void EnqueueBuffers()
+    private static void EnqueueBuffers(WaveInBuffer[] currentBuffers)
     {
-        foreach (var buffer in buffers)
+        foreach (var buffer in currentBuffers)
         {
             if (!buffer.InQueue)
             {
@@ -212,10 +216,11 @@ public class WaveInWindow : IWaveIn, IWaveLatency
             MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
             // Drain any buffers the driver has already filled but not yet delivered,
             // starting from the one we expect next so the order is preserved.
-            for (int n = 0; n < buffers.Length; n++)
+            var currentBuffers = buffers ?? [];
+            for (int n = 0; n < currentBuffers.Length; n++)
             {
-                int index = (n + nextBufferIndex) % buffers.Length;
-                var buffer = buffers[index];
+                int index = (n + nextBufferIndex) % currentBuffers.Length;
+                var buffer = currentBuffers[index];
                 if (buffer.Done)
                 {
                     RaiseDataAvailable(buffer);
@@ -281,7 +286,7 @@ public class WaveInWindow : IWaveIn, IWaveLatency
         DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
     }
 
-    private void RaiseRecordingStopped(Exception e)
+    private void RaiseRecordingStopped(Exception? e)
     {
         var handler = RecordingStopped;
         if (handler == null) return;

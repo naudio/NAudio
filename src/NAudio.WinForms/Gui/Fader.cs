@@ -16,7 +16,7 @@ public class Fader : System.Windows.Forms.Control
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private System.ComponentModel.Container components = null;
+    private System.ComponentModel.Container? components = null;
 
     /// <summary>
     /// Creates a new Fader control

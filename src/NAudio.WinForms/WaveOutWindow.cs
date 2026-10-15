@@ -20,8 +20,8 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
     private readonly WaveInterop.WaveCallback callback;
     private readonly WaveCallbackHost callbackHost;
     private IntPtr hWaveOut;
-    private WaveOutBuffer[] buffers;
-    private IWaveProvider waveStream;
+    private WaveOutBuffer[]? buffers;
+    private IWaveProvider? waveStream;
     private volatile PlaybackState playbackState;
     private int queuedBuffers;
     private int nextBufferIndex;
@@ -30,7 +30,7 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
     /// <summary>
     /// Indicates playback has stopped automatically (end of stream or an error).
     /// </summary>
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     /// <summary>
     /// Returns the number of waveOut devices available on the system.
@@ -136,28 +136,29 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
     /// </summary>
     public void Play()
     {
+        var currentBuffers = buffers ?? throw new InvalidOperationException("Must call Init first");
         if (playbackState == PlaybackState.Stopped)
         {
             playbackState = PlaybackState.Playing;
             Debug.Assert(queuedBuffers == 0, "Buffers already queued on play");
             nextBufferIndex = 0;
-            EnqueueBuffers();
+            EnqueueBuffers(currentBuffers);
         }
         else if (playbackState == PlaybackState.Paused)
         {
-            EnqueueBuffers();
+            EnqueueBuffers(currentBuffers);
             Resume();
             playbackState = PlaybackState.Playing;
         }
     }
 
-    private void EnqueueBuffers()
+    private void EnqueueBuffers(WaveOutBuffer[] currentBuffers)
     {
-        for (int n = 0; n < NumberOfBuffers; n++)
+        for (int n = 0; n < currentBuffers.Length; n++)
         {
-            if (!buffers[n].InQueue)
+            if (!currentBuffers[n].InQueue)
             {
-                if (buffers[n].OnDone())
+                if (currentBuffers[n].OnDone())
                 {
                     Interlocked.Increment(ref queuedBuffers);
                 }
@@ -239,7 +240,7 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
     /// <summary>
     /// The format the hardware is using.
     /// </summary>
-    public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
+    public WaveFormat OutputWaveFormat => waveStream?.WaveFormat ?? throw new InvalidOperationException("Must call Init first");
 
     /// <inheritdoc/>
     /// <remarks>
@@ -349,7 +350,7 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
         nextBufferIndex = (nextBufferIndex + 1) % buffers.Length;
         Interlocked.Decrement(ref queuedBuffers);
 
-        Exception exception = null;
+        Exception? exception = null;
         if (playbackState == PlaybackState.Playing)
         {
             lock (waveOutLock)
@@ -374,7 +375,7 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
         }
     }
 
-    private void RaisePlaybackStoppedEvent(Exception e)
+    private void RaisePlaybackStoppedEvent(Exception? e)
     {
         var handler = PlaybackStopped;
         if (handler == null) return;

@@ -15,14 +15,14 @@ public class WaveViewer : UserControl
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private Container components = null;
-    private WaveStream waveStream;
-    private ISampleProvider sampleProvider;
+    private Container? components = null;
+    private WaveStream? waveStream;
+    private ISampleProvider? sampleProvider;
     private int samplesPerPixel = 128;
     private long startPosition;
     private int bytesPerSampleFrame;
     private int channels;
-    private float[] readBuffer;
+    private float[]? readBuffer;
 
     /// <summary>
     /// Creates a new WaveViewer control
@@ -37,7 +37,7 @@ public class WaveViewer : UserControl
     /// <summary>
     /// sets the associated wavestream
     /// </summary>
-    public WaveStream WaveStream
+    public WaveStream? WaveStream
     {
         get
         {
@@ -108,7 +108,7 @@ public class WaveViewer : UserControl
     /// </summary>
     protected override void OnPaint(PaintEventArgs e)
     {
-        if (sampleProvider != null)
+        if (sampleProvider != null && waveStream != null)
         {
             int samplesPerColumn = samplesPerPixel * channels;
             waveStream.Position = startPosition + (e.ClipRectangle.Left * bytesPerSampleFrame * samplesPerPixel);

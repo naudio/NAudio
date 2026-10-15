@@ -13,13 +13,13 @@ public class VolumeSlider : System.Windows.Forms.UserControl
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private readonly System.ComponentModel.Container components = null;
+    private readonly System.ComponentModel.Container? components = null;
     private float volume = 1.0f;
     private readonly float MinDb = -48;
     /// <summary>
     /// Volume changed event
     /// </summary>
-    public event EventHandler VolumeChanged;
+    public event EventHandler? VolumeChanged;
 
     /// <summary>
     /// Creates a new VolumeSlider control

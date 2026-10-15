@@ -28,7 +28,7 @@ public partial class Pot : UserControl
     /// <summary>
     /// Value changed event
     /// </summary>
-    public event EventHandler ValueChanged;
+    public event EventHandler? ValueChanged;
 
     /// <summary>
     /// Creates a new pot control

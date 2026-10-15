@@ -13,7 +13,7 @@ public class SampleAggregator : ISampleProvider
     /// <summary>
     /// Raised to indicate the maximum volume level in this period
     /// </summary>
-    public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
+    public event EventHandler<MaxSampleEventArgs>? MaximumCalculated;
     private float maxValue;
     private float minValue;
     /// <summary>
@@ -25,7 +25,7 @@ public class SampleAggregator : ISampleProvider
     /// <summary>
     /// Raised to indicate that a block of samples has had an FFT performed on it
     /// </summary>
-    public event EventHandler<FftEventArgs> FftCalculated;
+    public event EventHandler<FftEventArgs>? FftCalculated;
 
     /// <summary>
     /// If true, performs an FFT on each block of samples

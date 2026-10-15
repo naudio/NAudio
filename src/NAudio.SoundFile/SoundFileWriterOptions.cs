@@ -46,5 +46,5 @@ public class SoundFileWriterOptions
     /// FLAC/Ogg/Opus, a limited LIST/INFO set for WAV/AIFF); unsupported
     /// fields are silently ignored. <c>null</c> writes no tags.
     /// </summary>
-    public SoundFileTags Tags { get; set; }
+    public SoundFileTags? Tags { get; set; }
 }

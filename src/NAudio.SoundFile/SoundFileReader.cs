@@ -22,7 +22,7 @@ public sealed class SoundFileReader : WaveStream, ISampleProvider
     private readonly Lock lockObject = new();
     private readonly WaveFormat waveFormat;
     private readonly SafeSndFileHandle handle;
-    private readonly StreamVirtualIo virtualIo;
+    private readonly StreamVirtualIo? virtualIo;
     private readonly long lengthBytes;
     private readonly int blockAlign;
     private readonly bool seekable;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using NAudio.Wave;
 
@@ -45,7 +46,7 @@ public static class WaveSampleLoader
     /// null for a mono file. Channels beyond the first two are ignored.
     /// Returns false if the file is missing or empty.
     /// </summary>
-    public static bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate) =>
+    public static bool TryLoad(string path, [NotNullWhen(true)] out float[]? left, out float[]? right, out int sampleRate) =>
         TryLoad(path, out left, out right, out sampleRate, out _);
 
     /// <summary>
@@ -57,7 +58,7 @@ public static class WaveSampleLoader
     /// when the file has no (valid) <c>smpl</c> loop; malformed or truncated
     /// chunks are ignored rather than failing the load.
     /// </summary>
-    public static bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+    public static bool TryLoad(string path, [NotNullWhen(true)] out float[]? left, out float[]? right, out int sampleRate,
         out SampleLoop? embeddedLoop)
     {
         left = null;
@@ -76,7 +77,7 @@ public static class WaveSampleLoader
     /// optional right channel), decoding it fully into memory. Returns false if
     /// it yields no samples.
     /// </summary>
-    public static bool TryLoad(ISampleProvider source, out float[] left, out float[] right, out int sampleRate)
+    public static bool TryLoad(ISampleProvider source, [NotNullWhen(true)] out float[]? left, out float[]? right, out int sampleRate)
     {
         if (source == null) throw new ArgumentNullException(nameof(source));
 

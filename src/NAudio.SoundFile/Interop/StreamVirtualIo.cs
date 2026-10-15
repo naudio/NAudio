@@ -24,7 +24,7 @@ internal sealed unsafe class StreamVirtualIo : IDisposable
 {
     private readonly Stream stream;
     private GCHandle selfHandle;
-    private Exception pending;
+    private Exception? pending;
     private bool disposed;
 
     // The caller always owns the backing stream (NAudio convention,
@@ -52,8 +52,10 @@ internal sealed unsafe class StreamVirtualIo : IDisposable
         Tell = &TellCb
     };
 
+    // The handle stays allocated until Dispose, which only runs after sf_close,
+    // so libsndfile never calls back with a freed or cleared handle.
     private static StreamVirtualIo FromUserData(IntPtr userData)
-        => (StreamVirtualIo)GCHandle.FromIntPtr(userData).Target;
+        => (StreamVirtualIo)GCHandle.FromIntPtr(userData).Target!;
 
     // Records the first failure so it can be rethrown on the managed
     // side after the sf_* call returns. Exceptions cannot cross the

@@ -75,7 +75,8 @@ public sealed class AsioAudioCapturedEventArgs : EventArgs
         var floats = context.InputFloatBuffers[channelIndex];
         if (!context.InputConverted[channelIndex])
         {
-            context.InputConverter(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
+            // InputConverter is set whenever there are input channels, which the index check above guarantees
+            context.InputConverter!(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
             context.InputConverted[channelIndex] = true;
         }
         return floats.AsSpan(0, context.Frames);

@@ -11,14 +11,14 @@ public sealed class AsioPlaybackOptions
     /// Audio source to play. Required. For an <see cref="ISampleProvider"/> source, use <see cref="From"/> or call
     /// <c>source.ToWaveProvider()</c> yourself.
     /// </summary>
-    public IWaveProvider Source { get; init; }
+    public IWaveProvider Source { get; init; } = null!; // required; validated by InitPlayback
 
     /// <summary>
     /// Physical output channel indices to route the source to. Source channel <c>n</c> plays out of
     /// <c>OutputChannels[n]</c>. Must have exactly as many entries as <c>Source.WaveFormat.Channels</c>.
     /// If <c>null</c>, defaults to the contiguous range <c>[0, Source.WaveFormat.Channels - 1]</c>.
     /// </summary>
-    public int[] OutputChannels { get; init; }
+    public int[]? OutputChannels { get; init; }
 
     /// <summary>
     /// Requested ASIO buffer size in frames. If <c>null</c>, uses the driver's preferred buffer size.
@@ -34,7 +34,7 @@ public sealed class AsioPlaybackOptions
     /// <summary>
     /// Convenience constructor that wraps an <see cref="ISampleProvider"/> via <c>ToWaveProvider()</c>.
     /// </summary>
-    public static AsioPlaybackOptions From(ISampleProvider source, int[] outputChannels = null, int? bufferSize = null)
+    public static AsioPlaybackOptions From(ISampleProvider source, int[]? outputChannels = null, int? bufferSize = null)
     {
         if (source is null) throw new ArgumentNullException(nameof(source));
         return new AsioPlaybackOptions

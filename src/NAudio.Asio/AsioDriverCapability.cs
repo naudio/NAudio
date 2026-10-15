@@ -11,7 +11,7 @@ public class AsioDriverCapability
     /// <summary>
     /// Drive Name
     /// </summary>
-    public string DriverName;
+    public string DriverName = "";
 
     /// <summary>
     /// Number of Input Channels
@@ -57,11 +57,11 @@ public class AsioDriverCapability
     /// <summary>
     /// Input Channel Info
     /// </summary>
-    public AsioChannelInfo[] InputChannelInfos;
+    public AsioChannelInfo[] InputChannelInfos = [];
     /// <summary>
     /// Output Channel Info
     /// </summary>
-    public AsioChannelInfo[] OutputChannelInfos;
+    public AsioChannelInfo[] OutputChannelInfos = [];
 
     /// <summary>
     /// All physical input channel indices as an int array: <c>[0, 1, ..., NbInputChannels - 1]</c>.

@@ -47,7 +47,7 @@ internal class AsioException : Exception
     /// </summary>
     /// <param name="error">The error.</param>
     /// <returns>the name of the error</returns>
-    public static String getErrorName(AsioError error)
+    public static String? getErrorName(AsioError error)
     {
         return Enum.GetName(typeof(AsioError), error);
     }

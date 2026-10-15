@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -19,12 +20,13 @@ namespace NAudio.Wave.Compression;
 /// </remarks>
 public class AcmDriver : IDisposable
 {
-    private static List<AcmDriver> drivers;
+    private static List<AcmDriver> drivers = [];
     private AcmDriverDetails details;
     private readonly IntPtr driverId;
     private IntPtr driverHandle;
-    private List<AcmFormatTag> formatTags;
-    private List<AcmFormat> tempFormatsList; // used by enumerator
+    private List<AcmFormatTag>? formatTags;
+    private List<AcmFormatTag> tempFormatTagsList = []; // used by enumerator
+    private List<AcmFormat> tempFormatsList = []; // used by enumerator
     private IntPtr localDllHandle;
 
     /// <summary>
@@ -98,19 +100,19 @@ public class AcmDriver : IDisposable
     /// <param name="ownerWindowHandle">Owner window handle, can be null</param>
     /// <param name="windowTitle">Window title</param>
     /// <param name="enumFlags">Enumeration flags. None to get everything</param>
-    /// <param name="enumFormat">Enumeration format. Only needed with certain enumeration flags</param>
-    /// <param name="selectedFormat">The selected format</param>
-    /// <param name="selectedFormatDescription">Textual description of the selected format</param>
-    /// <param name="selectedFormatTagDescription">Textual description of the selected format tag</param>
+    /// <param name="enumFormat">Enumeration format. Only needed with certain enumeration flags, otherwise null</param>
+    /// <param name="selectedFormat">The selected format, or null if the dialog was cancelled</param>
+    /// <param name="selectedFormatDescription">Textual description of the selected format, or null if the dialog was cancelled</param>
+    /// <param name="selectedFormatTagDescription">Textual description of the selected format tag, or null if the dialog was cancelled</param>
     /// <returns>True if a format was selected</returns>
     public static bool ShowFormatChooseDialog(
         IntPtr ownerWindowHandle,
         string windowTitle,
         AcmFormatEnumFlags enumFlags,
-        WaveFormat enumFormat,
-        out WaveFormat selectedFormat,
-        out string selectedFormatDescription,
-        out string selectedFormatTagDescription)
+        WaveFormat? enumFormat,
+        [NotNullWhen(true)] out WaveFormat? selectedFormat,
+        [NotNullWhen(true)] out string? selectedFormatDescription,
+        [NotNullWhen(true)] out string? selectedFormatTagDescription)
     {
         AcmFormatChoose formatChoose = new AcmFormatChoose();
         formatChoose.structureSize = Marshal.SizeOf(formatChoose);
@@ -176,7 +178,7 @@ public class AcmDriver : IDisposable
     /// </summary>
     /// <param name="shortName">Short Name</param>
     /// <returns>The driver, or null if not found</returns>
-    public static AcmDriver FindByShortName(string shortName)
+    public static AcmDriver? FindByShortName(string shortName)
     {
         foreach (AcmDriver driver in AcmDriver.EnumerateAcmDrivers())
         {
@@ -273,10 +275,11 @@ public class AcmDriver : IDisposable
                 {
                     throw new InvalidOperationException("Driver must be opened first");
                 }
-                formatTags = new List<AcmFormatTag>();
+                tempFormatTagsList = new List<AcmFormatTag>();
                 AcmFormatTagDetails formatTagDetails = new AcmFormatTagDetails();
                 formatTagDetails.structureSize = Marshal.SizeOf(formatTagDetails);
                 MmException.Try(AcmInterop.acmFormatTagEnum(this.driverHandle, ref formatTagDetails, AcmFormatTagEnumCallback, IntPtr.Zero, 0), "acmFormatTagEnum");
+                formatTags = tempFormatTagsList;
             }
             return formatTags;
         }
@@ -335,7 +338,7 @@ public class AcmDriver : IDisposable
 
     private bool AcmFormatTagEnumCallback(IntPtr hAcmDriverId, ref AcmFormatTagDetails formatTagDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags)
     {
-        formatTags.Add(new AcmFormatTag(formatTagDetails));
+        tempFormatTagsList.Add(new AcmFormatTag(formatTagDetails));
         return true;
     }
 

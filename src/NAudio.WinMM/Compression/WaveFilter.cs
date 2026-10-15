@@ -25,5 +25,5 @@ public class WaveFilter
     /// reserved
     /// </summary>
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
-    public int[] Reserved = null;
+    public int[]? Reserved = null;
 }

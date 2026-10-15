@@ -206,7 +206,7 @@ internal class AcmInterop
         IntPtr hAcmDriver,
         IntPtr sourceFormatPointer,
         IntPtr destFormatPointer,
-        [In] WaveFilter waveFilter,
+        [In] WaveFilter? waveFilter,
         IntPtr callback,
         IntPtr instance,
         AcmStreamOpenFlags openFlags);
@@ -216,7 +216,7 @@ internal class AcmInterop
         IntPtr hAcmDriver,
         IntPtr sourceFormatPointer,
         IntPtr destFormatPointer,
-        WaveFilter waveFilter,
+        WaveFilter? waveFilter,
         IntPtr callback,
         IntPtr instance,
         AcmStreamOpenFlags openFlags)

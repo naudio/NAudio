@@ -5,6 +5,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
+    <Nullable>enable</Nullable>
     <Description>winmm.dll-based Windows audio APIs (WaveOut, WaveIn, MidiIn, MidiOut, ACM) for the NAudio audio library.</Description>
   </PropertyGroup>
 

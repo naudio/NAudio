@@ -98,9 +98,9 @@ internal class AcmStreamHeader : IDisposable
         return Header.destBufferLengthUsed;
     }
 
-    public byte[] SourceBuffer { get; private set; }
+    public byte[] SourceBuffer { get; }
 
-    public byte[] DestBuffer { get; private set; }
+    public byte[] DestBuffer { get; }
 
     #region IDisposable Members
 
@@ -117,8 +117,6 @@ internal class AcmStreamHeader : IDisposable
         if (!disposed)
         {
             //Unprepare();
-            SourceBuffer = null;
-            DestBuffer = null;
             if (hSourceBuffer.IsAllocated)
             {
                 hSourceBuffer.Free();

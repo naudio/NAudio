@@ -13,10 +13,10 @@ namespace NAudio.Wave;
 public class WaveIn : IWaveIn, IWaveLatency
 {
     private readonly AutoResetEvent callbackEvent;
-    private readonly SynchronizationContext syncContext;
+    private readonly SynchronizationContext? syncContext;
     private IntPtr waveInHandle;
     private volatile CaptureState captureState;
-    private WaveInBuffer[] buffers;
+    private WaveInBuffer[]? buffers;
     private bool isDisposed;
     // Stopwatch ticks of the most recently delivered buffer. long.MinValue = none yet.
     private long lastBufferDeliveredTimestamp = long.MinValue;
@@ -24,12 +24,12 @@ public class WaveIn : IWaveIn, IWaveLatency
     /// <summary>
     /// Indicates recorded data is available
     /// </summary>
-    public event EventHandler<WaveInEventArgs> DataAvailable;
+    public event EventHandler<WaveInEventArgs>? DataAvailable;
 
     /// <summary>
     /// Indicates that all recorded data has now been received.
     /// </summary>
-    public event EventHandler<StoppedEventArgs> RecordingStopped;
+    public event EventHandler<StoppedEventArgs>? RecordingStopped;
 
     /// <summary>
     /// Prepares a Wave input device for recording
@@ -86,11 +86,12 @@ public class WaveIn : IWaveIn, IWaveLatency
             bufferSize -= bufferSize % WaveFormat.BlockAlign;
         }
 
-        buffers = new WaveInBuffer[NumberOfBuffers];
-        for (int n = 0; n < buffers.Length; n++)
+        var newBuffers = new WaveInBuffer[NumberOfBuffers];
+        for (int n = 0; n < newBuffers.Length; n++)
         {
-            buffers[n] = new WaveInBuffer(waveInHandle, bufferSize);
+            newBuffers[n] = new WaveInBuffer(waveInHandle, bufferSize);
         }
+        buffers = newBuffers;
     }
 
     private void OpenWaveInDevice()
@@ -136,7 +137,7 @@ public class WaveIn : IWaveIn, IWaveLatency
 
     private void RecordThread()
     {
-        Exception exception = null;
+        Exception? exception = null;
         try
         {
             DoRecording();
@@ -155,7 +156,9 @@ public class WaveIn : IWaveIn, IWaveLatency
     private void DoRecording()
     {
         captureState = CaptureState.Capturing;
-        foreach (var buffer in buffers)
+        var currentBuffers = buffers;
+        if (currentBuffers == null) return;
+        foreach (var buffer in currentBuffers)
         {
             if (!buffer.InQueue)
             {
@@ -167,7 +170,7 @@ public class WaveIn : IWaveIn, IWaveLatency
             if (callbackEvent.WaitOne())
             {
                 // requeue any buffers returned to us
-                foreach (var buffer in buffers)
+                foreach (var buffer in currentBuffers)
                 {
                     if (buffer.Done)
                     {
@@ -187,7 +190,7 @@ public class WaveIn : IWaveIn, IWaveLatency
         }
     }
 
-    private void RaiseRecordingStoppedEvent(Exception e)
+    private void RaiseRecordingStoppedEvent(Exception? e)
     {
         var handler = RecordingStopped;
         if (handler != null)

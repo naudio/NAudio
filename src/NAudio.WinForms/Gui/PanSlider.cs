@@ -12,13 +12,13 @@ public class PanSlider : System.Windows.Forms.UserControl
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private readonly System.ComponentModel.Container components = null;
+    private readonly System.ComponentModel.Container? components = null;
     private float pan;
 
     /// <summary>
     /// True when pan value changed
     /// </summary>
-    public event EventHandler PanChanged;
+    public event EventHandler? PanChanged;
 
     /// <summary>
     /// Creates a new PanSlider control

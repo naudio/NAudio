@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using NAudio.Utils;
 using NAudio.Wave;
 using NAudio.Tests.Shared;
@@ -155,7 +156,7 @@ public class AiffFileWriterTests
         var format = new WaveFormat(8000, 8, 1);
         var unsignedInput = new byte[] { 0x80, 0x8A, 0x00, 0xFF }; // 128 (silence), 138, 0, 255
 
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             writer.Write(unsignedInput, 0, unsignedInput.Length);
         }
@@ -172,7 +173,7 @@ public class AiffFileWriterTests
         var input = new byte[] { 0x80, 0x8A, 0x00, 0xFF };
         var original = (byte[])input.Clone();
 
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             writer.Write(input, 0, input.Length);
         }
@@ -192,6 +193,43 @@ public class AiffFileWriterTests
     }
 
     // Locates the SSND chunk's sound data within a written AIFF file.
+    [Test]
+    public void LargeWriteRoundTripsThroughWriterAndReader()
+    {
+        // Larger than the writer's stack buffer, so this exercises the pooled-buffer path
+        var sourceData = new byte[4096];
+        for (int i = 0; i < sourceData.Length; i++)
+        {
+            sourceData[i] = (byte)(i * 7);
+        }
+        var format = new WaveFormat(44100, 16, 2);
+
+        var roundTripped = WriteAndRead(format, writer => writer.Write(sourceData, 0, sourceData.Length));
+
+        Assert.That(roundTripped, Is.EqualTo(sourceData));
+    }
+
+    [Test]
+    public void SuccessiveWritesOfDifferentSizesRoundTrip()
+    {
+        // The writer reuses its scratch buffer, so a small write after a large one must only use the requested length
+        var large = new byte[4096];
+        for (int i = 0; i < large.Length; i++)
+        {
+            large[i] = (byte)(i * 3);
+        }
+        var small = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+        var format = new WaveFormat(44100, 16, 2);
+
+        var roundTripped = WriteAndRead(format, writer =>
+        {
+            writer.Write(large, 0, large.Length);
+            writer.Write(small, 0, small.Length);
+        });
+
+        Assert.That(roundTripped, Is.EqualTo(large.Concat(small).ToArray()));
+    }
+
     private static byte[] ExtractSsndSoundData(byte[] aiff)
     {
         for (int i = 0; i + 16 <= aiff.Length; i++)
@@ -211,7 +249,7 @@ public class AiffFileWriterTests
     {
         var ms = new MemoryStream();
 
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             writeAction(writer);
         }

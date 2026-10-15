@@ -160,7 +160,7 @@ public abstract class SamplerEngine : IMidiInstrument
     /// The candidate regions a note on the given channel might play; the engine
     /// filters them by key/velocity. Return null for "no instrument".
     /// </summary>
-    private protected abstract IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state);
+    private protected abstract IReadOnlyList<SamplerRegion>? GetRegionsForNoteOn(int channel, MidiChannelState state);
 
     /// <summary>
     /// Dispatches a MIDI event (note on/off, control change, pitch-bend,
@@ -284,7 +284,7 @@ public abstract class SamplerEngine : IMidiInstrument
         long silencedThrough = long.MinValue;
         while (excess-- > 0)
         {
-            SamplerVoice oldest = null;
+            SamplerVoice? oldest = null;
             foreach (var v in voices)
                 if (v.IsActive && v.Region == region && v.StartOrder > silencedThrough &&
                     (oldest == null || v.StartOrder < oldest.StartOrder))
@@ -594,7 +594,7 @@ public abstract class SamplerEngine : IMidiInstrument
     // off_mode=time is unsupported and projected as fast.
     private static void Silence(SamplerVoice voice)
     {
-        if (voice.Region.OffMode == SamplerOffMode.Normal) voice.Release();
+        if (voice.Region?.OffMode == SamplerOffMode.Normal) voice.Release();
         else voice.Choke();
     }
 

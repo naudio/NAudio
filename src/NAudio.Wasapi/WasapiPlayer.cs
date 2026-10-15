@@ -797,10 +797,6 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
                     }
                 }
             }
-
-            audioClient.Stop();
-            playbackState = PlaybackState.Stopped;
-            audioClient.Reset();
         }
         catch (Exception e)
         {
@@ -808,10 +804,29 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
         }
         finally
         {
+            // Teardown belongs here rather than at the end of the try block: the thread also leaves
+            // without running that far when the source's Read throws, or when the source ends before
+            // the first buffer is filled. Leaving the client running - or the state reporting Playing -
+            // strands the player: a later Play() then asks for more frames than the buffer has free and
+            // fails with AUDCLNT_E_BUFFER_TOO_LARGE, and callers polling PlaybackState never see it
+            // stop (issue #1442).
+            SafeStopAndReset();
+            playbackState = PlaybackState.Stopped;
             if (mmcssHandle != IntPtr.Zero)
                 NativeMethods.AvRevertMmThreadCharacteristics(mmcssHandle);
             RaisePlaybackStopped(exception);
         }
+    }
+
+    /// <summary>
+    /// Best-effort stop and reset of the audio client during teardown. A device that has been
+    /// removed mid-playback fails these calls (AUDCLNT_E_DEVICE_INVALIDATED); the failure is not
+    /// actionable here, and must not mask the real exception or escape and kill the play thread.
+    /// </summary>
+    private void SafeStopAndReset()
+    {
+        try { audioClient?.Stop(); } catch { /* device already gone */ }
+        try { audioClient?.Reset(); } catch { /* device already gone */ }
     }
 
     /// <summary>

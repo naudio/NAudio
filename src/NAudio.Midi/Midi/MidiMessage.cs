@@ -5,6 +5,7 @@ namespace NAudio.Midi;
 /// <summary>
 /// Represents a MIDI message
 /// </summary>
+[Obsolete("Use the typed MIDI events instead (e.g. new NoteOnEvent(0, channel, note, velocity, 0).GetAsShortMessage(), or IMidiOutput.Send(midiEvent)). MidiMessage will be removed in a future major version.")]
 public class MidiMessage
 {
     private readonly int rawData;

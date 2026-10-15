@@ -5,13 +5,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
+    <Nullable>enable</Nullable>
     <Description>winmm.dll-based Windows audio APIs (WaveOut, WaveIn, MidiIn, MidiOut, ACM) for the NAudio audio library.</Description>
-  </PropertyGroup>
-
-	<!-- needed for perfomance profiling unit tests -->
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

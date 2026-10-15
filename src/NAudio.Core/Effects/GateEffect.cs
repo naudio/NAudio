@@ -12,11 +12,11 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class GateEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Threshold", "dB", -80f, 0f, () => ThresholdDb, v => ThresholdDb = v),
         EffectParameter.Continuous("Range", "dB", -100f, 0f, () => RangeDb, v => RangeDb = v),
         EffectParameter.Continuous("Ratio", "", 1f, 20f, () => Ratio, v => Ratio = v),
@@ -25,7 +25,7 @@ public sealed class GateEffect : AudioEffect, IParameterized
         EffectParameter.Continuous("Hold", "ms", 0f, 500f, () => HoldMs, v => HoldMs = v),
         EffectParameter.Continuous("Release", "ms", 5f, 1000f, () => ReleaseMs, v => ReleaseMs = v),
         EffectParameter.Meter("Gain Reduction", "dB", 0f, 100f, () => GainReductionDb)
-    };
+    ];
 
     private bool open;
     private int holdRemaining;

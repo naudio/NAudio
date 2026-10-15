@@ -23,7 +23,7 @@ namespace NAudio.Effects;
 /// </remarks>
 public sealed class ParameterDispatchQueue : IParameterDispatch
 {
-    private readonly EffectParameter[] paramSlots;
+    private readonly EffectParameter?[] paramSlots;
     private readonly float[] valueSlots;
     private readonly int mask;
     private int head; // consumer index (audio thread)
@@ -70,7 +70,7 @@ public sealed class ParameterDispatchQueue : IParameterDispatch
         var t = Volatile.Read(ref tail);
         while (h != t)
         {
-            paramSlots[h].ApplyDeferred(valueSlots[h]);
+            paramSlots[h]?.ApplyDeferred(valueSlots[h]);
             paramSlots[h] = null;
             h = (h + 1) & mask;
         }

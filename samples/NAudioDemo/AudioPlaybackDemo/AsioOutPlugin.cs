@@ -25,7 +25,7 @@ internal class AsioOutPlugin : IOutputDevicePlugin
 
     public bool IsAvailable
     {
-        get { return AsioOut.isSupported(); }
+        get { return AsioOut.IsSupported(); }
     }
 
     public int Priority

@@ -14,13 +14,13 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class PitchShiftEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Pitch", "st", -12f, 12f, () => PitchSemitones, v => PitchSemitones = v)
-    };
+    ];
 
     private SmbPitchShifter[] shifters = Array.Empty<SmbPitchShifter>();
     private float[][] scratch = Array.Empty<float[]>();

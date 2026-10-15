@@ -13,31 +13,31 @@ namespace NAudio.SoundFile;
 public sealed class SoundFileTags
 {
     /// <summary>Track title.</summary>
-    public string Title { get; set; }
+    public string? Title { get; set; }
 
     /// <summary>Performing artist.</summary>
-    public string Artist { get; set; }
+    public string? Artist { get; set; }
 
     /// <summary>Album / collection name.</summary>
-    public string Album { get; set; }
+    public string? Album { get; set; }
 
     /// <summary>Free-form comment.</summary>
-    public string Comment { get; set; }
+    public string? Comment { get; set; }
 
     /// <summary>Recording / release date (format is codec-defined).</summary>
-    public string Date { get; set; }
+    public string? Date { get; set; }
 
     /// <summary>Genre.</summary>
-    public string Genre { get; set; }
+    public string? Genre { get; set; }
 
     /// <summary>Track number.</summary>
-    public string TrackNumber { get; set; }
+    public string? TrackNumber { get; set; }
 
     /// <summary>Copyright.</summary>
-    public string Copyright { get; set; }
+    public string? Copyright { get; set; }
 
     /// <summary>Encoding software.</summary>
-    public string Software { get; set; }
+    public string? Software { get; set; }
 
     /// <summary><c>true</c> if every field is unset.</summary>
     public bool IsEmpty =>

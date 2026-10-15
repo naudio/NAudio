@@ -17,18 +17,19 @@ namespace NAudio.Wave.Alsa;
 /// </remarks>
 public sealed class AlsaOut : IWavePlayer, IWaveLatency
 {
-    private static readonly PCMFormat[] PreferredFormats =
-    {
+    private static ReadOnlySpan<PCMFormat> PreferredFormats =>
+    [
         PCMFormat.SND_PCM_FORMAT_FLOAT_LE,
         PCMFormat.SND_PCM_FORMAT_S16_LE,
         PCMFormat.SND_PCM_FORMAT_S24_3LE,
-    };
+    ];
 
     private readonly Lock sync = new();
     private readonly ManualResetEventSlim resumeGate = new(initialState: true);
     private readonly AlsaPcm pcm;
-    private SampleChannel channel;
-    private IWaveProvider source;
+    private SampleChannel? channel;
+    private IWaveProvider? source;
+    private WaveFormat? outputWaveFormat;
     private int frameBytes;
     private float volume = 1.0f;
     private volatile PlaybackState playbackState = PlaybackState.Stopped;
@@ -53,7 +54,7 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
     public PlaybackState PlaybackState => playbackState;
 
     /// <inheritdoc />
-    public WaveFormat OutputWaveFormat { get; private set; }
+    public WaveFormat OutputWaveFormat => outputWaveFormat ?? throw new InvalidOperationException("Call Init first");
 
     /// <inheritdoc/>
     /// <remarks>
@@ -65,9 +66,10 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
     {
         get
         {
-            if (OutputWaveFormat == null) return TimeSpan.Zero;
+            var format = outputWaveFormat;
+            if (format == null) return TimeSpan.Zero;
             long frames = (long)AlsaPcm.PeriodFrames * AlsaPcm.Periods;
-            return TimeSpan.FromSeconds(frames / (double)OutputWaveFormat.SampleRate);
+            return TimeSpan.FromSeconds(frames / (double)format.SampleRate);
         }
     }
 
@@ -81,16 +83,17 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
     {
         get
         {
-            if (playbackState != PlaybackState.Playing || OutputWaveFormat == null)
+            var format = outputWaveFormat;
+            if (playbackState != PlaybackState.Playing || format == null)
                 return AverageLatency;
             if (AlsaInterop.PcmDelay(pcm.Pcm, out nint delayFrames) < 0 || delayFrames < 0)
                 return AverageLatency;
-            return TimeSpan.FromSeconds(delayFrames / (double)OutputWaveFormat.SampleRate);
+            return TimeSpan.FromSeconds(delayFrames / (double)format.SampleRate);
         }
     }
 
     /// <inheritdoc />
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     /// <inheritdoc />
     public float Volume
@@ -127,19 +130,19 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
             {
                 case PCMFormat.SND_PCM_FORMAT_FLOAT_LE:
                     source = new SampleToWaveProvider(channel);
-                    OutputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
+                    outputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
                     break;
                 case PCMFormat.SND_PCM_FORMAT_S24_3LE:
                     source = new SampleToWaveProvider24(channel);
-                    OutputWaveFormat = new WaveFormat(sampleRate, 24, channels);
+                    outputWaveFormat = new WaveFormat(sampleRate, 24, channels);
                     break;
                 default:
                     source = new SampleToWaveProvider16(channel);
-                    OutputWaveFormat = new WaveFormat(sampleRate, 16, channels);
+                    outputWaveFormat = new WaveFormat(sampleRate, 16, channels);
                     break;
             }
 
-            frameBytes = AlsaFormat.FrameBytes(OutputWaveFormat);
+            frameBytes = AlsaFormat.FrameBytes(outputWaveFormat);
             pcm.ConfigureHardware(format, channels, sampleRate);
             pcm.ConfigureSoftware((AlsaPcm.Periods - 1) * AlsaPcm.PeriodFrames);
             pcm.Prepare();
@@ -238,9 +241,11 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
     private void PlaybackLoop()
     {
         var buffer = new byte[AlsaPcm.PeriodFrames * frameBytes];
-        Exception error = null;
+        Exception? error = null;
         try
         {
+            // Play only starts this loop once Init has set source
+            var provider = source ?? throw new InvalidOperationException("Call Init before Play");
             while (pcm.Running)
             {
                 if (playbackState == PlaybackState.Paused)
@@ -249,7 +254,7 @@ public sealed class AlsaOut : IWavePlayer, IWaveLatency
                     continue;
                 }
 
-                int read = source.Read(buffer);
+                int read = provider.Read(buffer);
                 if (read == 0)
                 {
                     // Natural end of stream: let the device play out its

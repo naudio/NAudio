@@ -1,24 +1,20 @@
 ﻿using NAudio.Dmo;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
+// These tests cover the DMO APIs, which are obsolete but still supported until they're removed
+#pragma warning disable CS0618
+
 namespace NAudio.Windows.Tests.Dmo;
 
 [TestFixture]
 public class ResamplerDmoTests
 {
-    [SetUp]
-    public void SetUp()
-    {
-        OSUtils.RequireVista();
-    }
-
     [Test]
     [Category("IntegrationTest")]
     public void CanCreateResamplerMediaObject()

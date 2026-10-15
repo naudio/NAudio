@@ -12,7 +12,7 @@ internal abstract class StructureBuilder<T>
 
     public StructureBuilder()
     {
-        Reset();
+        data = [];
     }
 
     public abstract T Read(BinaryReader br);
@@ -21,7 +21,7 @@ internal abstract class StructureBuilder<T>
 
     public void Reset()
     {
-        data = new List<T>();
+        data = [];
     }
 
     public T[] Data => data.ToArray();

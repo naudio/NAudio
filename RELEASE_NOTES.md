@@ -13,8 +13,43 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * **Nullable reference types in NAudio.Core** - `NAudio.Core` is now compiled with nullable reference types enabled, so its public API carries nullability annotations (e.g. `WaveFileReader.ReadNextSampleFrame` and `Mp3Frame.LoadFromStream` return nullable types, and `Mp3Frame.RawData` is `byte[]?` when a frame is read without its data). This is a source-level change only: there are no binary breaks, but projects with nullable enabled may see new warnings, and overrides of NAudio.Core virtual members may need matching annotations. `XingHeader.LoadXingHeader` now returns `null` for a frame read without its data instead of throwing. Thanks to @Seb-stian (#1452)
+ * **Nullable reference types in NAudio.Midi** - `NAudio.Midi` is now also compiled with nullable reference types enabled (e.g. `MidiInMessageEventArgs.MidiEvent` and `NoteOnEvent.OffEvent` are nullable). Source-level change only; projects with nullable enabled may see new warnings. `MidiEvent.ReadNextEvent` now throws `FormatException` instead of `NullReferenceException` for running status with no previous event, and `RawMetaEvent` treats null data as empty (#825)
+ * **Nullable reference types in NAudio.WinMM** - `NAudio.WinMM` is now compiled with nullable reference types enabled (e.g. `AcmDriver.FindByShortName` and `WaveCapabilitiesHelpers.GetNameFromGuid` return nullable types, and `AcmDriver.ShowFormatChooseDialog` has nullable `out` parameters). Source-level change only; projects with nullable enabled may see new warnings. `WaveOut.OutputWaveFormat` before `Init` now throws `InvalidOperationException`, `AcmStream` members throw `ObjectDisposedException` after dispose, and `GetNameFromGuid` returns null instead of throwing when the registry key is missing, where each previously threw `NullReferenceException` (#825)
+ * **Nullable reference types in NAudio.SoundFile and NAudio.Sampler** - both packages are now compiled with nullable reference types enabled (e.g. the `SoundFileTags` fields, `SoundFileWriterOptions.Tags` and `SoundFileException.Function` are nullable, and the `TryLoad` methods on `WaveSampleLoader` / `ISfzSampleLoader` mark `left` as non-null on success and `right` as null for mono). Source-level change only; projects with nullable enabled may see new warnings, and custom `ISfzSampleLoader` implementations may need matching annotations (#825)
+ * **Nullable reference types in NAudio.WinForms, NAudio.Alsa and NAudio.Extras** - these packages are now compiled with nullable reference types enabled (e.g. `WaveViewer.WaveStream`, `AlsaException.Function` and the control/device events are nullable). Source-level change only; projects with nullable enabled may see new warnings. `AlsaOut.OutputWaveFormat` and `WaveOutWindow.OutputWaveFormat` now throw `InvalidOperationException` before `Init` (previously null and `NullReferenceException` respectively), and `WaveOutWindow.Play` before `Init` throws `InvalidOperationException` instead of `NullReferenceException` (#825)
  * Fixed several buffer and handle lifetime bugs in the winmm MIDI backend: `MidiOut.SendBuffer` no longer frees a sysex buffer while the driver may still own it, `MidiIn` now stops input before resetting it, and neither class calls into winmm with a handle it never opened. `MidiOut.SendBuffer` now blocks until the driver releases the buffer and throws `MmException` if the send fails.
+
+### 3.2.0 (15 Oct 2026)
+
+A feature and tidy-up release. Its headline is a first preview of macOS
+support: the new `NAudio.MacOS` package wraps Core Audio for playback and
+recording, Extended Audio File Services for reading and writing compressed
+formats, and AudioConverter for resampling. It ships pre-release only while its
+API settles, alongside the stable versions of the other packages. VB.NET users
+also get base classes and a guide that keep the NAudio 2 array-based `Read`
+signature.
+
+Several legacy APIs that have modern replacements are now `[Obsolete]`, to be
+removed in the next major version. The
+fixes include `DirectSoundOut`, which failed every playback in 3.1.0, and
+`WasapiPlayer`/`WasapiOut` getting stuck in the `Playing` state after a source
+error.
+
  * **macOS support (preview)** - A new wrappers library is added wrapping macOS native API's for playback/recording, reading/writing files and resampling audio. The `NAudio.MacOS` package ships pre-release only (`X.Y.Z-preview.N`) while its API settles, so it stays pre-release alongside stable releases of the other packages. Special thanks to @mdcdi1315 (#1325) for the work and the tests. For more information, see the [design](Docs/Architecture/MacOSWrappersDesign.md) doc that describes the decisions that helped shape the wrappers. (#1398)
+ * **VB.NET support** - Added `SampleProviderBase` and `WaveProviderBase`, base classes that keep the NAudio 2 `Read(buffer, offset, count)` signature for languages that cannot name a `Span<T>` in a method signature, and a [Using NAudio from VB.NET](Docs/UsingNAudioFromVB.md) guide covering playback, recording and custom providers from VB (#1426)
+ * Deprecated legacy APIs that have modern replacements: `Wave16ToFloatProvider`, `WaveFloatTo16Provider` and `Wave32To16Stream` (use `ToSampleProvider()` / `ToWaveProvider16()`), `IgnoreDisposeStream` (no longer needed), `ByteArrayExtensions` (use the BCL), `MidiMessage` (use the typed MIDI events), `ResamplerDmoStream`/`DmoResampler` (use `MediaFoundationResampler` or `WdlResamplingSampleProvider`), `DmoEffectWaveProvider` and the `Dmo*` effects (use `NAudio.Effects`), `AsioOut`'s recording path (use `AsioDevice`), `WaveFilter`, and `ProgressLog`. Added `AsioOut.IsSupported()` and deprecated the lowercase `isSupported()` (#1466)
+ * Deprecated `WaveFileReader.ReadNextSampleFrame` in favour of `ToSampleProvider()`, which supports more formats and doesn't allocate an array per sample frame (#1465)
+ * Reduced allocations when reading and writing WAV files, added `ReadOnlySpan<byte>` overloads of `WaveFileWriter.AddChunk` and `ChunkIdentifier.ChunkIdentifierToInt32`, and fixed `WaveChunks.GetData` leaving the stream position changed when a read fails. `ChunkIdentifierToInt32` now throws `ArgumentOutOfRangeException` for identifiers that aren't four bytes (#1457)
+ * Fixed `DirectSoundOut` failing every playback with `DirectSoundException 0x80004001` (or an `ArgumentException` for a format with extra data, e.g. one read from a WAV by `WaveFileReader`): the secondary buffer's `WAVEFORMATEX` was still a GCHandle-pinned `WaveFormat` instance — a site missed in the #1432 marshalling conversion, since `WaveFormat` no longer carries `[StructLayout]` — and now marshals via `WaveFormat.MarshalToPtr` (#1456)
+ * Fixed `WasapiPlayer` and `WasapiOut` being stranded in the `Playing` state, unable to play again, when the source's `Read` threw or the source ended before the first buffer was filled (#1442)
+ * Fixed `WaveFileWriter.WriteSample` and `WriteSamples(short[])` throwing for plain (non-extensible) 32-bit integer PCM formats (#1463)
+ * `WaveFileReader.ReadNextSampleFrame` now throws `InvalidDataException` for a WAV header with an invalid channel count or bit depth (#1464)
+ * Changed the `WaveStream.CurrentTime` setter to clamp to the bounds of the stream, and corrected the XML documentation for the core audio interfaces (#1441)
+ * Reworked the macOS `CoreAudioPlayer` and `CoreAudioRecorder` non-interleaved path, used for devices that expose one mono stream per channel; the recorder now also drains buffered audio when stopped, and non-interleaved streams carrying more than one channel are rejected explicitly (preview) (#1461)
+ * `ExtendedAudioFileServicesReader.CurrentTime` and `TotalTime` on macOS now throw `ObjectDisposedException` after the reader is disposed, rather than a native exception (preview) (#1451)
+ * Refreshed the NuGet package icon, now rendered from the new SVG version of the NAudio logo as a sharper, square 256×256 PNG (#1467)
+ * Fixed the Help and About links in the AudioFileInspector, MidiFileConverter and MixDiff sample apps, which threw on .NET 9 instead of opening the help page or browser, and pointed the links and help pages at GitHub rather than CodePlex (#1469)
 
 ### 3.1.0 (7 Sep 2026)
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using NAudio.Utils;
 
 namespace NAudio.Wave;
 
@@ -18,7 +17,7 @@ public class Id3v2Tag
     /// <summary>
     /// Reads an ID3v2 tag from a stream
     /// </summary>
-    public static Id3v2Tag ReadTag(Stream input)
+    public static Id3v2Tag? ReadTag(Stream input)
     {
         long tagStartPosition = input.Position;
         var reader = new BinaryReader(input);
@@ -42,7 +41,7 @@ public class Id3v2Tag
     /// <returns>A new ID3v2 tag</returns>
     public static Id3v2Tag Create(IEnumerable<KeyValuePair<string, string>> tags)
     {
-        return Id3v2Tag.ReadTag(CreateId3v2TagStream(tags));
+        return ReadTag(CreateId3v2TagStream(tags))!;
     }
 
     /// <summary>
@@ -88,28 +87,22 @@ public class Id3v2Tag
         byte[] body;
         if (key == "COMM") // comment
         {
-            body = ByteArrayExtensions.Concat(
-                new byte[] { UnicodeEncoding },
-                language,
-                shortDescription,
-                UnicodeOrder,
-                Encoding.Unicode.GetBytes(value));
+            body = [UnicodeEncoding, .. language, .. shortDescription, .. UnicodeOrder, .. Encoding.Unicode.GetBytes(value)];
         }
         else
         {
-            body = ByteArrayExtensions.Concat(
-                new byte[] { UnicodeEncoding },
-                UnicodeOrder,
-                Encoding.Unicode.GetBytes(value));
+            body = [UnicodeEncoding, .. UnicodeOrder, .. Encoding.Unicode.GetBytes(value)];
         }
 
-        return ByteArrayExtensions.Concat(
+        return
+        [
             // needs review - have converted to UTF8 as Win 8 has no Encoding.ASCII, 
             // need to check what the rules are for ID3v2 tag identifiers
-            Encoding.UTF8.GetBytes(key),
-            FrameSizeToBytes(body.Length),
-            new byte[] { 0, 0 }, // flags
-            body);
+            .. Encoding.UTF8.GetBytes(key),
+            .. FrameSizeToBytes(body.Length),
+            0, 0, // flags
+            .. body,
+        ];
     }
 
     /// <summary>
@@ -136,12 +129,13 @@ public class Id3v2Tag
     /// <returns></returns>
     private static byte[] CreateId3v2TagHeader(int size)
     {
-        byte[] tagHeader = ByteArrayExtensions.Concat(
-            Encoding.UTF8.GetBytes("ID3"),
-            new byte[] { 3, 0 }, // version
-            new byte[] { 0 }, // flags
-            GetId3TagHeaderSize(size));
-        return tagHeader;
+        return
+        [
+            .. "ID3"u8,
+            3, 0, // version
+            0,    // flags
+            .. GetId3TagHeaderSize(size),
+        ];
     }
 
     /// <summary>

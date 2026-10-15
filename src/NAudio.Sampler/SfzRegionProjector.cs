@@ -31,7 +31,7 @@ internal static class SfzRegionProjector
     /// Projects one mapped region, or returns null if it has no sample, the
     /// sample cannot be loaded, or the region is disabled (<c>end=-1</c>).
     /// </summary>
-    public static SamplerRegion Project(SfzMappedRegion region, ISfzSampleLoader loader)
+    public static SamplerRegion? Project(SfzMappedRegion region, ISfzSampleLoader loader)
     {
         if (region.Sample == null) return null;
         // an explicit end=-1 means "this region is not played" per the SFZ spec
@@ -138,10 +138,10 @@ internal static class SfzRegionProjector
     // gain are applied (a flat band is a no-op). The semantic layer supplies
     // the bands in natural units; the octave bandwidth becomes the peaking
     // filter's Q here.
-    private static IReadOnlyList<SamplerEqBand> BuildEqBands(IReadOnlyList<SfzEqBand> bands)
+    private static IReadOnlyList<SamplerEqBand>? BuildEqBands(IReadOnlyList<SfzEqBand>? bands)
     {
         if (bands == null) return null;
-        List<SamplerEqBand> result = null;
+        List<SamplerEqBand>? result = null;
         foreach (var band in bands)
         {
             if (band.GainDb == 0f) continue; // flat band -> no-op

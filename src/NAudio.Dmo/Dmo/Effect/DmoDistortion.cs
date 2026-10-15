@@ -28,6 +28,7 @@ internal interface IDirectSoundFXDistortion
 /// <summary>
 /// DMO Distortion Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.SaturationEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoDistortion : IDmoEffector<DmoDistortion.Params>
 {
     private static readonly Guid Id_Distortion = new("EF114C90-CD1D-484E-96E5-09CFAF912A21");

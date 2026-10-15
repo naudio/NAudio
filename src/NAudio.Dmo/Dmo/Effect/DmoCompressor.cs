@@ -29,6 +29,7 @@ internal interface IDirectSoundFXCompressor
 /// <summary>
 /// DMO Compressor Effect
 /// </summary>
+[System.Obsolete("Use NAudio.Effects.CompressorEffect (wrapped in an EffectSampleProvider) instead. The DMO effects will be removed in a future major version.")]
 public class DmoCompressor : IDmoEffector<DmoCompressor.Params>
 {
     private static readonly Guid Id_Compressor = new("EF011F79-4000-406D-87AF-BFFB3FC39D57");

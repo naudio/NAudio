@@ -1,4 +1,4 @@
-
+﻿
 using System;
 
 using NAudio.Wave;
@@ -140,7 +140,7 @@ public class FormatConversionTests
 
         Assert.DoesNotThrow(() => outFormat = MacUtils.ConstructWaveFormatFromASBD(asbd));
 
-        Assert.NotNull(outFormat);
+        Assert.That(outFormat, Is.Not.Null);
 
         Assert.That(
             asbd.mSampleRate,

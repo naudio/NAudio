@@ -17,7 +17,7 @@ public class WaveChunksExtensionsTests
     private static WaveFileReader WriteThenRead(System.Action<WaveFileWriter> write)
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             write(w);
             w.Write(Audio, 0, Audio.Length);

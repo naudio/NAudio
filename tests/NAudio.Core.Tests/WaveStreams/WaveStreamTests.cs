@@ -62,4 +62,51 @@ public class WaveStreamTests
         // would NOT match here (it would yield 8000 * 1.5 * 65 = 780000).
         Assert.That(stream.Position, Is.Not.EqualTo(780_000));
     }
+    [Test]
+    public void CurrentTimeSetterClampsNegativeToZero()
+    {
+        var stream = new NullWaveStream(new WaveFormat(8000, 16, 1), 16000);
+        stream.Position = 1600;
+
+        stream.CurrentTime = TimeSpan.FromSeconds(-1);
+
+        Assert.That(stream.Position, Is.Zero);
+    }
+
+    [Test]
+    public void CurrentTimeSetterClampsToLength()
+    {
+        // 1 second of 16-bit mono 8 kHz = 16000 bytes
+        var stream = new NullWaveStream(new WaveFormat(8000, 16, 1), 16000);
+
+        stream.CurrentTime = TimeSpan.FromSeconds(5);
+
+        Assert.That(stream.Position, Is.EqualTo(16000));
+    }
+
+    [Test]
+    public void CurrentTimeSetterSkipsClampWhenLengthIsNotSupported()
+    {
+        var stream = new LengthThrowingWaveStream(new NotSupportedException());
+
+        stream.CurrentTime = TimeSpan.FromSeconds(5);
+
+        Assert.That(stream.Position, Is.EqualTo(80000));
+    }
+
+    [Test]
+    public void CurrentTimeSetterDoesNotSwallowOtherLengthExceptions()
+    {
+        var stream = new LengthThrowingWaveStream(new ObjectDisposedException("stream"));
+
+        Assert.Throws<ObjectDisposedException>(() => stream.CurrentTime = TimeSpan.FromSeconds(5));
+    }
+
+    private sealed class LengthThrowingWaveStream(Exception lengthException) : WaveStream
+    {
+        public override WaveFormat WaveFormat { get; } = new WaveFormat(8000, 16, 1);
+        public override long Length => throw lengthException;
+        public override long Position { get; set; }
+        public override int Read(byte[] buffer, int offset, int count) => 0;
+    }
 }

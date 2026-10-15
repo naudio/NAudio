@@ -1,4 +1,4 @@
-// This interop definition was derived from the file AudioConverter.h of the Audio Toolbox Framework.
+﻿// This interop definition was derived from the file AudioConverter.h of the Audio Toolbox Framework.
 // See https://developer.apple.com/documentation/audiotoolbox for more information.
 
 using System.Runtime.Versioning;
@@ -7,7 +7,7 @@ namespace NAudio.MacOS.AudioToolbox;
 
 /// <summary>
 /// Dithering algorithms for audio converters <br />
-/// Constants to be used as the value for kAudioConverterPropertyDithering.
+/// Constants to be used as the value for the <see cref="Wave.MacAudioConverter.Dithering"/> property.
 /// </summary>
 [SupportedOSPlatform("macos")]
 [UnsupportedOSPlatform("ios")]

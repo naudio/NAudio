@@ -31,7 +31,7 @@ internal sealed class AlsaPcm : IDisposable
     private readonly Lock gate = new();
     private readonly SafePcmHandle handle;
     private bool disposed;
-    private Thread worker;
+    private Thread? worker;
     private volatile bool running;
 
     internal AlsaPcm(string pcmName, PCMStream stream)
@@ -212,7 +212,7 @@ internal sealed class AlsaPcm : IDisposable
     /// </summary>
     internal void StopWorker()
     {
-        Thread toJoin;
+        Thread? toJoin;
         lock (gate)
         {
             toJoin = worker;
@@ -246,7 +246,7 @@ internal sealed class AlsaPcm : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        Thread toJoin;
+        Thread? toJoin;
         lock (gate)
         {
             if (disposed)

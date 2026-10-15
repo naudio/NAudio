@@ -7,6 +7,7 @@ namespace NAudio.Wave;
 /// Raised when ASIO data has been recorded.
 /// It is important to handle this as quickly as possible as it is in the buffer callback
 /// </summary>
+[Obsolete("Raised only by AsioOut's obsolete recording path. Use AsioDevice.InitRecording or AsioDevice.InitDuplex instead (see Docs/AsioMigration.md). AsioAudioAvailableEventArgs will be removed in a future major version.")]
 public class AsioAudioAvailableEventArgs : EventArgs
 {
     /// <summary>

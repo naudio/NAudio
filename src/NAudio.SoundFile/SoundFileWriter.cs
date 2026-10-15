@@ -31,7 +31,7 @@ public sealed class SoundFileWriter : Stream
     private readonly int channels;
     private readonly int frameBytes;
     private readonly SafeSndFileHandle handle;
-    private readonly StreamVirtualIo virtualIo;
+    private readonly StreamVirtualIo? virtualIo;
     private SfVirtualIo vtable;
     private byte[] carry = [];
     private long bytesWritten;
@@ -60,7 +60,7 @@ public sealed class SoundFileWriter : Stream
     /// <param name="source">The audio to encode.</param>
     /// <param name="major">The container / codec to produce.</param>
     /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
-    public static void CreateSoundFile(string path, IWaveProvider source, SoundFileMajorFormat major, SoundFileWriterOptions options)
+    public static void CreateSoundFile(string path, IWaveProvider source, SoundFileMajorFormat major, SoundFileWriterOptions? options)
     {
         ArgumentNullException.ThrowIfNull(source);
         using var writer = new SoundFileWriter(path, source.WaveFormat, major, options);
@@ -87,7 +87,7 @@ public sealed class SoundFileWriter : Stream
     /// <param name="source">The audio to encode.</param>
     /// <param name="major">The container / codec to produce.</param>
     /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
-    public static void WriteSoundFileToStream(Stream outStream, IWaveProvider source, SoundFileMajorFormat major, SoundFileWriterOptions options)
+    public static void WriteSoundFileToStream(Stream outStream, IWaveProvider source, SoundFileMajorFormat major, SoundFileWriterOptions? options)
     {
         ArgumentNullException.ThrowIfNull(source);
         using (var writer = new SoundFileWriter(outStream, source.WaveFormat, major, options))
@@ -135,7 +135,7 @@ public sealed class SoundFileWriter : Stream
     /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
     /// <exception cref="ArgumentException">libsndfile rejects the format/rate/channel combination.</exception>
     /// <exception cref="NotSupportedException"><paramref name="sourceFormat"/> is not 16-bit PCM or 32-bit float.</exception>
-    public SoundFileWriter(string path, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions options = null)
+    public SoundFileWriter(string path, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions? options = null)
         : this(path, sourceFormat, BuildFormat(major, options), options)
     {
     }
@@ -152,7 +152,7 @@ public sealed class SoundFileWriter : Stream
     /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
     /// <exception cref="ArgumentException">The stream can't satisfy the format, or libsndfile rejects it.</exception>
     /// <exception cref="NotSupportedException"><paramref name="sourceFormat"/> is not 16-bit PCM or 32-bit float.</exception>
-    public SoundFileWriter(Stream outStream, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions options = null)
+    public SoundFileWriter(Stream outStream, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions? options = null)
         : this(outStream, sourceFormat, BuildFormat(major, options), options)
     {
     }
@@ -166,7 +166,7 @@ public sealed class SoundFileWriter : Stream
     /// <param name="rawFormat">A libsndfile <c>SF_FORMAT_*</c> bitfield (major | subtype).</param>
     /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
     /// <returns>A new writer.</returns>
-    public static SoundFileWriter FromRawFormat(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options = null)
+    public static SoundFileWriter FromRawFormat(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions? options = null)
         => new(path, sourceFormat, rawFormat, options);
 
     /// <summary>
@@ -178,10 +178,10 @@ public sealed class SoundFileWriter : Stream
     /// <param name="rawFormat">A libsndfile <c>SF_FORMAT_*</c> bitfield (major | subtype).</param>
     /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
     /// <returns>A new writer.</returns>
-    public static SoundFileWriter FromRawFormat(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options = null)
+    public static SoundFileWriter FromRawFormat(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions? options = null)
         => new(outStream, sourceFormat, rawFormat, options);
 
-    private SoundFileWriter(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options)
+    private SoundFileWriter(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions? options)
     {
         ArgumentNullException.ThrowIfNull(path);
         (this.sourceFormat, itemType, channels, frameBytes) = Validate(sourceFormat);
@@ -192,7 +192,7 @@ public sealed class SoundFileWriter : Stream
         ApplyOptions(options);
     }
 
-    private SoundFileWriter(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options)
+    private SoundFileWriter(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions? options)
     {
         ArgumentNullException.ThrowIfNull(outStream);
         if (!outStream.CanWrite)
@@ -228,7 +228,7 @@ public sealed class SoundFileWriter : Stream
         return path;
     }
 
-    private static int BuildFormat(SoundFileMajorFormat major, SoundFileWriterOptions options)
+    private static int BuildFormat(SoundFileMajorFormat major, SoundFileWriterOptions? options)
         => SoundFileFormatMap.BuildFormat(major, options?.Subtype ?? SoundFileSubtype.Default);
 
     private static (WaveFormat, ItemType, int, int) Validate(WaveFormat format)
@@ -274,7 +274,7 @@ public sealed class SoundFileWriter : Stream
         return info;
     }
 
-    private void ApplyOptions(SoundFileWriterOptions options)
+    private void ApplyOptions(SoundFileWriterOptions? options)
     {
         IntPtr h = handle.DangerousGetHandle();
 

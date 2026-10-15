@@ -29,14 +29,14 @@ public enum EffectParameterKind
 public sealed class EffectParameter
 {
     private readonly Func<float> getter;
-    private readonly Action<float> setter; // null ⇒ read-only (Meter)
-    private volatile IParameterDispatch dispatch;
+    private readonly Action<float>? setter; // null ⇒ read-only (Meter)
+    private volatile IParameterDispatch? dispatch;
     private float pendingValue;
     private bool hasPending;
 
     private EffectParameter(string name, EffectParameterKind kind, string unit,
-        float minimum, float maximum, IReadOnlyList<string> choices,
-        Func<float> getter, Action<float> setter)
+        float minimum, float maximum, IReadOnlyList<string>? choices,
+        Func<float> getter, Action<float>? setter)
     {
         Name = name;
         Kind = kind;
@@ -68,7 +68,7 @@ public sealed class EffectParameter
     public float DefaultValue { get; }
 
     /// <summary>Choice labels for <see cref="EffectParameterKind.Choice"/>; otherwise null.</summary>
-    public IReadOnlyList<string> Choices { get; }
+    public IReadOnlyList<string>? Choices { get; }
 
     /// <summary>True for a <see cref="EffectParameterKind.Meter"/> (set is ignored).</summary>
     public bool IsReadOnly => setter == null;
@@ -113,7 +113,7 @@ public sealed class EffectParameter
     /// pending value so the getter reflects the effect's real state until the
     /// next edit.
     /// </summary>
-    internal void SetDispatch(IParameterDispatch value)
+    internal void SetDispatch(IParameterDispatch? value)
     {
         hasPending = false;
         dispatch = value;

@@ -20,7 +20,7 @@ public class WaveFileWriterRf64Tests
     public void Rf64NotEnabledProducesPlainRiff()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.Write(new byte[100], 0, 100);
         }
@@ -33,7 +33,7 @@ public class WaveFileWriterRf64Tests
         // We can't actually allocate > 4 GB in a test, but we can prove the pre-flight
         // range check still triggers at the internal boundary.
         var ms = new MemoryStream();
-        using var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format,
+        using var w = new WaveFileWriter(ms, Format,
             new WaveFileWriterOptions { EnableRf64 = false, Rf64PromotionThreshold = 50 });
         // Even with a low threshold, EnableRf64 is false so the 4 GB cap still applies.
         // With our modest data the check doesn't fire, but we can at least verify the writer
@@ -51,7 +51,7 @@ public class WaveFileWriterRf64Tests
         // Whether or not promotion kicks in, the 36-byte JUNK placeholder is always reserved
         // so the ds64 slot exists.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true }))
         {
             w.Write(new byte[100], 0, 100);
         }
@@ -64,7 +64,7 @@ public class WaveFileWriterRf64Tests
     public void Rf64EnabledButSmallDataStaysAsRiff()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 10_000 }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 10_000 }))
         {
             w.Write(new byte[100], 0, 100);
         }
@@ -78,7 +78,7 @@ public class WaveFileWriterRf64Tests
     public void Rf64EnabledAndDataOverThresholdPromotesToRf64()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
         {
             w.Write(new byte[500], 0, 500);
         }
@@ -95,7 +95,7 @@ public class WaveFileWriterRf64Tests
     {
         var dataLength = 500;
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
         {
             w.Write(new byte[dataLength], 0, dataLength);
         }
@@ -118,7 +118,7 @@ public class WaveFileWriterRf64Tests
         for (int i = 0; i < audio.Length; i++) audio[i] = (byte)i;
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
         {
             w.Write(audio, 0, audio.Length);
         }
@@ -138,7 +138,7 @@ public class WaveFileWriterRf64Tests
         // Per EBU Tech 3306, the data chunk size in an RF64 file is 0xFFFFFFFF; the real
         // 64-bit size lives in ds64.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
         {
             w.Write(new byte[500], 0, 500);
         }
@@ -157,7 +157,7 @@ public class WaveFileWriterRf64Tests
         // Promotion must cope with the extra chunks correctly.
         var audio = new byte[500];
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions { EnableRf64 = true, Rf64PromotionThreshold = 100 }))
         {
             w.WriteBroadcastExtension(new BroadcastExtension { Description = "RF64 Test", Version = 1 });
             w.Write(audio, 0, audio.Length);
@@ -177,7 +177,7 @@ public class WaveFileWriterRf64Tests
     public void NormalWriterDoesNotEmitJunkPlaceholder()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.Write(new byte[100], 0, 100);
         }
@@ -191,7 +191,7 @@ public class WaveFileWriterRf64Tests
     {
         // new WaveFileWriterOptions() with no properties set should match the no-options ctor.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, new WaveFileWriterOptions()))
+        using (var w = new WaveFileWriter(ms, Format, new WaveFileWriterOptions()))
         {
             w.Write(new byte[100], 0, 100);
         }
@@ -206,7 +206,7 @@ public class WaveFileWriterRf64Tests
         // Passing null for options is allowed and equivalent to passing a default-constructed
         // WaveFileWriterOptions.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, null))
+        using (var w = new WaveFileWriter(ms, Format, null))
         {
             w.Write(new byte[100], 0, 100);
         }

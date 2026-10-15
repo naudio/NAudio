@@ -13,5 +13,5 @@ public interface IWaveChunkInterpreter<out T>
     /// Reads any required chunks from <paramref name="chunks"/> and returns the interpreted result,
     /// or <c>default</c> if the chunks needed to construct a meaningful result are not present.
     /// </summary>
-    T Interpret(WaveChunks chunks);
+    T? Interpret(WaveChunks chunks);
 }

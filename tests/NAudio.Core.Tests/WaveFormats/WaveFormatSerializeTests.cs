@@ -66,7 +66,7 @@ public class WaveFormatSerializeTests
     {
         var format = new WaveFormat(16000, 16, 1);
         using var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new WaveFileWriter(ms, format))
         {
             writer.Write(new byte[64], 0, 64);
         }

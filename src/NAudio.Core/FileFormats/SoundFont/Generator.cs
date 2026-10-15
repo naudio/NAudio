@@ -59,12 +59,12 @@ public class Generator
     /// <summary>
     /// Instrument
     /// </summary>
-    public Instrument Instrument { get; set; }
+    public Instrument? Instrument { get; set; }
 
     /// <summary>
     /// Sample Header
     /// </summary>
-    public SampleHeader SampleHeader { get; set; }
+    public SampleHeader? SampleHeader { get; set; }
 
     /// <summary>
     /// <see cref="object.ToString"/>
@@ -72,7 +72,7 @@ public class Generator
     public override string ToString()
     {
         if (GeneratorType == GeneratorEnum.Instrument)
-            return $"Generator Instrument {Instrument.Name}";
+            return $"Generator Instrument {Instrument}";
         else if (GeneratorType == GeneratorEnum.SampleID)
             return $"Generator SampleID {SampleHeader}";
         else

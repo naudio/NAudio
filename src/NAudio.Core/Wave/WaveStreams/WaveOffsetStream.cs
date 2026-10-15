@@ -11,7 +11,8 @@ namespace NAudio.Wave;
 /// </summary>
 public class WaveOffsetStream : WaveStream
 {
-    private WaveStream sourceStream;
+    private readonly WaveStream sourceStream;
+    private bool disposed = false;
     private long audioStartPosition;
     private long sourceOffsetBytes;
     private long sourceLengthBytes;
@@ -237,8 +238,11 @@ public class WaveOffsetStream : WaveStream
     {
         if (disposing)
         {
-            sourceStream?.Dispose();
-            sourceStream = null;
+            if (!disposed)
+            {
+                sourceStream.Dispose();
+                disposed = true;
+            }
         }
         else
         {

@@ -48,9 +48,9 @@ internal sealed class RegionIndex
 
     private RegionIndex(IReadOnlyList<SamplerRegion> regions)
     {
-        var buckets = new List<SamplerRegion>[128];
-        List<SamplerRegion> releases = null;
-        List<SamplerRegion> ccTriggered = null;
+        var buckets = new List<SamplerRegion>?[128];
+        List<SamplerRegion>? releases = null;
+        List<SamplerRegion>? ccTriggered = null;
 
         for (int i = 0; i < regions.Count; i++)
         {
@@ -72,8 +72,8 @@ internal sealed class RegionIndex
 
         noteOnByKey = new SamplerRegion[128][];
         for (int key = 0; key < 128; key++)
-            noteOnByKey[key] = buckets[key] == null ? Empty : buckets[key].ToArray();
-        ReleaseTriggered = releases == null ? Empty : releases.ToArray();
-        CcTriggered = ccTriggered == null ? Empty : ccTriggered.ToArray();
+            noteOnByKey[key] = buckets[key]?.ToArray() ?? Empty;
+        ReleaseTriggered = releases?.ToArray() ?? Empty;
+        CcTriggered = ccTriggered?.ToArray() ?? Empty;
     }
 }

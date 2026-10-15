@@ -64,7 +64,9 @@
         "src": "..",
         "files": [
           "naudio-logo.png",
-          "naudio-icon.png"
+          "naudio-icon.png",
+          "naudio-icon.svg",
+          "naudio-icon-dark.svg"
         ]
       }
     ],
@@ -77,7 +79,7 @@
     "globalMetadata": {
       "_appName": "NAudio",
       "_appTitle": "NAudio",
-      "_appLogoPath": "naudio-icon.png",
+      "_appLogoPath": "naudio-icon.svg",
       "_appFaviconPath": "naudio-icon.png",
       "_enableSearch": true,
       "_disableContribution": false,

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace NAudio.SoundFont;
 
@@ -62,8 +63,13 @@ public static class SoundFontInstrumentResolver
 
     private static void ResolveInstrument(Instrument instrument,
         SoundFontGenerators presetOffsets, Range presetKeyRange, Range presetVelRange,
-        IReadOnlyList<Modulator> presetModulators, List<SoundFontRegion> regions)
+        IReadOnlyList<Modulator>? presetModulators, List<SoundFontRegion> regions)
     {
+        if (instrument.Zones is null)
+        {
+            return;
+        }
+
         var globalInstrument = TryGetGlobalZone(instrument.Zones, GeneratorEnum.SampleID);
 
         foreach (var instrumentZone in instrument.Zones)
@@ -101,23 +107,24 @@ public static class SoundFontInstrumentResolver
     /// entries supersede earlier ones with identical routing). Returns null
     /// when neither zone has modulators, so the region keeps its empty default.
     /// </summary>
-    private static IReadOnlyList<Modulator> CombineModulators(Zone globalZone, Zone localZone)
+    private static IReadOnlyList<Modulator>? CombineModulators(Zone? globalZone, Zone? localZone)
     {
         var global = globalZone?.Modulators;
         var local = localZone?.Modulators;
-        bool hasGlobal = global != null && global.Length > 0;
-        bool hasLocal = local != null && local.Length > 0;
+        bool hasGlobal = global is { Length: > 0 };
+        bool hasLocal = local is { Length: > 0 };
         if (!hasGlobal && !hasLocal) return null;
         if (!hasGlobal) return local;
         if (!hasLocal) return global;
 
+        Debug.Assert(global is not null && local is not null);
         var combined = new Modulator[global.Length + local.Length];
         global.CopyTo(combined, 0);
         local.CopyTo(combined, global.Length);
         return combined;
     }
 
-    private static Instrument FindInstrument(Zone zone)
+    private static Instrument? FindInstrument(Zone zone)
     {
         if (zone.Generators == null) return null;
         foreach (var g in zone.Generators)
@@ -125,7 +132,7 @@ public static class SoundFontInstrumentResolver
         return null;
     }
 
-    private static SampleHeader FindSample(Zone zone)
+    private static SampleHeader? FindSample(Zone zone)
     {
         if (zone.Generators == null) return null;
         foreach (var g in zone.Generators)
@@ -137,7 +144,7 @@ public static class SoundFontInstrumentResolver
     /// A global zone is the (first) zone that lacks the terminal index
     /// generator. The spec requires it to be first, but we scan defensively.
     /// </summary>
-    private static Zone TryGetGlobalZone(Zone[] zones, GeneratorEnum indexGenerator)
+    private static Zone? TryGetGlobalZone(Zone[] zones, GeneratorEnum indexGenerator)
     {
         if (zones.Length == 0) return null;
         var first = zones[0];
@@ -181,7 +188,7 @@ public static class SoundFontInstrumentResolver
         }
     }
 
-    private static Range GetRange(Zone zone, GeneratorEnum rangeGenerator, Zone globalZone)
+    private static Range GetRange(Zone zone, GeneratorEnum rangeGenerator, Zone? globalZone)
     {
         // an explicit range on the zone wins; otherwise inherit the global
         // zone's range; otherwise the full 0-127 range

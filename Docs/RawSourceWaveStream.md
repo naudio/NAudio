@@ -38,7 +38,7 @@ var rs = new RawSourceWaveStream(ms, new WaveFormat(sampleRate, 16, 1));
 And now we can play the `RawSourceWaveStream` just like it was any other `WaveStream`:
 
 ```c#
-var wo = new WaveOut();
+var wo = new WasapiPlayerBuilder().Build();
 wo.Init(rs);
 wo.Play();
 while (wo.PlaybackState == PlaybackState.Playing)

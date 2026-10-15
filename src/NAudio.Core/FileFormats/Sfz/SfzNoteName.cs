@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 
 namespace NAudio.Sfz;
 
@@ -12,13 +13,13 @@ namespace NAudio.Sfz;
 public static class SfzNoteName
 {
     // semitone offset within an octave for each natural note letter
-    private static readonly int[] LetterSemitone = { 9, 11, 0, 2, 4, 5, 7 }; // a b c d e f g
+    private static ReadOnlySpan<int> LetterSemitone => [9, 11, 0, 2, 4, 5, 7]; // a b c d e f g
 
     /// <summary>
     /// Tries to parse a key value (note number or note name) to a MIDI note
     /// number. Returns false if the text is neither.
     /// </summary>
-    public static bool TryParse(string text, out int note)
+    public static bool TryParse(string? text, out int note)
     {
         note = 0;
         if (string.IsNullOrEmpty(text)) return false;
@@ -54,6 +55,6 @@ public static class SfzNoteName
     /// Parses a key value to a MIDI note number, returning
     /// <paramref name="fallback"/> if it is neither a number nor a note name.
     /// </summary>
-    public static int Parse(string text, int fallback) =>
+    public static int Parse(string? text, int fallback) =>
         TryParse(text, out var note) ? note : fallback;
 }

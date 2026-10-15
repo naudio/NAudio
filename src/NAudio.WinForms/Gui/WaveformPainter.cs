@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -40,6 +41,7 @@ public partial class WaveformPainter : Control
     /// On ForeColor Changed
     /// </summary>
     /// <param name="e"></param>
+    [MemberNotNull(nameof(foregroundPen))]
     protected override void OnForeColorChanged(EventArgs e)
     {
         foregroundPen = new Pen(ForeColor);

@@ -56,7 +56,7 @@ public class SoundFileException : Exception
     /// <summary>
     /// The libsndfile function that failed, or <c>null</c> when not supplied.
     /// </summary>
-    public string Function { get; }
+    public string? Function { get; }
 
     /// <summary>
     /// Throws a <see cref="SoundFileException"/> describing the last error

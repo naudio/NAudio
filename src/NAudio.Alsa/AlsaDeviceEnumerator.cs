@@ -9,7 +9,7 @@ namespace NAudio.Wave.Alsa;
 /// </summary>
 public sealed class AlsaDeviceInfo
 {
-    internal AlsaDeviceInfo(string name, string description)
+    internal AlsaDeviceInfo(string name, string? description)
     {
         Name = name;
         Description = description ?? string.Empty;

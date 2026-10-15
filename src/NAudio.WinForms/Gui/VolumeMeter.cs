@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -30,6 +31,7 @@ public partial class VolumeMeter : Control
     /// <summary>
     /// On Fore Color Changed
     /// </summary>
+    [MemberNotNull(nameof(foregroundBrush))]
     protected override void OnForeColorChanged(EventArgs e)
     {
         foregroundBrush = new SolidBrush(ForeColor);

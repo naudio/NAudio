@@ -67,7 +67,7 @@ public class FadeInOutSampleProvider : ISampleProvider
     /// internal lock has been released, so handlers may safely call back into
     /// <see cref="BeginFadeIn"/> / <see cref="BeginFadeOut"/> (e.g. to schedule a fade-out).
     /// </summary>
-    public event EventHandler FadeInComplete;
+    public event EventHandler? FadeInComplete;
 
     /// <summary>
     /// Raised once when a fade-out started via <see cref="BeginFadeOut"/> reaches silence.
@@ -76,7 +76,7 @@ public class FadeInOutSampleProvider : ISampleProvider
     /// <see cref="BeginFadeIn"/> / <see cref="BeginFadeOut"/> (e.g. to signal stop, or start
     /// a cross-fade into the next source).
     /// </summary>
-    public event EventHandler FadeOutComplete;
+    public event EventHandler? FadeOutComplete;
 
     /// <summary>
     /// Reads samples from this sample provider into a span

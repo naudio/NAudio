@@ -25,7 +25,7 @@ public class MidiIn : IMidiInput
     /// <summary>
     /// Called when a MIDI message is received
     /// </summary>
-    public event EventHandler<MidiInMessageEventArgs> MessageReceived;
+    public event EventHandler<MidiInMessageEventArgs>? MessageReceived;
 
     /// <summary>
     /// Raised when an invalid MIDI message is received.
@@ -34,12 +34,12 @@ public class MidiIn : IMidiInput
     /// This is winmm-specific and is not part of <see cref="IMidiInput"/>; the WinRT backend
     /// does not surface invalid-message events.
     /// </remarks>
-    public event EventHandler<MidiInMessageEventArgs> ErrorReceived;
+    public event EventHandler<MidiInMessageEventArgs>? ErrorReceived;
 
     /// <summary>
     /// Called when a Sysex MIDI message is received
     /// </summary>
-    public event EventHandler<MidiInSysexMessageEventArgs> SysexMessageReceived;
+    public event EventHandler<MidiInSysexMessageEventArgs>? SysexMessageReceived;
 
     /// <summary>
     /// Gets the number of MIDI input devices available in the system

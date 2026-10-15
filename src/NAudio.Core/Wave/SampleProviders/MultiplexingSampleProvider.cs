@@ -59,6 +59,10 @@ public class MultiplexingSampleProvider : ISampleProvider
             }
             inputChannelCount += input.WaveFormat.Channels;
         }
+        if (waveFormat == null)
+        {
+            throw new ArgumentException("No inputs provided.");
+        }
 
         mappings = new List<int>();
         for (int n = 0; n < outputChannelCount; n++)
@@ -70,7 +74,7 @@ public class MultiplexingSampleProvider : ISampleProvider
     /// <summary>
     /// persistent temporary buffer to prevent creating work for garbage collector
     /// </summary>
-    private float[] inputBuffer;
+    private float[]? inputBuffer;
 
     /// <summary>
     /// Reads samples from this sample provider

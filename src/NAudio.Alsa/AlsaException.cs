@@ -38,7 +38,7 @@ public class AlsaException : Exception
     /// <summary>
     /// The libasound function that failed, or <c>null</c> when not supplied.
     /// </summary>
-    public string Function { get; }
+    public string? Function { get; }
 
     /// <summary>
     /// Throws an <see cref="AlsaException"/> if <paramref name="errorCode"/>

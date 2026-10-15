@@ -94,7 +94,7 @@ public class RealtimeCaptureMixer
     /// </param>
     /// <param name="bufferDuration">Internal buffer size for this input (default 2s).</param>
     public CaptureMixerInput AddInput(WaveFormat sourceFormat,
-        Func<ISampleProvider, ISampleProvider> tap = null, TimeSpan? bufferDuration = null)
+        Func<ISampleProvider, ISampleProvider>? tap = null, TimeSpan? bufferDuration = null)
     {
         var input = new CaptureMixerInput(sourceFormat, WaveFormat, bufferDuration);
         inputs.Add(input);

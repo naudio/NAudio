@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -16,19 +17,19 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class NoiseSuppressionEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Aggressiveness", "", 0.5f, 4f, () => Aggressiveness, v => Aggressiveness = v),
         EffectParameter.Continuous("Spectral Floor", "", 0f, 0.5f, () => SpectralFloor, v => SpectralFloor = v),
         EffectParameter.Continuous("Noise Adapt", "", 0.001f, 0.5f, () => NoiseAdaptation, v => NoiseAdaptation = v)
-    };
+    ];
 
-    private FftProcessor fft;
-    private VoiceActivityDetector vad;
-    private float[] window;        // sqrt-Hann, analysis = synthesis (product = Hann, COLA at 50%)
+    private FftProcessor? fft;
+    private VoiceActivityDetector? vad;
+    private float[]? window;       // sqrt-Hann, analysis = synthesis (product = Hann, COLA at 50%)
     private int frameSize = 512;
     private int hop;
     private int spectrumLength;
@@ -67,6 +68,8 @@ public sealed class NoiseSuppressionEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(vad is not null, "Configure must be called before ProcessBlock.");
+
         var channelCount = Channels;
         for (var i = 0; i + channelCount <= buffer.Length; i += channelCount)
         {
@@ -104,6 +107,8 @@ public sealed class NoiseSuppressionEffect : AudioEffect, IParameterized
 
     private void ProcessHop(ChannelState state, bool updateNoise)
     {
+        Debug.Assert(fft is not null && window is not null, "Configure must be called before ProcessHop.");
+
         // Slide the analysis frame: drop the oldest hop, append the new hop.
         Array.Copy(state.Frame, hop, state.Frame, 0, frameSize - hop);
         Array.Copy(state.Fill, 0, state.Frame, frameSize - hop, hop);

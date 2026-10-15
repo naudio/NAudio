@@ -28,7 +28,7 @@ internal static partial class AlsaInterop
 
     private static IntPtr Resolve(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
     {
-        string[] candidates = libraryName switch
+        string[]? candidates = libraryName switch
         {
             AlsaLibrary => new[] { "libasound.so.2", "libasound.so", "libasound" },
             LibC => new[] { "libc.so.6", "libc.so", "libc" },
@@ -188,7 +188,7 @@ internal static partial class AlsaInterop
     /// the strdup'd result with libc <c>free</c>. Returns <c>null</c> when
     /// the field is absent (notably <c>IOID</c>, meaning bidirectional).
     /// </summary>
-    internal static string DeviceNameGetHintString(IntPtr hint, string id)
+    internal static string? DeviceNameGetHintString(IntPtr hint, string id)
     {
         var ptr = DeviceNameGetHint(hint, id);
         if (ptr == IntPtr.Zero)

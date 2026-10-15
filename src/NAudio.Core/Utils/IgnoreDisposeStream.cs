@@ -7,6 +7,7 @@ namespace NAudio.Utils;
 /// Pass-through stream that ignores Dispose
 /// Useful for dealing with MemoryStreams that you want to re-use
 /// </summary>
+[Obsolete("No longer needed: WaveFileWriter, AiffFileWriter and WaveFileReader leave a caller-supplied Stream open. For other types, use their leaveOpen option. IgnoreDisposeStream will be removed in a future major version.")]
 public class IgnoreDisposeStream : Stream
 {
     /// <summary>
@@ -130,7 +131,6 @@ public class IgnoreDisposeStream : Stream
         if (!IgnoreDispose)
         {
             SourceStream.Dispose();
-            SourceStream = null;
         }
         base.Dispose(disposing);
     }

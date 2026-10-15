@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -14,19 +15,19 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class TransientShaperEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Attack", "dB", -20f, 20f, () => AttackDb, v => AttackDb = v),
         EffectParameter.Continuous("Sustain", "dB", -20f, 20f, () => SustainDb, v => SustainDb = v),
         EffectParameter.Continuous("Fast", "ms", 0.1f, 20f, () => FastMs, v => FastMs = v),
         EffectParameter.Continuous("Slow", "ms", 10f, 500f, () => SlowMs, v => SlowMs = v)
-    };
+    ];
 
-    private EnvelopeFollower fast;
-    private EnvelopeFollower slow;
+    private EnvelopeFollower? fast;
+    private EnvelopeFollower? slow;
 
     /// <summary>Attack (transient) gain in dB; positive sharpens, negative softens. Default 0.</summary>
     public float AttackDb { get; set; }
@@ -50,6 +51,8 @@ public sealed class TransientShaperEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(fast is not null && slow is not null, "Configure must be called before ProcessBlock.");
+
         var channels = Channels;
         fast.AttackMilliseconds = fast.ReleaseMilliseconds = FastMs;
         slow.AttackMilliseconds = slow.ReleaseMilliseconds = SlowMs;

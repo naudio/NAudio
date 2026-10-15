@@ -185,7 +185,7 @@ public partial class AudioFileInspectorForm : Form
         string helpFilePath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "audio_file_inspector.html");
         try
         {
-            System.Diagnostics.Process.Start(helpFilePath);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(helpFilePath) { UseShellExecute = true });
         }
         catch (Win32Exception)
         {

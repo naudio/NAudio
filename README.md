@@ -4,7 +4,10 @@
 
 NAudio is an open source .NET audio library written by [Mark Heath](https://markheath.net)
 
-![NAudio logo](naudio-logo.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="naudio-logo-dark.svg">
+  <img alt="NAudio logo" src="naudio-logo.svg" width="400">
+</picture>
 
 📖 **[Documentation site](https://naudio.github.io/NAudio/)** — tutorials and the full API reference.
 

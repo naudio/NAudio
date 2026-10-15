@@ -75,10 +75,10 @@ public sealed class AlsaIn : IWaveIn, IWaveLatency
     }
 
     /// <inheritdoc />
-    public event EventHandler<WaveInEventArgs> DataAvailable;
+    public event EventHandler<WaveInEventArgs>? DataAvailable;
 
     /// <inheritdoc />
-    public event EventHandler<StoppedEventArgs> RecordingStopped;
+    public event EventHandler<StoppedEventArgs>? RecordingStopped;
 
     /// <inheritdoc />
     public void StartRecording()
@@ -104,7 +104,7 @@ public sealed class AlsaIn : IWaveIn, IWaveLatency
     private void CaptureLoop()
     {
         var buffer = new byte[AlsaPcm.PeriodFrames * frameBytes];
-        Exception error = null;
+        Exception? error = null;
         try
         {
             while (pcm.Running)

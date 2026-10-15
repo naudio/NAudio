@@ -21,12 +21,12 @@ public partial class AboutForm : Form
 
     private void linkLabelWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
-        System.Diagnostics.Process.Start(linkLabelWebsite.Text);
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(linkLabelWebsite.Text) { UseShellExecute = true });
     }
 
     private void linkLabelFeedback_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
-        System.Diagnostics.Process.Start("mailto:" + linkLabelFeedback.Text);
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:" + linkLabelFeedback.Text) { UseShellExecute = true });
     }
 
     private void buttonOK_Click(object sender, EventArgs e)
@@ -36,7 +36,7 @@ public partial class AboutForm : Form
 
     /// <summary>
     /// The URL of the website to use for help
-    /// e.g. http://www.codeplex.com/naudio
+    /// e.g. https://github.com/naudio/NAudio
     /// </summary>
     public string Url
     {

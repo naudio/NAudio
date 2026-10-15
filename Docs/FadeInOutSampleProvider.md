@@ -17,9 +17,9 @@ fade.BeginFadeIn(2000);
 Now we can pass our `FadeInOutSampleProvider` to an output device and start playing. We'll hear the audio fading in over the first two seconds.
 
 ```c#
-var waveOutDevice = new WaveOut();
-waveOutDevice.Init(fade);
-waveOutDevice.Play();
+var outputDevice = new WasapiPlayerBuilder().Build();
+outputDevice.Init(fade);
+outputDevice.Play();
 ```
 
 At some point in the future, we might want to fade out, and we can trigger that with `BeginFadeOut`, again specifying a 2 second fadeout. 

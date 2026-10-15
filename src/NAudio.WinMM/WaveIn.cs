@@ -156,6 +156,11 @@ public class WaveIn : IWaveIn, IWaveLatency
     private void DoRecording()
     {
         captureState = CaptureState.Capturing;
+        // Cache the buffers in a local: Dispose() calls CloseWaveInDevice() without joining
+        // this thread, and that nulls out the field, so re-reading it each loop could throw a
+        // NullReferenceException mid-recording. Once disposed, a WaveInBuffer reports no
+        // flags set, so the loop below sees nothing Done and exits cleanly. Same race as
+        // WaveOut hit in issue #804.
         var currentBuffers = buffers;
         if (currentBuffers == null) return;
         foreach (var buffer in currentBuffers)

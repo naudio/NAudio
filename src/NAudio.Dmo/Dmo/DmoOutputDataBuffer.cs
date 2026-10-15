@@ -10,7 +10,7 @@ namespace NAudio.Dmo;
 public struct DmoOutputDataBuffer : IDisposable
 {
     [MarshalAs(UnmanagedType.Interface)]
-    private IMediaBuffer pBuffer;
+    private IMediaBuffer? pBuffer;
     private DmoOutputDataBufferFlags dwStatus;
     private long rtTimestamp;
     private long referenceTimeDuration;
@@ -45,7 +45,7 @@ public struct DmoOutputDataBuffer : IDisposable
     /// </summary>
     public IMediaBuffer MediaBuffer
     {
-        get { return pBuffer; }
+        get { return pBuffer ?? throw new ObjectDisposedException(nameof(DmoOutputDataBuffer)); }
         internal set { pBuffer = value; }
     }
 
@@ -54,7 +54,7 @@ public struct DmoOutputDataBuffer : IDisposable
     /// </summary>
     public int Length
     {
-        get { return ((MediaBuffer)pBuffer).Length; }
+        get { return ((MediaBuffer)MediaBuffer).Length; }
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public struct DmoOutputDataBuffer : IDisposable
     /// <param name="destination">Span to copy data into</param>
     public void RetrieveData(Span<byte> destination)
     {
-        ((MediaBuffer)pBuffer).RetrieveData(destination);
+        ((MediaBuffer)MediaBuffer).RetrieveData(destination);
     }
 
     /// <summary>

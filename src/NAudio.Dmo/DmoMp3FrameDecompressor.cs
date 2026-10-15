@@ -9,12 +9,15 @@ namespace NAudio.Dmo;
 /// </summary>
 public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
 {
-    private WindowsMediaMp3Decoder mp3Decoder;
+    private WindowsMediaMp3Decoder? mp3Decoder;
     private readonly WaveFormat pcmFormat;
-    private MediaBuffer inputMediaBuffer;
+    private MediaBuffer? inputMediaBuffer;
     private DmoOutputDataBuffer outputBuffer;
     private readonly DmoOutputDataBuffer[] outputBufferArray;
     private bool reposition;
+
+    private WindowsMediaMp3Decoder Decoder => mp3Decoder ?? throw new ObjectDisposedException(nameof(DmoMp3FrameDecompressor));
+    private MediaBuffer InputMediaBuffer => inputMediaBuffer ?? throw new ObjectDisposedException(nameof(DmoMp3FrameDecompressor));
 
     /// <summary>
     /// Initializes a new instance of the DMO MP3 Frame decompressor
@@ -51,17 +54,21 @@ public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
     /// </summary>
     public int DecompressFrame(Mp3Frame frame, Span<byte> dest)
     {
+        if (frame.RawData == null)
+        {
+            throw new ArgumentException("The Mp3Frame was read without its data", nameof(frame));
+        }
         // 1. copy into our DMO's input buffer
-        inputMediaBuffer.LoadData(frame.RawData.AsSpan(0, frame.FrameLength));
+        InputMediaBuffer.LoadData(frame.RawData.AsSpan(0, frame.FrameLength));
 
         if (reposition)
         {
-            mp3Decoder.MediaObject.Flush();
+            Decoder.MediaObject.Flush();
             reposition = false;
         }
 
         // 2. Give the input buffer to the DMO to process
-        mp3Decoder.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
+        Decoder.MediaObject.ProcessInput(0, InputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
 
         outputBuffer.MediaBuffer.SetLength(0);
         outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
@@ -70,7 +77,7 @@ public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
         // DmoOutputDataBuffer is a struct; refresh the cached single-element
         // array slot so ProcessOutput sees the freshly reset flags.
         outputBufferArray[0] = outputBuffer;
-        mp3Decoder.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
+        Decoder.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
 
         if (outputBuffer.Length == 0)
         {

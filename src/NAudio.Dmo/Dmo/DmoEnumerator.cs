@@ -54,7 +54,7 @@ public class DmoEnumerator
                 enumDmo.Next(1, out Guid guid, out IntPtr namePointer, out itemsFetched);
                 if (itemsFetched == 1)
                 {
-                    string name = Marshal.PtrToStringUni(namePointer);
+                    string name = Marshal.PtrToStringUni(namePointer) ?? "";
                     Marshal.FreeCoTaskMem(namePointer);
                     yield return new DmoDescriptor(name, guid);
                 }

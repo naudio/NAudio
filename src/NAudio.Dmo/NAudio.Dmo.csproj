@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
     <Description>DirectX Media Objects (echo, chorus, reverb, MP3 decoder, resampler) and DirectSound output for the NAudio audio library.</Description>
   </PropertyGroup>
 

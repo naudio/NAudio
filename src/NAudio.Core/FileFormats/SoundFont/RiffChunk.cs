@@ -97,11 +97,9 @@ internal class RiffChunk
     /// useful for chunks that just contain a string
     /// </summary>
     /// <returns>chunk as string</returns>
-    public string? GetDataAsString()
+    public string GetDataAsString()
     {
         byte[] data = GetData();
-        if (data == null)
-            return null;
         return ByteEncoding.Instance.GetString(data, 0, data.Length);
     }
 

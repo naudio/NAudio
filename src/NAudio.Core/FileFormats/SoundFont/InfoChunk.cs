@@ -28,7 +28,7 @@ public class InfoChunk
                     WaveTableSoundEngine = c.GetDataAsString();
                     break;
                 case "INAM":
-                    BankName = c.GetDataAsString()!;
+                    BankName = c.GetDataAsString();
                     break;
                 case "irom":
                     DataROM = c.GetDataAsString();

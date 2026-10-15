@@ -173,7 +173,6 @@ public class Mp3Frame
     /// </summary>
     private Mp3Frame()
     {
-        RawData = null!; // TODO: larger refactor necessary
     }
 
     /// <summary>
@@ -294,9 +293,10 @@ public class Mp3Frame
     public int BitRate { get; private set; }
 
     /// <summary>
-    /// Raw frame data (includes header bytes)
+    /// Raw frame data (includes header bytes), or <see langword="null"/> if the frame was
+    /// loaded with <c>readData: false</c>
     /// </summary>
-    public byte[] RawData { get; private set; }
+    public byte[]? RawData { get; private set; }
 
     /// <summary>
     /// MPEG Version

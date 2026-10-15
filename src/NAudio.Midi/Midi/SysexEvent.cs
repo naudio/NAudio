@@ -77,7 +77,7 @@ public class SysexEvent : MidiEvent
     public override MidiEvent Clone()
     {
         var clone = (SysexEvent)MemberwiseClone();
-        clone.data = (byte[])data?.Clone();
+        clone.data = (byte[])data.Clone();
         return clone;
     }
 

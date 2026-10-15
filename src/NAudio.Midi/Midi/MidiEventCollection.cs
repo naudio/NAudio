@@ -72,7 +72,7 @@ public class MidiEventCollection : IEnumerable<IList<MidiEvent>>
     /// </summary>
     /// <param name="initialEvents">Initial events to add to the new track</param>
     /// <returns>The new track event list</returns>
-    public IList<MidiEvent> AddTrack(IList<MidiEvent> initialEvents)
+    public IList<MidiEvent> AddTrack(IList<MidiEvent>? initialEvents)
     {
         List<MidiEvent> events = initialEvents is null ? [] : new(initialEvents);
         trackEvents.Add(events);

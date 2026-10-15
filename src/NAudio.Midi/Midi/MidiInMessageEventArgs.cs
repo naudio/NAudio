@@ -32,9 +32,9 @@ public class MidiInMessageEventArgs : EventArgs
     public int RawMessage { get; private set; }
 
     /// <summary>
-    /// The raw message interpreted as a MidiEvent
+    /// The raw message interpreted as a MidiEvent, or <see langword="null"/> if it couldn't be parsed
     /// </summary>
-    public MidiEvent MidiEvent { get; private set; }
+    public MidiEvent? MidiEvent { get; private set; }
 
     /// <summary>
     /// The timestamp at which this message was received, measured from

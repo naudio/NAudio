@@ -14,6 +14,7 @@ limit and fails the release build if exceeded.
 -->
 
  * **Nullable reference types in NAudio.Core** - `NAudio.Core` is now compiled with nullable reference types enabled, so its public API carries nullability annotations (e.g. `WaveFileReader.ReadNextSampleFrame` and `Mp3Frame.LoadFromStream` return nullable types, and `Mp3Frame.RawData` is `byte[]?` when a frame is read without its data). This is a source-level change only: there are no binary breaks, but projects with nullable enabled may see new warnings, and overrides of NAudio.Core virtual members may need matching annotations. `XingHeader.LoadXingHeader` now returns `null` for a frame read without its data instead of throwing. Thanks to @Seb-stian (#1452)
+ * **Nullable reference types in NAudio.Midi** - `NAudio.Midi` is now also compiled with nullable reference types enabled (e.g. `MidiInMessageEventArgs.MidiEvent` and `NoteOnEvent.OffEvent` are nullable). Source-level change only; projects with nullable enabled may see new warnings. `MidiEvent.ReadNextEvent` now throws `FormatException` instead of `NullReferenceException` for running status with no previous event, and `RawMetaEvent` treats null data as empty (#825)
 
 ### 3.2.0 (15 Oct 2026)
 

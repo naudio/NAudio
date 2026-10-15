@@ -111,11 +111,11 @@ public class MidiFile
                 chunkSize = SwapUInt32(br.ReadUInt32());
 
                 long startPos = inputStream.Position;
-                MidiEvent me = null;
+                MidiEvent? me = null;
                 // Only channel-voice messages (NoteOn/Off, ControlChange, etc.) establish
                 // running status; meta and sysex events leave the running status anchor intact
                 // (issue #205).
-                MidiEvent runningStatus = null;
+                MidiEvent? runningStatus = null;
                 var outstandingNoteOns = new List<NoteOnEvent>();
                 while (inputStream.Position < startPos + chunkSize)
                 {

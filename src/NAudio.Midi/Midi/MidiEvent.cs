@@ -92,7 +92,7 @@ public class MidiEvent
     /// running status. Pass null if no channel-voice event has been read yet; meta and
     /// sysex events do not update running status and should not be passed here.</param>
     /// <returns>A new MidiEvent</returns>
-    public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent previous)
+    public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent? previous)
     {
         int deltaTime = ReadVarInt(br);
         MidiCommandCode commandCode;
@@ -101,6 +101,10 @@ public class MidiEvent
         if ((b & 0x80) == 0)
         {
             // a running command - command & channel are same as previous
+            if (previous is null)
+            {
+                throw new FormatException("Running status byte with no previous channel event");
+            }
             commandCode = previous.CommandCode;
             channel = previous.Channel;
             br.BaseStream.Position--; // need to push this back
@@ -257,7 +261,7 @@ public class MidiEvent
     /// <summary>
     /// Whether this is a note off event
     /// </summary>
-    public static bool IsNoteOff(MidiEvent midiEvent)
+    public static bool IsNoteOff(MidiEvent? midiEvent)
     {
         if (midiEvent != null)
         {
@@ -274,7 +278,7 @@ public class MidiEvent
     /// <summary>
     /// Whether this is a note on event
     /// </summary>
-    public static bool IsNoteOn(MidiEvent midiEvent)
+    public static bool IsNoteOn(MidiEvent? midiEvent)
     {
         if (midiEvent != null)
         {
@@ -290,11 +294,11 @@ public class MidiEvent
     /// <summary>
     /// Determines if this is an end track event
     /// </summary>
-    public static bool IsEndTrack(MidiEvent midiEvent)
+    public static bool IsEndTrack(MidiEvent? midiEvent)
     {
         if (midiEvent != null)
         {
-            MetaEvent me = midiEvent as MetaEvent;
+            MetaEvent? me = midiEvent as MetaEvent;
             if (me != null)
             {
                 return me.MetaEventType == MetaEventType.EndTrack;

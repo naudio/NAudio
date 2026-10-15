@@ -15,16 +15,20 @@ public class MidiEventComparer : IComparer<MidiEvent>
     /// Compares two MidiEvents
     /// Sorts by time, with EndTrack always sorted to the end
     /// </summary>
-    public int Compare(MidiEvent x, MidiEvent y)
+    public int Compare(MidiEvent? x, MidiEvent? y)
     {
+        if (ReferenceEquals(x, y)) return 0;
+        if (x is null) return -1;
+        if (y is null) return 1;
+
         long xTime = x.AbsoluteTime;
         long yTime = y.AbsoluteTime;
 
         if (xTime == yTime)
         {
             // sort meta events before note events, except end track
-            MetaEvent xMeta = x as MetaEvent;
-            MetaEvent yMeta = y as MetaEvent;
+            MetaEvent? xMeta = x as MetaEvent;
+            MetaEvent? yMeta = y as MetaEvent;
 
             if (xMeta != null)
             {

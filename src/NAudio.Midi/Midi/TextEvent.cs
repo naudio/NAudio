@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Midi;
 
@@ -48,6 +49,7 @@ public class TextEvent : MetaEvent
             Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
             return byteEncoding.GetString(data);
         }
+        [MemberNotNull(nameof(data))]
         set
         {
             Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;

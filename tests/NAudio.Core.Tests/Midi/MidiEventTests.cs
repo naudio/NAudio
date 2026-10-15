@@ -245,7 +245,7 @@ public class MidiEventTests
         var bytes = new byte[] { 0x00, 0x3C, 0x40 };
         using var ms = new MemoryStream(bytes);
         using var br = new BinaryReader(ms);
-        Assert.Throws<NullReferenceException>(() => MidiEvent.ReadNextEvent(br, null));
+        Assert.Throws<FormatException>(() => MidiEvent.ReadNextEvent(br, null));
     }
 
     [Test]
@@ -331,6 +331,24 @@ public class MidiEventTests
     {
         var midiEvent = new MidiEvent(12, 1, MidiCommandCode.Sysex);
         Assert.That(midiEvent.ToString(), Is.EqualTo("12 Sysex"));
+    }
+
+    [Test]
+    public void RawMetaEventTreatsNullDataAsEmpty()
+    {
+        var rawMeta = new RawMetaEvent(MetaEventType.SequencerSpecific, 0, null);
+        Assert.That(rawMeta.Data, Is.Empty);
+        Assert.That(((RawMetaEvent)rawMeta.Clone()).Data, Is.Empty);
+    }
+
+    [Test]
+    public void MidiEventComparerOrdersNullsFirst()
+    {
+        var comparer = new MidiEventComparer();
+        var midiEvent = new NoteEvent(0, 1, MidiCommandCode.NoteOff, 60, 0);
+        Assert.That(comparer.Compare(null, null), Is.Zero);
+        Assert.That(comparer.Compare(null, midiEvent), Is.Negative);
+        Assert.That(comparer.Compare(midiEvent, null), Is.Positive);
     }
 
     private static int CreateRawMessage(int status, int data1, int data2)

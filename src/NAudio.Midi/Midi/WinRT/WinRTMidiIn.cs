@@ -17,15 +17,15 @@ namespace NAudio.Midi;
 /// </remarks>
 public class WinRTMidiIn : IMidiInput
 {
-    private MidiInPort port;
+    private MidiInPort? port;
     private bool listening;
     private bool disposed;
 
     /// <inheritdoc />
-    public event EventHandler<MidiInMessageEventArgs> MessageReceived;
+    public event EventHandler<MidiInMessageEventArgs>? MessageReceived;
 
     /// <inheritdoc />
-    public event EventHandler<MidiInSysexMessageEventArgs> SysexMessageReceived;
+    public event EventHandler<MidiInSysexMessageEventArgs>? SysexMessageReceived;
 
     private WinRTMidiIn(MidiInPort port)
     {
@@ -58,7 +58,7 @@ public class WinRTMidiIn : IMidiInput
     /// <inheritdoc />
     public void Start()
     {
-        if (disposed) throw new ObjectDisposedException(nameof(WinRTMidiIn));
+        ObjectDisposedException.ThrowIf(port is null, this);
         if (!listening)
         {
             port.MessageReceived += Port_MessageReceived;
@@ -69,7 +69,7 @@ public class WinRTMidiIn : IMidiInput
     /// <inheritdoc />
     public void Stop()
     {
-        if (listening)
+        if (listening && port is not null)
         {
             port.MessageReceived -= Port_MessageReceived;
             listening = false;

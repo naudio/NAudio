@@ -15,7 +15,7 @@ namespace NAudio.Midi;
 /// </remarks>
 public class WinRTMidiOut : IMidiOutput
 {
-    private IMidiOutPort port;
+    private IMidiOutPort? port;
     private bool disposed;
 
     private WinRTMidiOut(IMidiOutPort port)
@@ -49,14 +49,14 @@ public class WinRTMidiOut : IMidiOutput
     /// <inheritdoc />
     public void Send(int message)
     {
-        if (disposed) throw new ObjectDisposedException(nameof(WinRTMidiOut));
+        ObjectDisposedException.ThrowIf(port is null, this);
         port.SendMessage(MidiMessageConverter.ToWinRTMessage(message));
     }
 
     /// <inheritdoc />
     public void SendBuffer(byte[] byteBuffer)
     {
-        if (disposed) throw new ObjectDisposedException(nameof(WinRTMidiOut));
+        ObjectDisposedException.ThrowIf(port is null, this);
         port.SendMessage(MidiMessageConverter.ToWinRTSysexMessage(byteBuffer));
     }
 

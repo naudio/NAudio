@@ -18,7 +18,7 @@ internal class AsioSampleConvertor
     /// <returns></returns>
     public static SampleConvertor SelectSampleConvertor(WaveFormat waveFormat, AsioSampleType asioType)
     {
-        SampleConvertor convertor = null;
+        SampleConvertor? convertor = null;
         bool is2Channels = waveFormat.Channels == 2;
 
         // TODO : IMPLEMENTS OTHER CONVERTOR TYPES

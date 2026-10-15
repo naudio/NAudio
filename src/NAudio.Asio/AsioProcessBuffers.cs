@@ -89,7 +89,8 @@ public readonly ref struct AsioProcessBuffers
         var floats = context.InputFloatBuffers[channelIndex];
         if (!context.InputConverted[channelIndex])
         {
-            context.InputConverter(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
+            // InputConverter is set whenever there are input channels, which the index check above guarantees
+            context.InputConverter!(context.InputNativeBuffers[channelIndex], floats.AsSpan(0, context.Frames), context.Frames);
             context.InputConverted[channelIndex] = true;
         }
         return floats.AsSpan(0, context.Frames);
@@ -155,18 +156,18 @@ internal sealed class AsioCallbackContext
     public AsioSampleType InputFormat;
     public AsioSampleType OutputFormat;
 
-    public IntPtr[] InputNativeBuffers;     // driver-owned pointers, one per selected input channel
-    public IntPtr[] OutputNativeBuffers;    // driver-owned pointers, one per selected output channel
-    public float[][] InputFloatBuffers;     // library-owned, pre-allocated to [Frames] per channel
-    public float[][] OutputFloatBuffers;    // library-owned, pre-allocated to [Frames] per channel
+    public IntPtr[] InputNativeBuffers = [];     // driver-owned pointers, one per selected input channel
+    public IntPtr[] OutputNativeBuffers = [];    // driver-owned pointers, one per selected output channel
+    public float[][] InputFloatBuffers = [];     // library-owned, pre-allocated to [Frames] per channel
+    public float[][] OutputFloatBuffers = [];    // library-owned, pre-allocated to [Frames] per channel
     public int InputNativeBytesPerChannel;
     public int OutputNativeBytesPerChannel;
-    public bool[] OutputRawAccessed;        // set true by AsioProcessBuffers.RawOutput for the corresponding channel
+    public bool[] OutputRawAccessed = [];        // set true by AsioProcessBuffers.RawOutput for the corresponding channel
 
     // Lazy input conversion: for non-float formats the native→float conversion runs on first GetInput/GetChannel
     // access rather than eagerly for every channel, so channels touched only via RawInput (or never read) pay nothing.
-    public AsioNativeToFloatConverter.ConverterFn InputConverter;  // native→float for the input format; null for output-only sessions
-    public bool[] InputConverted;           // per-channel guard: conversion runs once per callback, reset each buffer-switch
+    public AsioNativeToFloatConverter.ConverterFn? InputConverter;  // native→float for the input format; null for output-only sessions
+    public bool[] InputConverted = [];           // per-channel guard: conversion runs once per callback, reset each buffer-switch
 
     public bool Valid;
 }

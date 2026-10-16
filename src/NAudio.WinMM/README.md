@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.WinMM)](https://www.nuget.org/packages/NAudio.WinMM/)
 
-Windows Multimedia (WinMM / `winmm.dll`) bindings for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net9.0-windows`).
+Windows Multimedia (WinMM / `winmm.dll`) bindings for [NAudio](https://github.com/naudio/NAudio). Targets `net9.0` and is Windows-only at runtime (guarded by `[SupportedOSPlatform("windows")]`), so it can be referenced from a plain `netX.0` project as well as a `netX.0-windows` one.
 
 ## What's included
 

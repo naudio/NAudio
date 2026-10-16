@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.Dmo)](https://www.nuget.org/packages/NAudio.Dmo/)
 
-DirectX Media Object (DMO) and DirectSound support for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net9.0-windows`).
+DirectX Media Object (DMO) and DirectSound support for [NAudio](https://github.com/naudio/NAudio). Targets `net9.0` and is Windows-only at runtime (guarded by `[SupportedOSPlatform("windows")]`), so it can be referenced from a plain `netX.0` project as well as a `netX.0-windows` one.
 
 ## What's included
 

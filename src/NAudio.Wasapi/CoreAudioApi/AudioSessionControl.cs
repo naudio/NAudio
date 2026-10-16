@@ -24,6 +24,8 @@ public class AudioSessionControl : IDisposable
 
     private IAudioSessionControl SessionControl => audioSessionControlInterface ?? throw new ObjectDisposedException(nameof(AudioSessionControl));
     private IAudioSessionControl2? audioSessionControlInterface2;
+    private readonly AudioMeterInformation? audioMeterInformation;
+    private readonly SimpleAudioVolume? simpleAudioVolume;
     private readonly bool ownsInterface;
     private readonly Dictionary<IAudioSessionEventsHandler, AudioSessionEventsCallback> audioSessionEventCallbacks = new();
     private readonly Lock eventCallbackLock = new();
@@ -65,9 +67,9 @@ public class AudioSessionControl : IDisposable
         audioSessionControlInterface2 = audioSessionControlInterface as IAudioSessionControl2;
 
         if (audioSessionControlInterface is IAudioMeterInformation meters)
-            AudioMeterInformation = new AudioMeterInformation(meters);
+            audioMeterInformation = new AudioMeterInformation(meters);
         if (audioSessionControlInterface is ISimpleAudioVolume volume)
-            SimpleAudioVolume = new SimpleAudioVolume(volume);
+            simpleAudioVolume = new SimpleAudioVolume(volume);
     }
 
     /// <summary>
@@ -82,9 +84,9 @@ public class AudioSessionControl : IDisposable
         ownsInterface = false;
 
         if (audioSessionControlInterface is IAudioMeterInformation meters)
-            AudioMeterInformation = new AudioMeterInformation(meters);
+            audioMeterInformation = new AudioMeterInformation(meters);
         if (audioSessionControlInterface is ISimpleAudioVolume volume)
-            SimpleAudioVolume = new SimpleAudioVolume(volume);
+            simpleAudioVolume = new SimpleAudioVolume(volume);
     }
 
     /// <summary>
@@ -121,14 +123,18 @@ public class AudioSessionControl : IDisposable
     }
 
     /// <summary>
-    /// Audio meter information of the audio session, or null if the session does not expose IAudioMeterInformation.
+    /// Audio meter information of the audio session.
     /// </summary>
-    public AudioMeterInformation? AudioMeterInformation { get; }
+    /// <exception cref="NotSupportedException">The session does not expose IAudioMeterInformation.</exception>
+    public AudioMeterInformation AudioMeterInformation => audioMeterInformation
+        ?? throw new NotSupportedException("This audio session does not expose IAudioMeterInformation");
 
     /// <summary>
-    /// Simple audio volume of the audio session (for volume and mute status), or null if the session does not expose ISimpleAudioVolume.
+    /// Simple audio volume of the audio session (for volume and mute status).
     /// </summary>
-    public SimpleAudioVolume? SimpleAudioVolume { get; }
+    /// <exception cref="NotSupportedException">The session does not expose ISimpleAudioVolume.</exception>
+    public SimpleAudioVolume SimpleAudioVolume => simpleAudioVolume
+        ?? throw new NotSupportedException("This audio session does not expose ISimpleAudioVolume");
 
     /// <summary>
     /// The current state of the audio session.

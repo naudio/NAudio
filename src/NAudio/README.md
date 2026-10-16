@@ -15,15 +15,18 @@ Always, on every target framework:
 - **NAudio.Core** — the format-independent core: `WaveStream`, `IWaveProvider` / `ISampleProvider`, WAV and AIFF readers and writers, mixing, resampling, DSP, and the `NAudio.Effects` framework
 - **NAudio.Midi** — the MIDI event model and Standard MIDI File reading and writing
 
-Additionally, on a Windows target framework:
+Also on every target framework — these are Windows-only at runtime, marked `[SupportedOSPlatform("windows")]`, so a plain `netX.0` project gets them and the platform compatibility analyzer (`CA1416`) flags unguarded calls:
 
 - **NAudio.Wasapi** — WASAPI playback, capture and loopback (`WasapiPlayer` / `WasapiRecorder`), plus Media Foundation codecs
 - **NAudio.WinMM** — `WaveOut` / `WaveIn`, classic MIDI I/O, ACM codecs and mixer controls via `winmm.dll`
 - **NAudio.Asio** — low-latency multichannel playback and capture through ASIO drivers
 - **NAudio.Dmo** — DMO effects, the DMO MP3 decoder and resampler, and `DirectSoundOut`
+
+Additionally, on a Windows target framework (`netX.0-windows`):
+
 - **NAudio.WinForms** — Windows Forms controls, and the window-callback `WaveOutWindow` / `WaveInWindow`
 
-On a non-Windows target framework only the cross-platform pieces are referenced. If you only need a subset, reference the individual packages directly rather than this meta-package.
+`AudioFileReader` reads PCM/float WAV and AIFF everywhere, and uses Media Foundation (MP3, AAC, WMA, FLAC…) and ACM (compressed WAV) when running on Windows. If you're targeting Linux or macOS, you probably want the individual packages (`NAudio.Core` plus `NAudio.Alsa`, `NAudio.MacOS` or `NAudio.SoundFile`) rather than this meta-package.
 
 ## Optional packages
 
@@ -35,7 +38,7 @@ These are not pulled in by the meta-package — add them explicitly if you want 
 | [NAudio.SoundFile](https://www.nuget.org/packages/NAudio.SoundFile/) | cross-platform | Read *and write* WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 via libsndfile |
 | [NAudio.Alsa](https://www.nuget.org/packages/NAudio.Alsa/) | Linux | `AlsaOut` / `AlsaIn` playback and capture via libasound |
 | [NAudio.Vst3](https://www.nuget.org/packages/NAudio.Vst3/) | Windows | VST 3 plug-in hosting (preview) — effects and instruments |
-| [NAudio.Extras](https://www.nuget.org/packages/NAudio.Extras/) | cross-platform (+ Windows extras) | Opinionated helpers — playback engine, capture mixing, ID3 tags |
+| [NAudio.Extras](https://www.nuget.org/packages/NAudio.Extras/) | cross-platform (playback engine Windows-only) | Opinionated helpers — playback engine, capture mixing, ID3 tags |
 
 ## Getting started
 

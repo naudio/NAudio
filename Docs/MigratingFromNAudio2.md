@@ -42,7 +42,11 @@ Everything else is detailed below.
   `NAudio.SoundFile`. The `NAudio` meta-package still pulls the Windows stack
   together, so if you reference `NAudio` you generally don't need to change your
   package references. If you reference individual packages, you may need to add
-  one or two (see the type moves below). See
+  one or two (see the type moves below). A plain `netX.0` target framework gets
+  the whole Windows stack except the WinForms controls (`WaveOutWindow`,
+  `WaveInWindow` and the `NAudio.Gui` controls), which need `netX.0-windows`;
+  Windows-only types are marked `[SupportedOSPlatform("windows")]`, so unguarded
+  calls from a project that isn't Windows-specific show `CA1416` warnings. See
   [the assembly layout plan](https://github.com/naudio/NAudio/blob/main/Docs/Architecture/NAudio3AssemblyLayoutPlan.md).
 - **The `NAudio.Uap` package is removed.** The UWP/WinRT audio backend is gone; use
   `WasapiPlayerBuilder` / `WasapiRecorderBuilder` from `NAudio.Wasapi` instead.

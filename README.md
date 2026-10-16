@@ -25,7 +25,7 @@ Upgrading from NAudio 2? Start with **[Migrating from NAudio 2 to NAudio 3](Docs
 
 ## Packages
 
-Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package gets you the full Windows stack and is the right default. On a non-Windows target framework it resolves to the cross-platform pieces only. Reference the individual packages directly if you want a smaller surface.
+Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package gets you the full Windows stack and is the right default on Windows — from a plain `netX.0` project as well as a `netX.0-windows` one (only the WinForms controls need the latter). The Windows backends are marked `[SupportedOSPlatform("windows")]`, so the compiler flags unguarded calls in cross-platform code. On Linux or macOS, reference `NAudio.Core` and the backend you need directly rather than the meta-package.
 
 | Package | Platform | What it gives you |
 | --- | --- | --- |

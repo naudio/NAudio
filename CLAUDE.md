@@ -52,3 +52,5 @@ The `TestCategory!=IntegrationTest` filter skips tests needing real audio hardwa
 ## CI
 
 Every PR runs build + test on `windows-latest` via [.github/workflows/build.yml](.github/workflows/build.yml). Tests requiring real audio hardware should be marked with `TestCategory=IntegrationTest` so they're filtered out of the headless run.
+
+CI also packs every package under `src/` to run [package validation](https://learn.microsoft.com/dotnet/fundamentals/apicompat/package-validation/overview) against the last stable release (`PackageValidationBaselineVersion` in [src/Directory.Build.props](src/Directory.Build.props)). A `CP`/`PKV` error at pack time means you removed or changed public API or a target framework that release shipped: restore it unless the break is intentional, and see the troubleshooting section of [ReleaseInstructions.md](ReleaseInstructions.md) if it is. To check locally, run `dotnet pack src/<Package>/<Package>.csproj -c Release` after building.

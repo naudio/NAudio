@@ -38,7 +38,7 @@ Package versions are centralised in [Directory.Build.props](Directory.Build.prop
 
 Some cloud and CI environments start without a .NET SDK on the PATH — this isn't a property of the repo but of the host. The default Anthropic cloud-agent sandbox is one example, and other infrastructure (GitHub Copilot agents, fresh CI runners, etc.) may differ now or in the future. So **first check whether `dotnet` is available**; only install it if it isn't. On Debian/Ubuntu, install .NET 10 via apt: add Microsoft's feed with `wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O /tmp/ms.deb && sudo dpkg -i /tmp/ms.deb && sudo apt-get update`, then `sudo apt-get install -y dotnet-sdk-10.0` (the SDK builds the `net9.0` libraries fine).
 
-`NAudio.Core.Tests` references only cross-platform-buildable projects (`NAudio.Core`, `NAudio.Midi` and the `NAudio` meta-package, whose `net9.0` leg carries the Windows backends as plain `net9.0`), so it builds and runs on Linux/macOS without any extra flags. Build and run the cross-platform tests with:
+`NAudio.Core.Tests` references only cross-platform-buildable projects (`NAudio.Core`, `NAudio.Midi` and the `NAudio` meta-package, which is plain `net9.0`, as are the Windows backends it pulls in), so it builds and runs on Linux/macOS without any extra flags. Build and run the cross-platform tests with:
 
 ```
 dotnet build tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj

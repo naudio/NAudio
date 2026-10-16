@@ -26,8 +26,8 @@
 
   <ItemGroup>
     <!-- Cross-platform references only, so building on Linux/macOS needs no
-         -p:EnableWindowsTargeting=true. The NAudio meta-package qualifies: its net9.0
-         leg is cross-platform (Windows backends are plain net9.0, guarded at runtime),
+         -p:EnableWindowsTargeting=true. The NAudio meta-package qualifies: it is plain
+         net9.0 (its Windows backends are plain net9.0, guarded at runtime),
          which lets AudioFileReader's non-Windows behaviour be tested here. Its Windows
          decoding paths are tested in NAudio.Windows.Tests. -->
     <ProjectReference Include="..\..\src\NAudio.Core\NAudio.Core.csproj" />

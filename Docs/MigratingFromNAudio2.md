@@ -39,14 +39,17 @@ Everything else is detailed below.
   `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`,
   `NAudio.WinForms` and `NAudio.Dmo`, alongside the new `NAudio.Effects` (in
   `NAudio.Core`), `NAudio.Sampler`, `NAudio.Vst3`, `NAudio.Alsa` and
-  `NAudio.SoundFile`. The `NAudio` meta-package still pulls the Windows stack
-  together, so if you reference `NAudio` you generally don't need to change your
-  package references. If you reference individual packages, you may need to add
-  one or two (see the type moves below). A plain `netX.0` target framework gets
-  the whole Windows stack except the WinForms controls (`WaveOutWindow`,
-  `WaveInWindow` and the `NAudio.Gui` controls), which need `netX.0-windows`;
-  Windows-only types are marked `[SupportedOSPlatform("windows")]`, so unguarded
-  calls from a project that isn't Windows-specific show `CA1416` warnings. See
+  `NAudio.SoundFile`. The `NAudio` meta-package pulls in `NAudio.Core`,
+  `NAudio.Midi`, `NAudio.WinMM` and `NAudio.Wasapi`, which covers `WaveOut` /
+  `WaveIn`, WASAPI, Media Foundation, MIDI and `AudioFileReader` /
+  `Mp3FileReader`, on any target framework. **It does not include
+  `NAudio.Asio`, `NAudio.Dmo` or `NAudio.WinForms`.** If you use ASIO
+  (`AsioOut`, `AsioDevice`), `DirectSoundOut` or the DMO effects, or the WinForms
+  types (`WaveOutWindow`, `WaveInWindow`, the `NAudio.Gui` controls), add those
+  packages explicitly. (NAudio 3.0–3.2 included all three in the meta-package on
+  Windows target frameworks.) Windows-only types are marked
+  `[SupportedOSPlatform("windows")]`, so unguarded calls from a project that
+  isn't Windows-specific show `CA1416` warnings. See
   [the assembly layout plan](https://github.com/naudio/NAudio/blob/main/Docs/Architecture/NAudio3AssemblyLayoutPlan.md).
 - **The `NAudio.Uap` package is removed.** The UWP/WinRT audio backend is gone; use
   `WasapiPlayerBuilder` / `WasapiRecorderBuilder` from `NAudio.Wasapi` instead.
@@ -294,10 +297,10 @@ New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
   (`DmoMp3FrameDecompressor`), the DMO resampler (`ResamplerDmoStream`) and
   `DirectSoundOut` have been carved out of `NAudio.Wasapi` / `NAudio.Core`.
   Namespaces are preserved (`NAudio.Dmo`, `NAudio.Dmo.Effect`, and `NAudio.Wave`
-  for `DirectSoundOut`). Meta-package consumers see no change — `NAudio.Dmo`
-  comes in transitively. **Direct `NAudio.Wasapi` consumers** who use the
-  DMO/DirectSound types now need an explicit
-  `<PackageReference Include="NAudio.Dmo" />`.
+  for `DirectSoundOut`). If you use the DMO/DirectSound types, add an explicit
+  `<PackageReference Include="NAudio.Dmo" />`. This applies to `NAudio`
+  meta-package consumers too: the meta-package doesn't include `NAudio.Dmo`
+  (NAudio 3.0–3.2 did, on Windows target frameworks).
 - `DmoMp3FrameDecompressor` moved from `NAudio.FileFormats.Mp3` to `NAudio.Dmo`
   (update your `using`).
 - **The DMO interop enums are now `internal`** (`DmoInputStatusFlags`, `DmoEnumFlags`,
@@ -601,7 +604,9 @@ your signal chain instead (for example with `VolumeSampleProvider`).
 
 - [Release notes](https://github.com/naudio/NAudio/blob/main/RELEASE_NOTES.md) — the full list of what's new in NAudio 3.
 - [Migrating from `AsioOut` to `AsioDevice`](AsioMigration.md) — the ASIO API is
-  redesigned; `AsioOut` is preserved as a facade, so this is optional.
+  redesigned; `AsioOut` is preserved as a facade, so this is optional. Either way,
+  ASIO now needs an explicit reference to `NAudio.Asio`, which the meta-package
+  doesn't include.
 - [Audio effects](AudioEffects.md), [the sampler](Sampler.md),
   [cross-platform audio files](CrossPlatformAudioFilesWithSoundFile.md) — guides
   to the major new subsystems.

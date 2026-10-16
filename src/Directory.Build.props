@@ -5,9 +5,9 @@
   <PropertyGroup>
     <!-- Package validation runs at `dotnet pack` time (CI packs every PR, so it gates
          merges, not just releases). It checks that:
-         - every TFM asset in a package exposes a compatible API surface (e.g. the
-           meta-package's net9.0 and net9.0-windows legs), so code compiled against one
-           leg can't hit MissingMethodException when another leg is deployed;
+         - every TFM asset in a package exposes a compatible API surface (e.g.
+           NAudio.Midi's net9.0 and WinRT legs), so code compiled against one asset
+           can't hit MissingMethodException when another is deployed;
          - nothing the baseline release supported has been removed: no public API, and
            no target framework a consumer could previously resolve.
          The baseline is the latest stable release on nuget.org; bump it after each

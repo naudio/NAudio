@@ -8,6 +8,7 @@
     <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by Deactivate/UI lifecycle -->
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\..\src\NAudio.Extras\NAudio.Extras.csproj" />
     <ProjectReference Include="..\..\src\NAudio.Sampler\NAudio.Sampler.csproj" />
     <ProjectReference Include="..\..\src\NAudio.WinForms\NAudio.WinForms.csproj" />

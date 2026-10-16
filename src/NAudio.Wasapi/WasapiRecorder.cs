@@ -550,7 +550,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             var capture = Client.AudioCaptureClient;
 
             Client.Start();
-            captureState = CaptureState.Capturing;
+
+            // Avoid race condition where we stop immediately after starting
+            if (captureState == CaptureState.Starting)
+            {
+                captureState = CaptureState.Capturing;
+            }
 
             int waitMilliseconds = isUsingEventSync
                 ? 3 * bufferMilliseconds

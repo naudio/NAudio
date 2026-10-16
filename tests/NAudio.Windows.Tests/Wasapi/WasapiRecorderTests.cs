@@ -53,15 +53,6 @@ public class WasapiRecorderTests
         // This is the point that #1479 described: The recording here was originally failed to start.
         Assert.DoesNotThrow(recorder.StartRecording);
 
-        // TEMPORARY: Recording fails when using EventSync with the new code.
-        // Old WasapiCapture is not affected.
-        // This is temporary fix, the real code should be:
-        // Assert.DoesNotThrow(recorder.Dispose);
-
-        Assert.DoesNotThrow(recorder.StopRecording);
-
-        Thread.Sleep(100);
-
         Assert.DoesNotThrow(recorder.Dispose);
     }
 

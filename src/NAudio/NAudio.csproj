@@ -41,12 +41,12 @@
     <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
-    <!-- NAudio.Wasapi is plain net9.0 (Windows-only at runtime via
-         [SupportedOSPlatform]), so it imposes no version floor and just joins the
-         other Windows backends. It's still gated to the Windows legs so the
-         cross-platform surface doesn't expose Windows-only WASAPI/MF types.
-         Every backend referenced here targets net9.0 or net9.0-windows, so this
-         whole group resolves from the plain net9.0-windows leg too. -->
+    <!-- Asio, Dmo, WinMM and Wasapi are plain net9.0 (Windows-only at runtime via
+         [SupportedOSPlatform]); only WinForms needs net9.0-windows. They're still
+         gated to the Windows legs so the cross-platform surface doesn't expose
+         Windows-only types. Every backend referenced here targets net9.0 or
+         net9.0-windows, so this whole group resolves from the plain
+         net9.0-windows leg too. -->
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
   <!-- WASAPI marks "Media Foundation codecs available" for AudioFileReader. It lights

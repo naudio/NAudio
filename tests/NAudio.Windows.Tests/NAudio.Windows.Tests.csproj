@@ -40,6 +40,10 @@
          helper used on both sides. -->
     <Compile Include="..\NAudio.Core.Tests\Utils\Shared\*.cs"
              Link="Utils\Shared\%(Filename)%(Extension)" />
+    <!-- The fake ASIO driver and its checks, run here under the JIT; NAudioAsioFakeDriverTest
+         runs the same files as a Native AOT executable in CI. -->
+    <Compile Include="..\NAudioAsioFakeDriverTest\FakeAsioDriver.cs;..\NAudioAsioFakeDriverTest\FakeAsioDriverChecks.cs"
+             Link="Asio\FakeDriver\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

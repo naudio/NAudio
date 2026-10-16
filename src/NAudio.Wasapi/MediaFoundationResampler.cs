@@ -1,7 +1,4 @@
-﻿// TODO: remove once this file is annotated (nullable reference types, #825)
-#nullable disable
-
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;

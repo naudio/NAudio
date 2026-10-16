@@ -43,7 +43,7 @@ Demos live in `NAudioWpfDemo` (VST3 effect host, realtime effect, live instrumen
 
 | Package | Current TFM | Eventual TFM | Notes |
 |---|---|---|---|
-| `NAudio.Vst3` | `net9.0-windows` | `net9.0;net9.0-windows` | The `-windows` leg adds UI hosting (HWND embed). A portable `net9.0` leg for headless audio + MIDI on all OSes comes with macOS support. |
+| `NAudio.Vst3` | `net9.0` (Windows-only via `[SupportedOSPlatform("windows")]`) | `net9.0` | Moved from `net9.0-windows` to plain `net9.0` after 3.2.0: plug-in loading and HWND editor embedding are P/Invoke and COM interop, which need no Windows SDK reference assemblies. macOS/Linux support will relax the assembly-level platform attribute rather than add a TFM leg; a `-windows` leg is only needed if WinForms/WPF hosting helpers are ever added. |
 
 **Dependencies:** `NAudio.Core` (for `ISampleProvider`/`IWaveProvider` and buffer types) and `NAudio.Midi` (for `MidiEvent`). Nothing else. Lives at `NAudio.Vst3/NAudio.Vst3.csproj` alongside the other component packages.
 
@@ -129,7 +129,7 @@ Compatibility is validated against a deliberately diverse set spanning the major
 - **UI polish** — DPI-matrix validation (100/125/150/200 % + multi-monitor move with runtime content-scale re-push), a WinForms host smoke test (the framework-agnostic `AttachTo(IntPtr hwnd)` already proves out under WPF), and a Vital + Surge XT pass to exercise the OpenGL / VSTGUI rendering paths.
 - **Preset/program runtime re-query** — handling `restartComponent(kParamValuesChanged / kParamTitlesChanged)` after a preset/program change (the flag-dispatch plumbing exists from the latency-changed handler); `IProgramListData` / `IUnitData` (most hosts never touch it).
 - **Tempo-following synths** — `ProcessContext.tempo` is single-valued per block; splitting a block at an intra-block tempo change is deferred until a tempo-following VSTi is in the matrix.
-- **macOS / Linux audio + MIDI** — multi-target `net9.0;net9.0-windows`; `CFBundle` loading on macOS, `dlopen` on Linux. Headless audio/MIDI demos should run unchanged once the loader lands.
+- **macOS / Linux audio + MIDI** — relax the assembly-level `[SupportedOSPlatform("windows")]` (the package is already plain `net9.0`); `CFBundle` loading on macOS, `dlopen` on Linux. Headless audio/MIDI demos should run unchanged once the loader lands.
 - **Cross-platform UI** — NSView (macOS) / X11 XEmbed (Linux) embedding depends on the consumer's managed UI framework; deferred indefinitely. Workaround: run plug-ins headlessly with parameter automation.
 - **64-bit (`kSample64`) processing** — 32-bit float covers nearly every plug-in and matches `ISampleProvider`; the `SymbolicSampleSize` constant is exposed so adding it later isn't a breaking change.
 

@@ -1,7 +1,4 @@
-﻿// TODO: remove once this file is annotated (nullable reference types, #825)
-#nullable disable
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NAudio.CoreAudioApi;
 
 namespace NAudio.Wave;
@@ -39,4 +36,4 @@ public sealed record WasapiPlaybackCapability(
     WaveFormat OutputFormat,
     IReadOnlyList<string> Conversions,
     int LatencyMilliseconds,
-    string Reason);
+    string? Reason);

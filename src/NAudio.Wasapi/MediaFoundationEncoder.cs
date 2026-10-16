@@ -1,7 +1,4 @@
-﻿// TODO: remove once this file is annotated (nullable reference types, #825)
-#nullable disable
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -204,7 +201,7 @@ public class MediaFoundationEncoder : IDisposable
     /// if no bps match exists. Disposes the rejected media types and returns
     /// null if nothing matches.
     /// </summary>
-    private static MediaType SelectLosslessMediaType(Guid audioSubtype, WaveFormat inputFormat)
+    private static MediaType? SelectLosslessMediaType(Guid audioSubtype, WaveFormat inputFormat)
     {
         MediaFoundationApi.Startup();
         var allTypes = GetOutputMediaTypes(audioSubtype);
@@ -237,7 +234,7 @@ public class MediaFoundationEncoder : IDisposable
     /// <param name="inputFormat">Your encoder input format (used to check sample rate and channel count)</param>
     /// <param name="desiredBitRate">Your desired bitrate</param>
     /// <returns>The closest media type, or null if none available</returns>
-    public static MediaType SelectMediaType(Guid audioSubtype, WaveFormat inputFormat, int desiredBitRate)
+    public static MediaType? SelectMediaType(Guid audioSubtype, WaveFormat inputFormat, int desiredBitRate)
     {
         MediaFoundationApi.Startup();
         var allTypes = GetOutputMediaTypes(audioSubtype);
@@ -422,7 +419,7 @@ public class MediaFoundationEncoder : IDisposable
 
     private unsafe long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
     {
-        IMFSample sample = null;
+        IMFSample? sample = null;
         long durationConverted = 0;
         IntPtr samplePtr = IntPtr.Zero;
 

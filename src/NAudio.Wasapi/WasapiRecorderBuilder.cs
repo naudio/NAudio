@@ -1,7 +1,4 @@
-﻿// TODO: remove once this file is annotated (nullable reference types, #825)
-#nullable disable
-
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
@@ -14,17 +11,17 @@ namespace NAudio.Wave;
 /// </summary>
 public class WasapiRecorderBuilder
 {
-    private MMDevice device;
+    private MMDevice? device;
     private AudioClientShareMode shareMode = AudioClientShareMode.Shared;
     private bool useEventSync = true;
     private bool useLoopback;
     private int bufferMilliseconds = 100;
-    private WaveFormat requestedFormat;
-    private string mmcssTaskName;
+    private WaveFormat? requestedFormat;
+    private string? mmcssTaskName;
     private uint? processLoopbackId;
     private ProcessLoopbackMode processLoopbackMode = ProcessLoopbackMode.IncludeTargetProcessTree;
     private bool configureEchoCancellationReference;
-    private string echoCancellationReferenceEndpointId;
+    private string? echoCancellationReferenceEndpointId;
     private bool useCommunicationsMode;
     private bool useRawMode;
     private bool preferLowLatency;
@@ -147,7 +144,7 @@ public class WasapiRecorderBuilder
     /// </remarks>
     /// <param name="referenceRenderDevice">The render device to use as the reference stream, or null
     /// to let Windows choose automatically.</param>
-    public WasapiRecorderBuilder WithEchoCancellationReferenceEndpoint(MMDevice referenceRenderDevice = null)
+    public WasapiRecorderBuilder WithEchoCancellationReferenceEndpoint(MMDevice? referenceRenderDevice = null)
     {
         configureEchoCancellationReference = true;
         echoCancellationReferenceEndpointId = referenceRenderDevice?.ID;

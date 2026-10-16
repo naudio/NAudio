@@ -1,7 +1,4 @@
-﻿// TODO: remove once this file is annotated (nullable reference types, #825)
-#nullable disable
-
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using NAudio.MediaFoundation;
@@ -45,8 +42,8 @@ public class StreamMediaFoundationReader : MediaFoundationReader
     /// A supplied hint only helps Media Foundation locate a decoder that is already installed on the
     /// machine; it does not add codec support. If both hints are supplied they are both applied.
     /// </remarks>
-    public StreamMediaFoundationReader(Stream stream, MediaFoundationReaderSettings settings = null,
-        string contentType = null, string originName = null)
+    public StreamMediaFoundationReader(Stream stream, MediaFoundationReaderSettings? settings = null,
+        string? contentType = null, string? originName = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
         if (!stream.CanRead)

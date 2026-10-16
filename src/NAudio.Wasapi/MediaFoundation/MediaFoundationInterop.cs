@@ -85,7 +85,7 @@ internal static partial class MediaFoundationInterop
     /// the source-generated stub passes a null pointer to native in that case.
     /// </remarks>
     [LibraryImport("mfreadwrite.dll", StringMarshalling = StringMarshalling.Utf16)]
-    public static partial int MFCreateSinkWriterFromURL(string pwszOutputURL,
+    public static partial int MFCreateSinkWriterFromURL(string? pwszOutputURL,
                                                         IntPtr pByteStream, IntPtr pAttributes, out IntPtr ppSinkWriter);
 
     /// <summary>

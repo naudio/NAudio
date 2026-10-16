@@ -166,7 +166,7 @@ internal static partial class MacUtils
 
     [StackTraceHidden]
     [DebuggerStepThrough]
-    public static void EnsureDisposableObjectsDisposed(params IDisposable[] disposables)
+    public static void EnsureDisposableObjectsDisposed(params IDisposable?[] disposables)
     {
         List<Exception> exceptions = new(10);
         foreach (var i in disposables)

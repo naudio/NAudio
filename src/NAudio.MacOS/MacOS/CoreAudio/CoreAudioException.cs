@@ -25,7 +25,7 @@ public class CoreAudioException : MacException
     /// </summary>
     /// <param name="message">The custom error message to provide. Can be <see langword="null"/>.</param>
     /// <param name="osStatus">The <c>OSStatus</c> error code to provide.</param>
-    public CoreAudioException(string message, int osStatus) : base(message, osStatus) { }
+    public CoreAudioException(string? message, int osStatus) : base(message, osStatus) { }
 
     /// <summary>
     /// Throws a more appropriate exception for the specified status code.

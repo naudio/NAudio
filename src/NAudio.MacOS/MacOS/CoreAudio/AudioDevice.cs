@@ -2,7 +2,6 @@
 // See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
 using NAudio.Utils;
@@ -286,8 +285,7 @@ public class AudioDevice : AudioObject
     /// A <see cref="Uri"/> that indicates an image file that can be used to represent the device visually. <br />
     /// If no such image file is assigned for the device, this returns <see langword="null"/>.
     /// </summary>
-    [MaybeNull]
-    public Uri Icon
+    public Uri? Icon
     {
         get
         {

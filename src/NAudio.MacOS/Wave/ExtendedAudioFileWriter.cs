@@ -23,7 +23,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         : base(hExtFileObject, settings) { }
 
     // Initializes the writer.
-    private protected void Init() => AssignClientFormat(Settings.ProvidingFormat);
+    private protected void Init() => AssignClientFormat(ProvidingFormat);
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Usage",
@@ -268,7 +268,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
             );
             if (status == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
             {
-                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target).Exception;
+                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target!).Exception ?? new AudioFileException(status);
             }
             AudioFileException.ThrowIfError(status);
 
@@ -306,7 +306,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
             throw;
         }
 
-        StreamImpl writer = null;
+        StreamImpl? writer = null;
         try
         {
             writer = new StreamImpl(

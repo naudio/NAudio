@@ -6,6 +6,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
     <Description>macOS playback and recording support types for the NAudio audio library. macOS-only at runtime. This package is pre-release while its API settles.</Description>
   </PropertyGroup>
 

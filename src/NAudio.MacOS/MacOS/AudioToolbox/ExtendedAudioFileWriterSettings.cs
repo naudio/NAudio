@@ -14,7 +14,7 @@ public class ExtendedAudioFileWriterSettings
     /// The writer will utilize this to determine
     /// the format of the audio file.
     /// </summary>
-    public string FileType { get; set; }
+    public string? FileType { get; set; }
 
     /// <summary>
     /// Gets/sets the format under which data are provided
@@ -22,7 +22,7 @@ public class ExtendedAudioFileWriterSettings
     /// the data are written into, which may be a compressed
     /// format - selected by the writer once initialized.
     /// </summary>
-    public WaveFormat ProvidingFormat { get; set; }
+    public WaveFormat? ProvidingFormat { get; set; }
 
     /// <summary>
     /// Set to <see langword="true"/> to instruct the 

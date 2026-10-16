@@ -40,6 +40,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     private AudioClient Client => audioClient ?? throw new ObjectDisposedException(nameof(WasapiRecorder));
     private int bytesPerFrame;
     private readonly WaveFormat waveFormat;
+    private bool audioClientInitialized;
     private volatile CaptureState captureState;
     private Thread? captureThread;
     private EventWaitHandle? frameEvent;
@@ -167,7 +168,6 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         this.preferLowLatency = preferLowLatency;
         this.requireLowLatency = requireLowLatency;
 
-        recordingLock = new();
         audioClientInitialized = false;
 
         mmDevice = device;
@@ -183,7 +183,6 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     {
         syncContext = SynchronizationContext.Current;
         shareMode = AudioClientShareMode.Shared;
-        recordingLock = new();
         audioClientInitialized = false;
         // The process-loopback virtual device is always event-driven (LOOPBACK | EVENTCALLBACK).
         isUsingEventSync = true;
@@ -217,7 +216,6 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         syncContext = SynchronizationContext.Current;
         shareMode = AudioClientShareMode.Shared;
 
-        recordingLock = new();
         audioClientInitialized = false;
 
         isUsingEventSync = useEventSync;
@@ -243,16 +241,13 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     /// </summary>
     public void StartRecording()
     {
-        lock (recordingLock)
-        {
-            if (captureState != CaptureState.Stopped)
-                throw new InvalidOperationException("Already recording");
+        if (captureState != CaptureState.Stopped)
+            throw new InvalidOperationException("Already recording");
 
-            captureState = CaptureState.Starting;
-            InitializeAudioClient();
-            captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
-            captureThread.Start();
-        }
+        captureState = CaptureState.Starting;
+        InitializeAudioClient();
+        captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
+        captureThread.Start();
     }
 
     /// <summary>
@@ -260,11 +255,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     /// </summary>
     public void StopRecording()
     {
-        lock (recordingLock)
-        {
-            if (captureState != CaptureState.Stopped)
-                captureState = CaptureState.Stopping;
-        }
+        if (captureState != CaptureState.Stopped)
+            captureState = CaptureState.Stopping;
     }
 
     /// <summary>
@@ -275,15 +267,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     public async IAsyncEnumerable<AudioBuffer> CaptureAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        lock (recordingLock)
-        {
-            if (captureState != CaptureState.Stopped)
-                throw new InvalidOperationException("Already recording");
+        if (captureState != CaptureState.Stopped)
+            throw new InvalidOperationException("Already recording");
 
-            captureState = CaptureState.Starting;
+        captureState = CaptureState.Starting;
 
-            InitializeAudioClient();
-        }
+        InitializeAudioClient();
 
         IntPtr mmcssHandle = IntPtr.Zero;
         try
@@ -296,8 +285,14 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 
             bytesPerFrame = waveFormat.BlockAlign;
             var capture = Client.AudioCaptureClient;
+
             Client.Start();
-            captureState = CaptureState.Capturing;
+
+            // Avoid race condition where we stop immediately after starting
+            if (captureState == CaptureState.Starting)
+            {
+                captureState = CaptureState.Capturing;
+            }
 
             while (!cancellationToken.IsCancellationRequested && captureState == CaptureState.Capturing)
             {
@@ -349,8 +344,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 
     private void InitializeAudioClient()
     {
-        // If the recorder has already been initialized before, it has no meaning 
-        // to be initialized again. Fixes #1479.
+        // If the recorder has already been initialized before, it should not be initialized again.
+        // Fixes #1479.
         if (audioClientInitialized) { return; }
         LatencyMilliseconds = bufferMilliseconds;
 

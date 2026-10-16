@@ -22,7 +22,7 @@ public class WasapiRecorderTests
 {
     /**
      * The test verifying that the issue #1479 is fixed: Creates a recorder,
-     * starts recording, stops it again, and re-starts it.
+     * starts recording, stops it, and re-starts it.
      */
     [Test]
     public void VerifyThatReinitializationIsSafe_WasapiRecorder()
@@ -43,12 +43,10 @@ public class WasapiRecorderTests
         Assert.DoesNotThrow(recorder.StopRecording);
 
         // Wait for the recording to stop in a time window of 5 seconds.
-        if (stopEventWasCalled.Wait(5000))
+        Assert.That(stopEventWasCalled.Wait(5000), Is.True, "The RecordingStopped event was not raised.");
+        if (exception is not null)
         {
-            if (exception is not null)
-            {
-                Assert.Fail($"Failure returned by the recording stopped event: {exception}");
-            }
+            Assert.Fail($"Failure returned by the recording stopped event: {exception}");
         }
 
         // Now re-start recording.
@@ -89,12 +87,10 @@ public class WasapiRecorderTests
         Assert.DoesNotThrow(recorder.StopRecording);
 
         // Wait for the recording to stop in a time window of 5 seconds.
-        if (stopEventWasCalled.Wait(5000))
+        Assert.That(stopEventWasCalled.Wait(5000), Is.True, "The RecordingStopped event was not raised.");
+        if (exception is not null)
         {
-            if (exception is not null)
-            {
-                Assert.Fail($"Failure returned by the recording stopped event: {exception}");
-            }
+            Assert.Fail($"Failure returned by the recording stopped event: {exception}");
         }
 
         // Now re-start recording.
@@ -126,12 +122,10 @@ public class WasapiRecorderTests
         Assert.DoesNotThrow(recorder.StopRecording);
 
         // Wait for the recording to stop in a time window of 5 seconds.
-        if (stopEventWasCalled.Wait(5000))
+        Assert.That(stopEventWasCalled.Wait(5000), Is.True, "The RecordingStopped event was not raised.");
+        if (exception is not null)
         {
-            if (exception is not null)
-            {
-                Assert.Fail($"Failure returned by the recording stopped event: {exception}");
-            }
+            Assert.Fail($"Failure returned by the recording stopped event: {exception}");
         }
 
         // Now re-start recording.

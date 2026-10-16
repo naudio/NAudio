@@ -21,5 +21,5 @@ internal partial interface IAcousticEchoCancellationControl
     /// <param name="endpointId">The endpoint ID of the render endpoint to use as the reference
     /// stream, or null to let Windows choose. An invalid render device ID fails with E_INVALIDARG.</param>
     [PreserveSig]
-    int SetEchoCancellationRenderEndpoint([MarshalAs(UnmanagedType.LPWStr)] string endpointId);
+    int SetEchoCancellationRenderEndpoint([MarshalAs(UnmanagedType.LPWStr)] string? endpointId);
 }

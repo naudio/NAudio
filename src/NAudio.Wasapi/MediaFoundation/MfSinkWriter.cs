@@ -10,7 +10,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 internal class MfSinkWriter : IDisposable
 {
-    private Interfaces.IMFSinkWriter writerInterface;
+    private Interfaces.IMFSinkWriter? writerInterface;
+
+    private Interfaces.IMFSinkWriter Writer => writerInterface ?? throw new ObjectDisposedException(nameof(MfSinkWriter));
     private IntPtr nativePointer;
 
     internal MfSinkWriter(Interfaces.IMFSinkWriter writerInterface, IntPtr nativePointer)
@@ -26,7 +28,7 @@ internal class MfSinkWriter : IDisposable
     /// <returns>The zero-based index of the new stream.</returns>
     public int AddStream(MfMediaType targetMediaType)
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.AddStream(targetMediaType.NativePointer, out var streamIndex));
+        MediaFoundationException.ThrowIfFailed(Writer.AddStream(targetMediaType.NativePointer, out var streamIndex));
         return streamIndex;
     }
 
@@ -37,7 +39,7 @@ internal class MfSinkWriter : IDisposable
     /// <param name="inputMediaType">The input media type.</param>
     public void SetInputMediaType(int streamIndex, MfMediaType inputMediaType)
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.SetInputMediaType(streamIndex, inputMediaType.NativePointer, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Writer.SetInputMediaType(streamIndex, inputMediaType.NativePointer, IntPtr.Zero));
     }
 
     /// <summary>
@@ -45,7 +47,7 @@ internal class MfSinkWriter : IDisposable
     /// </summary>
     public void BeginWriting()
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.BeginWriting());
+        MediaFoundationException.ThrowIfFailed(Writer.BeginWriting());
     }
 
     /// <summary>
@@ -55,7 +57,7 @@ internal class MfSinkWriter : IDisposable
     /// <param name="sample">The sample to write.</param>
     public void WriteSample(int streamIndex, MfSample sample)
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.WriteSample(streamIndex, sample.NativePointer));
+        MediaFoundationException.ThrowIfFailed(Writer.WriteSample(streamIndex, sample.NativePointer));
     }
 
     /// <summary>
@@ -65,7 +67,7 @@ internal class MfSinkWriter : IDisposable
     /// <param name="timestamp">The timestamp of the gap, in 100-nanosecond units.</param>
     public void SendStreamTick(int streamIndex, long timestamp)
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.SendStreamTick(streamIndex, timestamp));
+        MediaFoundationException.ThrowIfFailed(Writer.SendStreamTick(streamIndex, timestamp));
     }
 
     /// <summary>
@@ -74,7 +76,7 @@ internal class MfSinkWriter : IDisposable
     /// <param name="streamIndex">The stream index.</param>
     public void NotifyEndOfSegment(int streamIndex)
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.NotifyEndOfSegment(streamIndex));
+        MediaFoundationException.ThrowIfFailed(Writer.NotifyEndOfSegment(streamIndex));
     }
 
     /// <summary>
@@ -83,7 +85,7 @@ internal class MfSinkWriter : IDisposable
     /// <param name="streamIndex">The stream index.</param>
     public void Flush(int streamIndex)
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.Flush(streamIndex));
+        MediaFoundationException.ThrowIfFailed(Writer.Flush(streamIndex));
     }
 
     /// <summary>
@@ -91,7 +93,7 @@ internal class MfSinkWriter : IDisposable
     /// </summary>
     public void DoFinalize()
     {
-        MediaFoundationException.ThrowIfFailed(writerInterface.DoFinalize());
+        MediaFoundationException.ThrowIfFailed(Writer.DoFinalize());
     }
 
     /// <summary>

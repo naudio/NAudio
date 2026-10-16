@@ -96,7 +96,7 @@ internal static partial class MediaFoundationInterop
     /// reference type. Same rationale as <see cref="MFInitMediaTypeFromWaveFormatEx"/>.
     /// </remarks>
     [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-    public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo pInputType, [In] MftRegisterTypeInfo pOutputType,
+    public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo? pInputType, [In] MftRegisterTypeInfo? pOutputType,
                                         out IntPtr pppMFTActivate, out int pcMFTActivate);
 
     /// <summary>

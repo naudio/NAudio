@@ -24,7 +24,9 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
     private readonly Stream stream;
     private readonly long wrapperInitialPosition;
     private IntPtr nativeAttributesPtr;
-    private IMFAttributes nativeAttributesRcw;
+    private IMFAttributes? nativeAttributesRcw;
+
+    private IMFAttributes Attributes => nativeAttributesRcw ?? throw new ObjectDisposedException(nameof(MfByteStreamFromStream));
 
     /// <param name="stream">The stream to wrap.</param>
     /// <param name="detectContentType">
@@ -41,7 +43,7 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
     /// exposed to the source resolver as <c>MF_BYTESTREAM_ORIGIN_NAME</c>. This is the same
     /// extension-based route the file-based reader uses via <c>MFCreateSourceReaderFromURL</c>.
     /// </param>
-    public MfByteStreamFromStream(Stream stream, bool detectContentType = true, string contentType = null, string originName = null)
+    public MfByteStreamFromStream(Stream stream, bool detectContentType = true, string? contentType = null, string? originName = null)
     {
         this.stream = stream;
         try { wrapperInitialPosition = stream.Position; } catch { wrapperInitialPosition = 0; }
@@ -53,23 +55,23 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
         // MediaFoundationReader uses via MFCreateSourceReaderFromURL.
         if (!string.IsNullOrEmpty(originName))
         {
-            nativeAttributesRcw.SetString(MfByteStreamAttributes.OriginName, originName);
+            Attributes.SetString(MfByteStreamAttributes.OriginName, originName);
         }
 
         if (!string.IsNullOrEmpty(contentType))
         {
             // An explicit MIME hint wins over content sniffing.
-            nativeAttributesRcw.SetString(MfByteStreamAttributes.ContentType, contentType);
+            Attributes.SetString(MfByteStreamAttributes.ContentType, contentType);
         }
         else if (string.IsNullOrEmpty(originName) && detectContentType)
         {
             // No explicit hint supplied: fall back to sniffing the leading bytes.
             // The only way for the below to throw an exception is a critical one,
             // which eitherwise will terminate soon the process, so we are OK and we do not need EH for this.
-            AudioFileFormat fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
+            AudioFileFormat? fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
             if (fmt is not null)
             {
-                nativeAttributesRcw.SetString(MfByteStreamAttributes.ContentType, fmt.MimeType);
+                Attributes.SetString(MfByteStreamAttributes.ContentType, fmt.MimeType);
             }
         }
     }
@@ -361,7 +363,7 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
         IntPtr sizeHandlerCcw = IntPtr.Zero,
             completionResultPtr = IntPtr.Zero,
             workItemPtr = IntPtr.Zero;
-        IMFAsyncResult completionResult = null, workItem = null;
+        IMFAsyncResult? completionResult = null, workItem = null;
         try
         {
             // We own this CCW ref; MFCreateAsyncResult AddRefs it as pObject, so it must be released
@@ -412,7 +414,7 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
             }
             else
             {
-                IMfByteStreamAsyncCallSizeHandler handler = null;
+                IMfByteStreamAsyncCallSizeHandler? handler = null;
                 try
                 {
                     handler = (IMfByteStreamAsyncCallSizeHandler)ComActivation
@@ -437,65 +439,65 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
 
     #region IMFAttributes Interface Implementation
 
-    public int GetItem(in Guid guidKey, nint pValue) => nativeAttributesRcw.GetItem(guidKey, pValue);
+    public int GetItem(in Guid guidKey, nint pValue) => Attributes.GetItem(guidKey, pValue);
 
-    public int GetItemType(in Guid guidKey, out int pType) => nativeAttributesRcw.GetItemType(guidKey, out pType);
+    public int GetItemType(in Guid guidKey, out int pType) => Attributes.GetItemType(guidKey, out pType);
 
-    public int CompareItem(in Guid guidKey, nint value, out int pbResult) => nativeAttributesRcw.CompareItem(guidKey, value, out pbResult);
+    public int CompareItem(in Guid guidKey, nint value, out int pbResult) => Attributes.CompareItem(guidKey, value, out pbResult);
 
-    public int Compare(nint pTheirs, int matchType, out int pbResult) => nativeAttributesRcw.Compare(pTheirs, matchType, out pbResult);
+    public int Compare(nint pTheirs, int matchType, out int pbResult) => Attributes.Compare(pTheirs, matchType, out pbResult);
 
-    public int GetUINT32(in Guid guidKey, out int punValue) => nativeAttributesRcw.GetUINT32(guidKey, out punValue);
+    public int GetUINT32(in Guid guidKey, out int punValue) => Attributes.GetUINT32(guidKey, out punValue);
 
-    public int GetUINT64(in Guid guidKey, out long punValue) => nativeAttributesRcw.GetUINT64(guidKey, out punValue);
+    public int GetUINT64(in Guid guidKey, out long punValue) => Attributes.GetUINT64(guidKey, out punValue);
 
-    public int GetDouble(in Guid guidKey, out double pfValue) => nativeAttributesRcw.GetDouble(guidKey, out pfValue);
+    public int GetDouble(in Guid guidKey, out double pfValue) => Attributes.GetDouble(guidKey, out pfValue);
 
-    public int GetGUID(in Guid guidKey, out Guid pguidValue) => nativeAttributesRcw.GetGUID(guidKey, out pguidValue);
+    public int GetGUID(in Guid guidKey, out Guid pguidValue) => Attributes.GetGUID(guidKey, out pguidValue);
 
-    public int GetStringLength(in Guid guidKey, out int pcchLength) => nativeAttributesRcw.GetStringLength(guidKey, out pcchLength);
+    public int GetStringLength(in Guid guidKey, out int pcchLength) => Attributes.GetStringLength(guidKey, out pcchLength);
 
-    public int GetString(in Guid guidKey, nint pwszValue, int cchBufSize, out int pcchLength) => nativeAttributesRcw.GetString(guidKey, pwszValue, cchBufSize, out pcchLength);
+    public int GetString(in Guid guidKey, nint pwszValue, int cchBufSize, out int pcchLength) => Attributes.GetString(guidKey, pwszValue, cchBufSize, out pcchLength);
 
-    public int GetAllocatedString(in Guid guidKey, out nint ppwszValue, out int pcchLength) => nativeAttributesRcw.GetAllocatedString(guidKey, out ppwszValue, out pcchLength);
+    public int GetAllocatedString(in Guid guidKey, out nint ppwszValue, out int pcchLength) => Attributes.GetAllocatedString(guidKey, out ppwszValue, out pcchLength);
 
-    public int GetBlobSize(in Guid guidKey, out int pcbBlobSize) => nativeAttributesRcw.GetBlobSize(guidKey, out pcbBlobSize);
+    public int GetBlobSize(in Guid guidKey, out int pcbBlobSize) => Attributes.GetBlobSize(guidKey, out pcbBlobSize);
 
-    public int GetBlob(in Guid guidKey, nint pBuf, int cbBufSize, out int pcbBlobSize) => nativeAttributesRcw.GetBlob(guidKey, pBuf, cbBufSize, out pcbBlobSize);
+    public int GetBlob(in Guid guidKey, nint pBuf, int cbBufSize, out int pcbBlobSize) => Attributes.GetBlob(guidKey, pBuf, cbBufSize, out pcbBlobSize);
 
-    public int GetAllocatedBlob(in Guid guidKey, out nint ppBuf, out int pcbSize) => nativeAttributesRcw.GetAllocatedBlob(guidKey, out ppBuf, out pcbSize);
+    public int GetAllocatedBlob(in Guid guidKey, out nint ppBuf, out int pcbSize) => Attributes.GetAllocatedBlob(guidKey, out ppBuf, out pcbSize);
 
-    public int GetUnknown(in Guid guidKey, in Guid riid, out nint ppv) => nativeAttributesRcw.GetUnknown(guidKey, riid, out ppv);
+    public int GetUnknown(in Guid guidKey, in Guid riid, out nint ppv) => Attributes.GetUnknown(guidKey, riid, out ppv);
 
-    public int SetItem(in Guid guidKey, nint value) => nativeAttributesRcw.SetItem(guidKey, value);
+    public int SetItem(in Guid guidKey, nint value) => Attributes.SetItem(guidKey, value);
 
-    public int DeleteItem(in Guid guidKey) => nativeAttributesRcw.DeleteItem(guidKey);
+    public int DeleteItem(in Guid guidKey) => Attributes.DeleteItem(guidKey);
 
-    public int DeleteAllItems() => nativeAttributesRcw.DeleteAllItems();
+    public int DeleteAllItems() => Attributes.DeleteAllItems();
 
-    public int SetUINT32(in Guid guidKey, int unValue) => nativeAttributesRcw.SetUINT32(guidKey, unValue);
+    public int SetUINT32(in Guid guidKey, int unValue) => Attributes.SetUINT32(guidKey, unValue);
 
-    public int SetUINT64(in Guid guidKey, long unValue) => nativeAttributesRcw.SetUINT64(guidKey, unValue);
+    public int SetUINT64(in Guid guidKey, long unValue) => Attributes.SetUINT64(guidKey, unValue);
 
-    public int SetDouble(in Guid guidKey, double fValue) => nativeAttributesRcw.SetDouble(guidKey, fValue);
+    public int SetDouble(in Guid guidKey, double fValue) => Attributes.SetDouble(guidKey, fValue);
 
-    public int SetGUID(in Guid guidKey, in Guid guidValue) => nativeAttributesRcw.SetGUID(guidKey, guidValue);
+    public int SetGUID(in Guid guidKey, in Guid guidValue) => Attributes.SetGUID(guidKey, guidValue);
 
-    public int SetString(in Guid guidKey, [MarshalAs(UnmanagedType.LPWStr)] string wszValue) => nativeAttributesRcw.SetString(guidKey, wszValue);
+    public int SetString(in Guid guidKey, [MarshalAs(UnmanagedType.LPWStr)] string wszValue) => Attributes.SetString(guidKey, wszValue);
 
-    public int SetBlob(in Guid guidKey, nint pBuf, int cbBufSize) => nativeAttributesRcw.SetBlob(guidKey, pBuf, cbBufSize);
+    public int SetBlob(in Guid guidKey, nint pBuf, int cbBufSize) => Attributes.SetBlob(guidKey, pBuf, cbBufSize);
 
-    public int SetUnknown(in Guid guidKey, nint pUnknown) => nativeAttributesRcw.SetUnknown(guidKey, pUnknown);
+    public int SetUnknown(in Guid guidKey, nint pUnknown) => Attributes.SetUnknown(guidKey, pUnknown);
 
-    public int LockStore() => nativeAttributesRcw.LockStore();
+    public int LockStore() => Attributes.LockStore();
 
-    public int UnlockStore() => nativeAttributesRcw.UnlockStore();
+    public int UnlockStore() => Attributes.UnlockStore();
 
-    public int GetCount(out int pcItems) => nativeAttributesRcw.GetCount(out pcItems);
+    public int GetCount(out int pcItems) => Attributes.GetCount(out pcItems);
 
-    public int GetItemByIndex(int unIndex, out Guid pGuidKey, nint pValue) => nativeAttributesRcw.GetItemByIndex(unIndex, out pGuidKey, pValue);
+    public int GetItemByIndex(int unIndex, out Guid pGuidKey, nint pValue) => Attributes.GetItemByIndex(unIndex, out pGuidKey, pValue);
 
-    public int CopyAllItems(nint pDest) => nativeAttributesRcw.CopyAllItems(pDest);
+    public int CopyAllItems(nint pDest) => Attributes.CopyAllItems(pDest);
 
     #endregion
 

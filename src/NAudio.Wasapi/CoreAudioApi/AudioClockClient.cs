@@ -11,7 +11,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioClockClient : IDisposable
 {
-    private IAudioClock audioClockClientInterface;
+    private IAudioClock? audioClockClientInterface;
+
+    private IAudioClock Clock => audioClockClientInterface ?? throw new ObjectDisposedException(nameof(AudioClockClient));
 
     internal AudioClockClient(IntPtr nativePointer)
     {
@@ -33,7 +35,7 @@ public class AudioClockClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClockClientInterface.GetCharacteristics(out var characteristics));
+            CoreAudioException.ThrowIfFailed(Clock.GetCharacteristics(out var characteristics));
             return (int)characteristics;
         }
     }
@@ -45,7 +47,7 @@ public class AudioClockClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClockClientInterface.GetFrequency(out var freq));
+            CoreAudioException.ThrowIfFailed(Clock.GetFrequency(out var freq));
             return freq;
         }
     }
@@ -55,7 +57,7 @@ public class AudioClockClient : IDisposable
     /// </summary>
     public bool GetPosition(out ulong position, out ulong qpcPosition)
     {
-        var hr = audioClockClientInterface.GetPosition(out position, out qpcPosition);
+        var hr = Clock.GetPosition(out position, out qpcPosition);
         if (hr == -1) return false;
         CoreAudioException.ThrowIfFailed(hr);
         return true;

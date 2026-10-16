@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
@@ -21,7 +22,9 @@ public class MMDeviceEnumerator : IDisposable
     // IID_IMMNotificationClient — mmdeviceapi.h
     private static readonly Guid IID_IMMNotificationClient = new("7991EEC9-7E89-4D85-8390-6C703CEC60C0");
 
-    private IMMDeviceEnumerator realEnumerator;
+    private IMMDeviceEnumerator? realEnumerator;
+
+    private IMMDeviceEnumerator Enumerator => realEnumerator ?? throw new ObjectDisposedException(nameof(MMDeviceEnumerator));
 
     // Registered notification clients, keyed by the managed client (reference identity) with the
     // retained CCW interface pointer as the value. Windows does NOT AddRef the client passed to
@@ -49,7 +52,7 @@ public class MMDeviceEnumerator : IDisposable
     /// <param name="dwStateMask">Bitmask of <see cref="DeviceState"/> values to include.</param>
     public MMDeviceCollection EnumerateAudioEndPoints(DataFlow dataFlow, DeviceState dwStateMask)
     {
-        CoreAudioException.ThrowIfFailed(realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out var ptr));
+        CoreAudioException.ThrowIfFailed(Enumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out var ptr));
         try
         {
             return new MMDeviceCollection((IMMDeviceCollection)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
@@ -70,7 +73,7 @@ public class MMDeviceEnumerator : IDisposable
     /// </exception>
     public MMDevice GetDefaultAudioEndpoint(DataFlow dataFlow, Role role)
     {
-        CoreAudioException.ThrowIfFailed(realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr));
+        CoreAudioException.ThrowIfFailed(Enumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr));
         return WrapDevicePointer(ptr);
     }
 
@@ -81,7 +84,7 @@ public class MMDeviceEnumerator : IDisposable
     public bool HasDefaultAudioEndpoint(DataFlow dataFlow, Role role)
     {
         const int E_NOTFOUND = unchecked((int)0x80070490);
-        int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
+        int hresult = Enumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
         if (hresult == 0x0)
         {
             Marshal.Release(ptr);
@@ -102,10 +105,10 @@ public class MMDeviceEnumerator : IDisposable
     /// <param name="dataFlow">Render or capture.</param>
     /// <param name="role">Console, multimedia, or communications role.</param>
     /// <param name="device">The default device on success; <c>null</c> otherwise.</param>
-    public bool TryGetDefaultAudioEndpoint(DataFlow dataFlow, Role role, out MMDevice device)
+    public bool TryGetDefaultAudioEndpoint(DataFlow dataFlow, Role role, [NotNullWhen(true)] out MMDevice? device)
     {
         const int E_NOTFOUND = unchecked((int)0x80070490);
-        int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
+        int hresult = Enumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
         if (hresult == 0x0)
         {
             device = WrapDevicePointer(ptr);
@@ -125,7 +128,7 @@ public class MMDeviceEnumerator : IDisposable
     /// </summary>
     public MMDevice GetDevice(string id)
     {
-        CoreAudioException.ThrowIfFailed(realEnumerator.GetDevice(id, out var ptr));
+        CoreAudioException.ThrowIfFailed(Enumerator.GetDevice(id, out var ptr));
         return WrapDevicePointer(ptr);
     }
 
@@ -154,7 +157,7 @@ public class MMDeviceEnumerator : IDisposable
     {
         if (client is null) throw new ArgumentNullException(nameof(client));
         var ptr = QueryNotificationClientInterface(client);
-        int hresult = realEnumerator.RegisterEndpointNotificationCallback(ptr);
+        int hresult = Enumerator.RegisterEndpointNotificationCallback(ptr);
         if (hresult >= 0)
         {
             // Success: retain the CCW reference for the whole registration (see registeredClients).
@@ -181,7 +184,7 @@ public class MMDeviceEnumerator : IDisposable
         var ptr = QueryNotificationClientInterface(client);
         try
         {
-            int hresult = realEnumerator.UnregisterEndpointNotificationCallback(ptr);
+            int hresult = Enumerator.UnregisterEndpointNotificationCallback(ptr);
             // Release the reference we retained at registration so the CCW ref count can fall to
             // zero and the managed client become collectable again.
             if (registeredClients.Remove(client, out var retained))

@@ -24,7 +24,9 @@ namespace NAudio.CoreAudioApi;
 /// </remarks>
 public class AcousticEchoCancellationControl : IDisposable
 {
-    private IAcousticEchoCancellationControl acousticEchoCancellationControlInterface;
+    private IAcousticEchoCancellationControl? acousticEchoCancellationControlInterface;
+
+    private IAcousticEchoCancellationControl Control => acousticEchoCancellationControlInterface ?? throw new ObjectDisposedException(nameof(AcousticEchoCancellationControl));
 
     internal AcousticEchoCancellationControl(IntPtr nativePointer)
     {
@@ -46,10 +48,10 @@ public class AcousticEchoCancellationControl : IDisposable
     /// <param name="renderEndpointId">The endpoint ID of the render endpoint (see
     /// <see cref="MMDevice.ID"/>), or null to let Windows pick the reference device automatically.</param>
     /// <exception cref="CoreAudioException">Thrown when the endpoint ID is invalid (E_INVALIDARG).</exception>
-    public void SetReferenceEndpoint(string renderEndpointId)
+    public void SetReferenceEndpoint(string? renderEndpointId)
     {
         CoreAudioException.ThrowIfFailed(
-            acousticEchoCancellationControlInterface.SetEchoCancellationRenderEndpoint(renderEndpointId));
+            Control.SetEchoCancellationRenderEndpoint(renderEndpointId));
     }
 
     /// <summary>
@@ -72,7 +74,7 @@ public class AcousticEchoCancellationControl : IDisposable
     /// </summary>
     public void UseDefaultReferenceEndpoint()
     {
-        SetReferenceEndpoint((string)null);
+        SetReferenceEndpoint((string?)null);
     }
 
     /// <summary>

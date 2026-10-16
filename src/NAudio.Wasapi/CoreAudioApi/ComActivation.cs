@@ -80,7 +80,7 @@ internal static class ComActivation
     /// <c>rcw is ComObject</c> from an interface-typed variable does not compile (Phase
     /// 2e Hazard #2), so the cast through <see cref="object"/> is required.
     /// </summary>
-    public static void ReleaseBoth<TInterface>(TInterface rcw, IntPtr ptr)
+    public static void ReleaseBoth<TInterface>(TInterface? rcw, IntPtr ptr)
         where TInterface : class
     {
         if (rcw != null)

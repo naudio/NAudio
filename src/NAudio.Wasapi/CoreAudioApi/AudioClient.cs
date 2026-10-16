@@ -24,18 +24,20 @@ public class AudioClient : IDisposable
     private static readonly Guid IID_IAudioClient = new("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
     private static readonly Guid IID_IAudioClient2 = new("726778CD-F60A-4eda-82DE-E47610CD78AA");
     private static readonly Guid IID_IActivateAudioInterfaceCompletionHandler = new("41D949AB-9862-444A-80F6-C261334DA5EB");
-    private IAudioClient audioClientInterface;
-    private readonly IAudioClient2 audioClientInterface2;
-    private readonly IAudioClient3 audioClientInterface3;
-    private WaveFormat mixFormat;
-    private AudioRenderClient audioRenderClient;
-    private AudioCaptureClient audioCaptureClient;
-    private AudioClockClient audioClockClient;
-    private AudioStreamVolume audioStreamVolume;
-    private SimpleAudioVolume simpleAudioVolume;
-    private AcousticEchoCancellationControl acousticEchoCancellationControl;
+    private IAudioClient? audioClientInterface;
+    private readonly IAudioClient2? audioClientInterface2;
+    private readonly IAudioClient3? audioClientInterface3;
+    private WaveFormat? mixFormat;
+    private AudioRenderClient? audioRenderClient;
+    private AudioCaptureClient? audioCaptureClient;
+    private AudioClockClient? audioClockClient;
+    private AudioStreamVolume? audioStreamVolume;
+    private SimpleAudioVolume? simpleAudioVolume;
+    private AcousticEchoCancellationControl? acousticEchoCancellationControl;
     private AudioClientShareMode shareMode;
     private int disposed;
+
+    private IAudioClient Client => audioClientInterface ?? throw new ObjectDisposedException(nameof(AudioClient));
 
     /// <summary>
     /// The special device interface path passed to ActivateAudioInterfaceAsync to request a
@@ -228,7 +230,7 @@ public class AudioClient : IDisposable
         {
             if (mixFormat == null)
             {
-                CoreAudioException.ThrowIfFailed(audioClientInterface.GetMixFormat(out var waveFormatPointer));
+                CoreAudioException.ThrowIfFailed(Client.GetMixFormat(out var waveFormatPointer));
                 var waveFormat = WaveFormat.MarshalFromPtr(waveFormatPointer);
                 Marshal.FreeCoTaskMem(waveFormatPointer);
                 mixFormat = waveFormat;
@@ -258,7 +260,7 @@ public class AudioClient : IDisposable
         try
         {
             CoreAudioException.ThrowIfFailed(
-                audioClientInterface.Initialize(shareMode, streamFlags, bufferDuration, periodicity, formatPtr, in audioSessionGuid));
+                Client.Initialize(shareMode, streamFlags, bufferDuration, periodicity, formatPtr, in audioSessionGuid));
         }
         finally
         {
@@ -275,7 +277,7 @@ public class AudioClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClientInterface.GetBufferSize(out uint bufferSize));
+            CoreAudioException.ThrowIfFailed(Client.GetBufferSize(out uint bufferSize));
             return (int)bufferSize;
         }
     }
@@ -287,7 +289,7 @@ public class AudioClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClientInterface.GetStreamLatency(out var latency));
+            CoreAudioException.ThrowIfFailed(Client.GetStreamLatency(out var latency));
             return latency;
         }
     }
@@ -299,7 +301,7 @@ public class AudioClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClientInterface.GetCurrentPadding(out var currentPadding));
+            CoreAudioException.ThrowIfFailed(Client.GetCurrentPadding(out var currentPadding));
             return currentPadding;
         }
     }
@@ -312,7 +314,7 @@ public class AudioClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClientInterface.GetDevicePeriod(out var defaultDevicePeriod, out _));
+            CoreAudioException.ThrowIfFailed(Client.GetDevicePeriod(out var defaultDevicePeriod, out _));
             return defaultDevicePeriod;
         }
     }
@@ -325,7 +327,7 @@ public class AudioClient : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioClientInterface.GetDevicePeriod(out _, out var minimumDevicePeriod));
+            CoreAudioException.ThrowIfFailed(Client.GetDevicePeriod(out _, out var minimumDevicePeriod));
             return minimumDevicePeriod;
         }
     }
@@ -349,7 +351,7 @@ public class AudioClient : IDisposable
             }
             if (audioStreamVolume == null)
             {
-                CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioStreamVolume, out var ptr));
+                CoreAudioException.ThrowIfFailed(Client.GetService(ID_AudioStreamVolume, out var ptr));
                 audioStreamVolume = new AudioStreamVolume(ptr);
             }
             return audioStreamVolume;
@@ -368,7 +370,7 @@ public class AudioClient : IDisposable
         {
             if (simpleAudioVolume == null)
             {
-                CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_SimpleAudioVolume, out var ptr));
+                CoreAudioException.ThrowIfFailed(Client.GetService(ID_SimpleAudioVolume, out var ptr));
                 simpleAudioVolume = new SimpleAudioVolume(ptr);
             }
             return simpleAudioVolume;
@@ -384,7 +386,7 @@ public class AudioClient : IDisposable
         {
             if (audioClockClient == null)
             {
-                CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioClockClient, out var ptr));
+                CoreAudioException.ThrowIfFailed(Client.GetService(ID_AudioClockClient, out var ptr));
                 audioClockClient = new AudioClockClient(ptr);
             }
             return audioClockClient;
@@ -400,7 +402,7 @@ public class AudioClient : IDisposable
         {
             if (audioRenderClient == null)
             {
-                CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioRenderClient, out var ptr));
+                CoreAudioException.ThrowIfFailed(Client.GetService(ID_AudioRenderClient, out var ptr));
                 audioRenderClient = new AudioRenderClient(ptr);
             }
             return audioRenderClient;
@@ -416,7 +418,7 @@ public class AudioClient : IDisposable
         {
             if (audioCaptureClient == null)
             {
-                CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioCaptureClient, out var ptr));
+                CoreAudioException.ThrowIfFailed(Client.GetService(ID_AudioCaptureClient, out var ptr));
                 audioCaptureClient = new AudioCaptureClient(ptr);
             }
             return audioCaptureClient;
@@ -437,11 +439,11 @@ public class AudioClient : IDisposable
     /// The <see cref="AcousticEchoCancellationControl"/>, or null if the endpoint does not support
     /// controlling the AEC reference endpoint (GetService returns E_NOINTERFACE).
     /// </returns>
-    public AcousticEchoCancellationControl TryGetAcousticEchoCancellationControl()
+    public AcousticEchoCancellationControl? TryGetAcousticEchoCancellationControl()
     {
         if (acousticEchoCancellationControl == null)
         {
-            int hr = audioClientInterface.GetService(ID_AcousticEchoCancellationControl, out var ptr);
+            int hr = Client.GetService(ID_AcousticEchoCancellationControl, out var ptr);
             if (hr == E_NOINTERFACE)
             {
                 return null;
@@ -517,13 +519,13 @@ public class AudioClient : IDisposable
     /// <param name="desiredFormat">Desired Format</param>
     /// <param name="closestMatchFormat">The closest supported format, or null if there is none. Shared mode only — always null in exclusive mode.</param>
     /// <returns>True if the format is supported</returns>
-    public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormat closestMatchFormat)
+    public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormat? closestMatchFormat)
     {
         closestMatchFormat = null;
         var formatPtr = WaveFormat.MarshalToPtr(desiredFormat);
         try
         {
-            int hresult = audioClientInterface.IsFormatSupported(shareMode, formatPtr, out var closestMatchPtr);
+            int hresult = Client.IsFormatSupported(shareMode, formatPtr, out var closestMatchPtr);
 
             if (closestMatchPtr != IntPtr.Zero)
             {
@@ -559,7 +561,7 @@ public class AudioClient : IDisposable
     /// </summary>
     public void Start()
     {
-        CoreAudioException.ThrowIfFailed(audioClientInterface.Start());
+        CoreAudioException.ThrowIfFailed(Client.Start());
     }
 
     /// <summary>
@@ -567,7 +569,7 @@ public class AudioClient : IDisposable
     /// </summary>
     public void Stop()
     {
-        CoreAudioException.ThrowIfFailed(audioClientInterface.Stop());
+        CoreAudioException.ThrowIfFailed(Client.Stop());
     }
 
     /// <summary>
@@ -576,7 +578,7 @@ public class AudioClient : IDisposable
     /// <param name="eventWaitHandle">The Wait Handle to setup</param>
     public void SetEventHandle(IntPtr eventWaitHandle)
     {
-        CoreAudioException.ThrowIfFailed(audioClientInterface.SetEventHandle(eventWaitHandle));
+        CoreAudioException.ThrowIfFailed(Client.SetEventHandle(eventWaitHandle));
     }
 
     /// <summary>
@@ -587,7 +589,7 @@ public class AudioClient : IDisposable
     /// </summary>
     public void Reset()
     {
-        CoreAudioException.ThrowIfFailed(audioClientInterface.Reset());
+        CoreAudioException.ThrowIfFailed(Client.Reset());
     }
 
     // ---- IAudioClient3 low-latency shared mode ----

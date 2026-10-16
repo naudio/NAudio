@@ -15,7 +15,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class SimpleAudioVolume : IDisposable
 {
-    private ISimpleAudioVolume simpleAudioVolume;
+    private ISimpleAudioVolume? simpleAudioVolume;
+
+    private ISimpleAudioVolume VolumeInterface => simpleAudioVolume ?? throw new ObjectDisposedException(nameof(SimpleAudioVolume));
     private readonly bool ownsInterface;
 
     /// <summary>
@@ -72,14 +74,14 @@ public class SimpleAudioVolume : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMasterVolume(out var result));
+            CoreAudioException.ThrowIfFailed(VolumeInterface.GetMasterVolume(out var result));
             return result;
         }
         set
         {
             if ((value >= 0.0) && (value <= 1.0))
             {
-                CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMasterVolume(value, Guid.Empty));
+                CoreAudioException.ThrowIfFailed(VolumeInterface.SetMasterVolume(value, Guid.Empty));
             }
             // should throw something if out of range
         }
@@ -92,12 +94,12 @@ public class SimpleAudioVolume : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMute(out var result));
+            CoreAudioException.ThrowIfFailed(VolumeInterface.GetMute(out var result));
             return result;
         }
         set
         {
-            CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMute(value, Guid.Empty));
+            CoreAudioException.ThrowIfFailed(VolumeInterface.SetMute(value, Guid.Empty));
         }
     }
 }

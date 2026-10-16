@@ -10,7 +10,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 internal class MfMediaBuffer : IDisposable
 {
-    private Interfaces.IMFMediaBuffer bufferInterface;
+    private Interfaces.IMFMediaBuffer? bufferInterface;
+
+    private Interfaces.IMFMediaBuffer Buffer => bufferInterface ?? throw new ObjectDisposedException(nameof(MfMediaBuffer));
     private IntPtr nativePointer;
 
     internal MfMediaBuffer(Interfaces.IMFMediaBuffer bufferInterface, IntPtr nativePointer)
@@ -27,7 +29,7 @@ internal class MfMediaBuffer : IDisposable
     /// <summary>
     /// Gets the native COM interface for this buffer.
     /// </summary>
-    internal Interfaces.IMFMediaBuffer NativeInterface => bufferInterface;
+    internal Interfaces.IMFMediaBuffer NativeInterface => Buffer;
 
     /// <summary>
     /// True until <see cref="Dispose()"/> nulls out the underlying COM interface.
@@ -42,13 +44,13 @@ internal class MfMediaBuffer : IDisposable
     /// </summary>
     public MediaBufferLease Lock()
     {
-        MediaFoundationException.ThrowIfFailed(bufferInterface.Lock(out var pBuffer, out var maxLength, out var currentLength));
+        MediaFoundationException.ThrowIfFailed(Buffer.Lock(out var pBuffer, out var maxLength, out var currentLength));
         return new MediaBufferLease(this, pBuffer, maxLength, currentLength);
     }
 
     internal void Unlock()
     {
-        MediaFoundationException.ThrowIfFailed(bufferInterface.Unlock());
+        MediaFoundationException.ThrowIfFailed(Buffer.Unlock());
     }
 
     /// <summary>
@@ -58,10 +60,10 @@ internal class MfMediaBuffer : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(bufferInterface.GetCurrentLength(out var length));
+            MediaFoundationException.ThrowIfFailed(Buffer.GetCurrentLength(out var length));
             return length;
         }
-        set => MediaFoundationException.ThrowIfFailed(bufferInterface.SetCurrentLength(value));
+        set => MediaFoundationException.ThrowIfFailed(Buffer.SetCurrentLength(value));
     }
 
     /// <summary>
@@ -71,7 +73,7 @@ internal class MfMediaBuffer : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(bufferInterface.GetMaxLength(out var length));
+            MediaFoundationException.ThrowIfFailed(Buffer.GetMaxLength(out var length));
             return length;
         }
     }
@@ -120,7 +122,7 @@ internal class MfMediaBuffer : IDisposable
 /// </summary>
 internal ref struct MediaBufferLease
 {
-    private MfMediaBuffer owner;
+    private MfMediaBuffer? owner;
 
     /// <summary>
     /// A writable span over the buffer memory.

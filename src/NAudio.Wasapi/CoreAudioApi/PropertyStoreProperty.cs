@@ -5,7 +5,7 @@
 /// </summary>
 public struct PropertyStoreProperty
 {
-    internal PropertyStoreProperty(PropertyKey key, object value)
+    internal PropertyStoreProperty(PropertyKey key, object? value)
     {
         Key = key;
         Value = value;
@@ -19,5 +19,5 @@ public struct PropertyStoreProperty
     /// <summary>
     /// Property Value
     /// </summary>
-    public object Value { get; }
+    public object? Value { get; }
 }

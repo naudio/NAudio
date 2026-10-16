@@ -11,9 +11,9 @@ internal static class DmoInterop
         [In] ref Guid guidCategory,
         DmoEnumFlags flags,
         int inTypes,
-        [In] DmoPartialMediaType[] inTypesArray,
+        [In] DmoPartialMediaType[]? inTypesArray,
         int outTypes,
-        [In] DmoPartialMediaType[] outTypesArray,
+        [In] DmoPartialMediaType[]? outTypesArray,
         out IntPtr enumDmo);
 
     [DllImport("msdmo.dll")]

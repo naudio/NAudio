@@ -20,10 +20,12 @@ public class AudioSessionManager : IDisposable
 {
     private static readonly Guid IID_IAudioSessionNotification = new("641DD20B-4D41-49CC-ABA3-174B9477BB08");
 
-    private IAudioSessionManager audioSessionInterface;
-    private IAudioSessionManager2 audioSessionInterface2;
-    private AudioSessionNotification audioSessionNotification;
-    private SessionCollection sessions;
+    private IAudioSessionManager? audioSessionInterface;
+
+    private IAudioSessionManager SessionManager => audioSessionInterface ?? throw new ObjectDisposedException(nameof(AudioSessionManager));
+    private IAudioSessionManager2? audioSessionInterface2;
+    private AudioSessionNotification? audioSessionNotification;
+    private SessionCollection? sessions;
 
     // ComWrappers CCWs return a distinct IntPtr per interface (and a separate vtable
     // for IUnknown). RegisterSessionNotification expects an IAudioSessionNotification*,
@@ -42,8 +44,8 @@ public class AudioSessionManager : IDisposable
         }
     }
 
-    private SimpleAudioVolume simpleAudioVolume;
-    private AudioSessionControl audioSessionControl;
+    private SimpleAudioVolume? simpleAudioVolume;
+    private AudioSessionControl? audioSessionControl;
 
     /// <summary>
     /// Session created delegate
@@ -53,7 +55,7 @@ public class AudioSessionManager : IDisposable
     /// <summary>
     /// Occurs when audio session has been added (for example run another program that use audio playback).
     /// </summary>
-    public event SessionCreatedDelegate OnSessionCreated;
+    public event SessionCreatedDelegate? OnSessionCreated;
 
     /// <summary>
     /// Creates a new AudioSessionManager — ownership of the COM pointer is transferred.
@@ -85,7 +87,7 @@ public class AudioSessionManager : IDisposable
         {
             if (simpleAudioVolume == null)
             {
-                CoreAudioException.ThrowIfFailed(audioSessionInterface.GetSimpleAudioVolume(Guid.Empty, 0, out var ptr));
+                CoreAudioException.ThrowIfFailed(SessionManager.GetSimpleAudioVolume(Guid.Empty, 0, out var ptr));
                 simpleAudioVolume = new SimpleAudioVolume(ptr);
             }
             return simpleAudioVolume;
@@ -102,7 +104,7 @@ public class AudioSessionManager : IDisposable
         {
             if (audioSessionControl == null)
             {
-                CoreAudioException.ThrowIfFailed(audioSessionInterface.GetAudioSessionControl(Guid.Empty, 0, out var ptr));
+                CoreAudioException.ThrowIfFailed(SessionManager.GetAudioSessionControl(Guid.Empty, 0, out var ptr));
                 audioSessionControl = new AudioSessionControl(ptr);
             }
             return audioSessionControl;
@@ -142,7 +144,9 @@ public class AudioSessionManager : IDisposable
     /// <summary>
     /// Returns list of sessions of current device.
     /// </summary>
-    public SessionCollection Sessions => sessions;
+    /// <exception cref="InvalidOperationException">The manager has been disposed, or the device does not support session enumeration.</exception>
+    public SessionCollection Sessions => sessions
+        ?? throw new InvalidOperationException("Audio sessions are not available: the manager has been disposed or the device does not support IAudioSessionManager2");
 
     /// <summary>
     /// Dispose.

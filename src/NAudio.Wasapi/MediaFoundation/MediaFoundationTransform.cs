@@ -9,7 +9,7 @@ namespace NAudio.MediaFoundation;
 
 /// <summary>
 /// An abstract base class for simplifying working with Media Foundation Transforms.
-/// You need to override the method that actually creates and configures the transform.
+/// You need to override the method that actually creates and configures the Transform.
 /// </summary>
 public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
 {
@@ -29,7 +29,9 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
     private int outputBufferOffset;
     private int outputBufferCount;
 
-    private Interfaces.IMFTransform transform;
+    private Interfaces.IMFTransform? transform;
+
+    private Interfaces.IMFTransform Transform => transform ?? throw new ObjectDisposedException(nameof(MediaFoundationTransform));
     private bool disposed;
     private long inputPosition; // in ref-time, so we can timestamp the input samples
     private long outputPosition; // also in ref-time
@@ -63,9 +65,9 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
 
     private void InitializeTransformForStreaming()
     {
-        MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.Flush, IntPtr.Zero));
-        MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyBeginStreaming, IntPtr.Zero));
-        MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyStartOfStream, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)MftMessageType.Flush, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)MftMessageType.NotifyBeginStreaming, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)MftMessageType.NotifyStartOfStream, IntPtr.Zero));
         initializedForStreaming = true;
     }
 
@@ -146,7 +148,7 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
 
             try
             {
-                MediaFoundationException.ThrowIfFailed(transform.ProcessInput(0, samplePtr, 0));
+                MediaFoundationException.ThrowIfFailed(Transform.ProcessInput(0, samplePtr, 0));
             }
             finally
             {
@@ -162,8 +164,8 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
 
     private void EndStreamAndDrain()
     {
-        MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyEndOfStream, IntPtr.Zero));
-        MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.Drain, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)MftMessageType.NotifyEndOfStream, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)MftMessageType.Drain, IntPtr.Zero));
         int read;
         do
         {
@@ -171,7 +173,7 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
         } while (read > 0);
         inputPosition = 0;
         outputPosition = 0;
-        MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyEndStreaming, IntPtr.Zero));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)MftMessageType.NotifyEndStreaming, IntPtr.Zero));
         initializedForStreaming = false;
     }
 
@@ -187,10 +189,10 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
         var (samplePtr, sample) = MediaFoundationApi.CreateSample();
         var (pBufferPtr, pBuffer) = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
         IntPtr returnedSamplePtr = IntPtr.Zero;
-        Interfaces.IMFSample returnedSample = null;
+        Interfaces.IMFSample? returnedSample = null;
         bool returnedSampleIsReplacement = false;
         IntPtr outputMediaBufferPtr = IntPtr.Zero;
-        Interfaces.IMFMediaBuffer outputMediaBuffer = null;
+        Interfaces.IMFMediaBuffer? outputMediaBuffer = null;
         bool outputBufferLocked = false;
         try
         {
@@ -205,7 +207,7 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
                 // Fourth out param is MFT_PROCESS_OUTPUT_STATUS (NewStreams flag); unused here.
                 // The per-buffer outputDataBuffer[0].Status is updated by the MFT through the
                 // pinned pointer.
-                hr = transform.ProcessOutput((int)MftProcessOutputFlags.None,
+                hr = Transform.ProcessOutput((int)MftProcessOutputFlags.None,
                                              1, handle.AddrOfPinnedObject(), out _);
             }
             finally
@@ -274,7 +276,7 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
         return (10000000L * bytes) / waveFormat.AverageBytesPerSecond;
     }
 
-    private (IntPtr Ptr, Interfaces.IMFSample Rcw) ReadFromSource()
+    private (IntPtr Ptr, Interfaces.IMFSample? Rcw) ReadFromSource()
     {
         int bytesRead = sourceProvider.Read(sourceBuffer.AsSpan());
         if (bytesRead == 0) return (IntPtr.Zero, null);
@@ -282,7 +284,7 @@ public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
         var (mediaBufferPtr, mediaBuffer) = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
         bool bufferLocked = false;
         IntPtr samplePtr = IntPtr.Zero;
-        Interfaces.IMFSample sample = null;
+        Interfaces.IMFSample? sample = null;
         try
         {
             MediaFoundationException.ThrowIfFailed(mediaBuffer.Lock(out IntPtr pBuffer, out _, out _));

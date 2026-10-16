@@ -111,8 +111,10 @@ foreach (MMDevice device in devices)
     // Hits VT_BLOB (WAVEFORMATEX)
     if (device.Properties.Contains(PropertyKeys.PKEY_AudioEngine_DeviceFormat))
     {
-        var blob = (byte[])device.Properties[PropertyKeys.PKEY_AudioEngine_DeviceFormat].Value;
-        Console.WriteLine($"    DeviceFormat: {blob.Length}-byte WAVEFORMAT blob");
+        if (device.Properties[PropertyKeys.PKEY_AudioEngine_DeviceFormat].Value is byte[] blob)
+        {
+            Console.WriteLine($"    DeviceFormat: {blob.Length}-byte WAVEFORMAT blob");
+        }
     }
 
     Console.WriteLine($"    Total properties: {device.Properties.Count}");

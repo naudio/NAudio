@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// TODO: remove once this file is annotated (nullable reference types, #825)
+#nullable disable
+
+using System.Collections.Generic;
 using NAudio.CoreAudioApi;
 
 namespace NAudio.Wave;

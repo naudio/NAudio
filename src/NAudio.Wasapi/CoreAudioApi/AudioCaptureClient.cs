@@ -10,7 +10,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioCaptureClient : IDisposable
 {
-    private IAudioCaptureClient audioCaptureClientInterface;
+    private IAudioCaptureClient? audioCaptureClientInterface;
+
+    private IAudioCaptureClient CaptureClient => audioCaptureClientInterface ?? throw new ObjectDisposedException(nameof(AudioCaptureClient));
 
     internal AudioCaptureClient(IntPtr nativePointer)
     {
@@ -35,7 +37,7 @@ public class AudioCaptureClient : IDisposable
         out long devicePosition,
         out long qpcPosition)
     {
-        CoreAudioException.ThrowIfFailed(audioCaptureClientInterface.GetBuffer(out var bufferPointer, out numFramesToRead, out bufferFlags, out devicePosition, out qpcPosition));
+        CoreAudioException.ThrowIfFailed(CaptureClient.GetBuffer(out var bufferPointer, out numFramesToRead, out bufferFlags, out devicePosition, out qpcPosition));
         return bufferPointer;
     }
 
@@ -49,7 +51,7 @@ public class AudioCaptureClient : IDisposable
         out int numFramesToRead,
         out AudioClientBufferFlags bufferFlags)
     {
-        CoreAudioException.ThrowIfFailed(audioCaptureClientInterface.GetBuffer(out var bufferPointer, out numFramesToRead, out bufferFlags, out _, out _));
+        CoreAudioException.ThrowIfFailed(CaptureClient.GetBuffer(out var bufferPointer, out numFramesToRead, out bufferFlags, out _, out _));
         return bufferPointer;
     }
 
@@ -62,7 +64,7 @@ public class AudioCaptureClient : IDisposable
     /// <returns>A lease that provides a read-only Span and releases the buffer on dispose</returns>
     public CaptureBufferLease GetBufferLease(int bytesPerFrame)
     {
-        CoreAudioException.ThrowIfFailed(audioCaptureClientInterface.GetBuffer(
+        CoreAudioException.ThrowIfFailed(CaptureClient.GetBuffer(
             out var bufferPointer, out var numFramesToRead, out var bufferFlags,
             out var devicePosition, out var qpcPosition));
         return new CaptureBufferLease(this, bufferPointer, numFramesToRead, bytesPerFrame, bufferFlags, devicePosition, qpcPosition);
@@ -73,7 +75,7 @@ public class AudioCaptureClient : IDisposable
     /// </summary>
     public int GetNextPacketSize()
     {
-        CoreAudioException.ThrowIfFailed(audioCaptureClientInterface.GetNextPacketSize(out var numFramesInNextPacket));
+        CoreAudioException.ThrowIfFailed(CaptureClient.GetNextPacketSize(out var numFramesInNextPacket));
         return numFramesInNextPacket;
     }
 
@@ -83,7 +85,7 @@ public class AudioCaptureClient : IDisposable
     /// <param name="numFramesRead">Number of frames read</param>
     public void ReleaseBuffer(int numFramesRead)
     {
-        CoreAudioException.ThrowIfFailed(audioCaptureClientInterface.ReleaseBuffer(numFramesRead));
+        CoreAudioException.ThrowIfFailed(CaptureClient.ReleaseBuffer(numFramesRead));
     }
 
     /// <summary>
@@ -110,7 +112,7 @@ public class AudioCaptureClient : IDisposable
 /// </summary>
 public ref struct CaptureBufferLease
 {
-    private AudioCaptureClient owner;
+    private AudioCaptureClient? owner;
     private readonly int frameCount;
 
     /// <summary>

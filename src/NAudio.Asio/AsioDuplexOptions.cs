@@ -13,14 +13,14 @@ public sealed class AsioDuplexOptions
     /// Optional — leave null or empty for an output-only session, where the callback writes per-channel output
     /// via <see cref="AsioProcessBuffers.GetOutput"/> with no capture side and <see cref="AsioProcessBuffers.InputChannelCount"/> is 0.
     /// </summary>
-    public int[] InputChannels { get; init; }
+    public int[]? InputChannels { get; init; }
 
     /// <summary>
     /// Physical output channel indices. May be non-contiguous. The processor callback writes to them via
     /// <see cref="AsioProcessBuffers.GetOutput"/> using zero-based indices into this array.
     /// Outputs not written by the callback are zeroed by the library before native-format conversion.
     /// </summary>
-    public int[] OutputChannels { get; init; }
+    public int[] OutputChannels { get; init; } = null!; // required; validated by InitDuplex
 
     /// <summary>
     /// Desired sample rate in Hz. If <c>null</c>, uses the driver's current sample rate
@@ -37,5 +37,5 @@ public sealed class AsioDuplexOptions
     /// User-supplied processing callback. Required. Runs on the ASIO driver's real-time thread — see the
     /// remarks on <see cref="AsioProcessCallback"/> for constraints.
     /// </summary>
-    public AsioProcessCallback Processor { get; init; }
+    public AsioProcessCallback Processor { get; init; } = null!; // required; validated by InitDuplex
 }

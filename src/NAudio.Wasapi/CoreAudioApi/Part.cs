@@ -1,4 +1,5 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Runtime.InteropServices;
 
@@ -11,7 +12,7 @@ public class Part
 {
     private const int E_NOTFOUND = unchecked((int)0x80070490);
     private readonly IPart partInterface;
-    private DeviceTopology deviceTopology;
+    private DeviceTopology? deviceTopology;
     private static Guid IID_IAudioVolumeLevel = new("7FB7B48F-531D-44A2-BCB3-5AD5A134B3DC");
     private static Guid IID_IAudioMute = new("DF45AEEA-B74A-4B6B-AFAD-2366B6AA012E");
     private static readonly Guid IID_IAudioEndpointVolume = new("5CDF2C82-841E-4546-9722-0CF74078229A");
@@ -168,9 +169,9 @@ public class Part
     }
 
     /// <summary>
-    /// Audio Volume Level
+    /// Audio Volume Level, or null if this part does not support it
     /// </summary>
-    public AudioVolumeLevel AudioVolumeLevel
+    public AudioVolumeLevel? AudioVolumeLevel
     {
         get
         {
@@ -181,9 +182,9 @@ public class Part
     }
 
     /// <summary>
-    /// Audio Mute
+    /// Audio Mute, or null if this part does not support it
     /// </summary>
-    public AudioMute AudioMute
+    public AudioMute? AudioMute
     {
         get
         {
@@ -194,9 +195,9 @@ public class Part
     }
 
     /// <summary>
-    /// Jack Description
+    /// Jack Description, or null if this part does not support it
     /// </summary>
-    public KsJackDescription JackDescription
+    public KsJackDescription? JackDescription
     {
         get
         {
@@ -206,6 +207,7 @@ public class Part
         }
     }
 
+    [MemberNotNull(nameof(deviceTopology))]
     private void GetDeviceTopology()
     {
         CoreAudioException.ThrowIfFailed(partInterface.GetTopologyObject(out var ptr));

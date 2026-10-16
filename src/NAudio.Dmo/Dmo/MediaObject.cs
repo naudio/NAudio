@@ -15,7 +15,9 @@ namespace NAudio.Dmo;
 /// </summary>
 public class MediaObject : IDisposable
 {
-    private IMediaObject mediaObject;
+    private IMediaObject? mediaObject;
+
+    private IMediaObject ComInterface => mediaObject ?? throw new ObjectDisposedException(nameof(MediaObject));
     private readonly int inputStreams;
     private readonly int outputStreams;
 
@@ -68,7 +70,7 @@ public class MediaObject : IDisposable
     public unsafe DmoMediaType? GetInputType(int inputStream, int inputTypeIndex)
     {
         DmoMediaType mediaType = default;
-        int hresult = mediaObject.GetInputType(inputStream, inputTypeIndex, (IntPtr)(&mediaType));
+        int hresult = ComInterface.GetInputType(inputStream, inputTypeIndex, (IntPtr)(&mediaType));
         if (hresult == HResult.S_OK)
         {
             DmoInterop.MoFreeMediaType(ref mediaType);
@@ -91,7 +93,7 @@ public class MediaObject : IDisposable
     public unsafe DmoMediaType? GetOutputType(int outputStream, int outputTypeIndex)
     {
         DmoMediaType mediaType = default;
-        int hresult = mediaObject.GetOutputType(outputStream, outputTypeIndex, (IntPtr)(&mediaType));
+        int hresult = ComInterface.GetOutputType(outputStream, outputTypeIndex, (IntPtr)(&mediaType));
         if (hresult == HResult.S_OK)
         {
             DmoInterop.MoFreeMediaType(ref mediaType);
@@ -113,7 +115,7 @@ public class MediaObject : IDisposable
     public unsafe DmoMediaType GetOutputCurrentType(int outputStreamIndex)
     {
         DmoMediaType mediaType = default;
-        int hresult = mediaObject.GetOutputCurrentType(outputStreamIndex, (IntPtr)(&mediaType));
+        int hresult = ComInterface.GetOutputCurrentType(outputStreamIndex, (IntPtr)(&mediaType));
         if (hresult == HResult.S_OK)
         {
             DmoInterop.MoFreeMediaType(ref mediaType);
@@ -123,7 +125,7 @@ public class MediaObject : IDisposable
         {
             throw new InvalidOperationException("Media type was not set.");
         }
-        throw Marshal.GetExceptionForHR(hresult);
+        throw Marshal.GetExceptionForHR(hresult) ?? new InvalidOperationException($"Unexpected HRESULT 0x{hresult:X8}");
     }
 
     /// <summary>
@@ -178,7 +180,7 @@ public class MediaObject : IDisposable
         int hResult;
         fixed (DmoMediaType* p = &mediaType)
         {
-            hResult = mediaObject.SetInputType(inputStreamIndex, (IntPtr)p, (int)flags);
+            hResult = ComInterface.SetInputType(inputStreamIndex, (IntPtr)p, (int)flags);
         }
         if (hResult != HResult.S_OK)
         {
@@ -289,7 +291,7 @@ public class MediaObject : IDisposable
         int hresult;
         fixed (DmoMediaType* p = &mediaType)
         {
-            hresult = mediaObject.SetOutputType(outputStreamIndex, (IntPtr)p, (int)flags);
+            hresult = ComInterface.SetOutputType(outputStreamIndex, (IntPtr)p, (int)flags);
         }
         if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_ACCEPTED)
         {
@@ -299,7 +301,7 @@ public class MediaObject : IDisposable
         {
             return true;
         }
-        throw Marshal.GetExceptionForHR(hresult);
+        throw Marshal.GetExceptionForHR(hresult) ?? new InvalidOperationException($"Unexpected HRESULT 0x{hresult:X8}");
     }
 
     /// <summary>
@@ -343,7 +345,7 @@ public class MediaObject : IDisposable
     /// <returns>Input Size Info</returns>
     public MediaObjectSizeInfo GetInputSizeInfo(int inputStreamIndex)
     {
-        Marshal.ThrowExceptionForHR(mediaObject.GetInputSizeInfo(inputStreamIndex, out int size, out int maxLookahead, out int alignment));
+        Marshal.ThrowExceptionForHR(ComInterface.GetInputSizeInfo(inputStreamIndex, out int size, out int maxLookahead, out int alignment));
         return new MediaObjectSizeInfo(size, maxLookahead, alignment);
     }
 
@@ -354,7 +356,7 @@ public class MediaObject : IDisposable
     /// <returns>Output Size Info</returns>
     public MediaObjectSizeInfo GetOutputSizeInfo(int outputStreamIndex)
     {
-        Marshal.ThrowExceptionForHR(mediaObject.GetOutputSizeInfo(outputStreamIndex, out int size, out int alignment));
+        Marshal.ThrowExceptionForHR(ComInterface.GetOutputSizeInfo(outputStreamIndex, out int size, out int alignment));
         return new MediaObjectSizeInfo(size, 0, alignment);
     }
 
@@ -386,7 +388,7 @@ public class MediaObject : IDisposable
             try
             {
                 Marshal.ThrowExceptionForHR(
-                    mediaObject.ProcessInput(inputStreamIndex, mbPtr, (int)flags, timestamp, duration));
+                    ComInterface.ProcessInput(inputStreamIndex, mbPtr, (int)flags, timestamp, duration));
             }
             finally
             {
@@ -447,7 +449,7 @@ public class MediaObject : IDisposable
             int hr;
             fixed (RawDmoOutputDataBuffer* p = raw)
             {
-                hr = mediaObject.ProcessOutput((int)flags, outputBufferCount, (IntPtr)p, out _);
+                hr = ComInterface.ProcessOutput((int)flags, outputBufferCount, (IntPtr)p, out _);
             }
             Marshal.ThrowExceptionForHR(hr);
 
@@ -473,7 +475,7 @@ public class MediaObject : IDisposable
     /// </summary>
     public void AllocateStreamingResources()
     {
-        Marshal.ThrowExceptionForHR(mediaObject.AllocateStreamingResources());
+        Marshal.ThrowExceptionForHR(ComInterface.AllocateStreamingResources());
     }
 
     /// <summary>
@@ -481,7 +483,7 @@ public class MediaObject : IDisposable
     /// </summary>
     public void FreeStreamingResources()
     {
-        Marshal.ThrowExceptionForHR(mediaObject.FreeStreamingResources());
+        Marshal.ThrowExceptionForHR(ComInterface.FreeStreamingResources());
     }
 
     /// <summary>
@@ -491,7 +493,7 @@ public class MediaObject : IDisposable
     /// <returns>Maximum input latency as a ref-time</returns>
     public long GetInputMaxLatency(int inputStreamIndex)
     {
-        Marshal.ThrowExceptionForHR(mediaObject.GetInputMaxLatency(inputStreamIndex, out long maxLatency));
+        Marshal.ThrowExceptionForHR(ComInterface.GetInputMaxLatency(inputStreamIndex, out long maxLatency));
         return maxLatency;
     }
 
@@ -500,7 +502,7 @@ public class MediaObject : IDisposable
     /// </summary>
     public void Flush()
     {
-        Marshal.ThrowExceptionForHR(mediaObject.Flush());
+        Marshal.ThrowExceptionForHR(ComInterface.Flush());
     }
 
     /// <summary>
@@ -509,7 +511,7 @@ public class MediaObject : IDisposable
     /// <param name="inputStreamIndex">Input Stream index</param>
     public void Discontinuity(int inputStreamIndex)
     {
-        Marshal.ThrowExceptionForHR(mediaObject.Discontinuity(inputStreamIndex));
+        Marshal.ThrowExceptionForHR(ComInterface.Discontinuity(inputStreamIndex));
     }
 
     /// <summary>
@@ -519,7 +521,7 @@ public class MediaObject : IDisposable
     /// <returns>true if accepting data</returns>
     public bool IsAcceptingData(int inputStreamIndex)
     {
-        int hresult = mediaObject.GetInputStatus(inputStreamIndex, out int flags);
+        int hresult = ComInterface.GetInputStatus(inputStreamIndex, out int flags);
         Marshal.ThrowExceptionForHR(hresult);
         return ((DmoInputStatusFlags)flags & DmoInputStatusFlags.AcceptData) == DmoInputStatusFlags.AcceptData;
     }

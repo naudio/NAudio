@@ -59,6 +59,25 @@ public enum MmResult
     /// <summary>device is synchronous, WAVERR_SYNC</summary>
     WaveSync = 35,
 
+    // MIDI error codes, found in mmsystem.h
+
+    /// <summary>header not prepared, MIDIERR_UNPREPARED</summary>
+    MidiHeaderUnprepared = 64,
+    /// <summary>still something playing, MIDIERR_STILLPLAYING</summary>
+    MidiStillPlaying = 65,
+    /// <summary>no configured instruments, MIDIERR_NOMAP</summary>
+    MidiNoMap = 66,
+    /// <summary>hardware is still busy, MIDIERR_NOTREADY</summary>
+    MidiNotReady = 67,
+    /// <summary>port no longer connected, MIDIERR_NODEVICE</summary>
+    MidiNoDevice = 68,
+    /// <summary>invalid MIF, MIDIERR_INVALIDSETUP</summary>
+    MidiInvalidSetup = 69,
+    /// <summary>operation unsupported with open mode, MIDIERR_BADOPENMODE</summary>
+    MidiBadOpenMode = 70,
+    /// <summary>thru device 'eating' a message, MIDIERR_DONT_CONTINUE</summary>
+    MidiDontContinue = 71,
+
     // ACM error codes, found in msacm.h
 
     /// <summary>Conversion not possible (ACMERR_NOTPOSSIBLE)</summary>

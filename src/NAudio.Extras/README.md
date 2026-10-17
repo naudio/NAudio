@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.Extras)](https://www.nuget.org/packages/NAudio.Extras/)
 
-Extra, opinionated helpers built on top of [NAudio](https://github.com/naudio/NAudio). Targets `net9.0` and `net9.0-windows10.0.19041.0`.
+Extra, opinionated helpers built on top of [NAudio](https://github.com/naudio/NAudio). Targets `net9.0`. `AudioPlaybackEngine` is Windows-only (it plays through `WaveOut`); everything else is cross-platform.
 
 ## What's included
 

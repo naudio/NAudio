@@ -1,13 +1,14 @@
-﻿#if WINDOWS
-using System;
+﻿using System;
+using System.Runtime.Versioning;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Extras;
 
 /// <summary>
-/// Demo for fire and forget playback
+/// Demo for fire and forget playback (Windows only, as it plays through <see cref="WaveOut"/>)
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class AudioPlaybackEngine : IDisposable
 {
     private readonly IWavePlayer outputDevice;
@@ -69,4 +70,3 @@ public class AudioPlaybackEngine : IDisposable
         outputDevice.Dispose();
     }
 }
-#endif

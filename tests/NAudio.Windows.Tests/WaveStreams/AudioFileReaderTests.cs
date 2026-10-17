@@ -7,10 +7,9 @@ using NUnit.Framework;
 namespace NAudio.Windows.Tests.WaveStreams;
 
 /// <summary>
-/// AudioFileReader lives in the NAudio meta-package (not NAudio.Core), which cross-targets a
-/// Windows TFM. These tests therefore live here rather than in NAudio.Core.Tests, so that the
-/// cross-platform test project doesn't need a reference to the meta-package (and the Windows
-/// targeting pack) just to exercise AudioFileReader.
+/// AudioFileReader tests that exercise its Windows decoding paths (Media Foundation, ACM) or
+/// otherwise need Windows. Its cross-platform behaviour is covered by
+/// AudioFileReaderPlatformTests in NAudio.Core.Tests.
 /// </summary>
 [TestFixture]
 public class AudioFileReaderTests

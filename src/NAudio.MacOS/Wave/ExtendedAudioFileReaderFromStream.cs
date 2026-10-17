@@ -133,7 +133,7 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
                 }
                 else if (osStatus == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
                 {
-                    throw ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target!).Exception ?? new AudioFileException(osStatus);
+                    throw ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target!).Exception ?? new AudioFileException("The internal callback implementation failed, but no exception was returned.", AudioFileErrors.kAudioFileUnspecifiedError);
                 }
                 else
                 {

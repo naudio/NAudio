@@ -268,7 +268,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
             );
             if (status == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
             {
-                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target!).Exception ?? new AudioFileException(status);
+                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target!).Exception ?? new AudioFileException("The internal callback implementation failed, but no exception was returned.", AudioFileErrors.kAudioFileUnspecifiedError);
             }
             AudioFileException.ThrowIfError(status);
 

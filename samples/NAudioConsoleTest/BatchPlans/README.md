@@ -31,6 +31,17 @@ as the exit code.
 - **`enumeration-smoke.json`** — portable. Runs all four parameter-free enumeration tests
   (ASIO drivers, WASAPI endpoints, DirectSound devices, MediaFoundation transforms). Use
   as a CI smoke check.
+- **`release-smoke.json`** — pre-release sweep of the Windows backends (MF, ACM, DMO, WDL,
+  libsndfile, WASAPI format negotiation and capture, WinMM capture, MIDI out sysex). Silent, and
+  generates its own fixtures under `Reports/fixtures/`, so it needs no editing. Run it from
+  `samples/NAudioConsoleTest`, since its paths are relative to the working directory.
+- **`release-smoke-playback.json`** — the audible companion: short, quiet playback through
+  WaveOut, WASAPI shared/exclusive, DirectSound and libsndfile, plus loopback and a master-volume
+  callback sweep. Plays the fixtures `release-smoke.json` generates, so run that first.
+- **`release-smoke-asio.json`** — ASIO lifecycle, sample-position and recording checks. Silent;
+  edit the driver name to match your interface.
+- **`winmm-waveformat-regression.json`** — the #1425 marshalling regression sweep; edit the
+  input paths to point at files on your machine.
 - **`asio-functional-sample.json`** — template. Demonstrates parameterised entries; you
   need to edit the driver name to match a device installed on your machine.
 

@@ -61,7 +61,7 @@ public class MediaFoundationReaderSeekTests
             Assert.That(got, Is.EqualTo(count));
             Assert.That(actual, Is.EqualTo(expected),
                 "PCM read after seeking differs from the bytes read sequentially to the same position");
-            Assert.That(seeker.Position, Is.EqualTo(target + got).Within(blockAlign),
+            Assert.That(seeker.Position, Is.EqualTo(target + got),
                 "Position accounting drifted after a seek");
         }
         finally
@@ -148,6 +148,53 @@ public class MediaFoundationReaderSeekTests
             TryDelete(path);
         }
     }
+
+    /// <summary>
+    /// After a seek on a compressed source the reported Position must stay on a frame boundary.
+    /// The decoder buffer's start was derived by truncating its 100ns timestamp to bytes, which can
+    /// land mid-frame, so Position ended up a byte or two off and every later read inherited it.
+    /// </summary>
+    [TestCase(AudioSubtypesName.Mp3, 1000)]
+    [TestCase(AudioSubtypesName.Mp3, 0)]
+    [TestCase(AudioSubtypesName.Aac, 1000)]
+    [TestCase(AudioSubtypesName.Aac, 0)]
+    public void SeekKeepsPositionFrameAlignedForCompressedSource(AudioSubtypesName codec, int targetOffset)
+    {
+        var subtype = codec == AudioSubtypesName.Mp3 ? AudioSubtypes.MFAudioFormat_MP3 : AudioSubtypes.MFAudioFormat_AAC;
+        var inputFormat = new WaveFormat(44100, 16, 2);
+        if (MediaFoundationEncoder.SelectMediaType(subtype, inputFormat, 0) == null)
+            Assert.Ignore($"No {codec} encoder available");
+
+        var path = Path.Combine(Path.GetTempPath(), $"naudio_mf_seek_{Guid.NewGuid():N}.{(codec == AudioSubtypesName.Mp3 ? "mp3" : "m4a")}");
+        try
+        {
+            var signal = new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.5 }.Take(TimeSpan.FromSeconds(3));
+            using (var encoder = new MediaFoundationEncoder(MediaFoundationEncoder.SelectMediaType(subtype, inputFormat, 128000)!))
+                encoder.Encode(path, signal.ToWaveProvider16());
+
+            using var reader = new MediaFoundationReader(path,
+                new MediaFoundationReader.MediaFoundationReaderSettings { RepositionInRead = false });
+            var blockAlign = reader.WaveFormat.BlockAlign;
+            Assert.That(reader.Length % blockAlign, Is.Zero, $"Length {reader.Length} is not a whole number of frames");
+            // an unaligned request part way in; it should be rounded down to a frame boundary
+            var target = reader.Length / 2 + targetOffset + 1;
+            reader.Position = target;
+            Assert.That(reader.Position % blockAlign, Is.Zero, $"Position {reader.Position} is not frame aligned after seek");
+            Assert.That(reader.Position, Is.EqualTo(target - target % blockAlign), "seek did not land on the requested frame");
+
+            var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond / 2];
+            var before = reader.Position;
+            var read = ReadFull(reader, buffer, buffer.Length);
+            Assert.That(reader.Position, Is.EqualTo(before + read));
+            Assert.That(reader.Position % blockAlign, Is.Zero, "Position is not frame aligned after reading");
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    public enum AudioSubtypesName { Mp3, Aac }
 
     private static string CreateTempSineWav(int seconds)
     {

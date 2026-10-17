@@ -56,6 +56,8 @@ internal sealed class MediaFoundationReadImmediateRepositionTest : IConsoleTest
         // Trigger immediate Reposition. With the pre-fix bug, the post-seek Read would return
         // data from the start of the file rather than the midpoint.
         var midpoint = reader.Length / 2;
+        // the reader rounds a seek down to a frame boundary
+        midpoint -= midpoint % reader.WaveFormat.BlockAlign;
         AnsiConsole.MarkupLine($"[grey]Setting Position = {midpoint:N0} (immediate seek)[/]");
         reader.Position = midpoint;
 

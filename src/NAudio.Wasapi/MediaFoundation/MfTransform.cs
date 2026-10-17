@@ -11,7 +11,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 internal class MfTransform : IDisposable
 {
-    private Interfaces.IMFTransform transformInterface;
+    private Interfaces.IMFTransform? transformInterface;
+
+    private Interfaces.IMFTransform Transform => transformInterface ?? throw new ObjectDisposedException(nameof(MfTransform));
     private IntPtr nativePointer;
 
     internal MfTransform(Interfaces.IMFTransform transformInterface, IntPtr nativePointer)
@@ -34,7 +36,7 @@ internal class MfTransform : IDisposable
     /// <param name="outputMaximum">Maximum number of output streams.</param>
     public void GetStreamLimits(out int inputMinimum, out int inputMaximum, out int outputMinimum, out int outputMaximum)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetStreamLimits(out inputMinimum, out inputMaximum, out outputMinimum, out outputMaximum));
+        MediaFoundationException.ThrowIfFailed(Transform.GetStreamLimits(out inputMinimum, out inputMaximum, out outputMinimum, out outputMaximum));
     }
 
     /// <summary>
@@ -44,7 +46,7 @@ internal class MfTransform : IDisposable
     /// <param name="outputStreams">Number of output streams.</param>
     public void GetStreamCount(out int inputStreams, out int outputStreams)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetStreamCount(out inputStreams, out outputStreams));
+        MediaFoundationException.ThrowIfFailed(Transform.GetStreamCount(out inputStreams, out outputStreams));
     }
 
     /// <summary>
@@ -54,7 +56,7 @@ internal class MfTransform : IDisposable
     /// <returns>The input stream info.</returns>
     public MftInputStreamInfo GetInputStreamInfo(int inputStreamId)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetInputStreamInfo(inputStreamId, out var streamInfo));
+        MediaFoundationException.ThrowIfFailed(Transform.GetInputStreamInfo(inputStreamId, out var streamInfo));
         return streamInfo;
     }
 
@@ -65,7 +67,7 @@ internal class MfTransform : IDisposable
     /// <returns>The output stream info.</returns>
     public MftOutputStreamInfo GetOutputStreamInfo(int outputStreamId)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetOutputStreamInfo(outputStreamId, out var streamInfo));
+        MediaFoundationException.ThrowIfFailed(Transform.GetOutputStreamInfo(outputStreamId, out var streamInfo));
         return streamInfo;
     }
 
@@ -77,7 +79,7 @@ internal class MfTransform : IDisposable
     /// <returns>The available media type.</returns>
     public MfMediaType GetInputAvailableType(int inputStreamId, int typeIndex)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetInputAvailableType(inputStreamId, typeIndex, out var mediaTypePtr));
+        MediaFoundationException.ThrowIfFailed(Transform.GetInputAvailableType(inputStreamId, typeIndex, out var mediaTypePtr));
         var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaType(mediaTypeInterface, mediaTypePtr);
     }
@@ -90,7 +92,7 @@ internal class MfTransform : IDisposable
     /// <returns>The available media type.</returns>
     public MfMediaType GetOutputAvailableType(int outputStreamId, int typeIndex)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetOutputAvailableType(outputStreamId, typeIndex, out var mediaTypePtr));
+        MediaFoundationException.ThrowIfFailed(Transform.GetOutputAvailableType(outputStreamId, typeIndex, out var mediaTypePtr));
         var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaType(mediaTypeInterface, mediaTypePtr);
     }
@@ -103,7 +105,7 @@ internal class MfTransform : IDisposable
     /// <param name="flags">Optional flags.</param>
     public void SetInputType(int inputStreamId, MfMediaType mediaType, MftSetTypeFlags flags = 0)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.SetInputType(inputStreamId, mediaType.NativePointer, (int)flags));
+        MediaFoundationException.ThrowIfFailed(Transform.SetInputType(inputStreamId, mediaType.NativePointer, (int)flags));
     }
 
     /// <summary>
@@ -114,7 +116,7 @@ internal class MfTransform : IDisposable
     /// <param name="flags">Optional flags.</param>
     public void SetOutputType(int outputStreamId, MfMediaType mediaType, MftSetTypeFlags flags = 0)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.SetOutputType(outputStreamId, mediaType.NativePointer, (int)flags));
+        MediaFoundationException.ThrowIfFailed(Transform.SetOutputType(outputStreamId, mediaType.NativePointer, (int)flags));
     }
 
     /// <summary>
@@ -124,7 +126,7 @@ internal class MfTransform : IDisposable
     /// <returns>The current input media type.</returns>
     public MfMediaType GetInputCurrentType(int inputStreamId)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetInputCurrentType(inputStreamId, out var mediaTypePtr));
+        MediaFoundationException.ThrowIfFailed(Transform.GetInputCurrentType(inputStreamId, out var mediaTypePtr));
         var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaType(mediaTypeInterface, mediaTypePtr);
     }
@@ -136,7 +138,7 @@ internal class MfTransform : IDisposable
     /// <returns>The current output media type.</returns>
     public MfMediaType GetOutputCurrentType(int outputStreamId)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetOutputCurrentType(outputStreamId, out var mediaTypePtr));
+        MediaFoundationException.ThrowIfFailed(Transform.GetOutputCurrentType(outputStreamId, out var mediaTypePtr));
         var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaType(mediaTypeInterface, mediaTypePtr);
     }
@@ -148,7 +150,7 @@ internal class MfTransform : IDisposable
     /// <returns>The input status flags.</returns>
     public MftInputStatusFlags GetInputStatus(int inputStreamId)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetInputStatus(inputStreamId, out var flags));
+        MediaFoundationException.ThrowIfFailed(Transform.GetInputStatus(inputStreamId, out var flags));
         return (MftInputStatusFlags)flags;
     }
 
@@ -158,7 +160,7 @@ internal class MfTransform : IDisposable
     /// <returns>The output status flags.</returns>
     public MftOutputStatusFlags GetOutputStatus()
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.GetOutputStatus(out var flags));
+        MediaFoundationException.ThrowIfFailed(Transform.GetOutputStatus(out var flags));
         return (MftOutputStatusFlags)flags;
     }
 
@@ -169,7 +171,7 @@ internal class MfTransform : IDisposable
     /// <param name="param">Message parameter.</param>
     public void ProcessMessage(MftMessageType messageType, IntPtr param)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.ProcessMessage((int)messageType, param));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessMessage((int)messageType, param));
     }
 
     /// <summary>
@@ -179,7 +181,7 @@ internal class MfTransform : IDisposable
     /// <param name="sample">The input sample.</param>
     public void ProcessInput(int inputStreamId, MfSample sample)
     {
-        MediaFoundationException.ThrowIfFailed(transformInterface.ProcessInput(inputStreamId, sample.NativePointer, 0));
+        MediaFoundationException.ThrowIfFailed(Transform.ProcessInput(inputStreamId, sample.NativePointer, 0));
     }
 
     /// <summary>
@@ -192,7 +194,7 @@ internal class MfTransform : IDisposable
     /// <returns>The HRESULT, since callers often need to check for MF_E_TRANSFORM_NEED_MORE_INPUT.</returns>
     public int ProcessOutput(MftProcessOutputFlags flags, int outputBufferCount, IntPtr outputDataBuffer, out int status)
     {
-        return transformInterface.ProcessOutput((int)flags, outputBufferCount, outputDataBuffer, out status);
+        return Transform.ProcessOutput((int)flags, outputBufferCount, outputDataBuffer, out status);
     }
 
     /// <summary>

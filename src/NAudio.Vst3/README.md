@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.Vst3)](https://www.nuget.org/packages/NAudio.Vst3/)
 
-VST 3® plug-in hosting for [NAudio](https://github.com/naudio/NAudio). Discover, load, and host VST 3 audio effects and instruments. Windows-only (`net9.0-windows`).
+VST 3® plug-in hosting for [NAudio](https://github.com/naudio/NAudio). Discover, load, and host VST 3 audio effects and instruments. Targets `net9.0` and is Windows-only at runtime (guarded by `[SupportedOSPlatform("windows")]`), so it can be referenced from a plain `netX.0` project as well as a `netX.0-windows` one.
 
 ## What's included
 

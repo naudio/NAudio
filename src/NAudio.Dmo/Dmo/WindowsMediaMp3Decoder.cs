@@ -18,7 +18,7 @@ public class WindowsMediaMp3Decoder : IDisposable
     // IID_IMediaObject — mediaobj.h
     private static readonly Guid IID_IMediaObject = new("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
-    private MediaObject mediaObject;
+    private MediaObject? mediaObject;
 
     /// <summary>
     /// Creates a new Windows Media MP3 Decoder.
@@ -38,7 +38,7 @@ public class WindowsMediaMp3Decoder : IDisposable
     /// <summary>
     /// Media Object
     /// </summary>
-    public MediaObject MediaObject => mediaObject;
+    public MediaObject MediaObject => mediaObject ?? throw new ObjectDisposedException(nameof(WindowsMediaMp3Decoder));
 
     #region IDisposable Members
 

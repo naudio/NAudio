@@ -48,8 +48,8 @@ internal sealed partial class MfByteStreamOnStreamAsyncCallback : IMFAsyncCallba
             int result = currentResult.GetObject(out nint innerResultPointer);
             if (!HResult.IsError(result))
             {
-                IMFAsyncResult innerResultWrapper = null;
-                IMfByteStreamAsyncCallSizeHandler sizeHandler = null;
+                IMFAsyncResult? innerResultWrapper = null;
+                IMfByteStreamAsyncCallSizeHandler? sizeHandler = null;
                 try
                 {
                     innerResultWrapper = (IMFAsyncResult)ComActivation

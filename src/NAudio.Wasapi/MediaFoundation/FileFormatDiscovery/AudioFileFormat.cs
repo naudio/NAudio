@@ -34,8 +34,8 @@ internal abstract class AudioFileFormat : IEquatable<AudioFileFormat>
     /// </summary>
     /// <param name="other">The other file format to compare this one against.</param>
     /// <returns>A value whether this object and <paramref name="other"/> are the same audio file formats.</returns>
-    public bool Equals(AudioFileFormat other) => ReferenceEquals(this, other);
+    public bool Equals(AudioFileFormat? other) => ReferenceEquals(this, other);
 
     /// <inheritdoc />
-    public sealed override bool Equals(object obj) => ReferenceEquals(this, obj);
+    public sealed override bool Equals(object? obj) => ReferenceEquals(this, obj);
 }

@@ -11,7 +11,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 public class MediaType : IDisposable
 {
-    private Interfaces.IMFMediaType mediaType;
+    private Interfaces.IMFMediaType? mediaType;
+
+    private Interfaces.IMFMediaType MediaTypeInterface => mediaType ?? throw new ObjectDisposedException(nameof(MediaType));
     private IntPtr nativePointer;
 
     /// <summary>
@@ -44,13 +46,13 @@ public class MediaType : IDisposable
 
     private int GetUInt32(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(mediaType.GetUINT32(key, out int value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetUINT32(key, out int value));
         return value;
     }
 
     private Guid GetGuid(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(mediaType.GetGUID(key, out Guid value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetGUID(key, out Guid value));
         return value;
     }
 
@@ -59,7 +61,7 @@ public class MediaType : IDisposable
     /// </summary>
     public int TryGetUInt32(Guid key, int defaultValue = -1)
     {
-        int hr = mediaType.GetUINT32(key, out int intValue);
+        int hr = MediaTypeInterface.GetUINT32(key, out int intValue);
         if (hr == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
         {
             return defaultValue;
@@ -77,7 +79,7 @@ public class MediaType : IDisposable
     /// </summary>
     public void SetUInt32(Guid key, int value)
     {
-        MediaFoundationException.ThrowIfFailed(mediaType.SetUINT32(key, value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetUINT32(key, value));
     }
 
     /// <summary>
@@ -92,7 +94,7 @@ public class MediaType : IDisposable
             fixed (byte* p = value)
             {
                 MediaFoundationException.ThrowIfFailed(
-                    mediaType.SetBlob(key, (IntPtr)p, value.Length));
+                    MediaTypeInterface.SetBlob(key, (IntPtr)p, value.Length));
             }
         }
     }
@@ -138,7 +140,7 @@ public class MediaType : IDisposable
     public Guid SubType
     {
         get { return GetGuid(MediaFoundationAttributes.MF_MT_SUBTYPE); }
-        set { MediaFoundationException.ThrowIfFailed(mediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value)); }
+        set { MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value)); }
     }
 
     /// <summary>
@@ -147,7 +149,7 @@ public class MediaType : IDisposable
     public Guid MajorType
     {
         get { return GetGuid(MediaFoundationAttributes.MF_MT_MAJOR_TYPE); }
-        set { MediaFoundationException.ThrowIfFailed(mediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, value)); }
+        set { MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, value)); }
     }
 
     /// <summary>
@@ -157,7 +159,7 @@ public class MediaType : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(mediaType.GetCount(out int count));
+            MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetCount(out int count));
             return count;
         }
     }
@@ -170,7 +172,7 @@ public class MediaType : IDisposable
     /// <param name="valuePtr">Receives the attribute value as a PropVariant. Caller must free with PropVariant.Clear.</param>
     public void GetAttributeByIndex(int index, out Guid key, IntPtr valuePtr)
     {
-        MediaFoundationException.ThrowIfFailed(mediaType.GetItemByIndex(index, out key, valuePtr));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetItemByIndex(index, out key, valuePtr));
     }
 
     /// <summary>

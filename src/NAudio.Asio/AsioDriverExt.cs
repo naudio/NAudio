@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Wave.Asio;
 
@@ -35,18 +36,18 @@ public class AsioDriverExt
     private readonly AsioDriver driver;
     private AsioCallbacks callbacks;
     private AsioDriverCapability capability;
-    private AsioBufferInfo[] bufferInfos;
+    private AsioBufferInfo[] bufferInfos = [];
     private bool isOutputReadySupported;
-    private IntPtr[] currentOutputBuffers;
-    private IntPtr[] currentInputBuffers;
+    private IntPtr[] currentOutputBuffers = [];
+    private IntPtr[] currentInputBuffers = [];
     private int numberOfOutputChannels;
     private int numberOfInputChannels;
-    private AsioFillBufferCallback fillBufferCallback;
+    private AsioFillBufferCallback? fillBufferCallback;
     private int bufferSize;
     private int outputChannelOffset;
     private int inputChannelOffset;
-    private int[] outputChannelIndices;
-    private int[] inputChannelIndices;
+    private int[] outputChannelIndices = [];
+    private int[] inputChannelIndices = [];
 
     // Per-buffer timing snapshot, refreshed at the start of every buffer-switch callback (both the
     // plain bufferSwitch fallback path and the rich bufferSwitchTimeInfo path) so AsioDevice can read
@@ -55,7 +56,7 @@ public class AsioDriverExt
     /// <summary>
     /// Reset Request Callback
     /// </summary>
-    public Action ResetRequestCallback;
+    public Action? ResetRequestCallback;
 
     /// <summary>
     /// Raised when the driver signals <c>kAsioBufferSizeChange</c>. The argument is the new
@@ -63,19 +64,19 @@ public class AsioDriverExt
     /// <c>Stop</c> → <c>Reinitialize</c> → <c>Start</c> dance as a reset request, so
     /// <see cref="NAudio.Wave.AsioDevice"/> folds this into its <c>DriverResetRequest</c> event.
     /// </summary>
-    public Action<int> BufferSizeChangedCallback;
+    public Action<int>? BufferSizeChangedCallback;
 
     /// <summary>
     /// Raised when the driver signals <c>kAsioLatenciesChanged</c>. No buffer rebuild is
     /// required — consumers typically just re-read <see cref="AsioDriver.GetLatencies"/>.
     /// </summary>
-    public Action LatenciesChangedCallback;
+    public Action? LatenciesChangedCallback;
 
     /// <summary>
     /// Raised when the driver signals <c>kAsioResyncRequest</c> (the driver detected a clock
     /// drop / xrun and is asking the host to resynchronise). Informational — no action required.
     /// </summary>
-    public Action ResyncRequestCallback;
+    public Action? ResyncRequestCallback;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AsioDriverExt"/> class based on an already
@@ -293,7 +294,7 @@ public class AsioDriverExt
     /// Gets or sets the fill buffer callback.
     /// </summary>
     /// <value>The fill buffer callback.</value>
-    public AsioFillBufferCallback FillBufferCallback
+    public AsioFillBufferCallback? FillBufferCallback
     {
         get { return fillBufferCallback; }
         set { fillBufferCallback = value; }
@@ -401,6 +402,7 @@ public class AsioDriverExt
     /// <summary>
     /// Builds the capabilities internally.
     /// </summary>
+    [MemberNotNull(nameof(capability))]
     private void BuildCapabilities()
     {
         capability = new AsioDriverCapability();

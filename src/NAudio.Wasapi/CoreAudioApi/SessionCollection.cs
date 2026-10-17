@@ -10,7 +10,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class SessionCollection : IDisposable
 {
-    private IAudioSessionEnumerator audioSessionEnumerator;
+    private IAudioSessionEnumerator? audioSessionEnumerator;
+
+    private IAudioSessionEnumerator SessionEnumerator => audioSessionEnumerator ?? throw new ObjectDisposedException(nameof(SessionCollection));
 
     /// <summary>
     /// Creates a new SessionCollection — ownership of the COM pointer is transferred.
@@ -38,7 +40,7 @@ public class SessionCollection : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetSession(index, out var ptr));
+            CoreAudioException.ThrowIfFailed(SessionEnumerator.GetSession(index, out var ptr));
             return new AudioSessionControl(ptr);
         }
     }
@@ -50,7 +52,7 @@ public class SessionCollection : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetCount(out var result));
+            CoreAudioException.ThrowIfFailed(SessionEnumerator.GetCount(out var result));
             return result;
         }
     }

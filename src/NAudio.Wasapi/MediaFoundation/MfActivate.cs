@@ -11,7 +11,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 public class MfActivate : IDisposable
 {
-    private Interfaces.IMFActivate activateInterface;
+    private Interfaces.IMFActivate? activateInterface;
+
+    private Interfaces.IMFActivate Activate => activateInterface ?? throw new ObjectDisposedException(nameof(MfActivate));
     private IntPtr nativePointer;
 
     internal MfActivate(Interfaces.IMFActivate activateInterface, IntPtr nativePointer)
@@ -32,7 +34,7 @@ public class MfActivate : IDisposable
     /// <returns>The activated object as an IntPtr. The caller owns the reference.</returns>
     public IntPtr ActivateObject(Guid interfaceId)
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.ActivateObject(interfaceId, out var ppv));
+        MediaFoundationException.ThrowIfFailed(Activate.ActivateObject(interfaceId, out var ppv));
         return ppv;
     }
 
@@ -45,7 +47,7 @@ public class MfActivate : IDisposable
     internal MfTransform ActivateTransform()
     {
         var iid = new Guid("bf94c121-5b05-4e6f-8000-ba598961414d"); // IID_IMFTransform
-        MediaFoundationException.ThrowIfFailed(activateInterface.ActivateObject(iid, out var ppv));
+        MediaFoundationException.ThrowIfFailed(Activate.ActivateObject(iid, out var ppv));
         var transformInterface = (Interfaces.IMFTransform)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
             ppv, CreateObjectFlags.UniqueInstance);
         return new MfTransform(transformInterface, ppv);
@@ -56,7 +58,7 @@ public class MfActivate : IDisposable
     /// </summary>
     public void ShutdownObject()
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.ShutdownObject());
+        MediaFoundationException.ThrowIfFailed(Activate.ShutdownObject());
     }
 
     /// <summary>
@@ -64,7 +66,7 @@ public class MfActivate : IDisposable
     /// </summary>
     public void DetachObject()
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.DetachObject());
+        MediaFoundationException.ThrowIfFailed(Activate.DetachObject());
     }
 
     /// <summary>
@@ -74,7 +76,7 @@ public class MfActivate : IDisposable
     /// <returns>The attribute value.</returns>
     public int GetUInt32(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.GetUINT32(key, out var value));
+        MediaFoundationException.ThrowIfFailed(Activate.GetUINT32(key, out var value));
         return value;
     }
 
@@ -85,7 +87,7 @@ public class MfActivate : IDisposable
     /// <returns>The attribute value.</returns>
     public Guid GetGuid(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.GetGUID(key, out var value));
+        MediaFoundationException.ThrowIfFailed(Activate.GetGUID(key, out var value));
         return value;
     }
 
@@ -96,7 +98,7 @@ public class MfActivate : IDisposable
     /// <returns>The string value.</returns>
     public string GetString(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.GetAllocatedString(key, out var ppwszValue, out var length));
+        MediaFoundationException.ThrowIfFailed(Activate.GetAllocatedString(key, out var ppwszValue, out var length));
         try
         {
             return Marshal.PtrToStringUni(ppwszValue, length);
@@ -114,7 +116,7 @@ public class MfActivate : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(activateInterface.GetCount(out var count));
+            MediaFoundationException.ThrowIfFailed(Activate.GetCount(out var count));
             return count;
         }
     }
@@ -127,7 +129,7 @@ public class MfActivate : IDisposable
     /// <param name="valuePtr">Receives the attribute value as a PropVariant. Caller must free with PropVariant.Clear.</param>
     public void GetAttributeByIndex(int index, out Guid key, IntPtr valuePtr)
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.GetItemByIndex(index, out key, valuePtr));
+        MediaFoundationException.ThrowIfFailed(Activate.GetItemByIndex(index, out key, valuePtr));
     }
 
     /// <summary>
@@ -135,7 +137,7 @@ public class MfActivate : IDisposable
     /// </summary>
     public T[] GetBlobAsArrayOf<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(Guid key) where T : new()
     {
-        MediaFoundationException.ThrowIfFailed(activateInterface.GetAllocatedBlob(key, out var ppBuf, out var cbSize));
+        MediaFoundationException.ThrowIfFailed(Activate.GetAllocatedBlob(key, out var ppBuf, out var cbSize));
         try
         {
             int structSize = Marshal.SizeOf<T>();
@@ -144,7 +146,7 @@ public class MfActivate : IDisposable
             var ptr = ppBuf;
             for (int i = 0; i < count; i++)
             {
-                result[i] = Marshal.PtrToStructure<T>(ptr);
+                result[i] = Marshal.PtrToStructure<T>(ptr)!; // only null for a null pointer
                 ptr += structSize;
             }
             return result;

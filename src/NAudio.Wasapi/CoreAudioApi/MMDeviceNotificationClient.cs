@@ -29,35 +29,35 @@ namespace NAudio.CoreAudioApi;
 public sealed partial class MMDeviceNotificationClient : IDisposable
 {
     private readonly MMDeviceEnumerator enumerator;
-    private readonly SynchronizationContext syncContext;
+    private readonly SynchronizationContext? syncContext;
     private readonly NotificationCallback callback;
     private bool disposed;
 
     /// <summary>
     /// Raised when the state of an endpoint device changes (active, disabled, not-present, unplugged).
     /// </summary>
-    public event EventHandler<DeviceStateChangedEventArgs> DeviceStateChanged;
+    public event EventHandler<DeviceStateChangedEventArgs>? DeviceStateChanged;
 
     /// <summary>
     /// Raised when a new endpoint device is added.
     /// </summary>
-    public event EventHandler<DeviceNotificationEventArgs> DeviceAdded;
+    public event EventHandler<DeviceNotificationEventArgs>? DeviceAdded;
 
     /// <summary>
     /// Raised when an endpoint device is removed.
     /// </summary>
-    public event EventHandler<DeviceNotificationEventArgs> DeviceRemoved;
+    public event EventHandler<DeviceNotificationEventArgs>? DeviceRemoved;
 
     /// <summary>
     /// Raised when the default endpoint device for a given data-flow direction and role changes.
     /// </summary>
-    public event EventHandler<DefaultDeviceChangedEventArgs> DefaultDeviceChanged;
+    public event EventHandler<DefaultDeviceChangedEventArgs>? DefaultDeviceChanged;
 
     /// <summary>
     /// Raised when a property value of an endpoint device changes. This can be high-frequency (for
     /// example a volume change fires it), so keep handlers cheap.
     /// </summary>
-    public event EventHandler<DevicePropertyChangedEventArgs> PropertyValueChanged;
+    public event EventHandler<DevicePropertyChangedEventArgs>? PropertyValueChanged;
 
     internal MMDeviceNotificationClient(MMDeviceEnumerator enumerator, bool useSynchronizationContext)
     {
@@ -81,7 +81,7 @@ public sealed partial class MMDeviceNotificationClient : IDisposable
         catch { /* enumerator may already be disposed */ }
     }
 
-    private void Raise<T>(EventHandler<T> handler, T args) where T : EventArgs
+    private void Raise<T>(EventHandler<T>? handler, T args) where T : EventArgs
     {
         if (handler is null) return;
         if (syncContext != null)

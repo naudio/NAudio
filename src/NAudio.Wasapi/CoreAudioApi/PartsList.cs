@@ -9,9 +9,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class PartsList
 {
-    private readonly IPartsList partsListInterface;
+    private readonly IPartsList? partsListInterface;
 
-    internal PartsList(IPartsList partsList)
+    internal PartsList(IPartsList? partsList)
     {
         partsListInterface = partsList;
     }

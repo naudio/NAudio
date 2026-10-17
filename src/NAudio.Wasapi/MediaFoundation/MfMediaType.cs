@@ -10,7 +10,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 internal class MfMediaType : IDisposable
 {
-    private Interfaces.IMFMediaType mediaTypeInterface;
+    private Interfaces.IMFMediaType? mediaTypeInterface;
+
+    private Interfaces.IMFMediaType MediaTypeInterface => mediaTypeInterface ?? throw new ObjectDisposedException(nameof(MfMediaType));
     private IntPtr nativePointer;
 
     internal MfMediaType(Interfaces.IMFMediaType mediaTypeInterface, IntPtr nativePointer)
@@ -31,7 +33,7 @@ internal class MfMediaType : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(mediaTypeInterface.GetMajorType(out var majorType));
+            MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetMajorType(out var majorType));
             return majorType;
         }
     }
@@ -43,10 +45,10 @@ internal class MfMediaType : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(mediaTypeInterface.GetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, out var subType));
+            MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, out var subType));
             return subType;
         }
-        set => MediaFoundationException.ThrowIfFailed(mediaTypeInterface.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value));
+        set => MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value));
     }
 
     /// <summary>
@@ -56,7 +58,7 @@ internal class MfMediaType : IDisposable
     {
         get
         {
-            MediaFoundationException.ThrowIfFailed(mediaTypeInterface.IsCompressedFormat(out var compressed));
+            MediaFoundationException.ThrowIfFailed(MediaTypeInterface.IsCompressedFormat(out var compressed));
             return compressed != 0;
         }
     }
@@ -68,7 +70,7 @@ internal class MfMediaType : IDisposable
     /// <returns>The attribute value.</returns>
     public int GetUInt32(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(mediaTypeInterface.GetUINT32(key, out var value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetUINT32(key, out var value));
         return value;
     }
 
@@ -80,7 +82,7 @@ internal class MfMediaType : IDisposable
     /// <returns>The attribute value, or defaultValue if not found.</returns>
     public int TryGetUInt32(Guid key, int defaultValue = -1)
     {
-        int hr = mediaTypeInterface.GetUINT32(key, out var value);
+        int hr = MediaTypeInterface.GetUINT32(key, out var value);
         if (hr == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
             return defaultValue;
         MediaFoundationException.ThrowIfFailed(hr);
@@ -94,7 +96,7 @@ internal class MfMediaType : IDisposable
     /// <param name="value">The attribute value.</param>
     public void SetUInt32(Guid key, int value)
     {
-        MediaFoundationException.ThrowIfFailed(mediaTypeInterface.SetUINT32(key, value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetUINT32(key, value));
     }
 
     /// <summary>
@@ -104,7 +106,7 @@ internal class MfMediaType : IDisposable
     /// <returns>The attribute value.</returns>
     public long GetUInt64(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(mediaTypeInterface.GetUINT64(key, out var value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetUINT64(key, out var value));
         return value;
     }
 
@@ -115,7 +117,7 @@ internal class MfMediaType : IDisposable
     /// <param name="value">The attribute value.</param>
     public void SetUInt64(Guid key, long value)
     {
-        MediaFoundationException.ThrowIfFailed(mediaTypeInterface.SetUINT64(key, value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetUINT64(key, value));
     }
 
     /// <summary>
@@ -125,7 +127,7 @@ internal class MfMediaType : IDisposable
     /// <returns>The attribute value.</returns>
     public Guid GetGuid(Guid key)
     {
-        MediaFoundationException.ThrowIfFailed(mediaTypeInterface.GetGUID(key, out var value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.GetGUID(key, out var value));
         return value;
     }
 
@@ -136,7 +138,7 @@ internal class MfMediaType : IDisposable
     /// <param name="value">The attribute value.</param>
     public void SetGuid(Guid key, Guid value)
     {
-        MediaFoundationException.ThrowIfFailed(mediaTypeInterface.SetGUID(key, value));
+        MediaFoundationException.ThrowIfFailed(MediaTypeInterface.SetGUID(key, value));
     }
 
     /// <summary>

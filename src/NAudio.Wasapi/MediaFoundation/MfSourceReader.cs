@@ -11,7 +11,9 @@ namespace NAudio.MediaFoundation;
 /// </summary>
 internal class MfSourceReader : IDisposable
 {
-    private Interfaces.IMFSourceReader readerInterface;
+    private Interfaces.IMFSourceReader? readerInterface;
+
+    private Interfaces.IMFSourceReader Reader => readerInterface ?? throw new ObjectDisposedException(nameof(MfSourceReader));
     private IntPtr nativePointer;
 
     internal MfSourceReader(Interfaces.IMFSourceReader readerInterface, IntPtr nativePointer)
@@ -27,7 +29,7 @@ internal class MfSourceReader : IDisposable
     /// <returns>True if the stream is selected.</returns>
     public bool GetStreamSelection(int streamIndex)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.GetStreamSelection(streamIndex, out var selected));
+        MediaFoundationException.ThrowIfFailed(Reader.GetStreamSelection(streamIndex, out var selected));
         return selected != 0;
     }
 
@@ -38,7 +40,7 @@ internal class MfSourceReader : IDisposable
     /// <param name="selected">True to select the stream, false to deselect.</param>
     public void SetStreamSelection(int streamIndex, bool selected)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.SetStreamSelection(streamIndex, selected ? 1 : 0));
+        MediaFoundationException.ThrowIfFailed(Reader.SetStreamSelection(streamIndex, selected ? 1 : 0));
     }
 
     /// <summary>
@@ -49,7 +51,7 @@ internal class MfSourceReader : IDisposable
     /// <returns>The native media type.</returns>
     public MfMediaType GetNativeMediaType(int streamIndex, int mediaTypeIndex)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.GetNativeMediaType(streamIndex, mediaTypeIndex, out var mediaTypePtr));
+        MediaFoundationException.ThrowIfFailed(Reader.GetNativeMediaType(streamIndex, mediaTypeIndex, out var mediaTypePtr));
         var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaType(mediaTypeInterface, mediaTypePtr);
     }
@@ -61,7 +63,7 @@ internal class MfSourceReader : IDisposable
     /// <returns>The current media type.</returns>
     public MfMediaType GetCurrentMediaType(int streamIndex)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.GetCurrentMediaType(streamIndex, out var mediaTypePtr));
+        MediaFoundationException.ThrowIfFailed(Reader.GetCurrentMediaType(streamIndex, out var mediaTypePtr));
         var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
         return new MfMediaType(mediaTypeInterface, mediaTypePtr);
     }
@@ -73,7 +75,7 @@ internal class MfSourceReader : IDisposable
     /// <param name="mediaType">The media type to set.</param>
     public void SetCurrentMediaType(int streamIndex, MfMediaType mediaType)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.SetCurrentMediaType(streamIndex, IntPtr.Zero, mediaType.NativePointer));
+        MediaFoundationException.ThrowIfFailed(Reader.SetCurrentMediaType(streamIndex, IntPtr.Zero, mediaType.NativePointer));
     }
 
     /// <summary>
@@ -90,7 +92,7 @@ internal class MfSourceReader : IDisposable
             Marshal.WriteInt16(propVariant, 2, 0);
             Marshal.WriteInt32(propVariant, 4, 0);
             Marshal.WriteInt64(propVariant, 8, position);
-            MediaFoundationException.ThrowIfFailed(readerInterface.SetCurrentPosition(Guid.Empty, propVariant));
+            MediaFoundationException.ThrowIfFailed(Reader.SetCurrentPosition(Guid.Empty, propVariant));
         }
         finally
         {
@@ -106,9 +108,9 @@ internal class MfSourceReader : IDisposable
     /// <param name="streamFlags">Receives status flags.</param>
     /// <param name="timestamp">Receives the timestamp in 100-nanosecond units.</param>
     /// <returns>The sample, or null if no sample was returned (e.g. end of stream).</returns>
-    public MfSample ReadSample(int streamIndex, out int actualStreamIndex, out SourceReaderFlags streamFlags, out long timestamp)
+    public MfSample? ReadSample(int streamIndex, out int actualStreamIndex, out SourceReaderFlags streamFlags, out long timestamp)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.ReadSample(streamIndex, 0, out actualStreamIndex, out var flags, out timestamp, out var samplePtr));
+        MediaFoundationException.ThrowIfFailed(Reader.ReadSample(streamIndex, 0, out actualStreamIndex, out var flags, out timestamp, out var samplePtr));
         streamFlags = (SourceReaderFlags)flags;
         if (samplePtr == IntPtr.Zero)
             return null;
@@ -122,7 +124,7 @@ internal class MfSourceReader : IDisposable
     /// <param name="streamIndex">The stream index, or a MF_SOURCE_READER constant.</param>
     public void Flush(int streamIndex)
     {
-        MediaFoundationException.ThrowIfFailed(readerInterface.Flush(streamIndex));
+        MediaFoundationException.ThrowIfFailed(Reader.Flush(streamIndex));
     }
 
     /// <summary>

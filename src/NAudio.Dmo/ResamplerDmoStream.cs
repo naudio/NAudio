@@ -12,18 +12,21 @@ namespace NAudio.Wave;
 public class ResamplerDmoStream : WaveStream
 {
     private readonly IWaveProvider inputProvider;
-    private readonly WaveStream inputStream;
+    private readonly WaveStream? inputStream;
     private readonly WaveFormat outputFormat;
     private DmoOutputDataBuffer outputBuffer;
     private readonly DmoOutputDataBuffer[] outputBufferArray;
-    private DmoResampler dmoResampler;
-    private MediaBuffer inputMediaBuffer;
-    private byte[] inputBuffer;
-    private byte[] outputStaging;
+    private DmoResampler? dmoResampler;
+    private MediaBuffer? inputMediaBuffer;
+    private byte[] inputBuffer = [];
+    private byte[] outputStaging = [];
     private int outputStagingOffset;
     private int outputStagingCount;
     private bool endOfStreamSignaled;
     private long position;
+
+    private DmoResampler Resampler => dmoResampler ?? throw new ObjectDisposedException(nameof(ResamplerDmoStream));
+    private MediaBuffer InputMediaBuffer => inputMediaBuffer ?? throw new ObjectDisposedException(nameof(ResamplerDmoStream));
 
     /// <summary>
     /// WaveStream to resample using the DMO Resampler
@@ -121,7 +124,7 @@ public class ResamplerDmoStream : WaveStream
             // Discontinuity puts the DMO into drain-only mode until its buffered
             // output is flushed; do that here and discard, so the next Read starts
             // cleanly from the new input position rather than emitting old-position tail.
-            dmoResampler.MediaObject.Discontinuity(0);
+            Resampler.MediaObject.Discontinuity(0);
             DrainAndDiscard();
             outputStagingOffset = 0;
             outputStagingCount = 0;
@@ -166,7 +169,7 @@ public class ResamplerDmoStream : WaveStream
                 break;
             }
 
-            if (!dmoResampler.MediaObject.IsAcceptingData(0))
+            if (!Resampler.MediaObject.IsAcceptingData(0))
             {
                 // Defensive break: with the Position setter draining on seek and
                 // the EOS path handled below, the DMO should always accept input
@@ -189,12 +192,12 @@ public class ResamplerDmoStream : WaveStream
             {
                 // Upstream EOS - tell the DMO so it flushes the tail samples still
                 // inside its resampler kernel; the next iteration drains them.
-                dmoResampler.MediaObject.Discontinuity(0);
+                Resampler.MediaObject.Discontinuity(0);
                 endOfStreamSignaled = true;
                 continue;
             }
-            inputMediaBuffer.LoadData(inputBuffer.AsSpan(0, inputBytesRead));
-            dmoResampler.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
+            InputMediaBuffer.LoadData(inputBuffer.AsSpan(0, inputBytesRead));
+            Resampler.MediaObject.ProcessInput(0, InputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
         }
 
         position += outputBytesProvided;
@@ -208,7 +211,7 @@ public class ResamplerDmoStream : WaveStream
         // DmoOutputDataBuffer is a struct; copy current state into the cached
         // single-element array so ProcessOutput sees the freshly reset flags.
         outputBufferArray[0] = outputBuffer;
-        dmoResampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
+        Resampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
 
         int produced = outputBuffer.Length;
         if (produced == 0)

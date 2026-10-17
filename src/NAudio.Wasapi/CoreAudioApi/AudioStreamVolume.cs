@@ -11,7 +11,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioStreamVolume : IDisposable
 {
-    private IAudioStreamVolume audioStreamVolumeInterface;
+    private IAudioStreamVolume? audioStreamVolumeInterface;
+
+    private IAudioStreamVolume StreamVolume => audioStreamVolumeInterface ?? throw new ObjectDisposedException(nameof(AudioStreamVolume));
 
     internal AudioStreamVolume(IntPtr nativePointer)
     {
@@ -46,9 +48,9 @@ public class AudioStreamVolume : IDisposable
     /// <returns>An array of volume levels between 0.0 and 1.0 for each channel in the audio stream.</returns>
     public float[] GetAllVolumes()
     {
-        CoreAudioException.ThrowIfFailed(audioStreamVolumeInterface.GetChannelCount(out var channels));
+        CoreAudioException.ThrowIfFailed(StreamVolume.GetChannelCount(out var channels));
         var levels = new float[channels];
-        CoreAudioException.ThrowIfFailed(audioStreamVolumeInterface.GetAllVolumes(channels, levels));
+        CoreAudioException.ThrowIfFailed(StreamVolume.GetAllVolumes(channels, levels));
         return levels;
     }
 
@@ -59,7 +61,7 @@ public class AudioStreamVolume : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioStreamVolumeInterface.GetChannelCount(out var channels));
+            CoreAudioException.ThrowIfFailed(StreamVolume.GetChannelCount(out var channels));
             unchecked
             {
                 return (int)channels;
@@ -81,7 +83,7 @@ public class AudioStreamVolume : IDisposable
         {
             index = (uint)channelIndex;
         }
-        CoreAudioException.ThrowIfFailed(audioStreamVolumeInterface.GetChannelVolume(index, out var level));
+        CoreAudioException.ThrowIfFailed(StreamVolume.GetChannelVolume(index, out var level));
         return level;
     }
 
@@ -118,7 +120,7 @@ public class AudioStreamVolume : IDisposable
         }
         unchecked
         {
-            CoreAudioException.ThrowIfFailed(audioStreamVolumeInterface.SetAllVoumes((uint)channelCount, levels));
+            CoreAudioException.ThrowIfFailed(StreamVolume.SetAllVoumes((uint)channelCount, levels));
         }
     }
 
@@ -135,7 +137,7 @@ public class AudioStreamVolume : IDisposable
         if (level > 1.0f) throw new ArgumentOutOfRangeException(nameof(level), "Volume must be between 0.0 and 1.0");
         unchecked
         {
-            CoreAudioException.ThrowIfFailed(audioStreamVolumeInterface.SetChannelVolume((uint)index, level));
+            CoreAudioException.ThrowIfFailed(StreamVolume.SetChannelVolume((uint)index, level));
         }
     }
 

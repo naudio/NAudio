@@ -16,9 +16,11 @@ public class AudioEndpointVolume : IDisposable
 {
     private static readonly Guid IID_IAudioEndpointVolumeCallback = new("657804FA-D6AD-4496-8A60-352752AF4F89");
 
-    private IAudioEndpointVolume audioEndPointVolume;
-    private readonly SynchronizationContext syncContext;
-    private AudioEndpointVolumeCallback callBack;
+    private IAudioEndpointVolume? audioEndPointVolume;
+
+    private IAudioEndpointVolume EndpointVolume => audioEndPointVolume ?? throw new ObjectDisposedException(nameof(AudioEndpointVolume));
+    private readonly SynchronizationContext? syncContext;
+    private AudioEndpointVolumeCallback? callBack;
 
     private Guid notificationGuid = Guid.Empty;
 
@@ -34,7 +36,7 @@ public class AudioEndpointVolume : IDisposable
     /// <summary>
     /// On Volume Notification
     /// </summary>
-    public event AudioEndpointVolumeNotificationDelegate OnVolumeNotification;
+    public event AudioEndpointVolumeNotificationDelegate? OnVolumeNotification;
 
     /// <summary>
     /// Volume Range
@@ -63,12 +65,12 @@ public class AudioEndpointVolume : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetMasterVolumeLevel(out var result));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.GetMasterVolumeLevel(out var result));
             return result;
         }
         set
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.SetMasterVolumeLevel(value, ref notificationGuid));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.SetMasterVolumeLevel(value, ref notificationGuid));
         }
     }
 
@@ -79,12 +81,12 @@ public class AudioEndpointVolume : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetMasterVolumeLevelScalar(out var result));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.GetMasterVolumeLevelScalar(out var result));
             return result;
         }
         set
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.SetMasterVolumeLevelScalar(value, ref notificationGuid));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.SetMasterVolumeLevelScalar(value, ref notificationGuid));
         }
     }
 
@@ -95,12 +97,12 @@ public class AudioEndpointVolume : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetMute(out var result));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.GetMute(out var result));
             return result;
         }
         set
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.SetMute(value, ref notificationGuid));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.SetMute(value, ref notificationGuid));
         }
     }
 
@@ -109,7 +111,7 @@ public class AudioEndpointVolume : IDisposable
     /// </summary>
     public void VolumeStepUp()
     {
-        CoreAudioException.ThrowIfFailed(audioEndPointVolume.VolumeStepUp(ref notificationGuid));
+        CoreAudioException.ThrowIfFailed(EndpointVolume.VolumeStepUp(ref notificationGuid));
     }
 
     /// <summary>
@@ -117,7 +119,7 @@ public class AudioEndpointVolume : IDisposable
     /// </summary>
     public void VolumeStepDown()
     {
-        CoreAudioException.ThrowIfFailed(audioEndPointVolume.VolumeStepDown(ref notificationGuid));
+        CoreAudioException.ThrowIfFailed(EndpointVolume.VolumeStepDown(ref notificationGuid));
     }
 
     /// <summary>
@@ -138,14 +140,14 @@ public class AudioEndpointVolume : IDisposable
         }
         Channels = new AudioEndpointVolumeChannels(audioEndPointVolume);
         StepInformation = new AudioEndpointVolumeStepInformation(audioEndPointVolume);
-        CoreAudioException.ThrowIfFailed(audioEndPointVolume.QueryHardwareSupport(out var hardwareSupp));
+        CoreAudioException.ThrowIfFailed(EndpointVolume.QueryHardwareSupport(out var hardwareSupp));
         HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
         VolumeRange = new AudioEndpointVolumeVolumeRange(audioEndPointVolume);
         callBack = new AudioEndpointVolumeCallback(this);
         var callBackPtr = QueryCallbackInterface(callBack);
         try
         {
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.RegisterControlChangeNotify(callBackPtr));
+            CoreAudioException.ThrowIfFailed(EndpointVolume.RegisterControlChangeNotify(callBackPtr));
         }
         finally
         {
@@ -201,7 +203,7 @@ public class AudioEndpointVolume : IDisposable
             var callBackPtr = QueryCallbackInterface(callBack);
             try
             {
-                audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
+                EndpointVolume.UnregisterControlChangeNotify(callBackPtr);
             }
             finally
             {

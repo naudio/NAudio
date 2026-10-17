@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using NAudio.Wave.Asio;
@@ -23,28 +24,28 @@ namespace NAudio.Wave;
 /// </remarks>
 public sealed class AsioDevice : IDisposable
 {
-    private readonly SynchronizationContext syncContext;
+    private readonly SynchronizationContext? syncContext;
     private readonly Lock stateLock = new();
-    private AsioDriverExt driver;
+    private AsioDriverExt? driver;
     private AsioDeviceState state;
 
     // Playback-mode state (set by InitPlayback, consumed by the buffer callback)
-    private IWaveProvider playbackSource;
-    private AsioSampleConvertor.SampleConvertor playbackConvertor;
-    private byte[] playbackStagingBuffer;
+    private IWaveProvider? playbackSource;
+    private AsioSampleConvertor.SampleConvertor? playbackConvertor;
+    private byte[]? playbackStagingBuffer;
     private int playbackOutputChannelCount;
     private int framesPerBuffer;
     private bool autoStopOnEndOfStream;
 
     // Recording-mode state (set by InitRecording, consumed by the buffer callback)
-    private AsioCallbackContext recordingContext;
-    private AsioNativeToFloatConverter.ConverterFn inputConverter;
+    private AsioCallbackContext? recordingContext;
+    private AsioNativeToFloatConverter.ConverterFn? inputConverter;
 
     // Duplex-mode state (set by InitDuplex, consumed by the buffer callback)
-    private AsioCallbackContext duplexContext;
-    private AsioNativeToFloatConverter.ConverterFn duplexInputConverter;
-    private AsioFloatToNativeConverter.ConverterFn duplexOutputConverter;
-    private AsioProcessCallback duplexProcessor;
+    private AsioCallbackContext? duplexContext;
+    private AsioNativeToFloatConverter.ConverterFn? duplexInputConverter;
+    private AsioFloatToNativeConverter.ConverterFn? duplexOutputConverter;
+    private AsioProcessCallback? duplexProcessor;
 
     // Lifecycle
     private int callbackThreadId;
@@ -56,7 +57,7 @@ public sealed class AsioDevice : IDisposable
 
     // Last-applied configuration, cached for Reinitialize() (Phase 0 finding F6).
     // One of AsioPlaybackOptions / AsioRecordingOptions / AsioDuplexOptions, or null before any Init*.
-    private object lastInitOptions;
+    private object? lastInitOptions;
 
     /// <summary>
     /// Gets the names of all installed ASIO drivers on this system.
@@ -133,7 +134,10 @@ public sealed class AsioDevice : IDisposable
     /// <see cref="AsioOut"/> facade so it can keep its raw <c>IntPtr</c>-based buffer-switch contract
     /// while delegating lifecycle and capability queries to this class.
     /// </summary>
-    internal AsioDriverExt UnderlyingDriver => driver;
+    internal AsioDriverExt UnderlyingDriver
+    {
+        get { ThrowIfDisposed(); return driver; }
+    }
 
     /// <summary>
     /// Current lifecycle state of the device.
@@ -224,7 +228,7 @@ public sealed class AsioDevice : IDisposable
     /// a user <see cref="Stop"/>, end-of-stream with auto-stop, or an unrecoverable driver fault.
     /// Always dispatched off the ASIO callback thread, so handlers may safely <see cref="Dispose"/> the device.
     /// </summary>
-    public event EventHandler<StoppedEventArgs> Stopped;
+    public event EventHandler<StoppedEventArgs>? Stopped;
 
     /// <summary>
     /// Raised when the driver reports that its settings have changed (e.g. the user opened the control panel and
@@ -237,7 +241,7 @@ public sealed class AsioDevice : IDisposable
     /// recovery path is identical: <see cref="Reinitialize"/> rebuilds the buffers against the driver's
     /// current preferred size.
     /// </remarks>
-    public event EventHandler DriverResetRequest;
+    public event EventHandler? DriverResetRequest;
 
     /// <summary>
     /// Raised when the driver reports that its input/output latencies have changed (e.g. after a clock-source
@@ -245,14 +249,14 @@ public sealed class AsioDevice : IDisposable
     /// re-read <see cref="InputLatencySamples"/> / <see cref="OutputLatencySamples"/> and refresh any UI that
     /// displays them. Dispatched on the captured <see cref="SynchronizationContext"/>.
     /// </summary>
-    public event EventHandler LatenciesChanged;
+    public event EventHandler? LatenciesChanged;
 
     /// <summary>
     /// Raised when the driver reports a clock dropout / xrun via <c>kAsioResyncRequest</c>. Informational —
     /// no recovery action is required, but applications that surface dropout diagnostics can log it here.
     /// Dispatched on the captured <see cref="SynchronizationContext"/>.
     /// </summary>
-    public event EventHandler ResyncOccurred;
+    public event EventHandler? ResyncOccurred;
 
     /// <summary>
     /// Raised per ASIO buffer-switch while recording. Dispatched synchronously on the ASIO driver thread for latency reasons;
@@ -262,7 +266,7 @@ public sealed class AsioDevice : IDisposable
     /// Only fires when the device was configured via <see cref="InitRecording"/>. In duplex mode, use the
     /// <see cref="AsioProcessCallback"/> supplied in <see cref="AsioDuplexOptions"/> instead.
     /// </remarks>
-    public event EventHandler<AsioAudioCapturedEventArgs> AudioCaptured;
+    public event EventHandler<AsioAudioCapturedEventArgs>? AudioCaptured;
 
     /// <summary>
     /// Configures the device for playback-only operation.
@@ -500,7 +504,7 @@ public sealed class AsioDevice : IDisposable
         state = AsioDeviceState.Configured;
     }
 
-    private AsioFillBufferCallback legacyRawCallback;
+    private AsioFillBufferCallback? legacyRawCallback;
 
     private void OnBufferUpdateLegacy(IntPtr[] inputBuffers, IntPtr[] outputBuffers)
     {
@@ -618,7 +622,7 @@ public sealed class AsioDevice : IDisposable
         StopInternal(null);
     }
 
-    private void StopInternal(Exception exception)
+    private void StopInternal(Exception? exception)
     {
         lock (stateLock)
         {
@@ -684,8 +688,11 @@ public sealed class AsioDevice : IDisposable
         try
         {
             callbackThreadId = Environment.CurrentManagedThreadId;
+            // Init/Reinitialize detach this callback before clearing the state, so these are set
             var ctx = recordingContext;
-            var timing = driver.LatestTimingInfo;
+            var drv = driver;
+            if (ctx is null || drv is null) return;
+            var timing = drv.LatestTimingInfo;
             ctx.SamplePosition = timing.SamplePosition;
             ctx.SystemTimeNanoseconds = timing.SystemTimeNanoseconds;
             ctx.Speed = timing.Speed;
@@ -730,8 +737,13 @@ public sealed class AsioDevice : IDisposable
         try
         {
             callbackThreadId = Environment.CurrentManagedThreadId;
+            // Init/Reinitialize detach this callback before clearing the state, so these are set
             var ctx = duplexContext;
-            var timing = driver.LatestTimingInfo;
+            var drv = driver;
+            var processor = duplexProcessor;
+            var outputConverter = duplexOutputConverter;
+            if (ctx is null || drv is null || processor is null || outputConverter is null) return;
+            var timing = drv.LatestTimingInfo;
             ctx.SamplePosition = timing.SamplePosition;
             ctx.SystemTimeNanoseconds = timing.SystemTimeNanoseconds;
             ctx.Speed = timing.Speed;
@@ -759,7 +771,7 @@ public sealed class AsioDevice : IDisposable
             try
             {
                 var buffers = new AsioProcessBuffers(ctx);
-                duplexProcessor(in buffers);
+                processor(in buffers);
             }
             finally
             {
@@ -770,7 +782,7 @@ public sealed class AsioDevice : IDisposable
             for (int i = 0; i < ctx.OutputChannelCount; i++)
             {
                 if (ctx.OutputRawAccessed[i]) continue;
-                duplexOutputConverter(ctx.OutputFloatBuffers[i].AsSpan(0, ctx.Frames), ctx.OutputNativeBuffers[i], ctx.Frames);
+                outputConverter(ctx.OutputFloatBuffers[i].AsSpan(0, ctx.Frames), ctx.OutputNativeBuffers[i], ctx.Frames);
             }
         }
         catch (Exception ex)
@@ -795,15 +807,20 @@ public sealed class AsioDevice : IDisposable
         try
         {
             callbackThreadId = Environment.CurrentManagedThreadId;
-            int read = playbackSource.Read(playbackStagingBuffer.AsSpan());
-            if (read < playbackStagingBuffer.Length)
-                Array.Clear(playbackStagingBuffer, read, playbackStagingBuffer.Length - read);
+            // Init/Reinitialize detach this callback before clearing the state, so these are set
+            var source = playbackSource;
+            var staging = playbackStagingBuffer;
+            var convertor = playbackConvertor;
+            if (source is null || staging is null || convertor is null) return;
+            int read = source.Read(staging.AsSpan());
+            if (read < staging.Length)
+                Array.Clear(staging, read, staging.Length - read);
 
             unsafe
             {
-                fixed (byte* pBuffer = playbackStagingBuffer)
+                fixed (byte* pBuffer = staging)
                 {
-                    playbackConvertor(new IntPtr(pBuffer), outputBuffers, playbackOutputChannelCount, framesPerBuffer);
+                    convertor(new IntPtr(pBuffer), outputBuffers, playbackOutputChannelCount, framesPerBuffer);
                 }
             }
 
@@ -835,6 +852,7 @@ public sealed class AsioDevice : IDisposable
             throw new InvalidOperationException($"AsioDevice has already been configured (state = {state}). Dispose and create a new instance to reconfigure.");
     }
 
+    [MemberNotNull(nameof(driver))]
     private void ThrowIfDisposed()
     {
         if (state == AsioDeviceState.Disposed || driver is null)
@@ -842,10 +860,16 @@ public sealed class AsioDevice : IDisposable
     }
 
     private AsioSampleType ValidateUniformInputFormat(int[] inputChannels)
-        => ValidateUniformChannelFormat(inputChannels, driver.Capabilities.InputChannelInfos, isInput: true);
+    {
+        ThrowIfDisposed();
+        return ValidateUniformChannelFormat(inputChannels, driver.Capabilities.InputChannelInfos, isInput: true);
+    }
 
     private AsioSampleType ValidateUniformOutputFormat(int[] outputChannels)
-        => ValidateUniformChannelFormat(outputChannels, driver.Capabilities.OutputChannelInfos, isInput: false);
+    {
+        ThrowIfDisposed();
+        return ValidateUniformChannelFormat(outputChannels, driver.Capabilities.OutputChannelInfos, isInput: false);
+    }
 
     // Pure helper extracted for unit-testability: takes the channel info array directly so tests don't
     // need a real or faked AsioDriverExt to exercise the mixed-format detection.
@@ -930,7 +954,7 @@ public sealed class AsioDevice : IDisposable
         DispatchEvent(ResyncOccurred);
     }
 
-    private void DispatchEvent(EventHandler handler)
+    private void DispatchEvent(EventHandler? handler)
     {
         if (handler is null) return;
         if (syncContext is null)
@@ -939,7 +963,7 @@ public sealed class AsioDevice : IDisposable
             syncContext.Post(_ => handler(this, EventArgs.Empty), null);
     }
 
-    internal void RaiseStopped(Exception exception)
+    internal void RaiseStopped(Exception? exception)
     {
         var handler = Stopped;
         if (handler is null) return;

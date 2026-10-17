@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <!-- Plain net9.0: everything here is P/Invoke or COM interop, which compiles on
+         any platform. Windows-only usage is enforced by the assembly-level
+         [SupportedOSPlatform("windows")] attribute below (the NAudio.Wasapi model),
+         so cross-platform projects can reference the package and plain netX.0
+         consumers on Windows can use it. -->
+    <TargetFramework>net9.0</TargetFramework>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
     <Description>DirectX Media Objects (echo, chorus, reverb, MP3 decoder, resampler) and DirectSound output for the NAudio audio library.</Description>
   </PropertyGroup>
 

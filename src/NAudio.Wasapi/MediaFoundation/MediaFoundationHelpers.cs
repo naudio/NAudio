@@ -233,7 +233,7 @@ public static class MediaFoundationApi
     /// <summary>
     /// Creates a sink writer from a URL
     /// </summary>
-    internal static IMFSinkWriter CreateSinkWriterFromUrl(string outputUrl, IntPtr byteStreamPtr = default, IntPtr attributesPtr = default)
+    internal static IMFSinkWriter CreateSinkWriterFromUrl(string? outputUrl, IntPtr byteStreamPtr = default, IntPtr attributesPtr = default)
     {
         MediaFoundationException.ThrowIfFailed(
             MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, byteStreamPtr, attributesPtr, out var ptr));

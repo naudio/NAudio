@@ -12,6 +12,7 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
     <Description>WASAPI playback and capture (including loopback and process loopback) and Media Foundation codecs for the NAudio audio library. Windows-only at runtime.</Description>
   </PropertyGroup>
 

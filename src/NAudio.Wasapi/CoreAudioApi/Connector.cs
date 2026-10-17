@@ -127,7 +127,7 @@ public class Connector
     {
         get
         {
-            return new Part(connectorInterface as IPart);
+            return new Part((IPart)connectorInterface);
         }
     }
 }

@@ -85,7 +85,7 @@ internal static partial class MediaFoundationInterop
     /// the source-generated stub passes a null pointer to native in that case.
     /// </remarks>
     [LibraryImport("mfreadwrite.dll", StringMarshalling = StringMarshalling.Utf16)]
-    public static partial int MFCreateSinkWriterFromURL(string pwszOutputURL,
+    public static partial int MFCreateSinkWriterFromURL(string? pwszOutputURL,
                                                         IntPtr pByteStream, IntPtr pAttributes, out IntPtr ppSinkWriter);
 
     /// <summary>
@@ -96,7 +96,7 @@ internal static partial class MediaFoundationInterop
     /// reference type. Same rationale as <see cref="MFInitMediaTypeFromWaveFormatEx"/>.
     /// </remarks>
     [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-    public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo pInputType, [In] MftRegisterTypeInfo pOutputType,
+    public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo? pInputType, [In] MftRegisterTypeInfo? pOutputType,
                                         out IntPtr pppMFTActivate, out int pcMFTActivate);
 
     /// <summary>

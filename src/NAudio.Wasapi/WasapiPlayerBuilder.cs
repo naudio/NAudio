@@ -9,12 +9,12 @@ namespace NAudio.Wave;
 /// </summary>
 public class WasapiPlayerBuilder
 {
-    private MMDevice device;
+    private MMDevice? device;
     private AudioClientShareMode shareMode = AudioClientShareMode.Shared;
     private int latencyMilliseconds = 200;
     private bool useEventSync = true;
     private AudioStreamCategory? audioCategory;
-    private string mmcssTaskName;
+    private string? mmcssTaskName;
     private bool preferLowLatency;
     private bool requireLowLatency;
     private bool useDefaultDeviceRouting;

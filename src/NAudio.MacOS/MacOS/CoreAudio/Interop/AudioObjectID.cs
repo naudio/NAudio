@@ -32,7 +32,7 @@ internal readonly struct AudioObjectID : IEqualityOperators<AudioObjectID, Audio
 
     public override int GetHashCode() => Value.GetHashCode();
 
-    public override bool Equals(object obj) => obj is AudioObjectID aid && aid.Value == Value;
+    public override bool Equals(object? obj) => obj is AudioObjectID aid && aid.Value == Value;
 
     public static bool IsUnknownID(AudioObjectID id) => id.Value == kAudioObjectUnknown;
 

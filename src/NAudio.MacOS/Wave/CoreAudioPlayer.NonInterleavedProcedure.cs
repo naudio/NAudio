@@ -11,7 +11,7 @@ public partial class CoreAudioPlayer
     private sealed class NonInterleavedProcedure : PlayerProcedure
     {
         private uint nonInterleavedStride;
-        private byte[] temporaryInterleavedBuffer;
+        private byte[]? temporaryInterleavedBuffer;
         private readonly NAudio.Utils.AudioDeinterleaver deinterleaver;
 
         public NonInterleavedProcedure(AudioDevice dev)

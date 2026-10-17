@@ -14,7 +14,7 @@ public partial class CoreAudioPlayer
         private readonly uint streamsLatency;
         private readonly LowLevelAudioConverter converter;
 
-        public unsafe ResamplerSource(IWaveProvider wp, AudioStreamBasicDescription requiredDesc, ChannelLayoutHandle channelLayoutOut, uint streamsLatency)
+        public unsafe ResamplerSource(IWaveProvider wp, AudioStreamBasicDescription requiredDesc, ChannelLayoutHandle? channelLayoutOut, uint streamsLatency)
         {
             this.streamsLatency = streamsLatency;
             converter = new(new(wp.Read), MacUtils.ConstructASBDFromWaveFormat(wp.WaveFormat), requiredDesc);

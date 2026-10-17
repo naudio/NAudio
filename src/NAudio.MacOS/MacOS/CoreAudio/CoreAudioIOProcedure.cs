@@ -72,7 +72,7 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     {
         try
         {
-            ((IOProcedureSignature)GCHandle.FromIntPtr(inClientData).Target)
+            ((IOProcedureSignature)GCHandle.FromIntPtr(inClientData).Target!)
                 .Invoke(
                     inNow,
                     inInputData,

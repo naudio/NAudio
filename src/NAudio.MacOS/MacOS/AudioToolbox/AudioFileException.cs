@@ -1,6 +1,5 @@
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.MacOS.AudioToolbox.Interop;
 
@@ -26,7 +25,7 @@ public class AudioFileException : AudioToolboxException
     /// </summary>
     /// <param name="message">The custom error message to provide. Can be <see langword="null"/>.</param>
     /// <param name="osStatus">The <c>OSStatus</c> error code to provide.</param>
-    public AudioFileException([AllowNull] string message, int osStatus) : base(message, osStatus) { }
+    public AudioFileException(string? message, int osStatus) : base(message, osStatus) { }
 
     internal static void ThrowIfError(int osStatus, out bool couldNotMapException)
     {

@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
@@ -31,12 +30,12 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
 {
     private CaptureState state;
     private readonly Lock lockObject;
-    private RecorderProcedure ioProcedure;
+    private RecorderProcedure? ioProcedure;
     private CoreAudioRecorderStateFlags flags;
     private readonly AudioDevice selectedDevice;
-    private PropertyListenerHandle streamsChanged;
-    private PropertyListenerHandle virtualFormatChanged;
-    private readonly SynchronizationContext syncContext;
+    private PropertyListenerHandle? streamsChanged;
+    private PropertyListenerHandle? virtualFormatChanged;
+    private readonly SynchronizationContext? syncContext;
     private readonly PropertyListenerHandle deviceWasRemoved;
 
     /// <summary>
@@ -45,7 +44,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// If a synchronization context is assigned for the thread where this instance
     /// is created to, it is used when a recording stopped event is dispatching.
     /// </summary>
-    public CoreAudioRecorder() : this(AudioSystemObject.Instance.DefaultInputDevice) { }
+    public CoreAudioRecorder() : this(AudioSystemObject.Instance.DefaultInputDevice ?? throw new InvalidOperationException("No default input device is available.")) { }
 
     /// <summary>
     /// Initializes a new Core Audio recoder instance from the specified device. <br />
@@ -103,8 +102,8 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     {
         private void PostEvent() => Handler.Invoke(Recorder, Args);
 
-        public static void UnwrapContextAndDispatch(object state)
-            => ((SyncContextStoppedEventData)state).PostEvent();
+        public static void UnwrapContextAndDispatch(object? state)
+            => ((SyncContextStoppedEventData)state!).PostEvent();
     }
 
     private void FireDataAvailableEvent(
@@ -128,9 +127,13 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         }
     }
 
-    private void OnRecordingStoppedHandlerFromIOProc(object sender, StoppedEventArgs e) => OnRecodingStopped(e);
+    // The I/O procedure is assigned whenever the Initialized flag is set,
+    // so this never throws once ThrowIfInvalidOrDisposed has passed.
+    private RecorderProcedure InitializedProcedure => ioProcedure ?? throw new InvalidOperationException("The Core Audio recorder has not been initialized yet.");
 
-    private void OnRecodingStopped(Exception ex) => OnRecodingStopped(new StoppedEventArgs(ex));
+    private void OnRecordingStoppedHandlerFromIOProc(object? sender, StoppedEventArgs e) => OnRecodingStopped(e);
+
+    private void OnRecodingStopped(Exception? ex) => OnRecodingStopped(new StoppedEventArgs(ex));
 
     private void OnRecodingStopped(StoppedEventArgs e)
     {
@@ -156,7 +159,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         return (
             selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Input) +
             selectedDevice.BufferFrameSize
-        ) / ioProcedure.VirtualFormat.mSampleRate;
+        ) / InitializedProcedure.VirtualFormat.mSampleRate;
     }
 
     private void StopRecordingInternal(bool dispatchRecordingStopped = false)
@@ -164,17 +167,18 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         try
         {
             state = CaptureState.Stopping;
+            var procedure = InitializedProcedure;
             try
             {
-                ioProcedure.Stop();
-                ioProcedure.DrainBuffers();
+                procedure.Stop();
+                procedure.DrainBuffers();
             }
             finally
             {
                 if (flags.HasFlag(CoreAudioRecorderStateFlags.EventHandleWasRegistered))
                 {
-                    ioProcedure.Event -= FireDataAvailableEvent;
-                    ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
+                    procedure.Event -= FireDataAvailableEvent;
+                    procedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
                 }
             }
             if (dispatchRecordingStopped)
@@ -213,7 +217,6 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// <summary>
     /// Gets the selected audio device where the recorder retrieves data from.
     /// </summary>
-    [NotNull]
     public AudioDevice Device => selectedDevice;
 
     /// <summary>Call this method once per instance to set up the recorder for recording.</summary>
@@ -273,11 +276,12 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             state = CaptureState.Starting;
             // Attach event handlers to the I/O procedure.
             // This is the DataAvailable event mode.
-            ioProcedure.Event += FireDataAvailableEvent;
-            ioProcedure.RecordingStopped += OnRecordingStoppedHandlerFromIOProc;
+            var procedure = InitializedProcedure;
+            procedure.Event += FireDataAvailableEvent;
+            procedure.RecordingStopped += OnRecordingStoppedHandlerFromIOProc;
             try
             {
-                ioProcedure.Start();
+                procedure.Start();
                 state = CaptureState.Capturing;
                 // Set the flag if and only if recording started successfully.
                 flags |= CoreAudioRecorderStateFlags.EventHandleWasRegistered;
@@ -287,8 +291,8 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
                 // Detach the events if Start() throws -
                 // if we do not do so, the event handlers
                 // remain attached to the procedure and never freed.
-                ioProcedure.Event -= FireDataAvailableEvent;
-                ioProcedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
+                procedure.Event -= FireDataAvailableEvent;
+                procedure.RecordingStopped -= OnRecordingStoppedHandlerFromIOProc;
                 // Flag the recorder as stopped.
                 state = CaptureState.Stopped;
                 throw;
@@ -357,21 +361,22 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
 
         // Create the buffer queue.
         SingleLinkedCaptureBufferQueue queue = new();
+        var procedure = InitializedProcedure;
 
         try
         {
-            ioProcedure.Event += queue.EnqueueFromHandler;
-            ioProcedure.Start();
+            procedure.Event += queue.EnqueueFromHandler;
+            procedure.Start();
             state = CaptureState.Capturing;
 
-            CoreAudioCaptureBuffer buffer;
+            CoreAudioCaptureBuffer? buffer;
             // Note that the below loop may be also stopped by using the IsRunning property.
             // This might happen for a couple of reasons:
             // 1. An exception occurred on the I/O thread (although practically impossible because we just enqueue to a queue)
             // 2. Recording stopped externally via the StopRecording method.
             // 3. Virtual stream format changed.
             // 4. Stream list has changed.
-            while ((!cancellationToken.IsCancellationRequested) && ioProcedure.IsRunning)
+            while ((!cancellationToken.IsCancellationRequested) && procedure.IsRunning)
             {
                 // See whether we have any capture buffer(s) available.
                 // Make sure we drain the whole output.
@@ -388,8 +393,8 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             // Now, drain any buffers.
             try
             {
-                ioProcedure.Stop();
-                ioProcedure.DrainBuffers();
+                procedure.Stop();
+                procedure.DrainBuffers();
             }
             catch { } // This is cleanup code - we cannot throw here.
             // Make sure that the buffer queue does not contain any buffers that we did not submitted
@@ -402,8 +407,8 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             {
                 // It is okay to call Stop a second time - this remains here only and only
                 // to handle stop when an exception has been occurred.
-                ioProcedure.Stop();
-                ioProcedure.Event -= queue.EnqueueFromHandler;
+                procedure.Stop();
+                procedure.Event -= queue.EnqueueFromHandler;
             }
             finally
             {
@@ -412,7 +417,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
             }
         }
         // If we have an exception, make sure to throw it
-        var ex = ioProcedure.Exception;
+        var ex = procedure.Exception;
         if (ex is not null) { throw ex; }
         // Flag to the enumerator that we won't return additional buffers
         yield break;
@@ -421,7 +426,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// <summary>
     /// Provides an event that is fired when new capture data are retrieved from the HAL.
     /// </summary>
-    public event CoreAudioCaptureDataAvailableHandler DataAvailable;
+    public event CoreAudioCaptureDataAvailableHandler? DataAvailable;
 
     /// <summary>
     /// Provides an event that is fired when the recorder's capture format has been changed.
@@ -430,12 +435,12 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
     /// If capture is already running, capture will be stopped. <br />
     /// If you want to restart recording, explicitly call the <see cref="StartRecording"/> method.
     /// </remarks>
-    public event CoreAudioCaptureFormatChangedHandler CaptureFormatChanged;
+    public event CoreAudioCaptureFormatChangedHandler? CaptureFormatChanged;
 
     /// <summary>
     /// Provides an event that is fired when the recording has been stopped.
     /// </summary>
-    public event EventHandler<StoppedEventArgs> RecordingStopped;
+    public event EventHandler<StoppedEventArgs>? RecordingStopped;
 
     /// <summary>
     /// Provides the audio format the HAL uses to capture audio. <br />
@@ -448,7 +453,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         {
             ThrowIfInvalidOrDisposed();
             // Construct the capture format.
-            var virtualFormat = ioProcedure.VirtualFormat;
+            var virtualFormat = InitializedProcedure.VirtualFormat;
 
             // Query channel layout
             Speakers spk = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Input, out var needsTranslation, out var needsExtensible);
@@ -488,7 +493,7 @@ public sealed partial class CoreAudioRecorder : IDisposable, IAsyncDisposable, I
         get
         {
             ThrowIfInvalidOrDisposed();
-            double latencySeconds = ioProcedure.GetCurrentLatency();
+            double latencySeconds = InitializedProcedure.GetCurrentLatency();
             if (latencySeconds == -1d)
             {
                 latencySeconds = GetLatencyInSeconds();

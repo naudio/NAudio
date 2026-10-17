@@ -1,16 +1,16 @@
-﻿#if !WINDOWS
-// Mp3FileReader requires AcmMp3FrameDecompressor which is Windows-only
-// Use Mp3FileReaderBase with a custom decompressor on non-Windows platforms
-#else
-using System.IO;
+﻿using System.IO;
+using System.Runtime.Versioning;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
 
 
 /// <summary>
-/// Class for reading from MP3 files
+/// Class for reading from MP3 files, decoding with the Windows ACM MP3 codec.
+/// On other platforms, use <see cref="Mp3FileReaderBase"/> with a managed frame decompressor
+/// such as NLayer.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class Mp3FileReader : Mp3FileReaderBase
 {
     /// <summary>Supports opening a MP3 file</summary>
@@ -41,4 +41,3 @@ public class Mp3FileReader : Mp3FileReaderBase
         return new AcmMp3FrameDecompressor(mp3Format);
     }
 }
-#endif

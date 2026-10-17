@@ -2,6 +2,8 @@
 
 NAudio 3 introduces `AsioDevice`, a redesigned ASIO API that handles playback, recording, and duplex I/O through three explicit configuration modes. This article covers playback only — see [AsioRecording](AsioRecording.md) and [AsioDuplex](AsioDuplex.md) for the other modes, and [AsioMigration](AsioMigration.md) if you're moving from the legacy `AsioOut` class.
 
+`AsioDevice` and `AsioOut` are in the [NAudio.Asio](https://www.nuget.org/packages/NAudio.Asio/) package, which the `NAudio` meta-package doesn't include: `dotnet add package NAudio.Asio`.
+
 ASIO is the low-latency driver format supported by most professional Windows audio interfaces and many DAW applications. To use it you need a soundcard with an ASIO driver installed. If your hardware doesn't ship one, [ASIO4ALL](http://asio4all.com/) is a free WDM-to-ASIO shim that works with most consumer soundcards.
 
 ## Open the device

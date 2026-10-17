@@ -153,6 +153,104 @@ public class WdlResamplingSampleProviderTests
             $"Left channel leaked from right: RMS={leftEnergy:F6}");
     }
 
+    // ---- Quality modes ----
+
+    [Test]
+    public void DefaultQualityIsLinearAndUnchanged()
+    {
+        // The two-argument constructor must keep the pre-quality-option behaviour sample for sample.
+        var input = GenerateSine(44100, channels: 2, seconds: 1, frequency: 1000, gain: 0.5);
+        var byDefault = new WdlResamplingSampleProvider(new ArraySampleProvider(input, 44100, 2), 48000);
+        var explicitLinear = new WdlResamplingSampleProvider(new ArraySampleProvider(input, 44100, 2), 48000,
+            WdlResamplerQuality.Linear);
+        Assert.That(byDefault.Quality, Is.EqualTo(WdlResamplerQuality.Linear));
+
+        var a = ReadAll(byDefault, 4096);
+        var b = ReadAll(explicitLinear, 4096);
+        Assert.That(a, Is.EqualTo(b));
+    }
+
+    [Test]
+    public void UnknownQualityThrows()
+    {
+        var source = new ArraySampleProvider(new float[100], 44100, 1);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new WdlResamplingSampleProvider(source, 48000, (WdlResamplerQuality)99));
+    }
+
+    [TestCase(WdlResamplerQuality.Sinc64, 44100, 48000, 1000.0)]
+    [TestCase(WdlResamplerQuality.Sinc64, 44100, 48000, 10000.0)]
+    [TestCase(WdlResamplerQuality.Sinc64, 48000, 44100, 10000.0)]
+    [TestCase(WdlResamplerQuality.Sinc16, 44100, 48000, 10000.0)]
+    public void SincModeKeepsSineLevelAndAccuracy(WdlResamplerQuality quality, int from, int to, double frequency)
+    {
+        // Least-squares fit a sine at the known frequency to the settled output, then require the
+        // fitted level to match the input within 0.1 dB and the residual to be > 70 dB down.
+        // Linear mode gets about -2 dB / 23 dB here at 10 kHz, so this distinguishes the modes.
+        const int blockFrames = 64;
+        const double gain = 0.5;
+        var input = GenerateSine(from, channels: 1, seconds: 1, frequency, gain);
+        var resampler = new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, 1), to, quality);
+
+        // Read a whole number of blocks that the input can fully supply, so no zero-filled tail
+        // from end-of-source flushing reaches the analysis window.
+        int outFrames = (to * 9 / 10) / blockFrames * blockFrames;
+        var output = new float[outFrames];
+        for (int pos = 0; pos < outFrames; pos += blockFrames)
+        {
+            int read = resampler.Read(output.AsSpan(pos, blockFrames));
+            Assert.That(read, Is.EqualTo(blockFrames), $"short read at frame {pos}");
+        }
+
+        var (levelDb, signalToErrorDb) = FitSine(output, skipStart: 2048, to, frequency, gain);
+        Assert.That(levelDb, Is.EqualTo(0.0).Within(0.1), $"{quality} {from}->{to} {frequency} Hz: level {levelDb:F3} dB");
+        Assert.That(signalToErrorDb, Is.GreaterThan(70.0),
+            $"{quality} {from}->{to} {frequency} Hz: signal-to-error {signalToErrorDb:F1} dB");
+    }
+
+    [Test]
+    public void LinearModeRollsOffHighFrequencies()
+    {
+        // Pins that Linear really is the old, cheaper algorithm: a 10 kHz tone loses well over
+        // 1 dB at 44.1k -> 48k, which no sinc mode does.
+        var input = GenerateSine(44100, channels: 1, seconds: 1, frequency: 10000, gain: 0.5);
+        var resampler = new WdlResamplingSampleProvider(new ArraySampleProvider(input, 44100, 1), 48000, WdlResamplerQuality.Linear);
+        var output = new float[640 * 64];
+        for (int pos = 0; pos < output.Length; pos += 64)
+            resampler.Read(output.AsSpan(pos, 64));
+        var (levelDb, _) = FitSine(output, skipStart: 2048, 48000, 10000, 0.5);
+        Assert.That(levelDb, Is.LessThan(-1.0), $"linear mode level {levelDb:F3} dB");
+    }
+
+    private static (double levelDb, double signalToErrorDb) FitSine(float[] data, int skipStart, int rate,
+        double frequency, double expectedAmplitude)
+    {
+        // Solve the 2x2 normal equations for y ~ a*sin(wt) + b*cos(wt). Phase is unknown because
+        // of the resampler's latency, which the sin/cos pair absorbs.
+        double w = 2 * Math.PI * frequency / rate;
+        double ss = 0, cc = 0, sc = 0, ys = 0, yc = 0;
+        for (int n = skipStart; n < data.Length; n++)
+        {
+            double s = Math.Sin(w * n), c = Math.Cos(w * n);
+            ss += s * s; cc += c * c; sc += s * c;
+            ys += data[n] * s; yc += data[n] * c;
+        }
+        double det = ss * cc - sc * sc;
+        double a = (ys * cc - yc * sc) / det;
+        double b = (yc * ss - ys * sc) / det;
+
+        double signal = 0, error = 0;
+        for (int n = skipStart; n < data.Length; n++)
+        {
+            double fit = a * Math.Sin(w * n) + b * Math.Cos(w * n);
+            signal += fit * fit;
+            double e = data[n] - fit;
+            error += e * e;
+        }
+        double amplitude = Math.Sqrt(a * a + b * b);
+        return (20 * Math.Log10(amplitude / expectedAmplitude), 10 * Math.Log10(signal / error));
+    }
+
     // ---- Direct WdlResampler tests (exercising sinc mode where the windowing fix lives) ----
 
     [Test]

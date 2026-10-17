@@ -58,6 +58,8 @@
       href: FadeInOutSampleProvider.md
     - name: Apply audio effects with NAudio.Effects
       href: AudioEffects.md
+    - name: Guitar amp captures with NAudio.Nam
+      href: NeuralAmpModeler.md
 - name: Generating audio
   items:
     - name: Play sine waves and other signals

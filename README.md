@@ -38,12 +38,13 @@ Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package i
 | [NAudio.Dmo](https://www.nuget.org/packages/NAudio.Dmo/) | Windows | DMO effects, DMO MP3 decoder and resampler, `DirectSoundOut` |
 | [NAudio.WinForms](https://www.nuget.org/packages/NAudio.WinForms/) | Windows | WinForms controls, and the window-callback `WaveOutWindow` / `WaveInWindow` |
 | [NAudio.Sampler](https://www.nuget.org/packages/NAudio.Sampler/) | cross-platform | Polyphonic software sampler — SoundFont (`.sf2`), SFZ and single-sample instruments |
+| [NAudio.Nam](https://www.nuget.org/packages/NAudio.Nam/) | cross-platform | Neural Amp Modeler (`.nam`) guitar amp and pedal captures as a real-time effect |
 | [NAudio.SoundFile](https://www.nuget.org/packages/NAudio.SoundFile/) | cross-platform | Read *and write* WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 via libsndfile |
 | [NAudio.Alsa](https://www.nuget.org/packages/NAudio.Alsa/) | Linux | `AlsaOut` / `AlsaIn` playback and capture via libasound |
 | [NAudio.Vst3](https://www.nuget.org/packages/NAudio.Vst3/) | Windows | VST 3 plug-in hosting (preview) — effects and instruments |
 | [NAudio.Extras](https://www.nuget.org/packages/NAudio.Extras/) | cross-platform (+ Windows extras) | Opinionated helpers — playback engine, capture mixing, ID3 tags |
 
-`NAudio.Core`, `NAudio.Midi`, `NAudio.Wasapi`, `NAudio.Dmo`, `NAudio.Sampler`, `NAudio.SoundFile` and `NAudio.Alsa` are Native-AOT compatible. See [the assembly layout plan](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) for the reasoning behind the split.
+`NAudio.Core`, `NAudio.Midi`, `NAudio.Wasapi`, `NAudio.Dmo`, `NAudio.Sampler`, `NAudio.Nam`, `NAudio.SoundFile` and `NAudio.Alsa` are Native-AOT compatible. See [the assembly layout plan](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) for the reasoning behind the split.
 
 ## Documentation
 
@@ -160,6 +161,7 @@ NAudio comes with several demo applications, which are the quickest way to see h
 * [Varispeed playback with NAudio using SoundTouch](http://markheath.net/post/varispeed-naudio-soundtouch)
 * [Fade audio in and out](Docs/FadeInOutSampleProvider.md)
 * [Apply audio effects with NAudio.Effects](Docs/AudioEffects.md)
+* [Guitar amp captures with NAudio.Nam (Neural Amp Modeler)](Docs/NeuralAmpModeler.md)
 
 ### Generating audio
 

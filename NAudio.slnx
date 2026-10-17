@@ -14,6 +14,7 @@
     <Project Path="src/NAudio.Dmo/NAudio.Dmo.csproj" />
     <Project Path="src/NAudio.Extras/NAudio.Extras.csproj" />
     <Project Path="src/NAudio.Midi/NAudio.Midi.csproj" />
+    <Project Path="src/NAudio.Nam/NAudio.Nam.csproj" />
     <Project Path="src/NAudio.Sampler/NAudio.Sampler.csproj" />
     <Project Path="src/NAudio.SoundFile/NAudio.SoundFile.csproj" />
     <Project Path="src/NAudio.Vst3/NAudio.Vst3.csproj" />
@@ -33,6 +34,7 @@
     </Project>
     <Project Path="tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj" />
     <Project Path="tests/NAudio.MacOS.Tests/NAudio.MacOS.Tests.csproj" />
+    <Project Path="tests/NAudio.Nam.Tests/NAudio.Nam.Tests.csproj" />
     <Project Path="tests/NAudio.Sampler.Tests/NAudio.Sampler.Tests.csproj" />
     <Project Path="tests/NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
     <Project Path="tests/NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />

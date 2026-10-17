@@ -181,6 +181,7 @@ jobs:
             'NAudio.SoundFile',
             'NAudio.MacOS',
             'NAudio.Sampler',
+            'NAudio.Nam',
             'NAudio',
             'NAudio.Extras'
           )

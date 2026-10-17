@@ -16,7 +16,10 @@ public sealed class NamModelMetadata
     /// <summary>Who made the capture.</summary>
     public string? ModeledBy { get; private init; }
 
-    /// <summary>The kind of gear captured, e.g. "amp", "pedal" or "amp_cab".</summary>
+    /// <summary>
+    /// The kind of gear captured: "amp", "pedal", "pedal_amp", "amp_cab",
+    /// "amp_pedal_cab", "preamp" or "studio". The "_cab" types include a speaker cabinet.
+    /// </summary>
     public string? GearType { get; private init; }
 
     /// <summary>The captured gear's manufacturer.</summary>

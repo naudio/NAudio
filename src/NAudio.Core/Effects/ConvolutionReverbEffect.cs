@@ -9,13 +9,16 @@ namespace NAudio.Effects;
 /// space or a synthetic IR) using partitioned FFT convolution, so the cost is
 /// bounded regardless of IR length. Supply a mono IR (applied to every channel) or
 /// one IR per channel. With no IR set the effect is a transparent pass-through.
-/// Reports its partition latency via <see cref="AudioEffect.LatencySamples"/>.
+/// Reports its partition latency via <see cref="AudioEffect.LatencySamples"/>, or
+/// none when <see cref="ZeroLatency"/> is set. For guitar cabinet impulse responses,
+/// <see cref="CabinetEffect"/> is usually a better fit.
 /// </summary>
 public sealed class ConvolutionReverbEffect : AudioEffect
 {
     private float[][]? impulseResponses;
     private PartitionedConvolver[] convolvers = Array.Empty<PartitionedConvolver>();
     private int partitionSize = 256;
+    private bool zeroLatency;
 
     /// <summary>
     /// Creates a convolution reverb with a sensible default wet/dry mix.
@@ -42,8 +45,27 @@ public sealed class ConvolutionReverbEffect : AudioEffect
         }
     }
 
+    /// <summary>
+    /// When true, the first partition of the impulse response is applied directly in
+    /// the time domain so the effect adds no latency, at the cost of
+    /// <see cref="PartitionSize"/> extra multiply-adds per sample. Pair it with a small
+    /// partition (32–128). Default false.
+    /// </summary>
+    public bool ZeroLatency
+    {
+        get => zeroLatency;
+        set
+        {
+            if (zeroLatency == value)
+                return;
+            zeroLatency = value;
+            if (WaveFormat != null)
+                BuildConvolvers();
+        }
+    }
+
     /// <inheritdoc />
-    public override int LatencySamples => convolvers.Length > 0 ? partitionSize : 0;
+    public override int LatencySamples => convolvers.Length > 0 && !zeroLatency ? partitionSize : 0;
 
     /// <summary>
     /// Sets a single impulse response applied to every channel.
@@ -107,7 +129,7 @@ public sealed class ConvolutionReverbEffect : AudioEffect
             var ir = impulseResponses.Length == 1
                 ? impulseResponses[0]
                 : impulseResponses[Math.Min(ch, impulseResponses.Length - 1)];
-            convolvers[ch] = new PartitionedConvolver(ir, partitionSize);
+            convolvers[ch] = new PartitionedConvolver(ir, partitionSize, zeroLatency);
         }
     }
 }

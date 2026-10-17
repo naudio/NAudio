@@ -29,6 +29,9 @@ limit and fails the release build if exceeded.
  * Fixed several buffer and handle lifetime bugs in the winmm MIDI backend: `MidiOut.SendBuffer` no longer frees a sysex buffer while the driver may still own it, `MidiIn` now stops input before resetting it, and neither class calls into winmm with a handle it never opened. `MidiOut.SendBuffer` now blocks until the driver releases the buffer and throws `MmException` if the send fails.
  * Fixed `MediaFoundationReader` reporting a `Position` that was not a whole number of frames after seeking a compressed file (e.g. MP3 or AAC), up to a frame before the requested position, and a `Length` that could include a partial frame. Seeks now round down to a frame boundary and land exactly on it (#1488)
  * **New package: NAudio.Nam** - native C# inference for [Neural Amp Modeler](https://www.neuralampmodeler.com/) captures. Loads A2 `.nam` models (A2-Lite and A2-Full) and runs them as a zero-latency, allocation-free `NamEffect`, or through `NamProcessor` for ASIO callbacks. Output matches NeuralAmpModelerCore to within float rounding. See `Docs/NeuralAmpModeler.md`
+ * Added `CabinetEffect`, a zero-latency guitar/bass cabinet simulator: it loads an impulse response from a WAV file at any sample rate, resamples it to the stream rate, and optionally trims its silent tail and normalises its level
+ * Added a zero-latency mode to `PartitionedConvolver` (new constructor overload) and `ConvolutionReverbEffect` (`ZeroLatency`), which applies the first partition of the impulse response directly so there is no partition delay
+ * `PartitionedConvolver` (and so `ConvolutionReverbEffect`) is about 2-3x faster: the frequency-domain multiply-accumulate is now vectorised
 
 ### 3.2.0 (15 Oct 2026)
 

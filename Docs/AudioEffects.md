@@ -110,7 +110,13 @@ All of these live in `NAudio.Effects`. Parameter units are shown in brackets; ev
 | --- | --- |
 | `ReverbEffect` | Freeverb (Schroeder–Moorer). `RoomSize`, `Damping`, `Width` (all 0–1). Low CPU baseline. |
 | `FdnReverbEffect` | Feedback-delay-network reverb. `DecaySeconds` (RT60), `Size`, `Damping`, `ModulationDepthMs`, `ModulationRateHz`, `PreDelayMs`, `Width`. Higher quality. |
-| `ConvolutionReverbEffect` | Partitioned FFT convolution. `SetImpulseResponse(float[])` (mono IR for all channels) or `SetImpulseResponse(float[][])` (per channel); `PartitionSize` (power of two). Reports `LatencySamples`. |
+| `ConvolutionReverbEffect` | Partitioned FFT convolution. `SetImpulseResponse(float[])` (mono IR for all channels) or `SetImpulseResponse(float[][])` (per channel); `PartitionSize` (power of two). Reports `LatencySamples`, which is one partition, or zero with `ZeroLatency = true` (the first partition of the IR is then applied directly, costing `PartitionSize` extra multiply-adds per sample). |
+
+### Cabinet simulation
+
+| Effect | Key parameters |
+| --- | --- |
+| `CabinetEffect` | Zero-latency convolution with a guitar/bass cabinet impulse response, fully wet by default. `LoadImpulseResponse(path)` reads a WAV file (mono, or one IR per channel) at any sample rate; `SetImpulseResponse(float[], sampleRate)` takes samples. The IR is resampled to the stream rate and, by default, its silent tail trimmed (`TrimSilence`) and its level normalised (`Normalize`). `MaxLength` caps the IR length; `MonoInput` convolves the channel average once for mono sources in a stereo stream; `PartitionSize` (default 64) tunes CPU. |
 
 ### Voice / comms
 
@@ -193,6 +199,7 @@ A few effects deliberately do **not** implement `IParameterized` because they ha
 * `Equalizer` — a dynamic list of `EqualizerBand`s
 * `GraphicEqualizer` — a per-layout set of band gains (`SetBandGain`/`GetBandGain`)
 * `ConvolutionReverbEffect` — needs an impulse response, not scalar parameters
+* `CabinetEffect` — likewise built around an impulse response
 
 (The WPF demo shows how to wrap a band-list effect as a fixed-parameter one — see `SevenBandEqEffect` below.)
 

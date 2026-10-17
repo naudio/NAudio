@@ -106,4 +106,19 @@ public class EffectResetTests
         fx.SetImpulseResponse(ir);
         AssertResetIsClean(fx);
     }
+
+    [Test]
+    public void CabinetFullyResets()
+    {
+        var ir = new float[2048];
+        uint s = 0x2468ace1;
+        for (var i = 0; i < ir.Length; i++)
+        {
+            s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+            ir[i] = (s / 2147483648f - 1f) * MathF.Exp(-i / 200f);
+        }
+        var fx = new CabinetEffect();
+        fx.SetImpulseResponse(ir, Sr);
+        AssertResetIsClean(fx);
+    }
 }

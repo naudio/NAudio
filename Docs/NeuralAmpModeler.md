@@ -48,7 +48,18 @@ player.Play();
 
 NAM networks are mono. Given more than one channel, `NamEffect` processes the average of the channels and writes the result to every channel. A guitar recorded on one side of a stereo file would then reach the model at half level and sound less driven, which is why the example converts to mono first.
 
-A capture models only what was captured: amp-only captures usually need a cabinet impulse response after them. `ConvolutionReverbEffect` with a cabinet IR and `Mix = 1` does this, at the cost of its partition latency (`LatencySamples`).
+A capture models only what was captured: amp-only captures need a speaker cabinet after them, or they sound harsh and fizzy. Add a `CabinetEffect` with a cabinet impulse response (IR) file. It adds no latency, accepts IRs at any sample rate, and by default trims the IR's silent tail and normalises its level:
+
+```c#
+var cabinet = new CabinetEffect { MonoInput = true };   // NamEffect output is the same on every channel
+cabinet.LoadImpulseResponse("4x12-v30-sm57.wav");
+
+var chain = new EffectChain(guitar)
+    .Add(new NamEffect(model))
+    .Add(cabinet);
+```
+
+`MonoInput` convolves once and copies the result to every channel, which halves the CPU cost after a `NamEffect`. A typical 50–200 ms cabinet IR costs well under 1% of a core. Captures whose `Metadata.GearType` is `"amp_cab"` or `"amp_pedal_cab"` already include the cabinet and don't need one.
 
 ## Choosing A2-Lite or A2-Full
 

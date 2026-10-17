@@ -8,7 +8,7 @@ namespace NAudioTests.Effects;
 /// <summary>
 /// Pins the "allocation-free steady state" claim: after warm-up, a representative
 /// effect of each mechanism (vectorised gain, dynamics, delay line, feedback
-/// reverb, biquad, crossfading EQ) must allocate zero managed bytes per
+/// reverb, biquad, crossfading EQ, zero-latency convolution) must allocate zero managed bytes per
 /// <c>Process</c> on the audio thread.
 /// </summary>
 [TestFixture]
@@ -24,8 +24,19 @@ public class EffectAllocationTests
         new DelayEffect(),
         new ReverbEffect(),
         new DcBlockerEffect(),
-        new Equalizer(EqualizerBand.Peaking(1000f, 1f, 6f))
+        new Equalizer(EqualizerBand.Peaking(1000f, 1f, 6f)),
+        CabinetWithImpulseResponse()
     };
+
+    private static CabinetEffect CabinetWithImpulseResponse()
+    {
+        var ir = new float[3000];
+        for (var i = 0; i < ir.Length; i++)
+            ir[i] = MathF.Exp(-i / 300f) * MathF.Sin(i * 0.2f);
+        var cabinet = new CabinetEffect();
+        cabinet.SetImpulseResponse(ir, 44100); // exercises resampling to the 48 kHz stream
+        return cabinet;
+    }
 
     private const int ProcessCallsPerWindow = 512;
 

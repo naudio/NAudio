@@ -51,6 +51,10 @@
     // --- Managed DSP and libsndfile (SoundFile tests skip if the native library is absent)
     { "id": "Dsp.WdlResampleFile", "params": { "input": "Reports/fixtures/6ch16-48k.wav", "output": "Reports/fixtures/out-wdl-6ch-44k.wav", "targetRate": 44100 } },
     { "id": "SoundFile.RoundTrip", "params": { "format": "Flac" } },
+    { "id": "SoundFile.RoundTrip", "params": { "format": "Wav" } },
+    { "id": "SoundFile.RoundTrip", "params": { "format": "Opus" } },
+    { "id": "SoundFile.RoundTrip", "params": { "format": "Mp3" } },
+    { "id": "SoundFile.StreamRoundTrip", "params": { "format": "OggVorbis" } },
     { "id": "SoundFile.Transcode", "params": { "input": "Reports/fixtures/stereo24-48k.wav", "output": "Reports/fixtures/out-sndfile.flac", "format": "Flac" } },
 
     // --- WASAPI format negotiation (IsFormatSupported / closest match)

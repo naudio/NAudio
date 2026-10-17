@@ -142,4 +142,42 @@ public class CoreAudioRecorderTests
 
         await recorder.DisposeAsync();
     }
+
+    /**
+     * The test verifying that the issue #1479 is fixed: Creates a recorder,
+     * starts recording, stops it, and re-starts it.
+     */
+    [Test]
+    public void VerifyThatReinitializationIsSafe()
+    {
+        var recorder = new CoreAudioRecorder();
+
+        Exception exception = null;
+        ManualResetEventSlim stopEventWasCalled = new(false);
+
+        recorder.RecordingStopped += (sender, e) => { stopEventWasCalled.Set(); exception = e.Exception; };
+
+        Assert.DoesNotThrow(recorder.InitializeRecording);
+
+        // Start recording: Initialize the recorder, stop it and re-initialize again.
+        Assert.DoesNotThrow(recorder.StartRecording);
+
+        // Simulate that we are doing some work.
+        Thread.Sleep(100);
+
+        Assert.DoesNotThrow(recorder.StopRecording);
+
+        // Wait for the recording to stop in a time window of 5 seconds.
+        Assert.That(stopEventWasCalled.Wait(5000), Is.True, "The RecordingStopped event was not raised.");
+        if (exception is not null)
+        {
+            Assert.Fail($"Failure returned by the recording stopped event: {exception}");
+        }
+
+        // Now re-start recording.
+        // This is the point that #1479 described: The recording here was originally failed to start.
+        Assert.DoesNotThrow(recorder.StartRecording);
+
+        Assert.DoesNotThrow(recorder.Dispose);
+    }
 }

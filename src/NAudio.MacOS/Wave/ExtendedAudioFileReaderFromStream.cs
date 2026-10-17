@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.AudioToolbox.Interop;
@@ -36,13 +35,13 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
         /// <summary>
         /// Gets/sets the MIME type of the provided data stream.
         /// </summary>
-        public string MimeType { get; set; }
+        public string? MimeType { get; set; }
 
         /// <summary>
         /// Gets/sets the name of the file that it's data are provided to 
         /// the stream that will be used to deduce the file type.
         /// </summary>
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
     }
 
     /// <summary>
@@ -53,7 +52,7 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
     /// <param name="settings">The settings object to use for configuring the audio file reader.</param>
     /// <exception cref="ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException"><paramref name="stream"/> is unreadable or unseekable. -or- The stream cannot be decoded.</exception>
-    public ExtendedAudioFileReaderFromStream(Stream stream, [AllowNull] ExtendedAudioFileReaderFromStreamSettings settings = null)
+    public ExtendedAudioFileReaderFromStream(Stream stream, ExtendedAudioFileReaderFromStreamSettings? settings = null)
         : base(settings)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -85,8 +84,8 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
         // because the MIME type is a more formal description 
         // than the file name.
         AudioFileTypeID[] ids = [0];
-        var sets = (ExtendedAudioFileReaderFromStreamSettings)Settings;
-        Stream streamObject = ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target).Stream;
+        var sets = (ExtendedAudioFileReaderFromStreamSettings?)Settings;
+        Stream streamObject = ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target!).Stream;
         if (sets is not null)
         {
             if (!string.IsNullOrWhiteSpace(sets.MimeType))
@@ -106,7 +105,7 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
         long initPosition = 0L;
         try { initPosition = streamObject.Position; } catch { }
         int osStatus;
-        Exception exception = null;
+        Exception? exception = null;
         try
         {
             foreach (var id in ids)
@@ -134,7 +133,7 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
                 }
                 else if (osStatus == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
                 {
-                    throw ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target).Exception;
+                    throw ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target!).Exception ?? new AudioFileException("The internal callback implementation failed, but no exception was returned.", AudioFileErrors.kAudioFileUnspecifiedError);
                 }
                 else
                 {

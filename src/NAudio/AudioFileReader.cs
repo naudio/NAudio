@@ -29,9 +29,9 @@ public class AudioFileReader : WaveStream, ISampleProvider
     /// Initializes a new instance of AudioFileReader
     /// </summary>
     /// <param name="fileName">The file to open</param>
-    /// <exception cref="NotSupportedException">The file is in a format the cross-platform build
-    /// cannot read. Use the Windows build for Media Foundation, or <c>SoundFileReader</c> from the
-    /// NAudio.SoundFile package.</exception>
+    /// <exception cref="NotSupportedException">Running on a platform other than Windows and the file
+    /// is not PCM or IEEE float WAV, or AIFF. Media Foundation and ACM decoding are Windows-only; on other
+    /// platforms use <c>SoundFileReader</c> from the NAudio.SoundFile package.</exception>
     public AudioFileReader(string fileName)
     {
         lockObject = new Lock();
@@ -43,17 +43,17 @@ public class AudioFileReader : WaveStream, ISampleProvider
     /// <summary>
     /// Initializes a new instance of AudioFileReader from a stream. The audio format is
     /// detected from the stream contents, so no file name is required. WAV and AIFF streams
-    /// are handled by the cross-platform readers; on the Windows build any other format is
-    /// passed to Media Foundation.
+    /// are handled by the cross-platform readers; on Windows any other format is passed to
+    /// Media Foundation.
     /// </summary>
     /// <param name="inputStream">The stream to read from. It must be readable and seekable, and
     /// the caller retains ownership of it — disposing the AudioFileReader does not dispose the
     /// underlying stream.</param>
     /// <exception cref="ArgumentNullException"><paramref name="inputStream"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException"><paramref name="inputStream"/> is unreadable or unseekable.</exception>
-    /// <exception cref="NotSupportedException">The stream is in a format the cross-platform build
-    /// cannot read. Use the Windows build for Media Foundation, or <c>SoundFileReader</c> from the
-    /// NAudio.SoundFile package.</exception>
+    /// <exception cref="NotSupportedException">Running on a platform other than Windows and the stream
+    /// is not PCM or IEEE float WAV, or AIFF. Media Foundation and ACM decoding are Windows-only; on other
+    /// platforms use <c>SoundFileReader</c> from the NAudio.SoundFile package.</exception>
     public AudioFileReader(Stream inputStream)
     {
         ArgumentNullException.ThrowIfNull(inputStream);
@@ -86,22 +86,15 @@ public class AudioFileReader : WaveStream, ISampleProvider
             var wf = readerStream.WaveFormat.AsStandardWaveFormat(); // might have been a WaveFormatExtensible, in which case ACM conversion might not be necessary
             if (wf.Encoding != WaveFormatEncoding.Pcm && wf.Encoding != WaveFormatEncoding.IeeeFloat)
             {
-#if !WINDOWS
-                throw new NotSupportedException("Non-PCM WAV is not supported by the cross-platform build of NAudio");
-#else
-                readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                readerStream = new BlockAlignReductionStream(readerStream);
-#endif
+                readerStream = CreatePcmStreamFromCompressedWave(readerStream);
             }
         }
         else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
         {
-#if WASAPI
             // Media Foundation is the default MP3 path in NAudio 3 (no Mp3FileReader fallback needed)
+            if (!OperatingSystem.IsWindows())
+                throw new NotSupportedException(NonWindowsMessage("MP3"));
             readerStream = new MediaFoundationReader(fileName);
-#else
-            throw new NotSupportedException("MP3 is not supported by the cross-platform build of NAudio");
-#endif
         }
         else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
         {
@@ -109,12 +102,10 @@ public class AudioFileReader : WaveStream, ISampleProvider
         }
         else
         {
-#if WASAPI
             // fall back to media foundation reader, see if that can play it
+            if (!OperatingSystem.IsWindows())
+                throw new NotSupportedException(NonWindowsMessage("This file format"));
             readerStream = new MediaFoundationReader(fileName);
-#else
-            throw new NotSupportedException("This file format is not supported by the cross-platform build of NAudio");
-#endif
         }
     }
 
@@ -136,29 +127,39 @@ public class AudioFileReader : WaveStream, ISampleProvider
                 readerStream = new WaveFileReader(inputStream);
                 if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 {
-#if !WINDOWS
-                    throw new NotSupportedException("Non-PCM WAV is not supported by the cross-platform build of NAudio");
-#else
-                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                    readerStream = new BlockAlignReductionStream(readerStream);
-#endif
+                    readerStream = CreatePcmStreamFromCompressedWave(readerStream);
                 }
                 break;
             case StreamAudioFormat.Aiff:
                 readerStream = new AiffFileReader(inputStream);
                 break;
             default:
-#if WASAPI
                 // fall back to Media Foundation, which detects the format itself and handles
                 // MP3, WMA, AAC/MP4, FLAC and more. Media Foundation is the default MP3 path in
                 // NAudio 3, so no Mp3FileReader fallback is needed here.
+                if (!OperatingSystem.IsWindows())
+                    throw new NotSupportedException(NonWindowsMessage("This stream format"));
                 readerStream = new StreamMediaFoundationReader(inputStream);
                 break;
-#else
-                throw new NotSupportedException("This stream format is not supported by the cross-platform build of NAudio");
-#endif
         }
     }
+
+    /// <summary>
+    /// Converts a compressed (non-PCM, non-float) WAV stream to PCM using ACM, which is only
+    /// available on Windows.
+    /// </summary>
+    private static WaveStream CreatePcmStreamFromCompressedWave(WaveStream compressed)
+    {
+        if (!OperatingSystem.IsWindows())
+            throw new NotSupportedException(NonWindowsMessage("Non-PCM WAV"));
+        var pcm = WaveFormatConversionStream.CreatePcmStream(compressed);
+        return new BlockAlignReductionStream(pcm);
+    }
+
+    private static string NonWindowsMessage(string what) =>
+        $"{what} is only supported by AudioFileReader on Windows, where it is decoded by Media Foundation or ACM. " +
+        "On other platforms use SoundFileReader from the NAudio.SoundFile package, or the Extended Audio File " +
+        "Services readers in NAudio.MacOS.";
 
     private enum StreamAudioFormat
     {

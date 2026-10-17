@@ -3,7 +3,6 @@ using System;
 using System.Numerics;
 using System.Threading;
 using System.Runtime.Versioning;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
 using NAudio.Utils;
@@ -27,17 +26,17 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     private bool disposed;
     private long clientReadBytes;
     private IntPtr extFileHandle;
-    private WaveFormat targetFormat;
+    // Assigned by Init(), which every derived constructor calls.
+    private WaveFormat targetFormat = null!;
     private readonly Lock lockObject;
     private AudioStreamBasicDescription sourceAsbd;
-    private readonly ExtendedAudioFileReaderSettings settings;
+    private readonly ExtendedAudioFileReaderSettings? settings;
 
-    private protected ExtendedAudioFileServicesReader([AllowNull] ExtendedAudioFileReaderSettings settings)
+    private protected ExtendedAudioFileServicesReader(ExtendedAudioFileReaderSettings? settings)
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         disposed = false;
         lockObject = new();
-        targetFormat = null;
         clientReadBytes = 0L;
         this.settings = settings;
     }
@@ -62,21 +61,22 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
         bool needsIeeeFloatSpecifically = false;
         Speakers decodedSpeakers = Speakers.None;
 
+        WaveFormat? format = null;
         if (settings is not null)
         {
-            targetFormat = settings.OutputFormat;
-            if (targetFormat is null)
+            format = settings.OutputFormat;
+            if (format is null)
             {
                 needsIeeeFloatSpecifically = settings.RequestIeeeFloat;
                 allowNonPowerOfTwoDepths = settings.AllowNonPowerOfTwoBitDepths;
             }
-            else if (targetFormat is WaveFormatExtensible ext)
+            else if (format is WaveFormatExtensible ext)
             {
                 decodedSpeakers = (Speakers)ext.ChannelMask;
             }
         }
 
-        if (targetFormat is null)
+        if (format is null)
         {
             // Source format may be wildly incomplete, so try to complete it and do validation on it.
             bool bitDepthSpecified = false;
@@ -130,7 +130,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
 
             if (extensibleIsNeeded || (bitDepthSpecified && (!BitOperations.IsPow2(bitDepth))))
             {
-                targetFormat = new WaveFormatExtensible(
+                format = new WaveFormatExtensible(
                     sampleRate,
                     bitDepthSpecified ? (int)BitOperations.RoundUpToPowerOf2((uint)bitDepth) : bitDepth,
                     channels,
@@ -141,11 +141,13 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
             }
             else
             {
-                targetFormat = needsIeeeFloatSpecifically ?
+                format = needsIeeeFloatSpecifically ?
                     WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels) :
                     new(sampleRate, bitDepth, channels);
             }
         }
+
+        targetFormat = format;
 
         // Reinterpret the target format as a macOS ASBD structure.
         AudioStreamBasicDescription asbdOut = MacUtils.ConstructASBDFromWaveFormat(targetFormat);
@@ -230,8 +232,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     /// Gets the settings object provided to this instance
     /// during construction.
     /// </summary>
-    [MaybeNull]
-    public ExtendedAudioFileReaderSettings Settings => settings;
+    public ExtendedAudioFileReaderSettings? Settings => settings;
 
     /// <inheritdoc />
     public sealed override bool CanRead => !disposed;

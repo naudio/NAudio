@@ -45,5 +45,5 @@ public class ExtendedAudioFileReaderSettings
     /// properties as they are purely existing to manipulate the default built-in logic
     /// of the reader.
     /// </remarks>
-    public WaveFormat OutputFormat { get; set; }
+    public WaveFormat? OutputFormat { get; set; }
 }

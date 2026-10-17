@@ -25,9 +25,9 @@ public sealed class ExtendedAudioFileReaderFromURL : ExtendedAudioFileServicesRe
     /// </summary>
     /// <param name="URL">The URL to the audio file to initialize from.</param>
     /// <param name="settings">Behavioral settings to apply to the reader.</param>
-    public ExtendedAudioFileReaderFromURL(Uri URL, ExtendedAudioFileReaderSettings settings = null) : this(URLObject: URL, settings) { }
+    public ExtendedAudioFileReaderFromURL(Uri URL, ExtendedAudioFileReaderSettings? settings = null) : this(URLObject: URL, settings) { }
 
-    private ExtendedAudioFileReaderFromURL(object URLObject, ExtendedAudioFileReaderSettings settings = null)
+    private ExtendedAudioFileReaderFromURL(object URLObject, ExtendedAudioFileReaderSettings? settings = null)
         : base(settings)
     {
         ArgumentNullException.ThrowIfNull(URLObject);
@@ -41,7 +41,7 @@ public sealed class ExtendedAudioFileReaderFromURL : ExtendedAudioFileServicesRe
     /// </summary>
     /// <param name="filePath">The file path to the audio file to initialize from.</param>
     /// <param name="settings">Behavioral settings to apply to the reader.</param>
-    public static ExtendedAudioFileReaderFromURL CreateFromFile(string filePath, ExtendedAudioFileReaderSettings settings = null)
+    public static ExtendedAudioFileReaderFromURL CreateFromFile(string filePath, ExtendedAudioFileReaderSettings? settings = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         return new ExtendedAudioFileReaderFromURL(URLObject: filePath, settings);

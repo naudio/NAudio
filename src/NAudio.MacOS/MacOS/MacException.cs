@@ -1,6 +1,5 @@
 
 using System.Runtime.InteropServices;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.MacOS.CoreFoundationApi;
 
@@ -39,7 +38,7 @@ public class MacException : ExternalException
     /// </summary>
     /// <param name="message">The custom error message to provide. Can be <see langword="null"/>.</param>
     /// <param name="osStatus">The <c>OSStatus</c> error code to provide.</param>
-    public MacException([AllowNull] string message, int osStatus) : base(message ?? RetrieveDescriptionIfPossible(osStatus), osStatus) { }
+    public MacException(string? message, int osStatus) : base(message ?? RetrieveDescriptionIfPossible(osStatus), osStatus) { }
 
     /// <summary>
     /// Provides the <c>OSStatus</c> code that is the reason why 

@@ -44,6 +44,8 @@ DirectSound is another legacy API that can be used as an alternative to `WaveOut
 
 To select a specific device with `DirectSoundOut`, you can call the static `DirectSoundOut.Devices` property which will let you get at the GUID for each device, which you can pass into the `DirectSoundOut` constructor. Like `WaveOut`, you can adjust the latency (overall buffer size).
 
+`DirectSoundOut` is in the [NAudio.Dmo](https://www.nuget.org/packages/NAudio.Dmo/) package, which the `NAudio` meta-package doesn't include.
+
 `DirectSoundOut` uses a background thread waiting to fill buffers (same as `WaveOut`). This is a reliable and uncomplicated mechanism, but as with any callback mechanism that uses a background thread, you must take responsibility yourself for ensuring that repositions do not happen at the same time as reads (although some of NAudio's built-in WaveStreams can protect you from getting this wrong).
 
 ## ASIO
@@ -51,6 +53,8 @@ To select a specific device with `DirectSoundOut`, you can call the static `Dire
 ASIO is the de-facto standard for audio interface drivers for recording studios. All professional audio interfaces for Windows will come with ASIO drivers that are designed to operate at the lowest latencies possible. ASIO is a good choice for professional audio applications requiring very low latency and direct hardware access.
 
 In NAudio 3 the ASIO device is [`AsioDevice`](AsioPlayback.md), which adds explicit playback/recording/duplex modes, non-contiguous channel selection, and per-channel `Span<float>` callbacks. (The older `AsioOut` class still works as a thin facade over `AsioDevice` — see [Migrating from AsioOut to AsioDevice](AsioMigration.md).)
+
+ASIO support is in the [NAudio.Asio](https://www.nuget.org/packages/NAudio.Asio/) package, which the `NAudio` meta-package doesn't include.
 
 ASIO devices are selected by name. Use `AsioDevice.GetDriverNames()` to see what devices are available on your system. Note that this will return all installed ASIO drivers. It does not necessarily mean that the soundcard is currently connected in the case of an external audio interface, so initialization can fail for that reason.
 

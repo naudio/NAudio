@@ -39,7 +39,7 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
     private GCHandle selfGcHandle;
     private uint nativeBufferSize;
     private readonly IntPtr audioConverterHandle;
-    private Exception exceptionOnFillComplexBufferCb;
+    private Exception? exceptionOnFillComplexBufferCb;
     private readonly ProviderReadDelegate readDelegate;
     public readonly AudioStreamBasicDescription sourceFormat;
     public readonly AudioStreamBasicDescription outputFormat;
@@ -136,7 +136,7 @@ internal unsafe sealed class LowLevelAudioConverter : IDisposable
         nint inUserData
     )
     {
-        var wrapper = (LowLevelAudioConverter)GCHandle.FromIntPtr(inUserData).Target;
+        var wrapper = (LowLevelAudioConverter)GCHandle.FromIntPtr(inUserData).Target!;
 
         uint bytesRead = 0U;
         Span<byte> currentSpan = new(wrapper.nativeBuffer, (int)wrapper.nativeBufferSize);

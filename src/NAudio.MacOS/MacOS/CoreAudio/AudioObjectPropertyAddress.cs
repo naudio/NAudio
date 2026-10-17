@@ -39,7 +39,7 @@ internal readonly struct AudioObjectPropertyAddress
 
     public override int GetHashCode() => HashCode.Combine(mSelector, mScope, mElement);
 
-    public override bool Equals(object obj) => obj is AudioObjectPropertyAddress addr && addr == this;
+    public override bool Equals(object? obj) => obj is AudioObjectPropertyAddress addr && addr == this;
 
     public static bool operator ==(AudioObjectPropertyAddress addr1, AudioObjectPropertyAddress addr2) =>
         addr1.mElement.Value == addr2.mElement.Value &&

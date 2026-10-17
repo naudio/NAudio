@@ -2,6 +2,8 @@
 
 Duplex is the mode where you read input and write output in a single buffer-switch callback — the foundation for low-latency monitoring, software effects, software-defined I/O, and live DSP. NAudio 3's `AsioDevice.InitDuplex` makes this a first-class API: a per-callback `AsioProcessBuffers` view over per-channel `Span<float>` for both directions, no `IntPtr` arithmetic, no flag dance.
 
+`AsioDevice` and `AsioOut` are in the [NAudio.Asio](https://www.nuget.org/packages/NAudio.Asio/) package, which the `NAudio` meta-package doesn't include: `dotnet add package NAudio.Asio`.
+
 For playback-only or recording-only use cases see [AsioPlayback](AsioPlayback.md) and [AsioRecording](AsioRecording.md). For migration from the old `InitRecordAndPlayback` pattern see [AsioMigration](AsioMigration.md).
 
 ## The processor callback

@@ -52,7 +52,7 @@ internal sealed class AsioRecordToWavTest : IConsoleTest
 
         var sampleRate = device.CurrentSampleRate;
         AnsiConsole.MarkupLine($"[grey]Sample rate:[/] {sampleRate} Hz");
-        AnsiConsole.MarkupLine($"[grey]Channels:[/]    [{string.Join(",", channels)}]");
+        AnsiConsole.MarkupLine($"[grey]Channels:[/]    [[{string.Join(",", channels)}]]");
         AnsiConsole.MarkupLine($"[grey]Output:[/]      {Markup.Escape(filePath)}");
         AnsiConsole.MarkupLine($"[grey]Duration:[/]    {duration.TotalSeconds:F0}s");
 

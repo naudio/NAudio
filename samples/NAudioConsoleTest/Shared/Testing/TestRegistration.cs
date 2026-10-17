@@ -57,12 +57,14 @@ internal static class TestRegistration
         TestRegistry.Register(new WasapiPlaySineWaveTest());
         TestRegistry.Register(new WasapiRecordAndPlaybackTest());
         TestRegistry.Register(new WasapiRecordToWavFileTest());
+        TestRegistry.Register(new WasapiRecorderRestartTest());
         TestRegistry.Register(new WasapiLoopbackCaptureTest());
         TestRegistry.Register(new WasapiProcessLoopbackTest());
         TestRegistry.Register(new WasapiDeviceNotificationWatcherTest());
         TestRegistry.Register(new WasapiVolumeCallbackStressTest());
 
         TestRegistry.Register(new DspWdlResampleFileTest());
+        TestRegistry.Register(new DspGenerateTestSignalTest());
 
         TestRegistry.Register(new DirectSoundListDevicesTest());
         TestRegistry.Register(new DirectSoundPlayToneTest());
@@ -76,6 +78,7 @@ internal static class TestRegistration
         TestRegistry.Register(new WinMmConvertWithStreamTest());
         TestRegistry.Register(new WinMmPlayFileTest());
         TestRegistry.Register(new WinMmRecordToFileTest());
+        TestRegistry.Register(new WinMmMidiOutSysexTest());
 
         TestRegistry.Register(new Vst3ListPluginsTest());
         TestRegistry.Register(new Vst3RenderEffectTest());

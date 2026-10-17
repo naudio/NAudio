@@ -1,0 +1,25 @@
+// Pre-release smoke, audible part. Each test plays for about two seconds at low volume
+// through the default render device. Turn the monitors down before running. Run
+// release-smoke.json first: this plan plays the fixtures it generates.
+//
+//     dotnet run -c Release -- run-batch BatchPlans/release-smoke-playback.json
+{
+  "name": "Release smoke (playback - audible)",
+  "stopOnFail": false,
+  "timeoutSeconds": 30,
+  "tests": [
+    { "id": "WinMm.PlayFile", "params": { "input": "Reports/fixtures/stereo.mp3", "volume": 0.2, "maxDuration": "2s" } },
+    { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo16.wav", "mode": "Shared", "maxDuration": "2s" } },
+    { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo16.wav", "mode": "Exclusive", "maxDuration": "2s" } },
+    { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo.m4a", "mode": "Shared", "maxDuration": "2s" } },
+    { "id": "DirectSound.PlayTone", "params": { "gain": 0.05, "duration": "1s" } },
+    { "id": "SoundFile.PlayFile", "params": { "input": "Reports/fixtures/stereo16.wav", "volume": 0.2, "maxDuration": "2s" } },
+
+    // Loopback while playing its own sine, so there is something to capture.
+    { "id": "Wasapi.LoopbackCapture", "params": { "playSine": true, "duration": "2s", "output": "Reports/fixtures/out-loopback.wav" } },
+
+    // Not audible itself, but sweeps the default endpoint's master volume (and restores
+    // it), so anything else playing will jump in level.
+    { "id": "Wasapi.VolumeCallbackStress", "params": { "iterations": 5 } }
+  ]
+}

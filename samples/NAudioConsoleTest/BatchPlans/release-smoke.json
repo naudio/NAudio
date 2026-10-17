@@ -1,0 +1,73 @@
+// Pre-release smoke for the Windows backends. Silent: nothing here plays audio, so it is
+// safe to run with monitors up. Needs a default capture device; everything else degrades to
+// whatever the machine has. Generates its own fixtures, so no paths need editing.
+//
+// Run from samples/NAudioConsoleTest (paths below are relative to the working directory):
+//
+//     dotnet run -c Release -- run-batch BatchPlans/release-smoke.json
+//
+// Companion plans: release-smoke-playback.json (audible, short and quiet) and
+// release-smoke-asio.json (needs an ASIO interface; edit the driver name).
+{
+  "name": "Release smoke (silent)",
+  "stopOnFail": false,
+  "timeoutSeconds": 60,
+  "tests": [
+    // --- Enumeration / host snapshot
+    { "id": "Wasapi.ListDevices" },
+    { "id": "DirectSound.ListDevices" },
+    { "id": "MediaFoundation.EnumerateTransforms" },
+    { "id": "Asio.ListDrivers" },
+    { "id": "SoundFile.ShowCapabilities" },
+
+    // --- Fixtures. >16 bits or >2 channels are written as WAVE_FORMAT_EXTENSIBLE.
+    { "id": "Dsp.GenerateTestSignal", "params": { "output": "Reports/fixtures/stereo16.wav" } },
+    { "id": "Dsp.GenerateTestSignal", "params": { "output": "Reports/fixtures/stereo24-48k.wav", "sampleRate": 48000, "bitsPerSample": 24 } },
+    { "id": "Dsp.GenerateTestSignal", "params": { "output": "Reports/fixtures/6ch16-48k.wav", "sampleRate": 48000, "channels": 6 } },
+    { "id": "Dsp.GenerateTestSignal", "params": { "output": "Reports/fixtures/float-48k.wav", "sampleRate": 48000, "float": true } },
+
+    // --- Media Foundation: encode, then read the results back
+    { "id": "MediaFoundation.EncodeToMp3", "params": { "input": "Reports/fixtures/stereo16.wav", "output": "Reports/fixtures/stereo.mp3" } },
+    { "id": "MediaFoundation.EncodeToAac", "params": { "input": "Reports/fixtures/stereo16.wav", "output": "Reports/fixtures/stereo.m4a" } },
+    { "id": "MediaFoundation.ReadAudioFile", "params": { "input": "Reports/fixtures/stereo.mp3" } },
+    { "id": "MediaFoundation.ReadAudioFile", "params": { "input": "Reports/fixtures/stereo.m4a" } },
+    { "id": "MediaFoundation.ReadAudioFile", "params": { "input": "Reports/fixtures/stereo24-48k.wav" } },
+    { "id": "MediaFoundation.ReadFromStream", "params": { "input": "Reports/fixtures/stereo.mp3" } },
+    { "id": "MediaFoundation.ReadImmediateReposition", "params": { "input": "Reports/fixtures/stereo.mp3" } },
+    { "id": "MediaFoundation.ResampleFile", "params": { "input": "Reports/fixtures/stereo24-48k.wav", "output": "Reports/fixtures/out-mf-resample-44k.wav", "targetRate": 44100 } },
+    { "id": "MediaFoundation.ResampleFile", "params": { "input": "Reports/fixtures/6ch16-48k.wav", "output": "Reports/fixtures/out-mf-resample-6ch-44k.wav", "targetRate": 44100 } },
+    { "id": "MediaFoundation.RoundTripMemoryStream", "params": { "input": "Reports/fixtures/stereo16.wav" } },
+
+    // --- WinMM / ACM
+    { "id": "WinMm.DecodeMp3", "params": { "input": "Reports/fixtures/stereo.mp3", "output": "Reports/fixtures/out-acm-decode.wav" } },
+    { "id": "WinMm.ConvertWithStream", "params": { "input": "Reports/fixtures/stereo16.wav", "output": "Reports/fixtures/out-acm-stream-22k.wav", "targetRate": 22050 } },
+    { "id": "WinMm.ConvertWithProvider", "params": { "input": "Reports/fixtures/stereo16.wav", "output": "Reports/fixtures/out-acm-provider-8k.wav", "targetRate": 8000 } },
+
+    // --- DMO
+    { "id": "Dmo.DecodeMp3", "params": { "input": "Reports/fixtures/stereo.mp3", "output": "Reports/fixtures/out-dmo-decode.wav" } },
+    { "id": "Dmo.ResampleFile", "params": { "input": "Reports/fixtures/stereo16.wav", "output": "Reports/fixtures/out-dmo-resample-22k.wav", "targetRate": 22050 } },
+    { "id": "Dmo.EchoEffect", "params": { "input": "Reports/fixtures/stereo16.wav", "output": "Reports/fixtures/out-dmo-echo.wav" } },
+
+    // --- Managed DSP and libsndfile (SoundFile tests skip if the native library is absent)
+    { "id": "Dsp.WdlResampleFile", "params": { "input": "Reports/fixtures/6ch16-48k.wav", "output": "Reports/fixtures/out-wdl-6ch-44k.wav", "targetRate": 44100 } },
+    { "id": "SoundFile.RoundTrip", "params": { "format": "Flac" } },
+    { "id": "SoundFile.Transcode", "params": { "input": "Reports/fixtures/stereo24-48k.wav", "output": "Reports/fixtures/out-sndfile.flac", "format": "Flac" } },
+
+    // --- WASAPI format negotiation (IsFormatSupported / closest match)
+    { "id": "Wasapi.ExclusiveQuickScan" },
+    { "id": "Wasapi.FindBestExclusiveFormat", "params": { "rate": 48000, "bits": 24, "channels": 2 } },
+    { "id": "Wasapi.FindBestExclusiveFormat", "params": { "rate": 96000, "bits": 32, "channels": 2 } },
+
+    // --- Capture (records from the default input; nothing is played)
+    { "id": "Wasapi.RecordToWavFile", "params": { "duration": "3s", "output": "Reports/fixtures/out-wasapi-record.wav" } },
+    { "id": "Wasapi.RecordToWavFile", "params": { "duration": "3s", "lowLatency": true, "output": "Reports/fixtures/out-wasapi-record-lowlatency.wav" } },
+    { "id": "Wasapi.RecorderRestart", "params": { "cycles": 3 } },
+    { "id": "Wasapi.RecorderRestart", "params": { "cycles": 3, "eventSync": false } },
+    { "id": "WinMm.RecordToFile", "params": { "duration": "3s", "output": "Reports/fixtures/out-winmm-record.wav" } },
+    { "id": "WinMm.RecordToFile", "params": { "duration": "3s", "sampleRate": 48000, "channels": 1, "output": "Reports/fixtures/out-winmm-record-48k-mono.wav" } },
+
+    // --- MIDI out. Device 0 is normally the Microsoft GS Wavetable Synth; only silent
+    // messages are sent. Don't point this at a hardware synth: GM System On resets it.
+    { "id": "WinMm.MidiOutSysex", "params": { "deviceNumber": 0 } }
+  ]
+}

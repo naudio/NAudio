@@ -43,7 +43,7 @@ Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package g
 | [NAudio.Vst3](https://www.nuget.org/packages/NAudio.Vst3/) | Windows | VST 3 plug-in hosting (preview) — effects and instruments |
 | [NAudio.Extras](https://www.nuget.org/packages/NAudio.Extras/) | cross-platform (+ Windows extras) | Opinionated helpers — playback engine, capture mixing, ID3 tags |
 
-`NAudio.Core`, `NAudio.Midi`, `NAudio.Wasapi`, `NAudio.Dmo`, `NAudio.Sampler`, `NAudio.SoundFile` and `NAudio.Alsa` are Native-AOT compatible. See [the assembly layout plan](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) for the reasoning behind the split.
+`NAudio.Core`, `NAudio.Midi`, `NAudio.Wasapi`, `NAudio.WinMM`, `NAudio.Asio`, `NAudio.Dmo`, `NAudio.Sampler`, `NAudio.SoundFile` and `NAudio.Alsa` are Native-AOT compatible. See [the assembly layout plan](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) for the reasoning behind the split.
 
 ## Documentation
 

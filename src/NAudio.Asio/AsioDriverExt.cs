@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Asio;
 
@@ -34,7 +35,13 @@ public delegate void AsioFillBufferCallback(IntPtr[] inputChannels, IntPtr[] out
 public class AsioDriverExt
 {
     private readonly AsioDriver driver;
-    private AsioCallbacks callbacks;
+    // The driver holds raw pointers to these delegates' thunks from createBuffers until
+    // disposeBuffers, so they live in fields for the lifetime of this object.
+    private readonly AsioCallbacksNative.BufferSwitch bufferSwitchCallback;
+    private readonly AsioCallbacksNative.SampleRateDidChange sampleRateDidChangeCallback;
+    private readonly AsioCallbacksNative.AsioMessage asioMessageCallback;
+    private readonly AsioCallbacksNative.BufferSwitchTimeInfo bufferSwitchTimeInfoCallback;
+    private readonly AsioCallbacksNative nativeCallbacks;
     private AsioDriverCapability capability;
     private AsioBufferInfo[] bufferInfos = [];
     private bool isOutputReadySupported;
@@ -101,11 +108,17 @@ public class AsioDriverExt
             throw new InvalidOperationException(message);
         }
 
-        callbacks = new AsioCallbacks();
-        callbacks.pasioMessage = AsioMessageCallBack;
-        callbacks.pbufferSwitch = BufferSwitchCallBack;
-        callbacks.pbufferSwitchTimeInfo = BufferSwitchTimeInfoCallBack;
-        callbacks.psampleRateDidChange = SampleRateDidChangeCallBack;
+        bufferSwitchCallback = BufferSwitchCallBack;
+        sampleRateDidChangeCallback = SampleRateDidChangeCallBack;
+        asioMessageCallback = AsioMessageCallBack;
+        bufferSwitchTimeInfoCallback = BufferSwitchTimeInfoCallBack;
+        nativeCallbacks = new AsioCallbacksNative
+        {
+            bufferSwitch = Marshal.GetFunctionPointerForDelegate(bufferSwitchCallback),
+            sampleRateDidChange = Marshal.GetFunctionPointerForDelegate(sampleRateDidChangeCallback),
+            asioMessage = Marshal.GetFunctionPointerForDelegate(asioMessageCallback),
+            bufferSwitchTimeInfo = Marshal.GetFunctionPointerForDelegate(bufferSwitchTimeInfoCallback),
+        };
 
         BuildCapabilities();
     }
@@ -383,7 +396,7 @@ public class AsioDriverExt
                 IntPtr pOutputBufferInfos = new IntPtr(infos);
 
                 // Create the ASIO Buffers with the callbacks
-                driver.CreateBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, ref callbacks);
+                driver.CreateBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, in nativeCallbacks);
             }
         }
 
@@ -451,8 +464,8 @@ public class AsioDriverExt
     /// so consumers see correct timestamps regardless of which path the driver chose.
     /// </summary>
     /// <param name="doubleBufferIndex">Index of the double buffer.</param>
-    /// <param name="directProcess">if set to <c>true</c> [direct process].</param>
-    private void BufferSwitchCallBack(int doubleBufferIndex, bool directProcess)
+    /// <param name="directProcess">Non-zero (ASIOTrue) if the driver is calling from its interrupt context.</param>
+    private void BufferSwitchCallBack(int doubleBufferIndex, int directProcess)
     {
         // Populate timing snapshot via getSamplePosition; speed defaults to 1.0, time code stays null.
         if (driver.TryGetSamplePosition(out var samplePos, out var timeStamp) == AsioError.ASE_OK)
@@ -501,18 +514,19 @@ public class AsioDriverExt
     /// <summary>
     /// Asio message call back.
     /// </summary>
-    /// <param name="selector">The selector.</param>
+    /// <param name="selectorValue">The selector.</param>
     /// <param name="value">The value.</param>
     /// <param name="message">The message.</param>
     /// <param name="opt">The opt.</param>
     /// <returns></returns>
-    private int AsioMessageCallBack(AsioMessageSelector selector, int value, IntPtr message, IntPtr opt)
+    private int AsioMessageCallBack(int selectorValue, int value, IntPtr message, IntPtr opt)
     {
+        var selector = (AsioMessageSelector)selectorValue;
         // Check when this is called?
         switch (selector)
         {
             case AsioMessageSelector.kAsioSelectorSupported:
-                AsioMessageSelector subValue = (AsioMessageSelector)Enum.ToObject(typeof(AsioMessageSelector), value);
+                var subValue = (AsioMessageSelector)value;
                 switch (subValue)
                 {
                     case AsioMessageSelector.kAsioEngineVersion:
@@ -564,9 +578,9 @@ public class AsioDriverExt
     /// </summary>
     /// <param name="asioTimeParam">Pointer to a driver-owned <c>AsioTime</c> struct, valid for the duration of this callback.</param>
     /// <param name="doubleBufferIndex">Index of the double buffer.</param>
-    /// <param name="directProcess">if set to <c>true</c> [direct process].</param>
+    /// <param name="directProcess">Non-zero (ASIOTrue) if the driver is calling from its interrupt context.</param>
     /// <returns>The same pointer the driver provided. Most drivers ignore the return value.</returns>
-    private IntPtr BufferSwitchTimeInfoCallBack(IntPtr asioTimeParam, int doubleBufferIndex, bool directProcess)
+    private IntPtr BufferSwitchTimeInfoCallBack(IntPtr asioTimeParam, int doubleBufferIndex, int directProcess)
     {
         latestTimingInfo = ReadTimingInfo(asioTimeParam);
 

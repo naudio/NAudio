@@ -347,52 +347,64 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         // If the recorder has already been initialized before, it should not be initialized again.
         // Fixes #1479.
         if (audioClientInitialized) { return; }
-        LatencyMilliseconds = bufferMilliseconds;
 
-        // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller
-        // engine period than the configured buffer length, at the cost of higher wake-up frequency.
-        if (preferLowLatency)
+        try
         {
-            var precondition = LowLatencyPreconditionReason();
-            if (precondition == null && TryInitializeLowLatency())
+            LatencyMilliseconds = bufferMilliseconds;
+
+            // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller
+            // engine period than the configured buffer length, at the cost of higher wake-up frequency.
+            if (preferLowLatency)
             {
-                LowLatencyActive = true;
+                var precondition = LowLatencyPreconditionReason();
+                if (precondition == null && TryInitializeLowLatency())
+                {
+                    LowLatencyActive = true;
+                }
+                else
+                {
+                    if (precondition != null)
+                        LowLatencyUnavailableReason = precondition;
+                    if (requireLowLatency)
+                        throw new InvalidOperationException(
+                            $"Low latency was required but could not be honoured: {LowLatencyUnavailableReason}. " +
+                            "Low-latency capture needs shared mode, event-driven sync, no loopback, IAudioClient3 " +
+                            "support, and a capture format matching the device mix format (omit WithFormat). " +
+                            "Request WithLowLatency() without required to fall back to standard shared mode instead.");
+                    InitializeStandard();
+                }
             }
             else
             {
-                if (precondition != null)
-                    LowLatencyUnavailableReason = precondition;
-                if (requireLowLatency)
-                    throw new InvalidOperationException(
-                        $"Low latency was required but could not be honoured: {LowLatencyUnavailableReason}. " +
-                        "Low-latency capture needs shared mode, event-driven sync, no loopback, IAudioClient3 " +
-                        "support, and a capture format matching the device mix format (omit WithFormat). " +
-                        "Request WithLowLatency() without required to fall back to standard shared mode instead.");
                 InitializeStandard();
             }
-        }
-        else
-        {
-            InitializeStandard();
-        }
 
-        if (configureEchoCancellationReference)
-        {
-            // GetService for the AEC control is only valid once the stream is initialized.
-            var aecControl = Client.TryGetAcousticEchoCancellationControl();
-            if (aecControl == null)
+            if (configureEchoCancellationReference)
             {
-                throw new NotSupportedException(
-                    "The capture endpoint does not support controlling the acoustic echo cancellation " +
-                    "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
-                    "endpoint whose AEC effect supports loopback reference control.");
+                // GetService for the AEC control is only valid once the stream is initialized.
+                var aecControl = Client.TryGetAcousticEchoCancellationControl();
+                if (aecControl == null)
+                {
+                    throw new NotSupportedException(
+                        "The capture endpoint does not support controlling the acoustic echo cancellation " +
+                        "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
+                        "endpoint whose AEC effect supports loopback reference control.");
+                }
+                // A null endpoint id lets Windows pick the loopback reference device itself.
+                aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
             }
-            // A null endpoint id lets Windows pick the loopback reference device itself.
-            aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
-        }
 
-        // The recorder has now been successfully initialized.
-        audioClientInitialized = true;
+            // The recorder has now been successfully initialized.
+            audioClientInitialized = true;
+        }
+        catch
+        {
+            // Any code thrown by the try block would surface the exception back to StartRecording, 
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>

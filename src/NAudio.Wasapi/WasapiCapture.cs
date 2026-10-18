@@ -228,15 +228,28 @@ public class WasapiCapture : IWaveIn, IWaveLatency
         {
             throw new InvalidOperationException("Previous recording still in progress");
         }
+
         captureState = CaptureState.Starting;
-        InitializeCaptureDevice();
-        var client = Client;
-        captureThread = new Thread(() => CaptureThread(client))
+
+        try
         {
-            IsBackground = true,
-            Name = "NAudio WasapiCapture Recording",
-        };
-        captureThread.Start();
+            InitializeCaptureDevice();
+            var client = Client;
+            captureThread = new Thread(() => CaptureThread(client))
+            {
+                IsBackground = true,
+                Name = "NAudio WasapiCapture Recording",
+            };
+            captureThread.Start();
+        }
+        catch
+        {
+            // Any exception thrown by the try block would surface the exception back to StartRecording,
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>

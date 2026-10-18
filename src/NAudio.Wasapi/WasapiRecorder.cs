@@ -245,9 +245,21 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             throw new InvalidOperationException("Already recording");
 
         captureState = CaptureState.Starting;
-        InitializeAudioClient();
-        captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
-        captureThread.Start();
+
+        try
+        {
+            InitializeAudioClient();
+            captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
+            captureThread.Start();
+        }
+        catch
+        {
+            // Any exception thrown by the try block would surface the exception back to StartRecording,
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>
@@ -272,11 +284,13 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 
         captureState = CaptureState.Starting;
 
-        InitializeAudioClient();
-
         IntPtr mmcssHandle = IntPtr.Zero;
         try
         {
+            // IMPORTANT: InitializeAudioClient must be inside the try block so that the
+            // captureState field is not left in the Starting state if this throws.
+            InitializeAudioClient();
+
             if (mmcssTaskName != null)
             {
                 uint taskIndex = 0;
@@ -347,6 +361,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         // If the recorder has already been initialized before, it should not be initialized again.
         // Fixes #1479.
         if (audioClientInitialized) { return; }
+
         LatencyMilliseconds = bufferMilliseconds;
 
         // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller

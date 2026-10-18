@@ -245,9 +245,21 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             throw new InvalidOperationException("Already recording");
 
         captureState = CaptureState.Starting;
-        InitializeAudioClient();
-        captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
-        captureThread.Start();
+
+        try
+        {
+            InitializeAudioClient();
+            captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
+            captureThread.Start();
+        }
+        catch
+        {
+            // Any exception thrown by the try block would surface the exception back to StartRecording,
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>
@@ -272,11 +284,13 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 
         captureState = CaptureState.Starting;
 
-        InitializeAudioClient();
-
         IntPtr mmcssHandle = IntPtr.Zero;
         try
         {
+            // IMPORTANT: InitializeAudioClient must be inside the try block so that the
+            // captureState field is not left in the Starting state if this throws.
+            InitializeAudioClient();
+
             if (mmcssTaskName != null)
             {
                 uint taskIndex = 0;
@@ -348,63 +362,52 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         // Fixes #1479.
         if (audioClientInitialized) { return; }
 
-        try
-        {
-            LatencyMilliseconds = bufferMilliseconds;
+        LatencyMilliseconds = bufferMilliseconds;
 
-            // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller
-            // engine period than the configured buffer length, at the cost of higher wake-up frequency.
-            if (preferLowLatency)
+        // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller
+        // engine period than the configured buffer length, at the cost of higher wake-up frequency.
+        if (preferLowLatency)
+        {
+            var precondition = LowLatencyPreconditionReason();
+            if (precondition == null && TryInitializeLowLatency())
             {
-                var precondition = LowLatencyPreconditionReason();
-                if (precondition == null && TryInitializeLowLatency())
-                {
-                    LowLatencyActive = true;
-                }
-                else
-                {
-                    if (precondition != null)
-                        LowLatencyUnavailableReason = precondition;
-                    if (requireLowLatency)
-                        throw new InvalidOperationException(
-                            $"Low latency was required but could not be honoured: {LowLatencyUnavailableReason}. " +
-                            "Low-latency capture needs shared mode, event-driven sync, no loopback, IAudioClient3 " +
-                            "support, and a capture format matching the device mix format (omit WithFormat). " +
-                            "Request WithLowLatency() without required to fall back to standard shared mode instead.");
-                    InitializeStandard();
-                }
+                LowLatencyActive = true;
             }
             else
             {
+                if (precondition != null)
+                    LowLatencyUnavailableReason = precondition;
+                if (requireLowLatency)
+                    throw new InvalidOperationException(
+                        $"Low latency was required but could not be honoured: {LowLatencyUnavailableReason}. " +
+                        "Low-latency capture needs shared mode, event-driven sync, no loopback, IAudioClient3 " +
+                        "support, and a capture format matching the device mix format (omit WithFormat). " +
+                        "Request WithLowLatency() without required to fall back to standard shared mode instead.");
                 InitializeStandard();
             }
-
-            if (configureEchoCancellationReference)
-            {
-                // GetService for the AEC control is only valid once the stream is initialized.
-                var aecControl = Client.TryGetAcousticEchoCancellationControl();
-                if (aecControl == null)
-                {
-                    throw new NotSupportedException(
-                        "The capture endpoint does not support controlling the acoustic echo cancellation " +
-                        "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
-                        "endpoint whose AEC effect supports loopback reference control.");
-                }
-                // A null endpoint id lets Windows pick the loopback reference device itself.
-                aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
-            }
-
-            // The recorder has now been successfully initialized.
-            audioClientInitialized = true;
         }
-        catch
+        else
         {
-            // Any code thrown by the try block would surface the exception back to StartRecording, 
-            // but it left the recorder into the invalid now Starting state.
-            // The below assignment fixes that.
-            captureState = CaptureState.Stopped;
-            throw;
+            InitializeStandard();
         }
+
+        if (configureEchoCancellationReference)
+        {
+            // GetService for the AEC control is only valid once the stream is initialized.
+            var aecControl = Client.TryGetAcousticEchoCancellationControl();
+            if (aecControl == null)
+            {
+                throw new NotSupportedException(
+                    "The capture endpoint does not support controlling the acoustic echo cancellation " +
+                    "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
+                    "endpoint whose AEC effect supports loopback reference control.");
+            }
+            // A null endpoint id lets Windows pick the loopback reference device itself.
+            aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
+        }
+
+        // The recorder has now been successfully initialized.
+        audioClientInitialized = true;
     }
 
     /// <summary>

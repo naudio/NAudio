@@ -157,61 +157,50 @@ public class WasapiCapture : IWaveIn, IWaveLatency
         if (initialized)
             return;
 
-        try
+        long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
+
+        if ((ShareMode == AudioClientShareMode.Exclusive) && !Client.IsFormatSupported(ShareMode, waveFormat))
         {
-            long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
+            throw new ArgumentException("Unsupported Wave Format");
+        }
 
-            if ((ShareMode == AudioClientShareMode.Exclusive) && !Client.IsFormatSupported(ShareMode, waveFormat))
+        var streamFlags = GetAudioClientStreamFlags();
+
+        // If using EventSync, setup is specific with shareMode
+        if (isUsingEventSync)
+        {
+            // Init Shared or Exclusive
+            if (ShareMode == AudioClientShareMode.Shared)
             {
-                throw new ArgumentException("Unsupported Wave Format");
-            }
-
-            var streamFlags = GetAudioClientStreamFlags();
-
-            // If using EventSync, setup is specific with shareMode
-            if (isUsingEventSync)
-            {
-                // Init Shared or Exclusive
-                if (ShareMode == AudioClientShareMode.Shared)
-                {
-                    // With EventCallBack and Shared, both latencies must be set to 0
-                    Client.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, 0,
-                        waveFormat, Guid.Empty);
-                }
-                else
-                {
-                    // With EventCallBack and Exclusive, both latencies must equals
-                    Client.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, requestedDuration,
-                                        waveFormat, Guid.Empty);
-                }
-
-                // Create the Wait Event Handle
-                frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
-                Client.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
+                // With EventCallBack and Shared, both latencies must be set to 0
+                Client.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, 0,
+                    waveFormat, Guid.Empty);
             }
             else
             {
-                // Normal setup for both sharedMode
-                Client.Initialize(ShareMode,
-                streamFlags,
-                requestedDuration,
-                0,
-                waveFormat,
-                Guid.Empty);
+                // With EventCallBack and Exclusive, both latencies must equals
+                Client.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, requestedDuration,
+                                    waveFormat, Guid.Empty);
             }
 
-            bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
-
-            initialized = true;
+            // Create the Wait Event Handle
+            frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            Client.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
         }
-        catch
+        else
         {
-            // Any code thrown by the try block would surface the exception back to StartRecording, 
-            // but it left the recorder into the invalid now Starting state.
-            // The below assignment fixes that.
-            captureState = CaptureState.Stopped;
-            throw;
+            // Normal setup for both sharedMode
+            Client.Initialize(ShareMode,
+            streamFlags,
+            requestedDuration,
+            0,
+            waveFormat,
+            Guid.Empty);
         }
+
+        bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
+
+        initialized = true;
     }
 
     /// <summary>
@@ -239,15 +228,28 @@ public class WasapiCapture : IWaveIn, IWaveLatency
         {
             throw new InvalidOperationException("Previous recording still in progress");
         }
+
         captureState = CaptureState.Starting;
-        InitializeCaptureDevice();
-        var client = Client;
-        captureThread = new Thread(() => CaptureThread(client))
+
+        try
         {
-            IsBackground = true,
-            Name = "NAudio WasapiCapture Recording",
-        };
-        captureThread.Start();
+            InitializeCaptureDevice();
+            var client = Client;
+            captureThread = new Thread(() => CaptureThread(client))
+            {
+                IsBackground = true,
+                Name = "NAudio WasapiCapture Recording",
+            };
+            captureThread.Start();
+        }
+        catch
+        {
+            // Any exception thrown by the try block would surface the exception back to StartRecording,
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>

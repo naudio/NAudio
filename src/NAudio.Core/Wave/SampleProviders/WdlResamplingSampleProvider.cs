@@ -67,6 +67,33 @@ public class WdlResamplingSampleProvider : ISampleProvider
     public WdlResamplerQuality Quality { get; }
 
     /// <summary>
+    /// What to do when the source returns fewer samples than requested. Off by default.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// When false, a short read from the source is taken as the end of the stream, which is what it
+    /// means for a well-behaved source: the remaining output is flushed with silence standing in for
+    /// the input after the end, and the provider returns its own short read followed by 0.
+    /// </para>
+    /// <para>
+    /// Set this to true for a source that returns short reads mid-stream, such as a
+    /// <see cref="BufferedWaveProvider"/> with <see cref="BufferedWaveProvider.ReadFully"/> off that is
+    /// read faster than it is filled. Flushing every short read would compute the last few output samples
+    /// of each read in the sinc modes from that silence instead of the input still to come. With this on,
+    /// the provider holds back the output that still needs input the source hasn't delivered (about half
+    /// the sinc kernel) and returns it on a later read, flushing only when the source returns 0. The cost
+    /// is that this provider is then not well-behaved itself: its short read can be followed by more
+    /// samples, so a consumer that treats a short read as the end (<see cref="MixingSampleProvider"/>
+    /// removes the input) loses the held-back tail.
+    /// </para>
+    /// <para>
+    /// Has no effect in <see cref="WdlResamplerQuality.Linear"/> mode, which never reaches past the next
+    /// input sample.
+    /// </para>
+    /// </remarks>
+    public bool HoldBackOnShortReads { get; set; }
+
+    /// <summary>
     /// Reads from this sample provider
     /// </summary>
     public int Read(Span<float> buffer)
@@ -74,15 +101,11 @@ public class WdlResamplingSampleProvider : ISampleProvider
         int framesRequested = buffer.Length / channels;
         int inNeeded = resampler.ResamplePrepare(framesRequested, outFormat.Channels, out Span<float> inBuffer);
         int inAvailable = source.Read(inBuffer[..(inNeeded * channels)]) / channels;
-        // A short read can mean the end of the stream or a source that is temporarily under-fed (a
-        // BufferedWaveProvider with ReadFully off, say). Padding it with silence is right for the first
-        // and wrong for the second, because in sinc mode the last few output samples would be computed
-        // from the padding. So only flush once the source returns nothing; until then, hold back the
-        // output that still needs input the source hasn't delivered. Linear mode reaches no further
-        // than the next input sample, so it keeps flushing on every short read as it always has.
-        bool flush = Quality == WdlResamplerQuality.Linear || inAvailable == 0;
+        // A short read from a well-behaved source is the end of the stream, so flush it. Only an
+        // under-fed source opted into with HoldBackOnShortReads waits for the source to return nothing.
+        bool flush = !HoldBackOnShortReads || Quality == WdlResamplerQuality.Linear || inAvailable == 0;
         int outAvailable = resampler.ResampleOut(buffer, inAvailable, framesRequested, channels, flush);
-        if (outAvailable == 0 && inAvailable > 0)
+        if (!flush && outAvailable == 0 && inAvailable > 0)
         {
             // Too little real input to complete a single output sample. Returning 0 would tell the
             // caller the stream had ended, so flush what is buffered instead.

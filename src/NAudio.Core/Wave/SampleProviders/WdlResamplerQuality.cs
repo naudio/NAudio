@@ -1,15 +1,13 @@
-namespace NAudio.Wave.SampleProviders;
+﻿namespace NAudio.Wave.SampleProviders;
 
 /// <summary>
 /// Resampling algorithm used by <see cref="WdlResamplingSampleProvider"/>
 /// </summary>
 /// <remarks>
-/// The sinc modes need input from slightly ahead of each output sample (half the kernel). When a source
-/// returns fewer samples than requested, <see cref="WdlResamplingSampleProvider"/> holds back the output
-/// that still needs input the source hasn't delivered and returns it on a later read. Only when the
-/// source returns nothing is the remaining output flushed, with silence standing in for the missing
-/// input. So a source that ends the stream with a short read and then returns 0 (a file reader, for
-/// example) gets its full tail, while an under-fed real-time source is not distorted by the padding.
+/// The sinc modes need input from slightly ahead of each output sample (half the kernel). A short read
+/// from the source is treated as the end of the stream and flushed with silence, which is right for a
+/// well-behaved source. For a source that returns short reads mid-stream, see
+/// <see cref="WdlResamplingSampleProvider.HoldBackOnShortReads"/>.
 /// </remarks>
 public enum WdlResamplerQuality
 {

@@ -102,7 +102,16 @@ Measured on a 0.5 amplitude sine, read in 64-frame blocks:
 
 `Sinc64` costs a little more CPU (about 0.7% of one core for 44.1k→48k mono, against 0.5% for `Linear`) and adds about 0.8 ms of latency. Neither mode allocates per `Read`. `WdlResamplerQuality.Sinc16` is a cheaper middle ground: clean up to around 10 kHz (81 dB signal-to-error) but about -0.8 dB at 18 kHz. `Linear` is the cheapest and adds no latency, but it audibly dulls the top end.
 
-The sinc modes need a little input from ahead of each output sample. If the source returns fewer samples than requested, as a `BufferedWaveProvider` with `ReadFully = false` does when the capture side hasn't caught up, the resampler holds back the last few output samples and returns them on a later read, once the input they need has arrived. Only when the source returns nothing is the remainder flushed out. A file reader, which ends with a short read and then returns 0, therefore gets its full tail. The exception is `MixingSampleProvider`, which removes an input as soon as it returns a short read, so a resampled input in a mixer loses about the last 0.8 ms of its stream.
+The sinc modes need a little input from ahead of each output sample. Like other NAudio providers, `WdlResamplingSampleProvider` expects its source to be well-behaved: it fills every read until the end of the stream, returns at most one short read, and then returns 0. That short read is treated as the end, so the resampler flushes its tail on it and is well-behaved itself. A source that returns short reads mid-stream, such as a `BufferedWaveProvider` with `ReadFully = false` that is read faster than it is filled, makes the last few output samples of each read come out slightly wrong in the sinc modes, because silence stands in for input that hasn't arrived yet. Leave `ReadFully` on for real-time use, or, for a consumer that polls for whatever is available, set `HoldBackOnShortReads = true`:
+
+```c#
+var resampler = new WdlResamplingSampleProvider(buffered.ToSampleProvider(), 16000)
+{
+    HoldBackOnShortReads = true
+};
+```
+
+The resampler then holds back the output that still needs input the source hasn't delivered and returns it on a later read, flushing only when the source returns 0. Its own short reads can then be followed by more samples, so don't use this setting for an input to a `MixingSampleProvider`, which removes an input on its first short read.
 
 The big advantage that the WDL resampler brings to the table is that it is fully managed code. This means it can be used in cross-platform scenarios where Windows Media Foundation is not available.
 

@@ -375,18 +375,19 @@ public class WdlResamplingSampleProviderTests
     // callback, say) routinely has less than that. ResampleOut then pads with zeros, produces the
     // output it can, and trims the padding-derived samples off the count. These tests pin that the
     // padding is not also charged against the caller's next read.
-    // In the sinc modes the provider does not pad a short read at all: it holds back the output whose
-    // kernel still reaches past the delivered input (about half the kernel) and returns it once that
-    // input arrives, flushing only when the source returns nothing.
+    // With HoldBackOnShortReads, the sinc modes do not pad a short read at all: the provider holds back
+    // the output whose kernel still reaches past the delivered input (about half the kernel) and returns
+    // it once that input arrives, flushing only when the source returns nothing.
 
     [Test]
     public void OverRequestingFromAnUnderfedSourceStillReturnsAllAvailableOutput(
-        [Values(160, 161, 192, 320, 2048)] int framesRequested, [Values] WdlResamplerQuality quality)
+        [Values(160, 161, 192, 320, 2048)] int framesRequested, [Values] WdlResamplerQuality quality,
+        [Values] bool holdBack)
     {
         // Reported repro: 48 kHz mono float in, 16 kHz out, 480 input frames (10 ms) handed over
         // per round, which is exactly 160 output frames. Every request size must keep yielding 160
         // -- before the fix, anything above 160 decayed and >= ~2x collapsed to 0 permanently.
-        // Sinc modes hold back a fixed few frames on the first round and then keep pace exactly.
+        // Holding back, sinc modes lag a fixed few frames on the first round and then keep pace exactly.
         const int from = 48000;
         const int to = 16000;
         const int inputFramesPerRound = 480;
@@ -394,9 +395,9 @@ public class WdlResamplingSampleProviderTests
         const int rounds = 6;
 
         var source = new ChunkedSampleProvider(GenerateSine(from, 1, 1, 1000, 0.5), from, 1, inputFramesPerRound);
-        var resampler = new WdlResamplingSampleProvider(source, to, quality);
+        var resampler = new WdlResamplingSampleProvider(source, to, quality) { HoldBackOnShortReads = holdBack };
         var buffer = new float[framesRequested];
-        int maxHeldBack = MaxHeldBackFrames(quality, from, to);
+        int maxHeldBack = holdBack ? MaxHeldBackFrames(quality, from, to) : 0;
 
         for (int round = 0; round < rounds; round++)
         {
@@ -404,10 +405,10 @@ public class WdlResamplingSampleProviderTests
             int read = resampler.Read(buffer);
             if (round == 0)
                 Assert.That(read, Is.InRange(expectedPerRound - maxHeldBack, expectedPerRound),
-                    $"{quality} first round: asked for {framesRequested} frames with {expectedPerRound} available");
+                    $"{quality} holdBack={holdBack} first round: asked for {framesRequested} frames with {expectedPerRound} available");
             else
                 Assert.That(read, Is.EqualTo(expectedPerRound),
-                    $"{quality} round {round}: asked for {framesRequested} frames with {expectedPerRound} available");
+                    $"{quality} holdBack={holdBack} round {round}: asked for {framesRequested} frames with {expectedPerRound} available");
         }
     }
 
@@ -423,15 +424,15 @@ public class WdlResamplingSampleProviderTests
     {
         // Same shape as above but generalised: 10 ms of input released per round while the caller
         // always asks for far more than that. Total output must track total input by the rate
-        // ratio; any per-call leakage compounds and shows up here. Sinc modes may lag by the fixed
-        // held-back amount but must not drift, and must hand it all over once the source ends.
+        // ratio; any per-call leakage compounds and shows up here. Holding back, sinc modes may lag by
+        // the fixed held-back amount but must not drift, and must hand it all over once the source ends.
         const int rounds = 200;
         int chunkFrames = from / 100;
         var input = GenerateSine(from, channels, 3, 1000, 0.5);
-        foreach (var quality in Enum.GetValues<WdlResamplerQuality>())
+        foreach (var (quality, holdBack) in QualityAndHoldBackCombinations())
         {
             var source = new ChunkedSampleProvider(input, from, channels, chunkFrames);
-            var resampler = new WdlResamplingSampleProvider(source, to, quality);
+            var resampler = new WdlResamplingSampleProvider(source, to, quality) { HoldBackOnShortReads = holdBack };
             var buffer = new float[8192 * channels];
 
             int totalSamples = 0;
@@ -443,9 +444,9 @@ public class WdlResamplingSampleProviderTests
 
             int inFrames = Math.Min(rounds * chunkFrames, input.Length / channels);
             int expected = (int)((long)inFrames * to / from);
-            int maxHeldBack = MaxHeldBackFrames(quality, from, to);
+            int maxHeldBack = holdBack ? MaxHeldBackFrames(quality, from, to) : 0;
             Assert.That(totalSamples / channels, Is.InRange(expected - maxHeldBack - 2, expected + 2),
-                $"{quality} {from} -> {to} ({channels}ch): expected ~{expected} output frames, got {totalSamples / channels}");
+                $"{quality} holdBack={holdBack} {from} -> {to} ({channels}ch): expected ~{expected} output frames, got {totalSamples / channels}");
 
             // End of stream: release the rest and drain until the resampler reports the end.
             while (source.ReleasedAll == false) source.ReleaseChunk();
@@ -453,7 +454,7 @@ public class WdlResamplingSampleProviderTests
             while ((read = resampler.Read(buffer)) > 0) totalSamples += read;
             int expectedAll = (int)((long)(input.Length / channels) * to / from);
             Assert.That(totalSamples / channels, Is.EqualTo(expectedAll).Within(2),
-                $"{quality} {from} -> {to} ({channels}ch): after draining expected ~{expectedAll} output frames, got {totalSamples / channels}");
+                $"{quality} holdBack={holdBack} {from} -> {to} ({channels}ch): after draining expected ~{expectedAll} output frames, got {totalSamples / channels}");
         }
     }
 
@@ -465,14 +466,17 @@ public class WdlResamplingSampleProviderTests
         // Restoring the sample count is not enough on its own: the fractional source position has
         // to stay aligned too, or the output drifts in phase at every short read. At integer rate
         // ratios a starved chunked read should be sample-for-sample identical to reading the same
-        // signal from a source that can always fill the request.
+        // signal from a source that can always fill the request. Linear only: by default the sinc modes
+        // flush every short read, so their last samples per read differ by design (see
+        // SincModeStarvedReadsMatchAWellFedRead for HoldBackOnShortReads).
         var input = GenerateSine(from, channels, 1, 1000, 0.5);
 
-        var wellFed = ReadAll(new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, channels), to), 4096 * channels);
+        var wellFed = ReadAll(new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, channels), to,
+            WdlResamplerQuality.Linear), 4096 * channels);
 
         int chunkFrames = from / 100;
         var source = new ChunkedSampleProvider(input, from, channels, chunkFrames);
-        var starved = new WdlResamplingSampleProvider(source, to);
+        var starved = new WdlResamplingSampleProvider(source, to, WdlResamplerQuality.Linear);
         var accumulated = new System.Collections.Generic.List<float>();
         var buffer = new float[8192 * channels];
         for (int round = 0; round < 120; round++)
@@ -489,6 +493,37 @@ public class WdlResamplingSampleProviderTests
                 $"{from} -> {to}: sample {i} differs between starved and well-fed reads");
     }
 
+    [Test]
+    public void WellBehavedSourceGivesOneShortReadThenZero(
+        [Values] WdlResamplerQuality quality, [Values(64, 1000, 4096)] int readFrames)
+    {
+        // A well-behaved provider fills every read until the end, returns at most one short read, and
+        // then 0. By default the resampler has to stay well-behaved when its source is: it flushes its
+        // tail on the source's short read rather than returning more samples after a short read.
+        var input = GenerateSine(44100, channels: 1, seconds: 1, frequency: 1000, gain: 0.5);
+        var resampler = new WdlResamplingSampleProvider(new ArraySampleProvider(input, 44100, 1), 48000, quality);
+        var buffer = new float[readFrames];
+        int total = 0;
+        int read;
+        while ((read = resampler.Read(buffer)) == buffer.Length) total += read;
+        total += read;
+        Assert.That(resampler.Read(buffer), Is.EqualTo(0), $"{quality}: a short read of {read} was followed by more samples");
+        Assert.That(total, Is.EqualTo(48000).Within(2), $"{quality}: total output");
+    }
+
+    [Test]
+    public void ResampledMixerInputKeepsItsTail([Values] WdlResamplerQuality quality)
+    {
+        // MixingSampleProvider removes an input on its first short read, so anything returned after
+        // that read is lost. With a well-behaved source the default behaviour must deliver it all first.
+        var input = new float[44100];
+        Array.Fill(input, 0.5f);
+        var resampler = new WdlResamplingSampleProvider(new ArraySampleProvider(input, 44100, 1), 48000, quality);
+        var mixer = new MixingSampleProvider(new ISampleProvider[] { resampler });
+        var output = ReadAll(mixer, 1024);
+        Assert.That(output.Length, Is.EqualTo(48000).Within(2), $"{quality}: mixer output length");
+    }
+
     [TestCase(WdlResamplerQuality.Sinc64, 48000, 44100, 1)]
     [TestCase(WdlResamplerQuality.Sinc64, 44100, 48000, 2)]
     [TestCase(WdlResamplerQuality.Sinc64, 48000, 16000, 1)]
@@ -496,17 +531,17 @@ public class WdlResamplingSampleProviderTests
     [TestCase(WdlResamplerQuality.Sinc16, 44100, 48000, 3)]
     public void SincModeStarvedReadsMatchAWellFedRead(WdlResamplerQuality quality, int from, int to, int channels)
     {
-        // Short reads must not leak the zero padding into the output: an under-fed sinc resampler has
-        // to produce the same samples as one whose source always fills the request. Padding short
-        // reads, as upstream WDL does, puts errors of up to ~3e-3 into the last few samples of every
-        // read here. Non-integer ratios included, unlike the test above.
+        // With HoldBackOnShortReads, short reads must not leak the zero padding into the output: an
+        // under-fed sinc resampler has to produce the same samples as one whose source always fills
+        // the request. Flushing every short read (the default) puts errors of up to ~3e-3 into the last
+        // few samples of every read here. Non-integer ratios included, unlike the test above.
         var input = GenerateSine(from, channels, 1, 1000, 0.5);
         var wellFed = ReadAll(new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, channels), to, quality),
             4096 * channels);
 
         int chunkFrames = from / 100;
         var source = new ChunkedSampleProvider(input, from, channels, chunkFrames);
-        var starved = new WdlResamplingSampleProvider(source, to, quality);
+        var starved = new WdlResamplingSampleProvider(source, to, quality) { HoldBackOnShortReads = true };
         var accumulated = new System.Collections.Generic.List<float>();
         var buffer = new float[8192 * channels];
         for (int round = 0; round < 120; round++)
@@ -525,30 +560,33 @@ public class WdlResamplingSampleProviderTests
 
     [Test]
     public void EndOfStreamDeliversTheFullOutput(
-        [Values] WdlResamplerQuality quality, [Values(64, 1000, 4096)] int readFrames)
+        [Values] WdlResamplerQuality quality, [Values(64, 1000, 4096)] int readFrames, [Values] bool holdBack)
     {
-        // A file-like source ends with a short read and then returns 0. Sinc modes hold back the tail
-        // on the short read, so it has to come out on the zero read: total output must match the
-        // input length by the rate ratio, not fall short by the held-back half kernel.
+        // A file-like source ends with a short read and then returns 0. Total output must match the
+        // input length by the rate ratio whether the tail is flushed on the short read (the default) or
+        // held back to the zero read.
         const int from = 44100;
         const int to = 48000;
         var input = GenerateSine(from, channels: 2, seconds: 1, frequency: 1000, gain: 0.5);
-        var output = ReadAll(new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, 2), to, quality),
-            readFrames * 2);
-        Assert.That(output.Length / 2, Is.EqualTo(to).Within(2), $"{quality}, {readFrames}-frame reads");
+        var resampler = new WdlResamplingSampleProvider(new ArraySampleProvider(input, from, 2), to, quality)
+        {
+            HoldBackOnShortReads = holdBack
+        };
+        var output = ReadAll(resampler, readFrames * 2);
+        Assert.That(output.Length / 2, Is.EqualTo(to).Within(2), $"{quality}, {readFrames}-frame reads, holdBack={holdBack}");
     }
 
     [TestCase(WdlResamplerQuality.Sinc64)]
     [TestCase(WdlResamplerQuality.Sinc16)]
     public void TinyUnderfedReadsNeverReportEndOfStream(WdlResamplerQuality quality)
     {
-        // With a few input frames per read, too few to complete an output sample past the held-back
+        // Holding back, with a few input frames per read, too few to complete an output sample past the held-back
         // look-ahead, the provider must still return something: 0 means end of stream to its callers
         // (WaveOut stops, MixingSampleProvider removes the input).
         const int from = 48000;
         const int to = 44100;
         var source = new ChunkedSampleProvider(GenerateSine(from, 1, 1, 1000, 0.5), from, 1, chunkFrames: 4);
-        var resampler = new WdlResamplingSampleProvider(source, to, quality);
+        var resampler = new WdlResamplingSampleProvider(source, to, quality) { HoldBackOnShortReads = true };
         var buffer = new float[1024];
         for (int round = 0; round < 50; round++)
         {
@@ -802,6 +840,15 @@ public class WdlResamplingSampleProviderTests
     }
 
     // ---- helpers ----
+
+    private static System.Collections.Generic.IEnumerable<(WdlResamplerQuality, bool)> QualityAndHoldBackCombinations()
+    {
+        foreach (var quality in Enum.GetValues<WdlResamplerQuality>())
+        {
+            yield return (quality, false);
+            yield return (quality, true);
+        }
+    }
 
     // Upper bound on the output frames a sinc mode holds back on a short read: the half kernel of
     // look-ahead plus a few frames of slack in ResampleOut's end-of-input test, at the output rate.

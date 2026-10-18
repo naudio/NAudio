@@ -125,4 +125,84 @@ public class WasapiRecorderTests
 
         Assert.DoesNotThrow(recorder.Dispose);
     }
+
+    // A format no endpoint supports in exclusive mode, so starting always fails.
+    private static WaveFormat UnsupportedExclusiveFormat => new(12345, 8, 7);
+
+    /**
+     * A failed start must leave the recorder Stopped (#1490), and a retry must fail with the
+     * same error again rather than "Already recording".
+     */
+    [Test]
+    public void FailedStartLeavesRecorderStopped_WasapiRecorder()
+    {
+        using var recorder = new WasapiRecorderBuilder()
+            .WithExclusiveMode()
+            .WithFormat(UnsupportedExclusiveFormat)
+            .Build();
+
+        var first = Assert.Catch(recorder.StartRecording);
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+
+        var second = Assert.Catch(recorder.StartRecording);
+        Assert.That(second.GetType(), Is.EqualTo(first.GetType()));
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+    }
+
+    // Same as above, but through CaptureAsync.
+    [Test]
+    public void FailedCaptureAsyncLeavesRecorderStopped_WasapiRecorder()
+    {
+        using var recorder = new WasapiRecorderBuilder()
+            .WithExclusiveMode()
+            .WithFormat(UnsupportedExclusiveFormat)
+            .Build();
+
+        Assert.CatchAsync(async () => { await foreach (var _ in recorder.CaptureAsync()) { } });
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+    }
+
+    // Same as above, but verifies the WasapiCapture class instead.
+    [Test]
+    public void FailedStartLeavesRecorderStopped_WasapiCapture()
+    {
+#pragma warning disable CS0618 // Type or member is obsolete
+        using var capture = new WasapiCapture();
+#pragma warning restore CS0618 // Type or member is obsolete
+        capture.ShareMode = AudioClientShareMode.Exclusive;
+        capture.WaveFormat = UnsupportedExclusiveFormat;
+
+        var first = Assert.Catch(capture.StartRecording);
+        Assert.That(capture.CaptureState, Is.EqualTo(CaptureState.Stopped));
+
+        var second = Assert.Catch(capture.StartRecording);
+        Assert.That(second.GetType(), Is.EqualTo(first.GetType()));
+        Assert.That(capture.CaptureState, Is.EqualTo(CaptureState.Stopped));
+    }
+
+    /**
+     * When initialization fails after IAudioClient::Initialize has already succeeded (here: the
+     * endpoint has no AEC reference control), a retry must report the same NotSupportedException,
+     * not AUDCLNT_E_ALREADY_INITIALIZED from initializing the same audio client twice.
+     */
+    [Test]
+    public void RetryAfterFailureLateInInitialization_WasapiRecorder()
+    {
+        using var recorder = new WasapiRecorderBuilder()
+            .WithEchoCancellationReferenceEndpoint()
+            .Build();
+
+        try
+        {
+            recorder.StartRecording();
+        }
+        catch (NotSupportedException)
+        {
+            Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+            Assert.Throws<NotSupportedException>(recorder.StartRecording);
+            return;
+        }
+
+        Assert.Ignore("The default capture endpoint supports the AEC reference control, so initialization cannot be made to fail late.");
+    }
 }

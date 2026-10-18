@@ -32,5 +32,30 @@ public interface IWaveProvider
     /// </summary>
     /// <param name="buffer">The buffer to fill with audio data.</param>
     /// <returns>The number of bytes written. Return 0 to signal end of stream.</returns>
+    /// <remarks>
+    /// <para>
+    /// A well-behaved provider fills the whole buffer on every call until the end of the stream.
+    /// It then returns at most one short read (fewer bytes than <c>buffer.Length</c>), and 0 on every
+    /// call after that. The count returned is always a whole number of sample frames, that is a
+    /// multiple of <see cref="WaveFormat.BlockAlign"/> bytes.
+    /// </para>
+    /// <para>
+    /// A provider that wraps another one, such as an effect or a resampler, may return more on that last
+    /// read than it received from its source, in order to flush a tail (for example a reverb decay or
+    /// samples held in a filter). Once it has done so, it must return 0.
+    /// </para>
+    /// <para>
+    /// Playback devices stop when <see cref="Read"/> returns 0. Consumers that keep reading after a
+    /// short read until they get 0 are being defensive against badly behaved sources; that is best
+    /// effort, not something a provider should rely on.
+    /// </para>
+    /// <para>
+    /// A real-time source that cannot always keep up should be put behind a
+    /// <see cref="BufferedWaveProvider"/> with <see cref="BufferedWaveProvider.ReadFully"/> set to
+    /// <see langword="true"/>, which pads with silence rather than returning a short read. A source that
+    /// can block, such as a network stream, belongs behind a <see cref="BufferedWaveProvider"/> that is
+    /// filled from another thread, not on the audio thread.
+    /// </para>
+    /// </remarks>
     int Read(Span<byte> buffer);
 }

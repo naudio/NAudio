@@ -70,11 +70,29 @@ public class RawSourceWaveStream : WaveStream
     /// <summary>
     /// Reads data from the stream
     /// </summary>
+    /// <remarks>
+    /// The buffer is filled completely until the source stream ends, which gives one short read and
+    /// then 0. When the buffer length is a whole number of sample frames (a multiple of
+    /// <see cref="WaveFormat.BlockAlign"/>), so is the count returned: a partial frame at the very end
+    /// of the source is dropped. A single <see cref="Stream.Read(Span{byte})"/> on the source may
+    /// return fewer bytes than requested (network, deflate, crypto and pipe streams all do this), so
+    /// this method keeps reading until the buffer is full or the source ends, and on such a stream a
+    /// call can wait for the rest of the requested data. For real-time playback from a source that may
+    /// stall, fill a <see cref="BufferedWaveProvider"/> from another thread and play from that instead.
+    /// </remarks>
     public override int Read(Span<byte> buffer)
     {
         try
         {
-            return sourceStream.Read(buffer);
+            // A single Read on the source may legitimately return fewer bytes than asked for,
+            // which would look like the end of the stream to a consumer, so keep asking until
+            // the buffer is full or the source runs out.
+            int read = sourceStream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false);
+            if (waveFormat.BlockAlign > 0 && buffer.Length % waveFormat.BlockAlign == 0)
+            {
+                read -= read % waveFormat.BlockAlign;
+            }
+            return read;
         }
         catch (EndOfStreamException)
         {

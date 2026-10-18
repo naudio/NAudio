@@ -29,7 +29,8 @@ public class WaveFileWriterTests
         Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "File Length");
         var buffer = new byte[600]; // 24 bit audio, block align is 3
         int read = reader.Read(buffer, 0, buffer.Length);
-        Assert.That(read, Is.EqualTo(testSequence.Length), "Data Length");
+        // 4 bytes is one whole 3-byte frame plus a partial one; Read only returns whole frames
+        Assert.That(read, Is.EqualTo(3), "Data Length");
         for (int n = 0; n < read; n++)
         {
             Assert.That(buffer[n], Is.EqualTo(testSequence[n]), $"Byte {n}");
@@ -60,7 +61,8 @@ public class WaveFileWriterTests
             Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "File Length");
             var buffer = new byte[600]; // 24 bit audio, block align is 3
             int read = reader.Read(buffer, 0, buffer.Length);
-            Assert.That(read, Is.EqualTo(testSequence.Length), "Data Length");
+            // 4 bytes is one whole 3-byte frame plus a partial one; Read only returns whole frames
+            Assert.That(read, Is.EqualTo(3), "Data Length");
 
             for (int n = 0; n < read; n++)
             {

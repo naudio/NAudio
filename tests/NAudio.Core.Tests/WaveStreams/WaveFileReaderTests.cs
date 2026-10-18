@@ -482,4 +482,64 @@ public class WaveFileReaderTests
         using var reader = new WaveFileReader(new MemoryStream(bytes));
         Assert.Throws<InvalidDataException>(() => reader.ReadNextSampleFrame());
     }
+
+    // A single Stream.Read may return fewer bytes than asked for mid-stream (network, deflate,
+    // crypto, pipe streams). WaveFileReader must still fill each buffer, so a consumer only sees
+    // full, whole-frame reads until the end of the data, then one short read, then 0.
+    [TestCase(3, 16, 2)]
+    [TestCase(7, 16, 2)]
+    [TestCase(7, 24, 2)]
+    [TestCase(3, 24, 1)]
+    [Category("UnitTest")]
+    public void ReadFillsBufferFromStreamThatReturnsShortReads(int maxBytesPerRead, int bitsPerSample, int channels)
+    {
+        var format = new WaveFormat(8000, bitsPerSample, channels);
+        int blockAlign = format.BlockAlign;
+        int bufferBytes = blockAlign * 50;
+        // 3.5 buffers' worth, so the last read is short
+        var audio = new byte[bufferBytes * 3 + blockAlign * 25];
+        new Random(1234).NextBytes(audio);
+        var wav = WaveFileBuilder.Build(format, audio);
+
+        using var reader = new WaveFileReader(new ShortReadStream(wav, maxBytesPerRead));
+        var reads = new System.Collections.Generic.List<int>();
+        var actual = new MemoryStream();
+        var buffer = new byte[bufferBytes];
+        int read;
+        while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            reads.Add(read);
+            actual.Write(buffer, 0, read);
+        }
+
+        Assert.That(reads, Is.EqualTo(new[] { bufferBytes, bufferBytes, bufferBytes, blockAlign * 25 }));
+        Assert.That(reader.Read(buffer, 0, buffer.Length), Is.Zero, "should keep returning 0 after the end");
+
+        using var direct = new WaveFileReader(new MemoryStream(wav));
+        var expected = new byte[direct.Length];
+        Assert.That(direct.Read(expected, 0, expected.Length), Is.EqualTo(audio.Length));
+        Assert.That(actual.ToArray(), Is.EqualTo(expected));
+        Assert.That(actual.ToArray(), Is.EqualTo(audio));
+    }
+
+    // A malformed data chunk whose length isn't a whole number of blocks must not produce a
+    // read that ends mid-frame; the trailing partial frame is dropped.
+    [TestCase(1)]
+    [TestCase(3)]
+    [Category("UnitTest")]
+    public void ReadRoundsDownToWholeBlocksWhenDataChunkLengthIsNotBlockAligned(int extraBytes)
+    {
+        var format = new WaveFormat(8000, 16, 2);
+        var audio = new byte[format.BlockAlign * 10 + extraBytes];
+        new Random(42).NextBytes(audio);
+        var wav = WaveFileBuilder.Build(format, audio);
+
+        using var reader = new WaveFileReader(new ShortReadStream(wav, 3));
+        var buffer = new byte[format.BlockAlign * 16];
+        int read = reader.Read(buffer, 0, buffer.Length);
+
+        Assert.That(read, Is.EqualTo(format.BlockAlign * 10));
+        Assert.That(buffer.AsSpan(0, read).ToArray(), Is.EqualTo(audio.AsSpan(0, read).ToArray()));
+        Assert.That(reader.Read(buffer, 0, buffer.Length), Is.Zero);
+    }
 }

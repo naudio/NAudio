@@ -161,6 +161,22 @@ public class WaveFileReader : WaveStream
     /// Reads bytes from the Wave File into the provided span.
     /// <see cref="Stream.Read(Span{byte})"/>
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The buffer length must be a whole number of sample frames (a multiple of
+    /// <see cref="WaveFormat.BlockAlign"/>). The buffer is filled completely until the end of the
+    /// data chunk, which gives one short read and then 0, and the count returned is always a whole
+    /// number of sample frames.
+    /// </para>
+    /// <para>
+    /// A single <see cref="Stream.Read(Span{byte})"/> on the underlying stream may return fewer bytes
+    /// than requested (network, deflate, crypto and pipe streams all do this), so this method keeps
+    /// reading from it until the buffer is full or the stream ends. On such a stream a call can
+    /// therefore wait for the rest of the requested data rather than returning early. For real-time
+    /// playback from a source that may stall, fill a <see cref="BufferedWaveProvider"/> from another
+    /// thread and play from that instead.
+    /// </para>
+    /// </remarks>
     public override int Read(Span<byte> buffer)
     {
         if (buffer.Length % waveFormat.BlockAlign != 0)
@@ -175,8 +191,16 @@ public class WaveFileReader : WaveStream
             if (Position + count > dataChunkLength)
             {
                 count = (int)(dataChunkLength - Position);
+                // dataChunkLength itself may not be a whole number of blocks
+                // (truncated/malformed data chunk), so round down to the nearest block.
+                count -= count % waveFormat.BlockAlign;
             }
-            return waveStream.Read(buffer.Slice(0, count));
+            // A single Read on the source may legitimately return fewer bytes than asked for
+            // (network, deflate and crypto streams all do this), which would look like the end
+            // of the stream to a consumer and could split a sample frame, so keep asking until
+            // the buffer is full or the source runs out.
+            int read = waveStream.ReadAtLeast(buffer.Slice(0, count), count, throwOnEndOfStream: false);
+            return read - read % waveFormat.BlockAlign;
         }
     }
 

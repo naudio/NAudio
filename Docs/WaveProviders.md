@@ -28,6 +28,7 @@ Its `Length` property denotes how many bytes are expected to be written to it.
 The return value of the `Read` method must provide the number of bytes that were read. 
 This should never be more than `buffer.Length` bytes and can only be less if the end of the audio stream is reached. 
 By convention, NAudio playback devices will stop playing when `Read` returns 0.
+See [the read contract](#the-read-contract) below for the full rules.
 
 `WaveStream` is the base class for NAudio file reader classes such as `WaveFileReader`, `Mp3FileReader`, `AiffFileReader` and `MediaFoundationReader`.
 It is a good choice of base class because these inherently support repositioning. 
@@ -91,6 +92,7 @@ The buffer's `Length` property denotes how many samples are expected to be writt
 
 Finally, the return value indicates how many samples were written to the buffer.
 You should return 0 to signal that you do not have any other data to provide.
+The same [read contract](#the-read-contract) applies as for `IWaveProvider`, counted in samples rather than bytes.
 
 To summarize, the `ISampleProvider` is a great base interface to use when you
 are implementing any kind of an audio effect.
@@ -121,3 +123,21 @@ There is the `ToWaveProvider16` extension method too if you want specifically to
 
 You can also use `AudioFileReader` which reads a wide variety of file types and implements `ISampleProvider`.
 
+## The read contract
+
+The `Read` methods on `IWaveProvider` (and so `WaveStream`) and `ISampleProvider` all follow the same rules,
+which the rest of NAudio is built around:
+
+- **Fill the buffer.** A well-behaved provider fills the whole buffer on every call until the end of the stream.
+- **One short read, then 0.** At the end of the stream it returns at most one short read (less than `buffer.Length`), and 0 on every call after that. Returning 0 is what tells a playback device to stop.
+- **Whole sample frames.** The count returned is always a whole number of sample frames: a multiple of `WaveFormat.BlockAlign` bytes for `IWaveProvider`, or of `WaveFormat.Channels` samples for `ISampleProvider`.
+- **Decorators may add a tail.** A provider that wraps another, such as an effect or a resampler, may return more on that last read than it got from its source, to flush a tail (a reverb decay, or samples held in a filter). After that it must return 0.
+
+Some consumers (for example `ConcatenatingSampleProvider` and `WaveFileWriter.CreateWaveFile`) keep reading after a short read until they get 0.
+That is just being defensive against badly behaved sources, and is best effort: don't rely on it.
+Others take a short read at face value; `MixingSampleProvider`, for instance, removes an input as soon as it returns a short read.
+
+If your source is real-time and can't always keep up (for example, audio arriving from the network or a capture device),
+don't return short reads from it. Put it behind a `BufferedWaveProvider` with `ReadFully = true` (the default),
+which pads with silence instead. Likewise a source that can block, such as a network stream, belongs behind a
+`BufferedWaveProvider` that is filled from another thread, rather than being read directly on the audio thread.

@@ -8,16 +8,22 @@ dotnet add package NAudio.Nam
 
 ## What it supports
 
-This version runs NAM's **Architecture 2 (A2)** models, the current standard since June 2026. An A2 file holds two versions of the same capture:
+`NamModel` loads the WaveNet and LSTM models that NAM's trainer produces:
 
-| Network | Channels | Weights | CPU at 48 kHz* |
-| --- | --- | --- | --- |
-| A2-Lite | 3 | 1,871 | ~1.5% of one core |
-| A2-Full | 8 | 12,146 | ~4% of one core |
+| Model | Typical size | CPU at 48 kHz* |
+| --- | --- | --- |
+| **A2-Lite** (Architecture 2, the current standard since June 2026) | 3 channels, 1,871 weights | ~1.5% of one core |
+| **A2-Full** | 8 channels, 12,146 weights | ~4% of one core |
+| **A1 WaveNet**: standard, lite, feather, nano | up to 16 channels, ~13,800 weights (standard) | ~5% (standard) |
+| **LSTM** | hidden size 12–32 | ~2–6% |
 
 \* Measured on a 2.1 GHz Xeon (AVX2). On Arm64 the library uses 128-bit NEON vectors instead.
 
-Older A1 WaveNet, LSTM and other architectures are rejected with a `NotSupportedException` that names the architecture. The output matches the official C++ implementation ([NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore)) to within about 1e-6.
+An A2 file holds A2-Lite and A2-Full versions of the same capture (see [below](#choosing-a2-lite-or-a2-full)), and A2 models run on a dedicated fast path. Other WaveNet configurations made from the same building blocks also load, including gated layers, per-layer kernel sizes, a bottleneck narrower than the channel count, and the activations NAM offers (Tanh, ReLU, LeakyReLU, Sigmoid, SiLU, Hardtanh, Hardswish, Softsign and others). A container file can mix architectures, such as an LSTM for its smallest size and WaveNets above it.
+
+Rarer features are rejected with a `NotSupportedException` that names the feature: FiLM conditioning, grouped convolutions, conditioning models (`condition_dsp`), slimmable layers, post-stack heads, "blended" gating and PReLU. So are the ConvNet and Linear architectures.
+
+The output matches the official C++ implementation ([NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore)) to within float rounding: about 1e-6 for most models, and 1e-4 at worst for A1 "standard", whose output also shifts by that order between builds of the C++ core itself.
 
 ## Run a capture on an audio file
 

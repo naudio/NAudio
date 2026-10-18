@@ -20,7 +20,7 @@ internal static class TestData
         return MemoryMarshal.Cast<byte, float>(bytes).ToArray();
     }
 
-    public static float[] Input => ReadFloats("a2_input.f32");
+    public static float[] Input => ReadFloats("input.f32");
 
     public static float[] Render(NamProcessor processor, float[] input, int blockSize)
     {

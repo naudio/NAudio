@@ -6,11 +6,11 @@ Run [Neural Amp Modeler](https://www.neuralampmodeler.com/) (NAM) captures of gu
 
 ## What's included
 
-- **`NamModel`** loads `.nam` files: NAM Architecture 2 (A2) models, as the A2-Lite/A2-Full container TONE3000 distributes or as a single A2 WaveNet. It exposes the capture's metadata (gear, loudness, input calibration).
+- **`NamModel`** loads `.nam` files: Architecture 2 (A2) models, as the A2-Lite/A2-Full container TONE3000 distributes or as a single network; A1 WaveNet models (standard, lite, feather, nano) and similar custom WaveNets; and LSTM models. It exposes the capture's metadata (gear, loudness, input calibration).
 - **`NamEffect`** is an `IAudioEffect` for `EffectChain` / `EffectSampleProvider`. It adds no latency, does not allocate while processing, and has bypass and dry/wet mix from the `AudioEffect` base.
 - **`NamProcessor`** is the mono engine underneath, for driving from your own buffers (e.g. an ASIO duplex callback).
 
-A2-Full uses about 4% of one desktop core at 48 kHz and A2-Lite about 1.5%. Output matches the official C++ implementation to within float rounding (about 1e-6). Older A1 and LSTM models are not supported yet.
+A2-Full uses about 4% of one desktop core at 48 kHz, A2-Lite about 1.5%, an A1 "standard" WaveNet about 5% and a typical LSTM 2–6%. Output matches the official C++ implementation to within float rounding.
 
 ```c#
 var model = NamModel.Load("my-amp.nam");
@@ -33,4 +33,4 @@ See the [NAudio documentation site](https://naudio.github.io/NAudio/) for tutori
 
 ## License
 
-MIT. The A2 network implementation is a port of [NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore), Copyright (c) 2023 Steven Atkinson, also MIT licensed.
+MIT. The network implementations are ports of [NeuralAmpModelerCore](https://github.com/sdatkinson/NeuralAmpModelerCore), Copyright (c) 2023 Steven Atkinson, also MIT licensed.

@@ -347,25 +347,6 @@ internal sealed class A2WaveNet<TLanes> : NamDsp where TLanes : struct, ISimdLan
         for (var i = 0; i < ring.Length; i += stride)
             source.CopyTo(ring.AsSpan(i, stride));
     }
-
-    private ref struct WeightReader(ReadOnlySpan<float> weights)
-    {
-        private readonly ReadOnlySpan<float> weights = weights;
-        private int index;
-
-        public float Next()
-        {
-            if (index >= weights.Length)
-                throw new FormatException($"The model has too few weights for its A2 configuration ({weights.Length} found).");
-            return weights[index++];
-        }
-
-        public readonly void EnsureConsumed()
-        {
-            if (index != weights.Length)
-                throw new FormatException($"The model has {weights.Length - index} more weights than its A2 configuration uses.");
-        }
-    }
 }
 
 /// <summary>Creates the A2 kernel with the widest SIMD layout the hardware runs natively.</summary>

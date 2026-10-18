@@ -24,6 +24,8 @@ public class NamModelTests
 
         var lite = model.Submodels[0];
         Assert.That(lite.IsA2Lite, Is.True);
+        Assert.That(lite.IsA2, Is.True);
+        Assert.That(lite.Architecture, Is.EqualTo("WaveNet"));
         Assert.That(lite.Channels, Is.EqualTo(3));
         Assert.That(lite.WeightCount, Is.EqualTo(1871));
         Assert.That(lite.MaxSize, Is.EqualTo(0.5));
@@ -67,28 +69,33 @@ public class NamModelTests
     [Test]
     public void RejectsOtherArchitectures()
     {
-        const string lstm = """{"version":"0.5.4","architecture":"LSTM","config":{"input_size":1,"hidden_size":3,"num_layers":1},"weights":[],"sample_rate":48000}""";
-        var ex = Assert.Throws<NotSupportedException>(() => NamModel.Parse(lstm));
-        Assert.That(ex!.Message, Does.Contain("LSTM"));
+        const string convNet = """{"version":"0.5.4","architecture":"ConvNet","config":{},"weights":[],"sample_rate":48000}""";
+        var ex = Assert.Throws<NotSupportedException>(() => NamModel.Parse(convNet));
+        Assert.That(ex!.Message, Does.Contain("ConvNet"));
     }
 
     [Test]
-    public void RejectsNonA2WaveNet()
+    public void WaveNetThatIsNotA2ShapedUsesTheGeneralEngine()
     {
         var json = FullSubmodelJson();
         json["config"]!["layers"]![0]!["dilations"]![0] = 2;
 
-        var ex = Assert.Throws<NotSupportedException>(() => NamModel.Parse(json.ToJsonString()));
-        Assert.That(ex!.Message, Does.Contain("dilations"));
+        var model = NamModel.Parse(json.ToJsonString());
+
+        Assert.That(model.Submodels[0].IsA2, Is.False);
+        Assert.That(model.Submodels[0].Architecture, Is.EqualTo("WaveNet"));
+        var output = TestData.Render(model.CreateProcessor(), TestData.Input, 64);
+        Assert.That(output, Has.All.Matches<float>(float.IsFinite));
     }
 
     [Test]
-    public void RejectsGatedWaveNet()
+    public void GatingALayerChangesTheExpectedWeightCount()
     {
+        // A gated layer has twice the convolution outputs, so the A2 weights no longer fit.
         var json = FullSubmodelJson();
         json["config"]!["layers"]![0]!["gating_mode"]![3] = "gated";
 
-        Assert.Throws<NotSupportedException>(() => NamModel.Parse(json.ToJsonString()));
+        Assert.Throws<FormatException>(() => NamModel.Parse(json.ToJsonString()));
     }
 
     [TestCase("0.4.9")]

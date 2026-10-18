@@ -13,11 +13,13 @@ namespace NAudio.Nam;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This version supports NAM's Architecture 2 (A2) models, either as a
-/// <c>SlimmableContainer</c> file holding A2-Lite and A2-Full networks (the format
-/// TONE3000 distributes) or as a single A2 WaveNet. Other architectures, such as
-/// the older A1 WaveNet and LSTM models, are rejected with
-/// <see cref="NotSupportedException"/>.
+/// Supported: NAM's Architecture 2 (A2) models, as a <c>SlimmableContainer</c> file
+/// holding A2-Lite and A2-Full networks (the format TONE3000 distributes) or as a
+/// single A2 WaveNet; A1 WaveNet models (standard, lite, feather, nano) and other
+/// WaveNet configurations built from the same features; and LSTM models. Rarer
+/// features (FiLM conditioning, grouped convolutions, conditioning models, slimmable
+/// layers, post-stack heads) and the ConvNet and Linear architectures are rejected
+/// with <see cref="NotSupportedException"/>, naming the feature.
 /// </para>
 /// <para>
 /// A loaded model is immutable and may be shared: each effect or processor created
@@ -161,12 +163,43 @@ public sealed class NamModel
     private static NamSubmodel ParseNetwork(JsonElement model, double maxSize)
     {
         var architecture = GetRequiredString(model, "architecture");
-        if (architecture != "WaveNet")
-            throw new NotSupportedException($"NAM '{architecture}' models are not supported; only A2 WaveNet models can be loaded.");
-        var reason = A2Shape.Check(GetRequired(model, "config"), out var channels);
-        if (reason != null)
-            throw new NotSupportedException($"This WaveNet model is not an A2 model ({reason}); only A2 WaveNet models are supported.");
+        var config = GetRequired(model, "config");
+        var weights = ReadWeights(model);
 
+        int? sampleRate = null;
+        if (model.TryGetProperty("sample_rate", out var sr) && sr.ValueKind == JsonValueKind.Number)
+        {
+            var rate = sr.GetDouble();
+            if (rate > 0)
+                sampleRate = (int)Math.Round(rate);
+        }
+        var metadata = NamModelMetadata.Parse(model);
+
+        switch (architecture)
+        {
+            case "WaveNet":
+                if (A2Shape.Check(config, out var a2Channels) == null)
+                {
+                    CheckWeightCount(weights, A2Shape.WeightCount(a2Channels), $"An A2 model with {a2Channels} channels");
+                    return new NamSubmodel(maxSize, architecture, isA2: true, a2Channels, sampleRate, metadata, weights,
+                        w => A2WaveNet.Create(a2Channels, w));
+                }
+                var wavenet = WaveNetSpec.Parse(config);
+                CheckWeightCount(weights, wavenet.WeightCount, "This WaveNet configuration");
+                return new NamSubmodel(maxSize, architecture, isA2: false, wavenet.LayerArrays[0].Channels, sampleRate, metadata, weights,
+                    w => new WaveNet(wavenet, w));
+            case "LSTM":
+                var lstm = LstmSpec.Parse(config);
+                CheckWeightCount(weights, lstm.WeightCount, "This LSTM configuration");
+                return new NamSubmodel(maxSize, architecture, isA2: false, lstm.HiddenSize, sampleRate, metadata, weights,
+                    w => new Lstm(lstm, w, sampleRate));
+            default:
+                throw new NotSupportedException($"NAM '{architecture}' models are not supported; WaveNet (A1 and A2) and LSTM models can be loaded.");
+        }
+    }
+
+    private static float[] ReadWeights(JsonElement model)
+    {
         var weightsElement = GetRequired(model, "weights");
         if (weightsElement.ValueKind != JsonValueKind.Array)
             throw new FormatException("weights must be an array.");
@@ -180,19 +213,13 @@ public sealed class NamModel
             // rounding to float is identical.
             weights[i++] = (float)w.GetDouble();
         }
-        var expected = A2Shape.WeightCount(channels);
+        return weights;
+    }
+
+    private static void CheckWeightCount(float[] weights, int expected, string description)
+    {
         if (weights.Length != expected)
-            throw new FormatException($"An A2 model with {channels} channels has {expected} weights, but this one has {weights.Length}.");
-
-        int? sampleRate = null;
-        if (model.TryGetProperty("sample_rate", out var sr) && sr.ValueKind == JsonValueKind.Number)
-        {
-            var rate = sr.GetDouble();
-            if (rate > 0)
-                sampleRate = (int)Math.Round(rate);
-        }
-
-        return new NamSubmodel(maxSize, channels, sampleRate, NamModelMetadata.Parse(model), weights);
+            throw new FormatException($"{description} has {expected} weights, but this model has {weights.Length}.");
     }
 
     private static string CheckVersion(JsonElement model)

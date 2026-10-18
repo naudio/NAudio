@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Fixed `WasapiRecorder` and `WasapiCapture` failing with `AUDCLNT_E_ALREADY_INITIALIZED` when restarted after a start that failed late in initialization (e.g. no AEC reference control); the original error is now reported again (#1493)
+ * Fixed `WasapiRecorder` and `WasapiCapture` being left in the `Starting` state when initialization throws, so later `StartRecording` calls failed with `"Already recording"`. (#1490)
  * Added `BufferedWaveProvider.CompleteAdding()` and `IsAddingCompleted`, so a producer can end the stream: `Read` drains the buffer, returns one unpadded short read even with `ReadFully`, then 0. Added `UnderrunSilenceBytes`, `DiscardedBytes` and `ResetCounters()` to show silence inserted on underrun and audio dropped on overflow (#1492)
  * Added `MixingSampleProvider.CompleteAdding()` and `IsAddingCompleted`, so a `ReadFully` mixer ends once its current inputs have ended; `AddMixerInput` after it throws `InvalidOperationException` (#1492)
  * Fixed `WasapiRecorder` not able to re-start after successfully stopping the recorder. (#1479)

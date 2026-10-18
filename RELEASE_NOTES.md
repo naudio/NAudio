@@ -13,7 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
- * Fixed `WasapiRecorder` and `WasapiCapture` failing with `AUDCLNT_E_ALREADY_INITIALIZED` when restarted after a start that failed late in initialization (e.g. no AEC reference control); the original error is now reported again
+ * Fixed `WasapiRecorder` and `WasapiCapture` failing with `AUDCLNT_E_ALREADY_INITIALIZED` when restarted after a start that failed late in initialization (e.g. no AEC reference control); the original error is now reported again (#1493)
  * Fixed `WasapiRecorder` and `WasapiCapture` being left in the `Starting` state when initialization throws, so later `StartRecording` calls failed with `"Already recording"`. (#1490)
  * Fixed `WasapiRecorder` not able to re-start after successfully stopping the recorder. (#1479)
  * **Nullable reference types in NAudio.Core** - `NAudio.Core` is now compiled with nullable reference types enabled, so its public API carries nullability annotations (e.g. `WaveFileReader.ReadNextSampleFrame` and `Mp3Frame.LoadFromStream` return nullable types, and `Mp3Frame.RawData` is `byte[]?` when a frame is read without its data). This is a source-level change only: there are no binary breaks, but projects with nullable enabled may see new warnings, and overrides of NAudio.Core virtual members may need matching annotations. `XingHeader.LoadXingHeader` now returns `null` for a frame read without its data instead of throwing. Thanks to @Seb-stian (#1452)

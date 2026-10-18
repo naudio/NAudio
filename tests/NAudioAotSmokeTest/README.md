@@ -1,10 +1,10 @@
 ﻿# NAudioAotSmokeTest
 
 A console smoke that validates the source-generated COM bridging in
-`NAudio.Wasapi`, and the winmm interop in `NAudio.WinMM`, survive the trim/AOT
-compiler. Built as part of the regular solution build so a regression in the
-`[GeneratedComInterface]` / `[GeneratedComClass]` analyzer story breaks CI
-immediately (`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
+`NAudio.Wasapi`, the winmm interop in `NAudio.WinMM`, and `NAudio.Nam`'s model
+inference survive the trim/AOT compiler. Built as part of the regular solution
+build so a regression in the `[GeneratedComInterface]` / `[GeneratedComClass]`
+analyzer story breaks CI immediately (`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
 
 ## What it covers
 
@@ -43,6 +43,14 @@ The program runs in several phases against the default render endpoint:
    `AcmStream` directly, reads through a `WaveFormatConversionStream` (the path
    `Mp3FileReader` and `AudioFileReader` decode through), and suggests a PCM
    format for GSM 6.10. ACM codecs are software, so none of it needs a device.
+
+5. **NAudio.Nam inference.** Builds an A2-Lite WaveNet, a legacy A1-style
+   WaveNet and an LSTM in code, plus a `SlimmableContainer` holding all three,
+   and runs audio through each with `NamEffect`, checking the output is finite,
+   not silent, and repeats exactly after `Reset`. This puts the
+   `System.Text.Json` model parsing, the generic-struct SIMD kernels and the
+   `TensorPrimitives` activations through whole-program compilation. Like the
+   ACM phase it needs no audio hardware.
 
 ## How CI uses it
 

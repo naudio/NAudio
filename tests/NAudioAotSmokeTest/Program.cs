@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using System.Text;
 using System.Threading;
 using NAudio;
 using NAudio.CoreAudioApi;
@@ -69,6 +73,12 @@ using NAudio.Wave.SampleProviders;
 //     the declared fields alone, so that tail came back zeroed and every conversion failed.
 //     Mp3FileReader and AudioFileReader both decode through this path. ACM codecs are
 //     software, so unlike the WaveOut/WaveIn drives this section needs no audio hardware.
+//
+// (7) NAudio.Nam — neural amp model inference (this section). Builds an A2-Lite WaveNet,
+//     a legacy A1-style WaveNet and an LSTM in code, plus a SlimmableContainer holding all
+//     three, and runs audio through each with NamEffect. Covers the System.Text.Json model
+//     parsing, the generic-struct SIMD kernels (A2 fast path and general WaveNet) and the
+//     TensorPrimitives activations under whole-program compilation. Needs no audio hardware.
 
 // PublishAot only takes effect on `dotnet publish`; `dotnet run` executes this under the JIT,
 // where every path below passed even while it was broken under AOT — which is how issue #1425 went
@@ -471,4 +481,123 @@ Console.WriteLine(acmFailures == 0
     ? $"  ACM stream header under {runtime}: OK"
     : $"  ACM stream header under {runtime}: FAIL ({acmFailures} check(s))");
 
-return winmmFailures + acmFailures == 0 ? 0 : 1;
+Console.WriteLine();
+Console.WriteLine("=== NAudio.Nam: neural amp model inference ===\n");
+
+int namFailures = 0;
+
+void NamCheck(string what, bool condition, object? actual)
+{
+    if (!condition)
+    {
+        namFailures++;
+    }
+    Console.WriteLine($"  {(condition ? "OK  " : "FAIL")} {what} = {actual}");
+}
+
+// Deterministic small weights, so every model is stable and gives a repeatable output.
+static string NamWeights(int count, double scale = 0.2)
+{
+    var sb = new StringBuilder("[");
+    for (int i = 0; i < count; i++)
+    {
+        if (i > 0)
+        {
+            sb.Append(',');
+        }
+        sb.Append((scale * Math.Sin(i * 0.7 + 0.3)).ToString("R", CultureInfo.InvariantCulture));
+    }
+    return sb.Append(']').ToString();
+}
+
+static string NamJoin(IEnumerable<int> values) => string.Join(",", values);
+
+// A2-Lite: the fixed A2 shape at 3 channels (1,871 weights), which takes the A2 fast path.
+int[] a2Kernels = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 15, 15, 6, 6, 6, 6, 6, 6, 6];
+int[] a2Dilations = [1, 3, 7, 17, 41, 101, 239, 1, 3, 7, 17, 41, 101, 239, 1, 13, 1, 3, 7, 17, 41, 101, 239];
+string a2Activations = string.Join(",", Enumerable.Repeat("{\"type\":\"LeakyReLU\",\"negative_slope\":0.01}", 23));
+string a2Gating = string.Join(",", Enumerable.Repeat("\"none\"", 23));
+string a2Lite = """
+    {"version":"0.7.0","architecture":"WaveNet","sample_rate":48000,
+     "config":{"layers":[{"input_size":1,"condition_size":1,"channels":3,"bottleneck":3,
+       "kernel_sizes":[KERNELS],"dilations":[DILATIONS],
+       "activation":[ACTIVATIONS],"gating_mode":[GATING],
+       "layer1x1":{"active":true,"groups":1},"head1x1":{"active":false,"out_channels":1,"groups":1},
+       "head":{"out_channels":1,"kernel_size":16,"bias":true}}],
+       "head":null,"head_scale":0.02},
+     "weights":WEIGHTS}
+    """
+    .Replace("KERNELS", NamJoin(a2Kernels))
+    .Replace("DILATIONS", NamJoin(a2Dilations))
+    .Replace("ACTIVATIONS", a2Activations)
+    .Replace("GATING", a2Gating)
+    .Replace("WEIGHTS", NamWeights(1871, 0.1));
+
+// An A1-style WaveNet in the legacy config format (two layer arrays, tanh, 131 weights),
+// which takes the general WaveNet engine.
+string legacyWaveNet = """
+    {"version":"0.5.4","architecture":"WaveNet","sample_rate":48000,
+     "config":{"layers":[
+       {"input_size":1,"condition_size":1,"head_size":2,"channels":3,"kernel_size":3,"dilations":[1,2],"activation":"Tanh","gated":false,"head_bias":false},
+       {"input_size":3,"condition_size":1,"head_size":1,"channels":2,"kernel_size":3,"dilations":[8],"activation":"Tanh","gated":false,"head_bias":true}],
+       "head":null,"head_scale":0.02},
+     "weights":WEIGHTS}
+    """.Replace("WEIGHTS", NamWeights(131));
+
+// An LSTM with hidden size 4: 4*4*(1+4) weights, 16 biases, 8 initial-state values, 5 head values.
+string lstm = """
+    {"version":"0.5.4","architecture":"LSTM","sample_rate":48000,
+     "config":{"input_size":1,"hidden_size":4,"num_layers":1},
+     "weights":WEIGHTS}
+    """.Replace("WEIGHTS", NamWeights(109));
+
+string namContainer = """
+    {"version":"0.7.0","architecture":"SlimmableContainer","sample_rate":48000,
+     "config":{"submodels":[
+       {"max_value":0.33,"model":LSTM_MODEL},
+       {"max_value":0.66,"model":WAVENET_MODEL},
+       {"max_value":1.0,"model":A2_MODEL}]}}
+    """
+    .Replace("LSTM_MODEL", lstm)
+    .Replace("WAVENET_MODEL", legacyWaveNet)
+    .Replace("A2_MODEL", a2Lite);
+
+try
+{
+    var namModel = NAudio.Nam.NamModel.Parse(namContainer);
+    NamCheck("container submodels", namModel.Submodels.Count == 3, namModel.Submodels.Count);
+
+    foreach (var (size, label) in new[] { (0.0, "LSTM"), (0.5, "general WaveNet"), (1.0, "A2-Lite fast path") })
+    {
+        var effect = new NAudio.Nam.NamEffect(namModel, size);
+        effect.Configure(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
+        var buffer = new float[4800 * 2];
+        for (int n = 0; n < 4800; n++)
+        {
+            buffer[2 * n] = buffer[2 * n + 1] = (float)(0.3 * Math.Sin(2 * Math.PI * 110 * n / 48000));
+        }
+        var first = (float[])buffer.Clone();
+        effect.Process(first);
+        effect.Reset();
+        var second = (float[])buffer.Clone();
+        effect.Process(second);
+
+        bool finite = first.All(float.IsFinite);
+        bool nonSilent = first.Any(v => Math.Abs(v) > 1e-6f);
+        bool repeatable = first.AsSpan().SequenceEqual(second);
+        NamCheck($"{label}: output finite and not silent", finite && nonSilent, $"peak {first.Max(Math.Abs):F4}");
+        NamCheck($"{label}: Reset repeats the output exactly", repeatable, repeatable ? "identical" : "differs");
+    }
+}
+catch (Exception e)
+{
+    namFailures++;
+    Console.WriteLine($"  FAIL NAM inference threw {e.GetType().Name}: {e.Message}");
+}
+
+Console.WriteLine();
+Console.WriteLine(namFailures == 0
+    ? $"  NAM inference under {runtime}: OK"
+    : $"  NAM inference under {runtime}: FAIL ({namFailures} check(s))");
+
+return winmmFailures + acmFailures + namFailures == 0 ? 0 : 1;

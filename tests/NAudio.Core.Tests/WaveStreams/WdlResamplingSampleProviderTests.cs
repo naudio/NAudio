@@ -168,7 +168,7 @@ public class WdlResamplingSampleProviderTests
     [Test]
     public void LinearQualityMatchesTheOriginalAlgorithm()
     {
-        // Linear is the pre-3.3 behaviour, so it must stay sample for sample what the provider used to
+        // Linear is the pre-3.4 behaviour, so it must stay sample for sample what the provider used to
         // produce: SetMode(true, 2, false), flushing every short read, until the output runs dry.
         const int from = 44100;
         const int to = 48000;

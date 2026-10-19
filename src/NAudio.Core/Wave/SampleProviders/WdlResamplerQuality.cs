@@ -13,7 +13,7 @@ public enum WdlResamplerQuality
 {
     /// <summary>
     /// Linear interpolation followed by two cascaded IIR low-pass filters. The cheapest mode, and the
-    /// only one before NAudio 3.3, but it rolls off high frequencies (about -2 dB at 10 kHz and
+    /// only one before NAudio 3.4, but it rolls off high frequencies (about -2 dB at 10 kHz and
     /// -20 dB at 18 kHz for 44.1 kHz to 48 kHz) and lets some aliasing and imaging through.
     /// </summary>
     Linear,

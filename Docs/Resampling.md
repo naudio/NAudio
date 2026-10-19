@@ -86,7 +86,7 @@ using (var reader = new AudioFileReader(inFile))
 By default `WdlResamplingSampleProvider` uses 64-tap windowed sinc interpolation (`WdlResamplerQuality.Sinc64`), which is flat across the audio band and keeps aliasing and imaging well down. That makes it suitable for quality-sensitive work such as music, mastering, or feeding a non-linear effect like an amp model, where aliasing products would turn into audible intermodulation. You can pick a different algorithm with the `quality` constructor argument:
 
 ```c#
-// the pre-3.3 algorithm: linear interpolation plus two IIR low-pass filters
+// the pre-3.4 algorithm: linear interpolation plus two IIR low-pass filters
 var resampler = new WdlResamplingSampleProvider(reader, 48000, WdlResamplerQuality.Linear);
 ```
 

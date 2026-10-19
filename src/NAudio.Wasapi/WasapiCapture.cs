@@ -19,6 +19,7 @@ public class WasapiCapture : IWaveIn, IWaveLatency
     private volatile CaptureState captureState;
     private Thread? captureThread;
     private AudioClient? audioClient;
+    private readonly MMDevice captureDevice;
 
     private AudioClient Client => audioClient ?? throw new ObjectDisposedException(nameof(WasapiCapture));
     private int bytesPerFrame;
@@ -76,6 +77,7 @@ public class WasapiCapture : IWaveIn, IWaveLatency
     public WasapiCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength)
     {
         syncContext = SynchronizationContext.Current;
+        this.captureDevice = captureDevice;
         audioClient = captureDevice.CreateAudioClient();
         ShareMode = AudioClientShareMode.Shared;
         isUsingEventSync = useEventSync;
@@ -157,6 +159,21 @@ public class WasapiCapture : IWaveIn, IWaveLatency
         if (initialized)
             return;
 
+        try
+        {
+            InitializeCaptureDeviceCore();
+        }
+        catch
+        {
+            ResetAfterFailedInitialize();
+            throw;
+        }
+
+        initialized = true;
+    }
+
+    private void InitializeCaptureDeviceCore()
+    {
         long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
 
         if ((ShareMode == AudioClientShareMode.Exclusive) && !Client.IsFormatSupported(ShareMode, waveFormat))
@@ -199,8 +216,30 @@ public class WasapiCapture : IWaveIn, IWaveLatency
         }
 
         bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
+    }
 
-        initialized = true;
+    /// <summary>
+    /// If initialization fails after IAudioClient::Initialize has succeeded (e.g. SetEventHandle failing),
+    /// the client cannot be initialized again, so swap in a fresh one to let a later StartRecording retry.
+    /// </summary>
+    private void ResetAfterFailedInitialize()
+    {
+        frameEventWaitHandle?.Dispose();
+        frameEventWaitHandle = null;
+
+        // A disposed capture (audioClient null) stays disposed.
+        if (audioClient == null)
+            return;
+        try
+        {
+            var freshClient = captureDevice.CreateAudioClient();
+            audioClient.Dispose();
+            audioClient = freshClient;
+        }
+        catch
+        {
+            // The device may have gone away; keep the existing client so the original exception surfaces.
+        }
     }
 
     /// <summary>
@@ -228,15 +267,28 @@ public class WasapiCapture : IWaveIn, IWaveLatency
         {
             throw new InvalidOperationException("Previous recording still in progress");
         }
+
         captureState = CaptureState.Starting;
-        InitializeCaptureDevice();
-        var client = Client;
-        captureThread = new Thread(() => CaptureThread(client))
+
+        try
         {
-            IsBackground = true,
-            Name = "NAudio WasapiCapture Recording",
-        };
-        captureThread.Start();
+            InitializeCaptureDevice();
+            var client = Client;
+            captureThread = new Thread(() => CaptureThread(client))
+            {
+                IsBackground = true,
+                Name = "NAudio WasapiCapture Recording",
+            };
+            captureThread.Start();
+        }
+        catch
+        {
+            // Any exception thrown by the try block would surface the exception back to StartRecording,
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>

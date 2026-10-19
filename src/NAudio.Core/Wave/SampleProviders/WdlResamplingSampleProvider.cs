@@ -9,7 +9,7 @@ namespace NAudio.Wave.SampleProviders;
 /// <remarks>
 /// Uses 64-tap windowed sinc interpolation (<see cref="WdlResamplerQuality.Sinc64"/>) by default, which is
 /// flat across the audio band. Pass <see cref="WdlResamplerQuality.Linear"/> for the cheaper algorithm used
-/// before NAudio 3.3. See <see cref="WdlResamplerQuality"/> for the trade-offs.
+/// before NAudio 3.4. See <see cref="WdlResamplerQuality"/> for the trade-offs.
 /// </remarks>
 public class WdlResamplingSampleProvider : ISampleProvider
 {

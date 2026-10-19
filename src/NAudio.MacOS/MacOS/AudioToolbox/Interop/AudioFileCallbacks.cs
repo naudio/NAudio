@@ -12,7 +12,7 @@ internal static unsafe class AudioFileCallbacks
     {
         public const int CustomErrorConst = -84993;
 
-        private Exception exception;
+        private Exception? exception;
         public readonly Stream Stream;
 
         public CallbacksUserData(Stream stream)
@@ -21,7 +21,7 @@ internal static unsafe class AudioFileCallbacks
             exception = null;
         }
 
-        public Exception Exception => exception;
+        public Exception? Exception => exception;
 
         public void AssignException(Exception ex) => exception = ex;
     }
@@ -49,7 +49,7 @@ internal static unsafe class AudioFileCallbacks
         // and if this crashes, it would suggest to us that
         // we are doing something really wrong.
         // So, it is actually correct to terminate the process immediately.
-        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
+        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target!;
 
         /*
             Note: In these callbacks implementations, we allow the AudioFile subsystem
@@ -109,7 +109,7 @@ internal static unsafe class AudioFileCallbacks
     )
     {
         *actualCount = 0U;
-        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
+        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target!;
 
         try
         {
@@ -155,7 +155,7 @@ internal static unsafe class AudioFileCallbacks
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static long GetSizeProcImpl(IntPtr inClientData)
     {
-        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
+        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target!;
 
         try
         {
@@ -171,7 +171,7 @@ internal static unsafe class AudioFileCallbacks
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static int SetSizeProcImpl(IntPtr inClientData, long size)
     {
-        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
+        CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target!;
 
         try
         {

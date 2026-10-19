@@ -162,7 +162,7 @@ internal class MidiInterop
 
     // http://msdn.microsoft.com/en-us/library/dd798474%28VS.85%29.aspx
     [DllImport("winmm.dll")]
-    public static extern MmResult midiOutLongMsg(IntPtr hMidiOut, ref MIDIHDR lpMidiOutHdr, int uSize);
+    public static extern MmResult midiOutLongMsg(IntPtr hMidiOut, IntPtr lpMidiOutHdr, int uSize);
 
     // http://msdn.microsoft.com/en-us/library/dd798475%28VS.85%29.aspx
     [DllImport("winmm.dll")]
@@ -174,7 +174,7 @@ internal class MidiInterop
 
     // http://msdn.microsoft.com/en-us/library/dd798477%28VS.85%29.aspx
     [DllImport("winmm.dll")]
-    public static extern MmResult midiOutPrepareHeader(IntPtr hMidiOut, ref MIDIHDR lpMidiOutHdr, int uSize);
+    public static extern MmResult midiOutPrepareHeader(IntPtr hMidiOut, IntPtr lpMidiOutHdr, int uSize);
 
     // http://msdn.microsoft.com/en-us/library/dd798479%28VS.85%29.aspx
     [DllImport("winmm.dll")]
@@ -190,7 +190,7 @@ internal class MidiInterop
 
     // http://msdn.microsoft.com/en-us/library/dd798482%28VS.85%29.aspx
     [DllImport("winmm.dll")]
-    public static extern MmResult midiOutUnprepareHeader(IntPtr hMidiOut, ref MIDIHDR lpMidiOutHdr, int uSize);
+    public static extern MmResult midiOutUnprepareHeader(IntPtr hMidiOut, IntPtr lpMidiOutHdr, int uSize);
 
     // http://msdn.microsoft.com/en-us/library/dd798485%28VS.85%29.aspx
     [DllImport("winmm.dll")]
@@ -250,6 +250,10 @@ internal class MidiInterop
     }
 
     // http://msdn.microsoft.com/en-us/library/dd798449%28VS.85%29.aspx
+    // n.b. the dwReserved array makes this struct non-blittable, so passing it by ref to a
+    // P/Invoke hands the driver a pointer to a temporary marshalled copy that is freed when the
+    // call returns. The driver may retain the header until it signals completion, so callers must
+    // allocate it with AllocHGlobal/StructureToPtr and pass the IntPtr overloads instead.
     [StructLayout(LayoutKind.Sequential)]
     public struct MIDIHDR
     {

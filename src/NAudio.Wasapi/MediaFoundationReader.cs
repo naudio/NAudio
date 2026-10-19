@@ -221,7 +221,8 @@ public class MediaFoundationReader : WaveStream
 
             // a successful MF_PD_DURATION query always returns a duration value
             var lengthInBytes = (((long)variant.Value!) * waveFormat.AverageBytesPerSecond) / 10000000L;
-            return lengthInBytes;
+            // truncating the duration to bytes can leave a partial frame
+            return lengthInBytes - lengthInBytes % waveFormat.BlockAlign;
         }
         finally
         {
@@ -408,6 +409,8 @@ public class MediaFoundationReader : WaveStream
         {
             if (value < 0)
                 throw new ArgumentOutOfRangeException("value", "Position cannot be less than 0");
+            // never start mid-frame; that produces loud static
+            value -= value % BlockAlign;
             if (settings.RepositionInRead)
             {
                 repositionTo = value;
@@ -472,9 +475,12 @@ public class MediaFoundationReader : WaveStream
                 }
 
                 // The decoder output is PCM (constant bit rate), so the sample timestamp maps to an
-                // exact byte position. MF can return several buffers carrying the same timestamp, so
-                // we gate on the end of the buffer rather than its start.
-                long decoderPosition = (long)((ulong)timestamp * (ulong)averageBytesPerSecond / 10000000UL);
+                // exact frame. Round to the nearest frame rather than truncating to bytes: the
+                // timestamp is in 100ns units, so a byte truncation can land mid-frame and leave
+                // Position misaligned for every read that follows. MF can return several buffers
+                // carrying the same timestamp, so we gate on the end of the buffer rather than its start.
+                long decoderFrame = (long)(((ulong)timestamp * (ulong)waveFormat.SampleRate + 5000000UL) / 10000000UL);
+                long decoderPosition = decoderFrame * BlockAlign;
                 long bufferEnd = decoderPosition + decoderOutputCount;
 
                 if (bufferEnd <= desiredPosition)
@@ -487,10 +493,9 @@ public class MediaFoundationReader : WaveStream
 
                 if (decoderPosition < desiredPosition)
                 {
+                    // Both positions are frame aligned, so the skip is a whole number of frames
+                    // and we land exactly on the requested position.
                     int skip = (int)(desiredPosition - decoderPosition);
-                    // Round the skip down to a frame boundary; starting mid-sample produces loud
-                    // static. This lands us at most BlockAlign-1 bytes before the requested position.
-                    skip -= skip % BlockAlign;
                     decoderOutputOffset = skip;
                     decoderOutputCount -= skip;
                     achievedPosition = decoderPosition + skip;

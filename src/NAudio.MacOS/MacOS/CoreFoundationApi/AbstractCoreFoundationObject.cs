@@ -154,7 +154,7 @@ internal abstract class AbstractCoreFoundationObject
     /// For example, two CFNumber objects are equal if the numeric values they represent are equal. 
     /// Two <see cref="CFString"/> objects are equal if they represent identical sequences of characters, regardless of encoding.
     /// </remarks>
-    public bool Equals(AbstractCoreFoundationObject other)
+    public bool Equals(AbstractCoreFoundationObject? other)
     {
         ThrowIfInvalidOrDisposed();
         return other is not null &&
@@ -162,7 +162,7 @@ internal abstract class AbstractCoreFoundationObject
                NativeMethods.CFEqual(handle, other.handle) != MacBoolean.False;
     }
 
-    public sealed override bool Equals(object obj) => (!(IsInvalid || IsClosed)) && Equals(obj as AbstractCoreFoundationObject);
+    public sealed override bool Equals(object? obj) => (!(IsInvalid || IsClosed)) && Equals(obj as AbstractCoreFoundationObject);
 
     public sealed override bool IsInvalid => handle == IntPtr.Zero;
 
@@ -187,7 +187,7 @@ internal abstract class AbstractCoreFoundationObject
     {
         if (IsClosed || IsInvalid)
         {
-            return base.ToString();
+            return base.ToString() ?? string.Empty;
         }
         else
         {

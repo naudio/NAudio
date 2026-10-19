@@ -18,10 +18,10 @@ namespace NAudio.MacOS.CoreAudio;
 /// </summary>
 public sealed class AudioSystemObject : AudioObject
 {
-    private PropertyListenerHandle devicesListChanged;
-    private PropertyListenerHandle defaultInputDeviceChanged;
-    private PropertyListenerHandle defaultOutputDeviceChanged;
-    private PropertyListenerHandle defaultSystemOutputDeviceChanged;
+    private PropertyListenerHandle? devicesListChanged;
+    private PropertyListenerHandle? defaultInputDeviceChanged;
+    private PropertyListenerHandle? defaultOutputDeviceChanged;
+    private PropertyListenerHandle? defaultSystemOutputDeviceChanged;
 
     private AudioSystemObject(AudioObjectID id)
         : base(id)
@@ -107,7 +107,7 @@ public sealed class AudioSystemObject : AudioObject
     /// <summary>
     /// The <see cref="AudioDevice"/> of the default input AudioDevice.
     /// </summary>
-    public AudioDevice DefaultInputDevice => GetAudioObjectValue(
+    public AudioDevice? DefaultInputDevice => GetAudioObjectValue(
         AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
             AudioSystemObjectProperties.kAudioHardwarePropertyDefaultInputDevice
         ),
@@ -117,7 +117,7 @@ public sealed class AudioSystemObject : AudioObject
     /// <summary>
     /// The <see cref="AudioDevice"/> of the default output AudioDevice.
     /// </summary>
-    public AudioDevice DefaultOutputDevice => GetAudioObjectValue(
+    public AudioDevice? DefaultOutputDevice => GetAudioObjectValue(
         AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
             AudioSystemObjectProperties.kAudioHardwarePropertyDefaultOutputDevice
         ),
@@ -128,7 +128,7 @@ public sealed class AudioSystemObject : AudioObject
     /// The output <see cref="AudioDevice"/> to use for system 
     /// related sound from the alert sound to digital call progress.
     /// </summary>
-    public AudioDevice DefaultSystemOutputDevice => GetAudioObjectValue(
+    public AudioDevice? DefaultSystemOutputDevice => GetAudioObjectValue(
         AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
             AudioSystemObjectProperties.kAudioHardwarePropertyDefaultSystemOutputDevice
         ),
@@ -159,7 +159,7 @@ public sealed class AudioSystemObject : AudioObject
     /// The <see cref="AudioDevice"/> instance of the device referred by the specified 
     /// <paramref name="uid"/>, or <see langword="null"/> if it does not refer to any device.
     /// </returns>
-    public AudioDevice ConvertUIDToDevice(string uid)
+    public AudioDevice? ConvertUIDToDevice(string uid)
     {
         ArgumentException.ThrowIfNullOrEmpty(uid);
         using var convertedCF = CFString.CreateFromString(uid);
@@ -202,7 +202,7 @@ public sealed class AudioSystemObject : AudioObject
     /// Note that an error is not returned if the UID doesn't refer to any <see cref="AudioClockDevice"/>. <br />
     /// Rather, this method will return <see langword="null"/>.
     /// </summary>
-    public AudioClockDevice ConvertUIDToClockDevice(string uid)
+    public AudioClockDevice? ConvertUIDToClockDevice(string uid)
     {
         ArgumentException.ThrowIfNullOrEmpty(uid);
         using var convertedCF = CFString.CreateFromString(uid);
@@ -341,7 +341,7 @@ public sealed class AudioSystemObject : AudioObject
     /// Rather, this method will return <see langword="null"/>.
     /// </summary>
     /// <param name="pid">The PID of the audio process object to query.</param>
-    public Process ConvertPIDToProcessObject(int pid) => GetAudioObjectValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioSystemObjectProperties.kAudioHardwarePropertyTranslatePIDToProcessObject), AudioObjectsConstructors.ConstructProcess, [pid]);
+    public Process? ConvertPIDToProcessObject(int pid) => GetAudioObjectValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioSystemObjectProperties.kAudioHardwarePropertyTranslatePIDToProcessObject), AudioObjectsConstructors.ConstructProcess, [pid]);
 
     #region Events
 
@@ -349,7 +349,7 @@ public sealed class AudioSystemObject : AudioObject
     /// Event that clients can be informed when the service has been reset for some reason.
     /// When a reset happens, any state the client has, such as cached data or added listeners, must be re-established by the client.
     /// </summary>
-    public event AudioObjectPropertyListenerDelegate ServiceRestarted;
+    public event AudioObjectPropertyListenerDelegate? ServiceRestarted;
 
     private void InvokeDeviceListChanged(AudioObject o) => DeviceListChanged?.Invoke(o);
 
@@ -363,22 +363,22 @@ public sealed class AudioSystemObject : AudioObject
     /// Event that clients can be informed when the list of devices has been changed. <br />
     /// This particular list changes when a device is added or removed from the HAL.
     /// </summary>
-    public event AudioObjectPropertyListenerDelegate DeviceListChanged;
+    public event AudioObjectPropertyListenerDelegate? DeviceListChanged;
 
     /// <summary>
     /// Event that clients can be informed when the default input device is changed.
     /// </summary>
-    public event AudioObjectPropertyListenerDelegate DefaultInputDeviceChanged;
+    public event AudioObjectPropertyListenerDelegate? DefaultInputDeviceChanged;
 
     /// <summary>
     /// Event that clients can be informed when the default output device is changed.
     /// </summary>
-    public event AudioObjectPropertyListenerDelegate DefaultOutputDeviceChanged;
+    public event AudioObjectPropertyListenerDelegate? DefaultOutputDeviceChanged;
 
     /// <summary>
     /// Event that clients can be informed when the default system output device is changed.
     /// </summary>
-    public event AudioObjectPropertyListenerDelegate DefaultSystemOutputDeviceChanged;
+    public event AudioObjectPropertyListenerDelegate? DefaultSystemOutputDeviceChanged;
 
     #endregion
 

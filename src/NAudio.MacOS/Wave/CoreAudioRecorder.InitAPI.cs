@@ -190,8 +190,10 @@ public partial class CoreAudioRecorder
             for (int I = 0; I < streams.Length; I++) { streamSelection[I] = I == selectedIndex; }
         }
 
-        selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
-        ioProcedure.VirtualFormat = virtualFormat;
+        // Both branches above leave a procedure assigned.
+        var procedure = InitializedProcedure;
+        selectedDevice.SetStreamUsage(procedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
+        procedure.VirtualFormat = virtualFormat;
         virtualFormatChanged = streams[selectedIndex].ConstructVirtualFormatChangedEvent();
         virtualFormatChanged.Event += OnVirtualFormatChanged;
         try

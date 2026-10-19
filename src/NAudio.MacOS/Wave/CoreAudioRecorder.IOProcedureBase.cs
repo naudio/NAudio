@@ -15,7 +15,7 @@ public partial class CoreAudioRecorder
     // of the HAL regarding how the audio data should be retrieved.
     private abstract class RecorderProcedure : CoreAudioIOProcedure
     {
-        private Exception exception;
+        private Exception? exception;
         private AudioStreamBasicDescription virtualFormat;
         private AudioTimeStamp inNowStamp, inInputTimeStamp;
 
@@ -102,7 +102,7 @@ public partial class CoreAudioRecorder
         // Currently, it is only used by the non-interleaved procedure implementation.
         public virtual void DrainBuffers() { }
 
-        public Exception Exception
+        public Exception? Exception
         {
             get
             {
@@ -121,8 +121,8 @@ public partial class CoreAudioRecorder
             set => virtualFormat = value;
         }
 
-        public event CoreAudioCaptureDataAvailableHandler Event;
+        public event CoreAudioCaptureDataAvailableHandler? Event;
 
-        public event EventHandler<StoppedEventArgs> RecordingStopped;
+        public event EventHandler<StoppedEventArgs>? RecordingStopped;
     }
 }

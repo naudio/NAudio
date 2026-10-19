@@ -40,6 +40,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     private AudioClient Client => audioClient ?? throw new ObjectDisposedException(nameof(WasapiRecorder));
     private int bytesPerFrame;
     private readonly WaveFormat waveFormat;
+    private bool audioClientInitialized;
     private volatile CaptureState captureState;
     private Thread? captureThread;
     private EventWaitHandle? frameEvent;
@@ -167,6 +168,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         this.preferLowLatency = preferLowLatency;
         this.requireLowLatency = requireLowLatency;
 
+        audioClientInitialized = false;
+
         mmDevice = device;
         deviceId = device.ID;
         deviceFriendlyName = device.FriendlyName;
@@ -180,6 +183,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     {
         syncContext = SynchronizationContext.Current;
         shareMode = AudioClientShareMode.Shared;
+        audioClientInitialized = false;
         // The process-loopback virtual device is always event-driven (LOOPBACK | EVENTCALLBACK).
         isUsingEventSync = true;
         isProcessLoopback = true;
@@ -211,6 +215,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     {
         syncContext = SynchronizationContext.Current;
         shareMode = AudioClientShareMode.Shared;
+
+        audioClientInitialized = false;
+
         isUsingEventSync = useEventSync;
         this.bufferMilliseconds = bufferMilliseconds;
         this.mmcssTaskName = mmcssTaskName;
@@ -238,9 +245,21 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             throw new InvalidOperationException("Already recording");
 
         captureState = CaptureState.Starting;
-        InitializeAudioClient();
-        captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
-        captureThread.Start();
+
+        try
+        {
+            InitializeAudioClient();
+            captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
+            captureThread.Start();
+        }
+        catch
+        {
+            // Any exception thrown by the try block would surface the exception back to StartRecording,
+            // but it left the recorder into the invalid now Starting state.
+            // The below assignment fixes that.
+            captureState = CaptureState.Stopped;
+            throw;
+        }
     }
 
     /// <summary>
@@ -264,11 +283,14 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             throw new InvalidOperationException("Already recording");
 
         captureState = CaptureState.Starting;
-        InitializeAudioClient();
 
         IntPtr mmcssHandle = IntPtr.Zero;
         try
         {
+            // IMPORTANT: InitializeAudioClient must be inside the try block so that the
+            // captureState field is not left in the Starting state if this throws.
+            InitializeAudioClient();
+
             if (mmcssTaskName != null)
             {
                 uint taskIndex = 0;
@@ -277,8 +299,14 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 
             bytesPerFrame = waveFormat.BlockAlign;
             var capture = Client.AudioCaptureClient;
+
             Client.Start();
-            captureState = CaptureState.Capturing;
+
+            // Avoid race condition where we stop immediately after starting
+            if (captureState == CaptureState.Starting)
+            {
+                captureState = CaptureState.Capturing;
+            }
 
             while (!cancellationToken.IsCancellationRequested && captureState == CaptureState.Capturing)
             {
@@ -330,6 +358,26 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 
     private void InitializeAudioClient()
     {
+        // If the recorder has already been initialized before, it should not be initialized again.
+        // Fixes #1479.
+        if (audioClientInitialized) { return; }
+
+        try
+        {
+            InitializeAudioClientCore();
+        }
+        catch
+        {
+            ResetAfterFailedInitialize();
+            throw;
+        }
+
+        // The recorder has now been successfully initialized.
+        audioClientInitialized = true;
+    }
+
+    private void InitializeAudioClientCore()
+    {
         LatencyMilliseconds = bufferMilliseconds;
 
         // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller
@@ -372,6 +420,35 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             }
             // A null endpoint id lets Windows pick the loopback reference device itself.
             aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
+        }
+    }
+
+    /// <summary>
+    /// Initialization can fail after IAudioClient::Initialize has already succeeded (e.g. no AEC
+    /// reference control, or SetEventHandle failing). The client cannot be initialized twice, so swap in
+    /// a fresh one, letting a later start retry from scratch and report the original error again rather
+    /// than AUDCLNT_E_ALREADY_INITIALIZED.
+    /// </summary>
+    private void ResetAfterFailedInitialize()
+    {
+        LowLatencyActive = false;
+        frameEvent?.Dispose();
+        frameEvent = null;
+
+        // Process-loopback and default-device-routing clients are activated asynchronously and have no
+        // MMDevice to recreate from; for those a retry can still fail if Initialize had succeeded. Skip
+        // a disposed recorder (audioClient null) so it stays disposed.
+        if (mmDevice == null || audioClient == null)
+            return;
+        try
+        {
+            var freshClient = RecreateAudioClient();
+            audioClient.Dispose();
+            audioClient = freshClient;
+        }
+        catch
+        {
+            // The device may have gone away; keep the existing client so the original exception surfaces.
         }
     }
 
@@ -509,7 +586,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         captureState == CaptureState.Stopped ? null : audioClient?.TryGetAcousticEchoCancellationControl();
 
     // Low latency needs a fixed endpoint (process loopback is excluded by LowLatencyPreconditionReason
-    // and default-device routing by the builder), so the recreation path always has an MMDevice.
+    // and default-device routing by the builder), so the low-latency recreation path always has an MMDevice.
     private AudioClient RecreateAudioClient() =>
         (mmDevice ?? throw new InvalidOperationException("Cannot recreate the audio client without a fixed endpoint"))
             .CreateAudioClient();
@@ -530,7 +607,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
             var capture = Client.AudioCaptureClient;
 
             Client.Start();
-            captureState = CaptureState.Capturing;
+
+            // Avoid race condition where we stop immediately after starting
+            if (captureState == CaptureState.Starting)
+            {
+                captureState = CaptureState.Capturing;
+            }
 
             int waitMilliseconds = isUsingEventSync
                 ? 3 * bufferMilliseconds

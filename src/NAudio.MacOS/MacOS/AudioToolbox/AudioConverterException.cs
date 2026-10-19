@@ -1,6 +1,5 @@
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.MacOS.AudioToolbox.Interop;
 
@@ -26,7 +25,7 @@ public sealed class AudioConverterException : AudioToolboxException
     /// </summary>
     /// <param name="message">The custom error message to provide. Can be <see langword="null"/>.</param>
     /// <param name="osStatus">The <c>OSStatus</c> error code to provide.</param>
-    public AudioConverterException([AllowNull] string message, int osStatus) : base(message, osStatus) { }
+    public AudioConverterException(string? message, int osStatus) : base(message, osStatus) { }
 
     /// <summary>
     /// Throws an appropriate exception for the specified status code. <br />

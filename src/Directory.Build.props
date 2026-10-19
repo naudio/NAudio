@@ -1,0 +1,23 @@
+<Project>
+  <!-- Settings for the shipping NuGet packages only. The repo-wide settings still apply. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- Package validation runs at `dotnet pack` time (CI packs every PR, so it gates
+         merges, not just releases). It checks that:
+         - every TFM asset in a package exposes a compatible API surface (e.g.
+           NAudio.Midi's net9.0 and WinRT legs), so code compiled against one asset
+           can't hit MissingMethodException when another is deployed;
+         - nothing the baseline release supported has been removed: no public API, and
+           no target framework a consumer could previously resolve.
+         The baseline is the latest stable release on nuget.org; bump it after each
+         stable release (see ReleaseInstructions.md). Intentional breaking
+         changes for a major version go in a per-project CompatibilitySuppressions.xml
+         (generate it with -p:GenerateCompatibilitySuppressionFile=true), so each one is
+         a reviewed, visible diff.
+         Scoped to src/ because restore downloads the baseline package for every project
+         that sets a baseline version, and the samples and tests were never published. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>3.3.0</PackageValidationBaselineVersion>
+  </PropertyGroup>
+</Project>

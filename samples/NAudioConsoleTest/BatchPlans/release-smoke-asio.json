@@ -1,0 +1,19 @@
+// Pre-release smoke for ASIO. Silent: the lifecycle tests stream silence and the rest only
+// record. Replace the driver name with one from `run Asio.ListDrivers`, and check the input
+// channel indices exist with `run Asio.ShowCapabilities --driver=...`.
+//
+//     dotnet run -c Release -- run-batch BatchPlans/release-smoke-asio.json
+{
+  "name": "Release smoke (ASIO)",
+  "stopOnFail": false,
+  "timeoutSeconds": 60,
+  "tests": [
+    { "id": "Asio.ShowCapabilities", "params": { "driver": "SSL ASIO Driver 1" } },
+    { "id": "Asio.ValidateSamplePosition", "params": { "driver": "SSL ASIO Driver 1", "duration": "5s" } },
+    { "id": "Asio.ReinitializeRoundTrip", "params": { "driver": "SSL ASIO Driver 1" } },
+    { "id": "Asio.DisposeFromStoppedHandler", "params": { "driver": "SSL ASIO Driver 1" } },
+    { "id": "Asio.StopFromCallbackGuard", "params": { "driver": "SSL ASIO Driver 1" } },
+    { "id": "Asio.RecordToWav", "params": { "driver": "SSL ASIO Driver 1", "inputChannels": "0,1", "duration": "3s", "output": "Reports/fixtures/out-asio-record.wav" } },
+    { "id": "Asio.ShowChannelLevels", "params": { "driver": "SSL ASIO Driver 1", "inputChannels": "0,1", "duration": "3s" } }
+  ]
+}

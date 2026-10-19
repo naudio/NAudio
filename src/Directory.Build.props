@@ -18,6 +18,6 @@
          Scoped to src/ because restore downloads the baseline package for every project
          that sets a baseline version, and the samples and tests were never published. -->
     <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageValidationBaselineVersion>3.2.0</PackageValidationBaselineVersion>
+    <PackageValidationBaselineVersion>3.3.0</PackageValidationBaselineVersion>
   </PropertyGroup>
 </Project>

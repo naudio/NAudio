@@ -23,7 +23,7 @@ public class Gsm610WaveFormat : WaveFormat
         blockAlign = 65;
         sampleRate = 8000;
 
-        extraSize = 2;
+        extraSize = Gsm610ExtraBytes;
         samplesPerBlock = 320;
     }
 
@@ -33,11 +33,15 @@ public class Gsm610WaveFormat : WaveFormat
     /// </summary>
     internal Gsm610WaveFormat(BinaryReader reader) : base(reader)
     {
-        if (extraSize >= 2)
+        if (extraSize >= Gsm610ExtraBytes)
         {
             samplesPerBlock = reader.ReadInt16();
         }
+        // Serialize writes samplesPerBlock and nothing else, so cbSize must say so.
+        extraSize = Gsm610ExtraBytes;
     }
+
+    private const short Gsm610ExtraBytes = 2; // samplesPerBlock
 
     /// <summary>
     /// Samples per block

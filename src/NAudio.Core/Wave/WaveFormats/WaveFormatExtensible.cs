@@ -35,6 +35,10 @@ public class WaveFormatExtensible : WaveFormat
         wValidBitsPerSample = reader.ReadInt16();
         dwChannelMask = reader.ReadInt32();
         subFormat = new Guid(reader.ReadBytes(16));
+        // Serialize writes exactly these 22 bytes, so report exactly these 22 bytes. A block
+        // whose cbSize claimed more (drivers do pad it) would otherwise advertise extra data
+        // this format doesn't carry and can't write back out.
+        extraSize = ExtensibleExtraBytes;
     }
 
     private const short ExtensibleExtraBytes = 22; // wValidBitsPerSample + dwChannelMask + SubFormat

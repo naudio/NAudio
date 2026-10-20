@@ -41,7 +41,12 @@ public class AdpcmWaveFormat : WaveFormat
         {
             coefficients[n] = reader.ReadInt16();
         }
+        // Serialize always writes samplesPerBlock, numCoeff and all 14 coefficients, so cbSize
+        // has to describe that block whatever the source claimed.
+        extraSize = AdpcmExtraBytes;
     }
+
+    private const short AdpcmExtraBytes = 32; // samplesPerBlock + numCoeff + 14 coefficients
 
     /// <summary>
     /// Samples per block
@@ -69,7 +74,7 @@ public class AdpcmWaveFormat : WaveFormat
         this.waveFormatTag = WaveFormatEncoding.Adpcm;
 
         // TODO: validate sampleRate, bitsPerSample
-        this.extraSize = 32;
+        this.extraSize = AdpcmExtraBytes;
         switch (this.sampleRate)
         {
             case 8000:

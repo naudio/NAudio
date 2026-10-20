@@ -37,13 +37,15 @@ foreach (var driver in AcmDriver.EnumerateAcmDrivers())
                 format.WaveFormat.BitsPerSample, format.WaveFormat.BlockAlign, format.WaveFormat.AverageBytesPerSecond,
                 (format.WaveFormat.AverageBytesPerSecond * 8) / 1000.0,
                 format.WaveFormat.ExtraSize);
-            if (format.WaveFormat is WaveFormatExtraData && format.WaveFormat.ExtraSize > 0)
+            if (format.WaveFormat.ExtraSize > 0)
             {
-                WaveFormatExtraData wfed = (WaveFormatExtraData)format.WaveFormat;
+                // The extra bytes follow the 18-byte WAVEFORMATEX header. ToWaveFormatExBytes
+                // works whatever WaveFormat subclass the format was decoded as.
+                byte[] formatBytes = format.WaveFormat.ToWaveFormatExBytes();
                 builder.Append("      Extra Bytes:\r\n      ");
-                for (int n = 0; n < format.WaveFormat.ExtraSize; n++)
+                for (int n = 18; n < formatBytes.Length; n++)
                 {
-                    builder.AppendFormat("{0:X2} ", wfed.ExtraData[n]);
+                    builder.AppendFormat("{0:X2} ", formatBytes[n]);
                 }
                 builder.Append("\r\n");
             }

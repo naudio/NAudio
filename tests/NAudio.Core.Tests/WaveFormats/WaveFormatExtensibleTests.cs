@@ -116,11 +116,46 @@ public class WaveFormatExtensibleTests
         Assert.That(readBack.Encoding, Is.EqualTo(WaveFormatEncoding.Extensible));
         Assert.That(readBack.ExtraSize, Is.EqualTo(22));
 
-        var extra = (WaveFormatExtraData)readBack;
-        // SubFormat GUID lives after wValidBitsPerSample (2) + dwChannelMask (4)
-        var subFormat = new Guid(extra.ExtraData.AsSpan(6, 16));
-        Assert.That(subFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_PCM));
-        Assert.That(BitConverter.ToInt16(extra.ExtraData, 0), Is.EqualTo((short)24), "valid bits");
-        Assert.That(BitConverter.ToInt32(extra.ExtraData, 2), Is.EqualTo((int)Speakers.Stereo), "channel mask");
+        // A fmt chunk tagged extensible comes back as a WaveFormatExtensible, so the
+        // SubFormat is a property rather than something to unpack from raw extra bytes.
+        Assert.That(readBack, Is.InstanceOf<WaveFormatExtensible>());
+        var extensible = (WaveFormatExtensible)readBack;
+        Assert.That(extensible.SubFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_PCM));
+        Assert.That(extensible.ValidBitsPerSample, Is.EqualTo(24), "valid bits");
+        Assert.That(extensible.ChannelMask, Is.EqualTo((int)Speakers.Stereo), "channel mask");
+        Assert.That(extensible.SampleRate, Is.EqualTo(48000));
+        Assert.That(extensible.Channels, Is.EqualTo(2));
+        Assert.That(extensible.BitsPerSample, Is.EqualTo(32));
+    }
+
+    /// <summary>
+    /// Tagged extensible but carrying fewer than the 22 extension bytes. Decoding that into a
+    /// WaveFormatExtensible would invent a SubFormat, and its Serialize would then write more
+    /// extra data than cbSize promised, so the bytes are kept verbatim instead.
+    /// </summary>
+    [Test]
+    public void TooLittleExtraDataForExtensibleStaysExtraData()
+    {
+        var extra = new byte[] { 24, 0, 3, 0 };
+        using var ms = new MemoryStream();
+        using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            writer.Write((ushort)WaveFormatEncoding.Extensible);
+            writer.Write((short)2);     // channels
+            writer.Write(48000);        // sample rate
+            writer.Write(384000);       // average bytes per second
+            writer.Write((short)8);     // block align
+            writer.Write((short)32);    // bits per sample
+            writer.Write((short)extra.Length);
+            writer.Write(extra);
+        }
+        ms.Position = 0;
+        using var reader = new BinaryReader(ms);
+        var readBack = WaveFormat.FromFormatChunk(reader, (int)ms.Length);
+
+        Assert.That(readBack, Is.Not.InstanceOf<WaveFormatExtensible>());
+        Assert.That(readBack, Is.InstanceOf<WaveFormatExtraData>());
+        Assert.That(readBack.ExtraSize, Is.EqualTo(extra.Length));
+        Assert.That(((WaveFormatExtraData)readBack).ExtraData, Is.EqualTo(extra));
     }
 }

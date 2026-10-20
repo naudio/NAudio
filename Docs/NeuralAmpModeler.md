@@ -6,6 +6,8 @@
 dotnet add package NAudio.Nam
 ```
 
+To try captures without writing code, run the WPF demo app (`samples/NAudioWpfDemo`, Windows) and open its **Neural Amp Modeler** module. You can load a `.nam` file and a cabinet IR, then play a guitar through them live over ASIO, or play or render a DI recording, with a readout of the amp's CPU load and latency.
+
 ## What it supports
 
 `NamModel` loads the WaveNet and LSTM models that NAM's trainer produces:

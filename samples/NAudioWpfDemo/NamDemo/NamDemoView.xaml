@@ -1,0 +1,110 @@
+<UserControl x:Class="NAudioWpfDemo.NamDemo.NamDemoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="600">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="10">
+            <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,8"
+                       Text="Neural Amp Modeler: amp captures with a cabinet IR" />
+
+            <!-- Amp -->
+            <GroupBox Header="Amp model (.nam)" Padding="6" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <Button Content="Load model…" Width="110" Command="{Binding LoadModelCommand}" />
+                        <TextBlock Text="{Binding ModelPath}" Margin="8,0" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="420" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Network:" Width="70" VerticalAlignment="Center" />
+                        <ComboBox Width="200" ItemsSource="{Binding Sizes}"
+                                  SelectedIndex="{Binding SelectedSizeIndex, Mode=TwoWay}"
+                                  ToolTip="A2 files hold A2-Lite (cheaper) and A2-Full (more accurate) versions of the same capture." />
+                        <CheckBox Content="Enabled" Margin="12,0,0,0" VerticalAlignment="Center"
+                                  IsChecked="{Binding AmpEnabled, Mode=TwoWay}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding ModelInfo}" TextWrapping="Wrap" Foreground="#444444" />
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Cabinet -->
+            <GroupBox Header="Cabinet impulse response (.wav)" Padding="6" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <Button Content="Load IR…" Width="110" Command="{Binding LoadIrCommand}" />
+                        <Button Content="Clear" Width="60" Margin="4,0,0,0" Command="{Binding ClearIrCommand}" />
+                        <CheckBox Content="Enabled" Margin="12,0,0,0" VerticalAlignment="Center"
+                                  IsChecked="{Binding CabinetEnabled, Mode=TwoWay}" />
+                        <TextBlock Text="{Binding IrPath}" Margin="8,0" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="280" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding IrInfo}" TextWrapping="Wrap" Foreground="#444444" />
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Levels -->
+            <GroupBox Header="Levels" Padding="6" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="70" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Input gain" VerticalAlignment="Center"
+                               ToolTip="Drives the amp harder or softer, like the guitar's volume knob." />
+                    <Slider Grid.Row="0" Grid.Column="1" Minimum="-24" Maximum="24" SmallChange="0.5" LargeChange="3"
+                            IsMoveToPointEnabled="True" Margin="4,2" Value="{Binding InputGainDb, Mode=TwoWay}" />
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding InputGainText}" VerticalAlignment="Center" TextAlignment="Right" />
+                    <TextBlock Grid.Row="1" Text="Output gain" VerticalAlignment="Center" />
+                    <Slider Grid.Row="1" Grid.Column="1" Minimum="-40" Maximum="12" SmallChange="0.5" LargeChange="3"
+                            IsMoveToPointEnabled="True" Margin="4,2" Value="{Binding OutputGainDb, Mode=TwoWay}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding OutputGainText}" VerticalAlignment="Center" TextAlignment="Right" />
+                </Grid>
+            </GroupBox>
+
+            <!-- Live -->
+            <GroupBox Header="Play live (ASIO)" Padding="6" Margin="0,0,0,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="Driver:" Width="50" VerticalAlignment="Center" />
+                        <ComboBox Width="200" ItemsSource="{Binding Drivers}"
+                                  SelectedItem="{Binding SelectedDriver, Mode=TwoWay}" />
+                        <TextBlock Text="Guitar on input" VerticalAlignment="Center" Margin="10,0,4,0" />
+                        <TextBox Width="36" VerticalAlignment="Center"
+                                 Text="{Binding InputChannel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="The ASIO input the guitar is plugged into (1-based). Use an instrument (Hi-Z) input." />
+                        <Button Content="Start" Width="60" Margin="10,0,4,0" Command="{Binding StartCommand}" />
+                        <Button Content="Stop" Width="60" Command="{Binding StopCommand}" />
+                    </StackPanel>
+                    <CheckBox Content="Enable monitoring (hear the output)" IsChecked="{Binding Monitoring, Mode=TwoWay}" />
+                    <TextBlock Margin="0,2,0,4" TextWrapping="Wrap" Foreground="#B00020"
+                               Text="⚠ Output starts muted and auto-mutes on a runaway level. Use headphones or keep speakers low: amp models add a lot of gain." />
+                    <TextBlock Text="Output level" />
+                    <ProgressBar Height="14" Minimum="0" Maximum="1" Value="{Binding OutputLevel, Mode=OneWay}" />
+                </StackPanel>
+            </GroupBox>
+
+            <!-- File -->
+            <GroupBox Header="Play or render a DI recording" Padding="6" Margin="0,0,0,8">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Choose file…" Width="110" Command="{Binding ChooseInputFileCommand}" />
+                    <Button Content="Play" Width="56" Margin="6,0,4,0" Command="{Binding PlayFileCommand}" />
+                    <Button Content="Stop" Width="56" Margin="0,0,4,0" Command="{Binding StopFileCommand}" />
+                    <Button Content="Render to WAV…" Command="{Binding RenderCommand}" />
+                    <TextBlock Text="{Binding InputFilePath}" Margin="8,0" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                </StackPanel>
+            </GroupBox>
+
+            <TextBlock Text="{Binding Performance}" TextWrapping="Wrap" FontFamily="Consolas" Margin="0,0,0,4" />
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

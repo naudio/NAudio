@@ -13,6 +13,9 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Added `BufferedWaveProvider.CompleteAdding()` and `IsAddingCompleted`, so a producer can end the stream: `Read` drains the buffer, returns one unpadded short read even with `ReadFully`, then 0. Added `UnderrunSilenceBytes`, `DiscardedBytes` and `ResetCounters()` to show silence inserted on underrun and audio dropped on overflow (#1492)
+ * Added `MixingSampleProvider.CompleteAdding()` and `IsAddingCompleted`, so a `ReadFully` mixer ends once its current inputs have ended; `AddMixerInput` after it throws `InvalidOperationException` (#1492)
+
 ### 3.3.0 (19 Oct 2026)
 
 A packaging and nullability release. The `NAudio` meta-package is now a single

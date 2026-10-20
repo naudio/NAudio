@@ -61,6 +61,22 @@ that can be played or rendered to a file.
 
 `BufferedWaveProvider` is a good example of a `IWaveProvider` as it has no ability to reposition - it simply returns any buffered audio from its `Read` method.
 
+### Ending a buffered stream, and spotting glitches
+
+`BufferedWaveProvider` is usually the boundary between a real-time producer (a capture callback or a network thread calling `AddSamples`) and a pull-based pipeline calling `Read`. With `ReadFully = true` (the default) it pads any underrun with silence, so it never returns 0 and the stream never ends: playback won't raise `PlaybackStopped`, and `WaveFileWriter.CreateWaveFile` would run forever.
+
+When the producer has no more audio, call `CompleteAdding()`. `Read` then returns whatever is still buffered, ends with one short read (not padded, even with `ReadFully`), and returns 0 from then on, which is what NAudio's read contract expects of a finished source. `AddSamples` after `CompleteAdding` throws `InvalidOperationException`. Completion is permanent: `ClearBuffer` does not undo it (clearing a completed buffer just ends the stream straight away), so create a new `BufferedWaveProvider` for a new stream.
+
+```c#
+var buffered = new BufferedWaveProvider(waveIn.WaveFormat);
+waveIn.DataAvailable += (s, a) => buffered.AddSamples(a.Buffer, 0, a.BytesRecorded);
+waveIn.RecordingStopped += (s, a) => buffered.CompleteAdding();
+```
+
+Two counters show what the padding hides. `UnderrunSilenceBytes` is the total silence `Read` has inserted because the buffer ran dry (including reads made before any audio arrived), and `DiscardedBytes` is the total incoming audio thrown away because the buffer was full and `DiscardOnBufferOverflow` is set. They are counters rather than events because `Read` normally runs on the audio thread, where an event handler could make the glitch worse; poll them from a timer or UI thread instead, and call `ResetCounters()` to start counting again.
+
+`MixingSampleProvider` has the same issue with `ReadFully = true`, and the same fix: `CompleteAdding()` means no more inputs will be added, so once the current inputs have all ended the mixer returns a short read and then 0. `AddMixerInput` after that throws `InvalidOperationException`.
+
 ## `ISampleProvider`
 
 While implementing `IWaveProvider` is a useful approach to implement an audio effect, it has the caveat that

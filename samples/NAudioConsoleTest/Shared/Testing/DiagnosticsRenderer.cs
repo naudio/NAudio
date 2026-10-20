@@ -13,9 +13,10 @@ public static class DiagnosticsRenderer
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        TypeInfoResolver = ConsoleTestJsonContext.Default,
     };
 
-    public static string ToJson(HostDiagnostics d) => JsonSerializer.Serialize(d, JsonOptions);
+    public static string ToJson(HostDiagnostics d) => JsonSerializer.Serialize(d, JsonOptions.TypeInfo<HostDiagnostics>());
 
     public static string ToMarkdown(HostDiagnostics d)
     {

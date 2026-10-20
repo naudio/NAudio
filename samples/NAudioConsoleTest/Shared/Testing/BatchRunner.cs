@@ -42,7 +42,7 @@ public static class BatchRunner
         BatchPlan plan;
         try
         {
-            plan = JsonSerializer.Deserialize<BatchPlan>(File.ReadAllText(planPath), PlanJsonOptions)
+            plan = JsonSerializer.Deserialize(File.ReadAllText(planPath), PlanJsonOptions.TypeInfo<BatchPlan>())
                 ?? throw new InvalidOperationException("Plan deserialised to null");
         }
         catch (Exception ex)
@@ -115,7 +115,7 @@ public static class BatchRunner
 
         var jsonPath = Path.Combine(outDir, "summary.json");
         var mdPath = Path.Combine(outDir, "summary.md");
-        File.WriteAllText(jsonPath, JsonSerializer.Serialize(report, ReportJsonOptions));
+        File.WriteAllText(jsonPath, JsonSerializer.Serialize(report, ReportJsonOptions.TypeInfo<BatchReport>()));
         File.WriteAllText(mdPath, RenderMarkdown(report));
 
         Console.WriteLine();
@@ -292,6 +292,7 @@ public static class BatchRunner
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        TypeInfoResolver = ConsoleTestJsonContext.Default,
     };
 
     private static readonly JsonSerializerOptions ReportJsonOptions = new()
@@ -299,6 +300,7 @@ public static class BatchRunner
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        TypeInfoResolver = ConsoleTestJsonContext.Default,
     };
 }
 

@@ -27,7 +27,7 @@ The output matches the official C++ implementation ([NeuralAmpModelerCore](https
 
 ## Run a capture on an audio file
 
-`NamEffect` is an ordinary `IAudioEffect`, so it goes in an `EffectChain` like any other effect. NAM models are trained at 48 kHz and must be run at that rate, so resample first if your audio is at another rate:
+`NamEffect` is an ordinary `IAudioEffect`, so it goes in an `EffectChain` like any other effect. NAM models are trained at 48 kHz and must be run at that rate, so resample first if your audio is at another rate. `WdlResamplingSampleProvider` uses 64-tap sinc interpolation by default, which matters here: aliasing from a cheap resampler feeds into the amp model's distortion and comes out as audible intermodulation:
 
 ```c#
 using NAudio.Effects;
@@ -107,6 +107,47 @@ device.Start();
 ```
 
 Load the model and create the processor before starting the device. Parsing a `.nam` file allocates and takes tens of milliseconds, so never do it on the audio thread.
+
+Without an ASIO driver, WASAPI works too: capture into a `BufferedWaveProvider` and play the effect chain from it. Shared-mode WASAPI adds more latency than ASIO, and the capture and playback devices run on separate clocks, so the buffer absorbs the difference. Low-latency capture (`WithLowLatency`) only works in the device's own format, which is usually 48 kHz float stereo:
+
+```c#
+using NAudio.Effects;
+using NAudio.Nam;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+
+var model = NamModel.Load("my-amp.nam");
+var cabinet = new CabinetEffect { MonoInput = true };
+cabinet.LoadImpulseResponse("4x12-v30-sm57.wav");
+
+using var recorder = new WasapiRecorderBuilder().WithLowLatency().Build();
+var input = new BufferedWaveProvider(recorder.WaveFormat, TimeSpan.FromMilliseconds(100))
+{
+    DiscardOnBufferOverflow = true,
+};
+recorder.DataAvailable += (buffer, _, _, _) => input.AddSamples(buffer);
+
+// The guitar is on the interface's first input: take that channel at full level.
+ISampleProvider guitar = new StereoToMonoSampleProvider(input.ToSampleProvider()) { LeftVolume = 1f, RightVolume = 0f };
+var chain = new EffectChain(guitar)
+    .Add(new NamEffect(model))
+    .Add(cabinet);
+
+using var player = new WasapiPlayerBuilder().WithLowLatency().Build();
+player.Init(new MonoToStereoSampleProvider(chain));
+recorder.StartRecording();
+player.Play();
+```
+
+This assumes a 48 kHz stereo device. At 44.1 kHz, put a `WdlResamplingSampleProvider` to 48 kHz before the `NamEffect`; it uses 64-tap sinc interpolation by default, which is flat across the audio band.
+
+`BufferedWaveProvider` counts the glitches it hides. Poll them from a timer or the UI, never from the audio thread:
+
+```c#
+Console.WriteLine($"underruns: {input.UnderrunSilenceBytes} bytes, overflow: {input.DiscardedBytes} bytes");
+```
+
+A rising `UnderrunSilenceBytes` means playback ran out of input: the capture side delivered late, or processing couldn't keep up (try A2-Lite or a larger buffer). A rising `DiscardedBytes` means input arrived faster than it was played, which is usually clock drift between the two devices.
 
 ## Input level and model metadata
 

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Drives NAudio.Asio against a fake in-process ASIO driver (FakeAsioDriver.cs), so the
+         whole native boundary — vtable binding, struct layouts, ANSI strings, and the
+         callbacks the driver calls back into — is exercised without audio hardware.
+         CI publishes it with Native AOT and *runs* it, which is what catches interop
+         that builds cleanly but breaks under AOT (#1425). NAudio.Windows.Tests runs the
+         same checks under the JIT. Plain net9.0 with no RuntimeIdentifier, so it also
+         runs on Linux/macOS: the fake involves no OS APIs. -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsPackable>false</IsPackable>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- NAudio.Asio is [SupportedOSPlatform("windows")], but nothing here reaches Windows:
+         the fake driver replaces the registry lookup and CoCreateInstance. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Asio\NAudio.Asio.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Report trim/AOT warnings against NAudio.Asio by symbol rather than as one IL2104. -->
+    <TrimmableAssembly Include="NAudio.Asio" />
+    <TrimmableAssembly Include="NAudio.Core" />
+  </ItemGroup>
+
+</Project>

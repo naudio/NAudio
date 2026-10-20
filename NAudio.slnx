@@ -39,6 +39,7 @@
     <Project Path="tests/NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
     <Project Path="tests/NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />
     <Project Path="tests/NAudioAotSmokeTest/NAudioAotSmokeTest.csproj" />
+    <Project Path="tests/NAudioAsioFakeDriverTest/NAudioAsioFakeDriverTest.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/AudioFileInspector/AudioFileInspector.csproj" />

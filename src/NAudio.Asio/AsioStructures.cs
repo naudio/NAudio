@@ -79,6 +79,112 @@ public struct AsioClockSource
     public string Name;
 }
 
+/// <summary>
+/// Blittable mirror of the native <c>ASIOClockSource</c> (48 bytes). The driver writes into this
+/// directly; <see cref="ToManaged"/> converts it to the public <see cref="AsioClockSource"/>, whose
+/// <c>[ByValTStr]</c> name would otherwise need runtime marshalling.
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+internal unsafe struct AsioClockSourceNative
+{
+    public const int NameLength = 32;
+
+    public int index;
+    public int associatedChannel;
+    public int associatedGroup;
+    public int isCurrentSource;   // ASIOBool
+    public fixed byte name[NameLength];
+
+    public AsioClockSource ToManaged()
+    {
+        fixed (byte* pName = name)
+        {
+            return new AsioClockSource
+            {
+                Index = index,
+                AssociatedChannel = associatedChannel,
+                AssociatedGroup = associatedGroup,
+                IsCurrentSource = isCurrentSource,
+                Name = AsioNativeStrings.Read(pName, NameLength),
+            };
+        }
+    }
+}
+
+/// <summary>
+/// Blittable mirror of the native <c>ASIOChannelInfo</c> (52 bytes). ASIOBool and ASIOSampleType
+/// are both 32-bit in the SDK, so they're plain ints here.
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+internal unsafe struct AsioChannelInfoNative
+{
+    public const int NameLength = 32;
+
+    public int channel;           // on input, channel index
+    public int isInput;           // on input, ASIOBool
+    public int isActive;          // on exit, ASIOBool
+    public int channelGroup;      // on exit
+    public int type;              // on exit, ASIOSampleType
+    public fixed byte name[NameLength];
+
+    public AsioChannelInfo ToManaged()
+    {
+        fixed (byte* pName = name)
+        {
+            return new AsioChannelInfo
+            {
+                channel = channel,
+                isInput = isInput != 0,
+                isActive = isActive != 0,
+                channelGroup = channelGroup,
+                type = (AsioSampleType)type,
+                name = AsioNativeStrings.Read(pName, NameLength),
+            };
+        }
+    }
+}
+
+/// <summary>
+/// Native <c>ASIOCallbacks</c>: four C function pointers that the driver keeps from
+/// <c>createBuffers</c> until <c>disposeBuffers</c>.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+internal struct AsioCallbacksNative
+{
+    public IntPtr bufferSwitch;          // void (*)(long doubleBufferIndex, ASIOBool directProcess)
+    public IntPtr sampleRateDidChange;   // void (*)(ASIOSampleRate sRate)
+    public IntPtr asioMessage;           // long (*)(long selector, long value, void* message, double* opt)
+    public IntPtr bufferSwitchTimeInfo;  // ASIOTime* (*)(ASIOTime* params, long doubleBufferIndex, ASIOBool directProcess)
+
+    // Blittable delegate signatures for the callbacks (ASIOBool and long are 32-bit ints), so the
+    // reverse-P/Invoke thunks need no marshalling under the JIT or Native AOT.
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void BufferSwitch(int doubleBufferIndex, int directProcess);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void SampleRateDidChange(double sRate);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int AsioMessage(int selector, int value, IntPtr message, IntPtr opt);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr BufferSwitchTimeInfo(IntPtr asioTimeParam, int doubleBufferIndex, int directProcess);
+}
+
+internal static unsafe class AsioNativeStrings
+{
+    /// <summary>
+    /// Reads a fixed-size, normally null-terminated ANSI string field, stopping at the field
+    /// size if the driver didn't terminate it.
+    /// </summary>
+    public static string Read(byte* field, int size)
+    {
+        int length = new ReadOnlySpan<byte>(field, size).IndexOf((byte)0);
+        if (length < 0) length = size;
+        return Marshal.PtrToStringAnsi((IntPtr)field, length);
+    }
+}
+
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 internal struct AsioBufferInfo
 {

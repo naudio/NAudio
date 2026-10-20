@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Midi;
 
@@ -8,7 +9,7 @@ namespace NAudio.Midi;
 /// </summary>
 public class NoteOnEvent : NoteEvent
 {
-    private NoteEvent offEvent;
+    private NoteEvent? offEvent;
 
     /// <summary>
     /// Reads a new Note On event from a stream of MIDI data
@@ -42,9 +43,11 @@ public class NoteOnEvent : NoteEvent
     public override MidiEvent Clone() => new NoteOnEvent(AbsoluteTime, Channel, NoteNumber, Velocity, NoteLength);
 
     /// <summary>
-    /// The associated Note off event
+    /// The associated Note off event, or <see langword="null"/> if none has been paired with this
+    /// note on (e.g. an unmatched note on in a file read without strict checking)
     /// </summary>
-    public NoteEvent OffEvent
+    [DisallowNull]
+    public NoteEvent? OffEvent
     {
         get
         {

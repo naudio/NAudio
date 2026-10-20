@@ -35,7 +35,7 @@ var sampler = new SoundFontSampler(soundFont);
 // before sending it events from outside the audio thread
 var live = new LiveMidiInstrument(sampler);
 
-using var device = new WaveOutEvent();
+using var device = new WasapiPlayerBuilder().Build();
 device.Init(live);
 device.Play();
 
@@ -46,7 +46,7 @@ live.NoteOff(0, 60);
 
 The sampler consumes MIDI through `ProcessMidiEvent(MidiEvent)` (plus the `NoteOn`/`NoteOff` convenience methods) and produces audio through `Read`. Both must be called from the same thread — see [Live MIDI input](#live-midi-input) for why the example above wraps the sampler in `LiveMidiInstrument`. When a host such as `SequencedMidiPlayer` drives the sampler on the audio thread itself, no wrapper is needed.
 
-`WaveOutEvent` is used in these examples for brevity; the sampler is just an `ISampleProvider`, so any output device works — `WasapiPlayer` on Windows, `AlsaOut` on Linux, or anything else from [Choose an output device type](OutputDeviceTypes.md).
+`WasapiPlayer` is used in these examples as it's the recommended output device on Windows; the sampler is just an `ISampleProvider`, so any output device works — `AlsaOut` on Linux, `CoreAudioPlayer` on macOS, or anything else from [Choose an output device type](OutputDeviceTypes.md).
 
 ### Channels, banks and percussion
 
@@ -88,7 +88,7 @@ var sampler = new SoundFontSampler(new SoundFont("FluidR3_GM.sf2"));
 var transport = new Transport(sequence.TempoMap, sampler.WaveFormat.SampleRate);
 var player = new SequencedMidiPlayer(transport, sequence.Timeline, sampler);
 
-using var device = new WaveOutEvent();
+using var device = new WasapiPlayerBuilder().Build();
 device.Init(player);
 device.Play();
 transport.Play();
@@ -122,7 +122,7 @@ The sampler engine is **single-threaded by design**: `Read` and every MIDI entry
 var sampler = SfzSampler.FromFile(@"instruments\piano.sfz");
 var live = new LiveMidiInstrument(sampler);
 
-using var device = new WaveOutEvent();
+using var device = new WasapiPlayerBuilder().Build();
 device.Init(live);
 device.Play();
 

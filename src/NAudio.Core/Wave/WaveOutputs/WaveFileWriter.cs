@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text;
 using NAudio.Wave.SampleProviders;
 
 // ReSharper disable once CheckNamespace
@@ -40,28 +43,31 @@ public interface IWaveChunkWriter
 /// </summary>
 public class WaveFileWriter : Stream
 {
-    private Stream outStream;
+    private readonly Stream outStream;
     private readonly BinaryWriter writer;
     private long dataSizePos;
     private long factSampleCountPos;
     private long dataChunkSize;
     private readonly WaveFormat format;
-    private readonly string filename;
+    private readonly string? filename;
     private readonly bool ownsStream;
     private readonly bool enableRf64;
     private readonly long rf64PromotionThreshold;
     private readonly long junkChunkPos = -1;
+    private static ReadOnlySpan<byte> JunkChunk => new byte[28] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     private bool headerFinalized;
     private bool isDisposed;
-    private readonly List<BufferedChunk> beforeDataChunks = new();
-    private readonly List<BufferedChunk> afterDataChunks = new();
-    private CueList bufferedCues;
+    private readonly List<BufferedChunk> beforeDataChunks = [];
+    private readonly List<BufferedChunk> afterDataChunks = [];
+    private CueList? bufferedCues;
 
-    private readonly struct BufferedChunk
+    // Chunk IDs are stored as their little-endian FOURCC value; BinaryWriter.Write(int) writes the same four bytes back out
+    private readonly record struct BufferedChunk(int Id, byte[] Data)
     {
-        public BufferedChunk(string id, byte[] data) { Id = id; Data = data; }
-        public string Id { get; }
-        public byte[] Data { get; }
+        public BufferedChunk(ReadOnlySpan<byte> id, byte[] data)
+            : this(BinaryPrimitives.ReadInt32LittleEndian(id), data)
+        {
+        }
     }
 
     /// <summary>
@@ -142,14 +148,14 @@ public class WaveFileWriter : Stream
     /// the WAV header and flushes the stream, but leaves it open for the caller to dispose.
     /// Use the filename constructor if you want the writer to own and close the underlying file.
     /// </remarks>
-    public WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions options)
+    public WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions? options)
         : this(outStream, format, options, ownsStream: false)
     {
     }
 
-    private WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions options, bool ownsStream)
+    private WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions? options, bool ownsStream)
     {
-        options ??= new WaveFileWriterOptions();
+        options ??= WaveFileWriterOptions.Default;
         this.outStream = outStream;
         this.ownsStream = ownsStream;
         this.format = format;
@@ -157,9 +163,9 @@ public class WaveFileWriter : Stream
         this.rf64PromotionThreshold = options.Rf64PromotionThreshold;
         writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
 
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
+        writer.Write("RIFF"u8);
         writer.Write(0); // placeholder
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
+        writer.Write("WAVE"u8);
 
         if (this.enableRf64)
         {
@@ -167,12 +173,12 @@ public class WaveFileWriter : Stream
             // Reserve a JUNK chunk of the same size; at close time, if the file exceeds
             // the RF64 promotion threshold, this slot is overwritten with a real ds64 chunk.
             junkChunkPos = outStream.Position;
-            writer.Write(System.Text.Encoding.UTF8.GetBytes("JUNK"));
-            writer.Write(28);
-            writer.Write(new byte[28]);
+            writer.Write("JUNK"u8);
+            writer.Write(JunkChunk.Length);
+            writer.Write(JunkChunk);
         }
 
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
+        writer.Write("fmt "u8);
         format.Serialize(writer);
     }
 
@@ -206,12 +212,33 @@ public class WaveFileWriter : Stream
     /// <param name="chunkId">Four-character chunk identifier (e.g. <c>"bext"</c>).</param>
     /// <param name="data">Chunk payload. Word-alignment padding is handled by the writer.</param>
     /// <param name="position">Where in the file the chunk should be placed.</param>
+    // Preferred over the span overload so that AddChunk(null, ...) binds here and throws ArgumentNullException
+    [OverloadResolutionPriority(1)]
     public void AddChunk(string chunkId, byte[] data, ChunkPosition position)
     {
+        ArgumentNullException.ThrowIfNull(chunkId);
+
+        Span<byte> chunkIdBytes = stackalloc byte[4];
+        if (!Encoding.UTF8.TryGetBytes(chunkId, chunkIdBytes, out int bytesWritten) || bytesWritten != 4)
+        {
+            throw new ArgumentException("Chunk id must be exactly four characters", nameof(chunkId));
+        }
+
+        AddChunk(chunkIdBytes, data, position);
+    }
+
+    /// <summary>
+    /// Adds a raw RIFF chunk to be written. Before-data chunks must be added before any
+    /// audio is written; after-data chunks are buffered until the writer is closed.
+    /// </summary>
+    /// <param name="chunkId">Four-character chunk identifier (e.g. <c>"bext"</c>).</param>
+    /// <param name="data">Chunk payload. Word-alignment padding is handled by the writer.</param>
+    /// <param name="position">Where in the file the chunk should be placed.</param>
+    public void AddChunk(ReadOnlySpan<byte> chunkId, byte[] data, ChunkPosition position)
+    {
         ThrowIfDisposed();
-        if (chunkId == null) throw new ArgumentNullException(nameof(chunkId));
+        ArgumentNullException.ThrowIfNull(data);
         if (chunkId.Length != 4) throw new ArgumentException("Chunk id must be exactly four characters", nameof(chunkId));
-        if (data == null) throw new ArgumentNullException(nameof(data));
 
         if (position == ChunkPosition.BeforeData)
         {
@@ -233,7 +260,7 @@ public class WaveFileWriter : Stream
     /// </summary>
     public void AddChunk(IWaveChunkWriter chunk)
     {
-        if (chunk == null) throw new ArgumentNullException(nameof(chunk));
+        ArgumentNullException.ThrowIfNull(chunk);
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true))
         {
@@ -251,10 +278,7 @@ public class WaveFileWriter : Stream
     public void AddCue(int position, string label)
     {
         ThrowIfDisposed();
-        if (bufferedCues == null)
-        {
-            bufferedCues = new CueList();
-        }
+        bufferedCues ??= new CueList();
         bufferedCues.Add(new Cue(position, label));
     }
 
@@ -269,10 +293,7 @@ public class WaveFileWriter : Stream
     public void AddCue(int position, string label, int length)
     {
         ThrowIfDisposed();
-        if (bufferedCues == null)
-        {
-            bufferedCues = new CueList();
-        }
+        bufferedCues ??= new CueList();
         bufferedCues.Add(new Cue(position, label, length));
     }
 
@@ -287,13 +308,13 @@ public class WaveFileWriter : Stream
 
         if (HasFactChunk())
         {
-            writer.Write(System.Text.Encoding.UTF8.GetBytes("fact"));
+            writer.Write("fact"u8);
             writer.Write(4);
             factSampleCountPos = outStream.Position;
             writer.Write(0);
         }
 
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
+        writer.Write("data"u8);
         dataSizePos = outStream.Position;
         writer.Write(0);
         headerFinalized = true;
@@ -301,7 +322,7 @@ public class WaveFileWriter : Stream
 
     private void WriteFramedChunk(BufferedChunk chunk)
     {
-        writer.Write(System.Text.Encoding.UTF8.GetBytes(chunk.Id));
+        writer.Write(chunk.Id);
         writer.Write(chunk.Data.Length);
         writer.Write(chunk.Data);
         if ((chunk.Data.Length & 1) == 1) writer.Write((byte)0);
@@ -316,7 +337,7 @@ public class WaveFileWriter : Stream
     /// <summary>
     /// The wave file name or null if not applicable
     /// </summary>
-    public string Filename => filename;
+    public string? Filename => filename;
 
     /// <summary>
     /// Number of bytes of audio in the data chunk
@@ -377,7 +398,7 @@ public class WaveFileWriter : Stream
     {
         ThrowIfDisposed();
         EnsureHeaderFinalized();
-        if (!enableRf64 && dataChunkSize + count > UInt32.MaxValue)
+        if (!enableRf64 && dataChunkSize + count > uint.MaxValue)
             throw new ArgumentException("WAV file too large - enable RF64 for files larger than 4 GB", nameof(count));
         outStream.Write(data, offset, count);
         dataChunkSize += count;
@@ -391,13 +412,11 @@ public class WaveFileWriter : Stream
     {
         ThrowIfDisposed();
         EnsureHeaderFinalized();
-        if (!enableRf64 && dataChunkSize + data.Length > UInt32.MaxValue)
+        if (!enableRf64 && dataChunkSize + data.Length > uint.MaxValue)
             throw new ArgumentException("WAV file too large - enable RF64 for files larger than 4 GB");
         outStream.Write(data);
         dataChunkSize += data.Length;
     }
-
-    private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time
 
     /// <summary>
     /// Writes a single sample to the Wave file
@@ -409,21 +428,19 @@ public class WaveFileWriter : Stream
         EnsureHeaderFinalized();
         if (WaveFormat.BitsPerSample == 16)
         {
-            writer.Write((Int16)(Int16.MaxValue * sample));
+            writer.Write((short)(short.MaxValue * sample));
             dataChunkSize += 2;
         }
         else if (WaveFormat.BitsPerSample == 24)
         {
-            var value = BitConverter.GetBytes((Int32)(Int32.MaxValue * sample));
-            value24[0] = value[1];
-            value24[1] = value[2];
-            value24[2] = value[3];
+            var value = BitConverter.GetBytes((int)(int.MaxValue * sample));
+            Span<byte> value24 = [value[1], value[2], value[3]];
             writer.Write(value24);
             dataChunkSize += 3;
         }
-        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible)
         {
-            // A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
+            // Plain 32-bit PCM is integer. A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
             // distinguished by its SubFormat GUID (NAudio defaults 32-bit extensible to IEEE
             // float). AsStandardWaveFormat resolves the subformat for both WaveFormatExtensible
             // and a WaveFormatExtraData tagged extensible, so honour it rather than assuming PCM.
@@ -433,7 +450,7 @@ public class WaveFileWriter : Stream
             }
             else
             {
-                writer.Write((Int32)(Int32.MaxValue * sample));
+                writer.Write((int)(int.MaxValue * sample));
             }
             dataChunkSize += 4;
         }
@@ -485,9 +502,10 @@ public class WaveFileWriter : Stream
         // 24 bit PCM data
         else if (WaveFormat.BitsPerSample == 24)
         {
+            Span<byte> value24 = stackalloc byte[3];
             for (int sample = 0; sample < count; sample++)
             {
-                var value = BitConverter.GetBytes(UInt16.MaxValue * samples[sample + offset]);
+                var value = BitConverter.GetBytes(ushort.MaxValue * samples[sample + offset]);
                 value24[0] = value[1];
                 value24[1] = value[2];
                 value24[2] = value[3];
@@ -495,8 +513,8 @@ public class WaveFileWriter : Stream
             }
             dataChunkSize += (count * 3);
         }
-        // 32 bit PCM or IEEE float data
-        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+        // 32 bit PCM, or extensible PCM or IEEE float data
+        else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding is WaveFormatEncoding.Pcm or WaveFormatEncoding.Extensible)
         {
             // As in WriteSample, a 32-bit extensible format may carry an IEEE-float subformat,
             // in which case the 16-bit samples must be normalised to float rather than written
@@ -505,14 +523,14 @@ public class WaveFileWriter : Stream
             {
                 for (int sample = 0; sample < count; sample++)
                 {
-                    writer.Write(samples[sample + offset] / (float)(Int16.MaxValue + 1));
+                    writer.Write(samples[sample + offset] / (float)(short.MaxValue + 1));
                 }
             }
             else
             {
                 for (int sample = 0; sample < count; sample++)
                 {
-                    writer.Write(UInt16.MaxValue * samples[sample + offset]);
+                    writer.Write(ushort.MaxValue * samples[sample + offset]);
                 }
             }
             dataChunkSize += (count * 4);
@@ -522,7 +540,7 @@ public class WaveFileWriter : Stream
         {
             for (int sample = 0; sample < count; sample++)
             {
-                writer.Write(samples[sample + offset] / (float)(Int16.MaxValue + 1));
+                writer.Write(samples[sample + offset] / (float)(short.MaxValue + 1));
             }
             dataChunkSize += (count * 4);
         }
@@ -566,29 +584,25 @@ public class WaveFileWriter : Stream
     {
         if (disposing && !isDisposed)
         {
-            if (outStream != null)
+            try
             {
-                try
+                EnsureHeaderFinalized();
+                FinalizeFile();
+            }
+            finally
+            {
+                if (ownsStream)
                 {
-                    EnsureHeaderFinalized();
-                    FinalizeFile();
+                    // We opened the file (filename constructor), so we close it.
+                    outStream.Dispose();
                 }
-                finally
+                else
                 {
-                    if (ownsStream)
-                    {
-                        // We opened the file (filename constructor), so we close it.
-                        outStream.Dispose();
-                    }
-                    else
-                    {
-                        // The caller handed us the stream; finalize the file by flushing,
-                        // but leave the stream open for them to dispose.
-                        outStream.Flush();
-                    }
-                    outStream = null;
-                    isDisposed = true;
+                    // The caller handed us the stream; finalize the file by flushing,
+                    // but leave the stream open for them to dispose.
+                    outStream.Flush();
                 }
+                isDisposed = true;
             }
         }
         base.Dispose(disposing);
@@ -607,8 +621,8 @@ public class WaveFileWriter : Stream
         // Emit buffered AddCue content (if any) ahead of explicitly-added AfterData chunks.
         if (bufferedCues != null && bufferedCues.Count > 0)
         {
-            WriteFramedChunk(new BufferedChunk("cue ", bufferedCues.SerializeCueChunkData()));
-            WriteFramedChunk(new BufferedChunk("LIST", bufferedCues.SerializeAdtlListChunkData()));
+            WriteFramedChunk(new BufferedChunk("cue "u8, bufferedCues.SerializeCueChunkData()));
+            WriteFramedChunk(new BufferedChunk("LIST"u8, bufferedCues.SerializeAdtlListChunkData()));
         }
 
         foreach (var chunk in afterDataChunks)
@@ -643,19 +657,19 @@ public class WaveFileWriter : Stream
 
         // overwrite RIFF -> RF64 and set the top-level RIFF size to 0xFFFFFFFF
         outStream.Position = 0;
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("RF64"));
+        writer.Write("RF64"u8);
         writer.Write(unchecked((int)0xFFFFFFFF));
         // WAVE is at offset 8 and is unchanged
 
         // overwrite JUNK placeholder with ds64 chunk
         outStream.Position = junkChunkPos;
-        writer.Write(System.Text.Encoding.UTF8.GetBytes("ds64"));
+        writer.Write("ds64"u8);
         writer.Write(28);
-        writer.Write(totalLength - 8);  // RIFF size (64-bit)
-        writer.Write(dataChunkSize);      // data chunk size (64-bit)
+        writer.Write(totalLength - 8);      // RIFF size (64-bit)
+        writer.Write(dataChunkSize);        // data chunk size (64-bit)
         long sampleCount = format.BlockAlign > 0 ? dataChunkSize / format.BlockAlign : 0;
-        writer.Write(sampleCount);              // sample count (64-bit)
-        writer.Write(0);                   // table length
+        writer.Write(sampleCount);          // sample count (64-bit)
+        writer.Write(0);                    // table length
 
         // data chunk size field stays 0xFFFFFFFF per RF64 convention
         outStream.Position = dataSizePos;
@@ -665,13 +679,13 @@ public class WaveFileWriter : Stream
     private void UpdateDataChunk()
     {
         outStream.Position = dataSizePos;
-        writer.Write((UInt32)dataChunkSize);
+        writer.Write((uint)dataChunkSize);
     }
 
     private void UpdateRiffChunk()
     {
         outStream.Position = 4;
-        writer.Write((UInt32)(outStream.Length - 8));
+        writer.Write((uint)(outStream.Length - 8));
     }
 
     private void UpdateFactChunk()
@@ -689,8 +703,7 @@ public class WaveFileWriter : Stream
 
     private void ThrowIfDisposed()
     {
-        if (isDisposed) throw new ObjectDisposedException(nameof(WaveFileWriter));
+        ObjectDisposedException.ThrowIf(isDisposed, this);
     }
-
     #endregion
 }

@@ -26,10 +26,10 @@ public interface IWaveIn : IDisposable
     /// <summary>
     /// Indicates recorded data is available 
     /// </summary>
-    event EventHandler<WaveInEventArgs> DataAvailable;
+    event EventHandler<WaveInEventArgs>? DataAvailable;
 
     /// <summary>
     /// Indicates that all recorded data has now been received.
     /// </summary>
-    event EventHandler<StoppedEventArgs> RecordingStopped;
+    event EventHandler<StoppedEventArgs>? RecordingStopped;
 }

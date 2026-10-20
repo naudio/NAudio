@@ -16,7 +16,7 @@ public class InfoListInterpreterTests
     private static WaveFileReader OpenWithInfo(InfoMetadata info)
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.WriteInfoMetadata(info);
             w.Write(Audio, 0, Audio.Length);
@@ -36,7 +36,7 @@ public class InfoListInterpreterTests
     public void ReturnsNullWhenNoListChunk()
     {
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.Write(Audio, 0, Audio.Length);
         }
@@ -50,7 +50,7 @@ public class InfoListInterpreterTests
     {
         // File with cue labels (adtl) but no INFO list — the interpreter must distinguish.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddCue(1, "Label");
             w.Write(Audio, 0, Audio.Length);
@@ -216,7 +216,7 @@ public class InfoListInterpreterTests
         info.Set("INAM", "Song");
 
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        using (var w = new WaveFileWriter(ms, Format))
         {
             w.AddCue(1, "CueLabel");
             w.WriteInfoMetadata(info);

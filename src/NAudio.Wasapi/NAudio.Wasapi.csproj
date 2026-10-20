@@ -12,13 +12,8 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
     <Description>WASAPI playback and capture (including loopback and process loopback) and Media Foundation codecs for the NAudio audio library. Windows-only at runtime.</Description>
-  </PropertyGroup>
-
-  <!-- needed for perfomance profiling unit tests -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	<DebugType>full</DebugType>
-	<DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

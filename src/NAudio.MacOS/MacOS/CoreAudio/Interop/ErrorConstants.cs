@@ -50,7 +50,7 @@ internal static class ErrorConstants /* OSStatus */
     /// </summary>
     /// <param name="errorCode">The OSStatus error code to inspect.</param>
     /// <returns>A string describing the error message, or <see langword="null"/> if the error code is not Core Audio framework-specific.</returns>
-    public static string GetErrorMessage(int errorCode)
+    public static string? GetErrorMessage(int errorCode)
     {
         if (errorCode == kAudioHardwareNoError)
         {

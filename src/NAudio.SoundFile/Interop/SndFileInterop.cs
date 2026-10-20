@@ -176,7 +176,7 @@ internal static partial class SndFileInterop
     [LibraryImport(Library, EntryPoint = "sf_set_string", StringMarshalling = StringMarshalling.Utf8)]
     internal static partial int SetString(IntPtr sndfile, int strType, string value);
 
-    internal static string GetString(IntPtr sndfile, int strType)
+    internal static string? GetString(IntPtr sndfile, int strType)
     {
         var ptr = GetStringRaw(sndfile, strType);
         return ptr == IntPtr.Zero ? null : Marshal.PtrToStringUTF8(ptr);

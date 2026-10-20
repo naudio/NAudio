@@ -36,4 +36,4 @@ public sealed record WasapiPlaybackCapability(
     WaveFormat OutputFormat,
     IReadOnlyList<string> Conversions,
     int LatencyMilliseconds,
-    string Reason);
+    string? Reason);

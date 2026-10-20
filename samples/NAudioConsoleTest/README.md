@@ -38,6 +38,20 @@ See [BatchPlans/README.md](BatchPlans/README.md) for the JSON plan schema and th
 plans (`enumeration-smoke.json`, `asio-functional-sample.json`). Reports land in
 `Reports/<timestamp>/summary.{json,md}` and are gitignored.
 
+### Running under Native AOT
+
+To test the AOT-compatible NAudio packages against real hardware, publish the app with Native AOT
+(needs the MSVC build tools) and run the resulting exe as above, batch plans included:
+
+```
+dotnet publish -c Release -r win-x64 -p:PublishAot=true -o <dir>
+```
+
+The project sets `IsAotCompatible`, so an ordinary build already fails on code that would break
+under AOT. JSON goes through the source-generated
+[`ConsoleTestJsonContext`](Shared/Testing/ConsoleTestJsonContext.cs): add any new type you
+serialise there.
+
 ## Adding a new test
 
 1. **Create the test class** in the appropriate backend folder (e.g.

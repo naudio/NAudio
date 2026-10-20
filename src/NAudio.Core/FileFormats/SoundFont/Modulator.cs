@@ -28,7 +28,7 @@ public class Modulator
     /// <summary>
     /// Source Modulation data type
     /// </summary>
-    public ModulatorType SourceModulationData { get; set; }
+    public ModulatorType? SourceModulationData { get; set; }
 
     /// <summary>
     /// Destination generator type
@@ -43,7 +43,7 @@ public class Modulator
     /// <summary>
     /// Source Modulation Amount Type
     /// </summary>
-    public ModulatorType SourceModulationAmount { get; set; }
+    public ModulatorType? SourceModulationAmount { get; set; }
 
     /// <summary>
     /// Source Transform Type
@@ -62,8 +62,8 @@ public class Modulator
         return other != null
             && DestinationGenerator == other.DestinationGenerator
             && SourceTransform == other.SourceTransform
-            && SourceModulationData.RawValue == other.SourceModulationData.RawValue
-            && SourceModulationAmount.RawValue == other.SourceModulationAmount.RawValue;
+            && SourceModulationData?.RawValue == other.SourceModulationData?.RawValue
+            && SourceModulationAmount?.RawValue == other.SourceModulationAmount?.RawValue;
     }
 
     /// <summary>

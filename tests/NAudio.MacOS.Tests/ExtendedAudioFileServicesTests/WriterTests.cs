@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.IO;
 
@@ -37,7 +37,7 @@ public class WriterTests
         settings ??= new();
         settings.ProvidingFormat = sg.WaveFormat;
         var path = CreateRandomFileName();
-        var wr = ExtendedAudioFileWriter.CreateFromFilePath(path, settings, true);
+        var wr = ExtendedAudioFileWriter.CreateToFilePath(path, settings, true);
         WriteAndDisposeWriter(wr, sg);
         TryDeleteTheCreatedFile(path);
     }
@@ -58,7 +58,7 @@ public class WriterTests
 
         try
         {
-            var wr = ExtendedAudioFileWriter.CreateFromStream(fs, settings);
+            var wr = ExtendedAudioFileWriter.CreateToStream(fs, settings);
             WriteAndDisposeWriter(wr, sg);
         }
         finally

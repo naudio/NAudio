@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders;
@@ -17,7 +18,7 @@ public abstract class SampleProviderConverterBase : ISampleProvider
     /// <summary>
     /// Source buffer (to avoid constantly creating small buffers during playback)
     /// </summary>
-    protected byte[] sourceBuffer;
+    protected byte[]? sourceBuffer;
 
     /// <summary>
     /// Initializes a new instance of SampleProviderConverterBase
@@ -45,6 +46,7 @@ public abstract class SampleProviderConverterBase : ISampleProvider
     /// Ensure the source buffer exists and is big enough
     /// </summary>
     /// <param name="sourceBytesRequired">Bytes required</param>
+    [MemberNotNull(nameof(sourceBuffer))]
     protected void EnsureSourceBuffer(int sourceBytesRequired)
     {
         sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);

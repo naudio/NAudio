@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 
@@ -15,8 +15,9 @@ public partial class CoreAudioPlayer
     // of the HAL regarding how the audio data should be provided.
     private unsafe abstract class PlayerProcedure : CoreAudioIOProcedure
     {
-        private Exception exception;
-        private IPlayerSource source;
+        private Exception? exception;
+        // Assigned by the player through Source before the procedure is ever started.
+        private IPlayerSource source = null!;
         // The device's sample time on the first cycle of the current run. The
         // device clock counts from whenever the device itself started, which is
         // not when this player started, so it only becomes a position once it
@@ -33,7 +34,6 @@ public partial class CoreAudioPlayer
         public PlayerProcedure(AudioDevice dev)
             : base(dev)
         {
-            source = null;
             exception = null;
             firstSampleTime = double.NaN;
             shouldStopInNextCall = false;
@@ -148,7 +148,7 @@ public partial class CoreAudioPlayer
             set => source = value;
         }
 
-        public event EventHandler<StoppedEventArgs> PlaybackStopped;
+        public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
         public double CurrentLatencyInSeconds()
         {

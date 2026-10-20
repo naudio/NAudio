@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
@@ -34,6 +35,7 @@ public abstract class WaveProvider32 : IWaveProvider, ISampleProvider
     /// Allows you to specify the sample rate and channels for this WaveProvider
     /// (should be initialised before you pass it to a wave player)
     /// </summary>
+    [MemberNotNull(nameof(waveFormat))]
     public void SetWaveFormat(int sampleRate, int channels)
     {
         this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);

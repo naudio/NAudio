@@ -22,6 +22,7 @@
 //        misrepresented as being the original software.
 //     3. This notice may not be removed or altered from any source distribution.
 
+#nullable disable
 
 using System;
 
@@ -228,6 +229,27 @@ public class WdlResampler
     /// </summary>
     public int ResampleOut(Span<WDL_ResampleSample> outBuffer, int nsamples_in, int nsamples_out, int nch)
     {
+        return ResampleOut(outBuffer, nsamples_in, nsamples_out, nch, true);
+    }
+
+    /// <summary>
+    /// As <see cref="ResampleOut(Span{float}, int, int, int)"/>, but lets the caller choose what happens when
+    /// nsamples_in is less than the value returned by ResamplePrepare.
+    /// </summary>
+    /// <param name="outBuffer">Buffer to receive the resampled output</param>
+    /// <param name="nsamples_in">Number of input frames written to the buffer from ResamplePrepare</param>
+    /// <param name="nsamples_out">Maximum number of output frames to produce</param>
+    /// <param name="nch">Number of channels</param>
+    /// <param name="flush">
+    /// true to treat short input as the end of the stream: the input is padded with silence so that all
+    /// remaining valid output is produced (the behaviour of the four-argument overload). false to treat
+    /// short input as a temporary shortfall (an under-fed real-time source): only output that is fully
+    /// determined by real input is produced, and the remaining input stays buffered for the next call.
+    /// In sinc mode this avoids computing the last few output samples from the padding.
+    /// </param>
+    /// <returns>Number of output frames written to outBuffer</returns>
+    public int ResampleOut(Span<WDL_ResampleSample> outBuffer, int nsamples_in, int nsamples_out, int nch, bool flush)
+    {
         if (nch > WDL_RESAMPLE_MAX_NCH || nch < 1)
         {
             return 0;
@@ -256,7 +278,7 @@ public class WdlResampler
 
         int rsinbuf_availtemp = m_samples_in_rsinbuf;
 
-        if (nsamples_in < m_last_requested) // flush out to ensure we can deliver
+        if (flush && nsamples_in < m_last_requested) // flush out to ensure we can deliver
         {
             int fsize = (m_last_requested - nsamples_in) * 2 + m_sincsize * 2;
 

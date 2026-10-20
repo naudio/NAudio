@@ -110,7 +110,7 @@ public class Cue
 /// </remarks>
 public class CueList
 {
-    private readonly List<Cue> cues = new();
+    private readonly List<Cue> cues = [];
     /// <summary>
     /// Creates an empty cue list
     /// </summary>
@@ -185,7 +185,7 @@ public class CueList
     /// </summary>
     /// <param name="cueChunkData">The data contained in the cue chunk</param>
     /// <param name="listChunkData">The data contained in the list chunk</param>
-    internal CueList(byte[] cueChunkData, byte[] listChunkData)
+    internal CueList(byte[] cueChunkData, byte[]? listChunkData)
     {
         int cueCount = BitConverter.ToInt32(cueChunkData, 0);
         Dictionary<int, int> cueIndex = new Dictionary<int, int>();
@@ -200,8 +200,8 @@ public class CueList
 
         string[] labels = new string[cueCount];
         int?[] lengths = new int?[cueCount];
-        var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-        var ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
+        var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl"u8);
+        var ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt"u8);
 
         // Parse list chunk - properly handle all chunk types.
         // listChunkData may be null when the file has cue points but no adtl labels
@@ -264,7 +264,7 @@ public class CueList
     /// </summary>
     internal byte[] SerializeCueChunkData()
     {
-        int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
+        int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data"u8);
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
         w.Write(Count);
@@ -289,14 +289,15 @@ public class CueList
     /// </summary>
     internal byte[] SerializeAdtlListChunkData()
     {
-        int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-        int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
+        int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl"u8);
+        int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt"u8);
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
-        w.Write(Encoding.UTF8.GetBytes("adtl"));
+        w.Write("adtl"u8);
         for (int i = 0; i < Count; i++)
         {
-            var labelArray = Encoding.UTF8.GetBytes(this[i].Label ?? string.Empty);
+            string label = this[i].Label;
+            var labelArray = string.IsNullOrEmpty(label) ? [] : Encoding.UTF8.GetBytes(label);
             w.Write(labelChunkId);
             w.Write(labelArray.Length + 1 + 4); // dwIdentifier + text + null terminator
             w.Write(i);                         // dwIdentifier (the cue id)
@@ -315,7 +316,7 @@ public class CueList
                 w.Write(ltxtChunkId);
                 w.Write(20);
                 w.Write(i);                     // dwIdentifier (cue id)
-                w.Write(this[i].Length.Value);  // dwSampleLength
+                w.Write(this[i].Length!.Value); // dwSampleLength
                 w.Write(0);                     // dwPurpose
                 w.Write((short)0);              // wCountry
                 w.Write((short)0);              // wLanguage
@@ -353,7 +354,7 @@ public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
     public static readonly CueListInterpreter Instance = new();
 
     /// <inheritdoc />
-    public CueList Interpret(WaveChunks chunks)
+    public CueList? Interpret(WaveChunks chunks)
     {
         if (chunks == null) return null;
         var cueChunk = chunks.Find("cue ");
@@ -361,12 +362,12 @@ public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
 
         // A WAV file may contain multiple LIST chunks (e.g. INFO metadata alongside adtl labels).
         // Only the adtl list carries cue labels, so we filter by list type.
-        byte[] listChunkData = null;
+        byte[]? listChunkData = null;
         foreach (var list in chunks.FindAll("LIST"))
         {
             if (list.Length < 4) continue;
             var data = chunks.GetData(list);
-            if (data.Length >= 4 && data[0] == (byte)'a' && data[1] == (byte)'d' && data[2] == (byte)'t' && data[3] == (byte)'l')
+            if (data.AsSpan().StartsWith("adtl"u8))
             {
                 listChunkData = data;
                 break;

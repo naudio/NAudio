@@ -2,6 +2,8 @@
 
 NAudio 3's `AsioDevice` exposes a clean recording mode that delivers per-channel `Span<float>` to your event handler — no `IntPtr` arithmetic, no manual sample-format decoding, no interleaving math. This article covers recording only — see [AsioPlayback](AsioPlayback.md), [AsioDuplex](AsioDuplex.md), and [AsioMigration](AsioMigration.md) for related modes and migration guidance.
 
+`AsioDevice` and `AsioOut` are in the [NAudio.Asio](https://www.nuget.org/packages/NAudio.Asio/) package, which the `NAudio` meta-package doesn't include: `dotnet add package NAudio.Asio`.
+
 You need a soundcard with an ASIO driver installed. [ASIO4ALL](http://asio4all.com/) is a free fallback for hardware that doesn't ship one.
 
 ## Open the device

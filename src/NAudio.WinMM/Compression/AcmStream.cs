@@ -20,7 +20,7 @@ public class AcmStream : IDisposable
 {
     private IntPtr streamHandle;
     private IntPtr driverHandle;
-    private AcmStreamHeader streamHeader;
+    private AcmStreamHeader? streamHeader;
     private readonly WaveFormat sourceFormat;
 
     /// <summary>
@@ -70,6 +70,7 @@ public class AcmStream : IDisposable
     /// <param name="driverId">the driver identifier</param>
     /// <param name="sourceFormat">the source format</param>
     /// <param name="waveFilter">the wave filter</param>
+    [Obsolete("ACM filter (same-format effect) drivers are effectively obsolete and NAudio provides no way to enumerate them. To use a codec that isn't installed, use AcmDriver.AddLocalDriver. This constructor will be removed in a future major version.")]
     public AcmStream(IntPtr driverId, WaveFormat sourceFormat, WaveFilter waveFilter)
     {
         int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);
@@ -156,19 +157,34 @@ public class AcmStream : IDisposable
     /// <summary>
     /// Returns the Source Buffer. Fill this with data prior to calling convert
     /// </summary>
-    public byte[] SourceBuffer => streamHeader.SourceBuffer;
+    public byte[] SourceBuffer
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(streamHeader is null, this);
+            return streamHeader.SourceBuffer;
+        }
+    }
 
     /// <summary>
     /// Returns the Destination buffer. This will contain the converted data
     /// after a successful call to Convert
     /// </summary>
-    public byte[] DestBuffer => streamHeader.DestBuffer;
+    public byte[] DestBuffer
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(streamHeader is null, this);
+            return streamHeader.DestBuffer;
+        }
+    }
 
     /// <summary>
     /// Report that we have repositioned in the source stream
     /// </summary>
     public void Reposition()
     {
+        ObjectDisposedException.ThrowIf(streamHeader is null, this);
         streamHeader.Reposition();
     }
 

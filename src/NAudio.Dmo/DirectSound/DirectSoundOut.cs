@@ -4,6 +4,7 @@ using System.Runtime.InteropServices.Marshalling;
 using System.Threading;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using NAudio.Dmo.Interop;
 using NAudio.Wave.DirectSoundInterop;
 
@@ -19,25 +20,25 @@ public partial class DirectSoundOut : IWavePlayer
     /// <summary>
     /// Playback Stopped
     /// </summary>
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     private PlaybackState playbackState;
-    private WaveFormat waveFormat;
+    private WaveFormat? waveFormat;
     private int samplesTotalSize;
     private int samplesFrameSize;
     private int nextSamplesWriteIndex;
     private readonly int desiredLatency;
     private readonly Guid device;
-    private byte[] samples;
-    private IWaveProvider waveStream = null;
-    private IDirectSound directSound = null;
-    private IDirectSoundBuffer primarySoundBuffer = null;
-    private IDirectSoundBuffer secondaryBuffer = null;
-    private EventWaitHandle frameEventWaitHandle1;
-    private EventWaitHandle frameEventWaitHandle2;
-    private EventWaitHandle endEventWaitHandle;
-    private Thread notifyThread;
-    private readonly SynchronizationContext syncContext;
+    private byte[]? samples;
+    private IWaveProvider? waveStream = null;
+    private IDirectSound? directSound = null;
+    private IDirectSoundBuffer? primarySoundBuffer = null;
+    private IDirectSoundBuffer? secondaryBuffer = null;
+    private EventWaitHandle? frameEventWaitHandle1;
+    private EventWaitHandle? frameEventWaitHandle2;
+    private EventWaitHandle? endEventWaitHandle;
+    private Thread? notifyThread;
+    private readonly SynchronizationContext? syncContext;
     private long bytesPlayed;
 
     // Used purely for locking. Deliberately a plain object rather than a
@@ -63,7 +64,7 @@ public partial class DirectSoundOut : IWavePlayer
         }
     }
 
-    private static List<DirectSoundDeviceInfo> devices;
+    private static List<DirectSoundDeviceInfo> devices = [];
 
     // BOOL-returning [UnmanagedCallersOnly] thunk invoked from native by
     // DirectSoundEnumerate. Replaces the old delegate-based callback so the
@@ -84,7 +85,7 @@ public partial class DirectSoundOut : IWavePlayer
             Marshal.Copy(lpGuid, guidBytes, 0, 16);
             device.Guid = new Guid(guidBytes);
         }
-        device.Description = Marshal.PtrToStringAnsi(lpcstrDescription);
+        device.Description = Marshal.PtrToStringAnsi(lpcstrDescription) ?? "";
         if (lpcstrModule != IntPtr.Zero)
         {
             device.ModuleName = Marshal.PtrToStringAnsi(lpcstrModule);
@@ -233,10 +234,11 @@ public partial class DirectSoundOut : IWavePlayer
             var pos = GetPosition();
 
             // samples played in this stream
-            pos /= waveFormat.Channels * waveFormat.BitsPerSample / 8;
+            var format = OutputWaveFormat;
+            pos /= format.Channels * format.BitsPerSample / 8;
 
             // ms played in this stream
-            return TimeSpan.FromMilliseconds(pos * 1000.0 / waveFormat.SampleRate);
+            return TimeSpan.FromMilliseconds(pos * 1000.0 / format.SampleRate);
         }
     }
 
@@ -251,6 +253,8 @@ public partial class DirectSoundOut : IWavePlayer
         this.waveFormat = waveProvider.WaveFormat;
     }
 
+    [MemberNotNull(nameof(directSound), nameof(primarySoundBuffer), nameof(secondaryBuffer), nameof(samples),
+        nameof(frameEventWaitHandle1), nameof(frameEventWaitHandle2), nameof(endEventWaitHandle))]
     private void InitializeDirectSound()
     {
         // Open DirectSound
@@ -313,7 +317,12 @@ public partial class DirectSoundOut : IWavePlayer
             samplesFrameSize = MsToBytes(desiredLatency);
 
             // Fill BufferDescription for SecondaryBuffer
-            GCHandle handleOnWaveFormat = GCHandle.Alloc(waveFormat, GCHandleType.Pinned); // Ptr to waveFormat
+            // MarshalToPtr, not a pinned GCHandle on the managed object: WaveFormat has carried
+            // no [StructLayout] since #1432, so its Auto layout may reorder fields — the pinned
+            // instance handed to CreateSoundBuffer was not a valid WAVEFORMATEX (every format
+            // failed with DirectSoundException 0x80004001), and a WaveFormatExtraData pin throws
+            // ArgumentException outright because of its byte[] field.
+            IntPtr waveFormatPtr = WaveFormat.MarshalToPtr(OutputWaveFormat);
             IntPtr secondaryBufferPtr;
             try
             {
@@ -328,7 +337,7 @@ public partial class DirectSoundOut : IWavePlayer
                         | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS
                         | DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2,
                     dwReserved = 0,
-                    lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(), // Ptr to waveFormat
+                    lpwfxFormat = waveFormatPtr,
                     guidAlgo = Guid.Empty,
                 };
 
@@ -337,7 +346,7 @@ public partial class DirectSoundOut : IWavePlayer
             }
             finally
             {
-                handleOnWaveFormat.Free();
+                Marshal.FreeHGlobal(waveFormatPtr);
             }
             try
             {
@@ -365,7 +374,7 @@ public partial class DirectSoundOut : IWavePlayer
                 int hr = Marshal.QueryInterface(secondaryBufferPtr, in iidNotify, out IntPtr notifyPtr);
                 DirectSoundException.ThrowIfFailed(hr);
 
-                IDirectSoundNotify notify = null;
+                IDirectSoundNotify? notify = null;
                 try
                 {
                     notify = (IDirectSoundNotify)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
@@ -444,7 +453,7 @@ public partial class DirectSoundOut : IWavePlayer
     }
 
     /// <inheritdoc/>
-    public WaveFormat OutputWaveFormat => waveFormat;
+    public WaveFormat OutputWaveFormat => waveFormat ?? throw new InvalidOperationException("Must call Init first");
 
     /// <summary>
     /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -461,9 +470,9 @@ public partial class DirectSoundOut : IWavePlayer
     /// <returns>
     /// 	<c>true</c> if [is buffer lost]; otherwise, <c>false</c>.
     /// </returns>
-    private bool IsBufferLost()
+    private static bool IsBufferLost(IDirectSoundBuffer buffer)
     {
-        DirectSoundException.ThrowIfFailed(secondaryBuffer.GetStatus(out DirectSoundBufferStatus status));
+        DirectSoundException.ThrowIfFailed(buffer.GetStatus(out DirectSoundBufferStatus status));
         return (status & DirectSoundBufferStatus.DSBSTATUS_BUFFERLOST) != 0;
     }
 
@@ -474,8 +483,9 @@ public partial class DirectSoundOut : IWavePlayer
     /// <returns>number of byttes</returns>
     private int MsToBytes(int ms)
     {
-        int bytes = ms * (waveFormat.AverageBytesPerSecond / 1000);
-        bytes -= bytes % waveFormat.BlockAlign;
+        var format = OutputWaveFormat;
+        int bytes = ms * (format.AverageBytesPerSecond / 1000);
+        bytes -= bytes % format.BlockAlign;
         return bytes;
     }
 
@@ -489,7 +499,7 @@ public partial class DirectSoundOut : IWavePlayer
         bool firstBufferStarted = false;
         bytesPlayed = 0;
 
-        Exception exception = null;
+        Exception? exception = null;
         // Incase the thread is killed
         try
         {
@@ -610,7 +620,7 @@ public partial class DirectSoundOut : IWavePlayer
         }
     }
 
-    private void RaisePlaybackStopped(Exception e)
+    private void RaisePlaybackStopped(Exception? e)
     {
         var handler = PlaybackStopped;
         if (handler != null)
@@ -706,10 +716,17 @@ public partial class DirectSoundOut : IWavePlayer
     {
         int bytesRead = bytesToCopy;
 
+        // Feed only runs on the playback thread after InitializeDirectSound, so these are set
+        // unless a concurrent Stop has already torn playback down - treat that as end of stream
+        var buffer = secondaryBuffer;
+        var stream = waveStream;
+        var samples = this.samples;
+        if (buffer is null || stream is null || samples is null) return 0;
+
         // Restore the buffer if lost
-        if (IsBufferLost())
+        if (IsBufferLost(buffer))
         {
-            DirectSoundException.ThrowIfFailed(secondaryBuffer.Restore());
+            DirectSoundException.ThrowIfFailed(buffer.Restore());
         }
 
         // Clear the bufferSamples if in Paused
@@ -720,7 +737,7 @@ public partial class DirectSoundOut : IWavePlayer
         else
         {
             // Read data from stream (Should this be inserted between the lock / unlock?)
-            bytesRead = waveStream.Read(samples.AsSpan(0, bytesToCopy));
+            bytesRead = stream.Read(samples.AsSpan(0, bytesToCopy));
 
             if (bytesRead == 0)
             {
@@ -730,7 +747,7 @@ public partial class DirectSoundOut : IWavePlayer
         }
 
         // Lock a portion of the SecondaryBuffer (starting from 0 or 1/2 the buffer)
-        DirectSoundException.ThrowIfFailed(secondaryBuffer.Lock(nextSamplesWriteIndex, (uint)bytesRead,
+        DirectSoundException.ThrowIfFailed(buffer.Lock(nextSamplesWriteIndex, (uint)bytesRead,
             out IntPtr wavBuffer1, out int nbSamples1,
             out IntPtr wavBuffer2, out int nbSamples2,
             DirectSoundBufferLockFlag.None));
@@ -746,7 +763,7 @@ public partial class DirectSoundOut : IWavePlayer
         }
 
         // Unlock the SecondaryBuffer
-        DirectSoundException.ThrowIfFailed(secondaryBuffer.Unlock(wavBuffer1, nbSamples1, wavBuffer2, nbSamples2));
+        DirectSoundException.ThrowIfFailed(buffer.Unlock(wavBuffer1, nbSamples1, wavBuffer2, nbSamples2));
 
         return bytesRead;
     }
@@ -816,9 +833,9 @@ public class DirectSoundDeviceInfo
     /// <summary>
     /// Device description
     /// </summary>
-    public string Description { get; set; }
+    public string Description { get; set; } = "";
     /// <summary>
-    /// Device module name
+    /// Device module name, or null if the driver reports none
     /// </summary>
-    public string ModuleName { get; set; }
+    public string? ModuleName { get; set; }
 }

@@ -3,7 +3,7 @@
 namespace NAudioDemo.VolumeMixerDemo;
 
 /// <summary>
-/// Volume mixer with functionality of Win Vista and higher Volume Mixer.
+/// Volume mixer with the functionality of the Windows Volume Mixer.
 /// </summary>
 internal class VolumeMixerPlugin : INAudioDemoPlugin
 {

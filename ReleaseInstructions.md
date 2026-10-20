@@ -54,13 +54,15 @@ The tag push triggers `release.yml`, which:
 - Validates `RELEASE_NOTES.md` has a matching `### 3.0.0` section, and that it fits NuGet's 35,000-character `PackageReleaseNotes` limit.
 - Packs all 14 NAudio packages (+ matching `.snupkg` symbol packages), `NAudio.MacOS` pre-release and the rest stable.
 - Pushes everything to NuGet via trusted publishing.
-- Creates a GitHub Release titled `NAudio 3.0.0` with body extracted from the `RELEASE_NOTES.md` section, with the 13 `.nupkg` files attached as release assets (symbol packages are not attached — they go to NuGet's symbol server).
+- Creates a GitHub Release titled `NAudio 3.0.0` with body extracted from the `RELEASE_NOTES.md` section, with the 14 `.nupkg` files (including the pre-release `NAudio.MacOS`) attached as release assets (symbol packages are not attached — they go to NuGet's symbol server).
 
 No further action required for the publish itself. Both validations are fail-fast — if `VersionPrefix` or release notes don't match the tag, the workflow errors before packing.
 
 ### c. Post-release version bump PR
 
 Open a small follow-up PR bumping `<VersionPrefix>` in `Directory.Build.props` to the next development version (e.g. `3.0.1` or `3.1.0`). Without this, the next preview dispatch produces a version *lower* than the just-shipped final (since `3.0.0-preview.N < 3.0.0`).
+
+In the same PR, set `<PackageValidationBaselineVersion>` in [src/Directory.Build.props](src/Directory.Build.props) to the version you just shipped. Package validation compares every pack against that release and fails on any removed public API or target framework, so the baseline should always be the latest stable release. Do this only once the packages are live on NuGet, because restore downloads the baseline. Skip it after a preview: the baseline stays on the last stable release.
 
 ### d. Announce
 
@@ -77,6 +79,8 @@ GitHub Release + NuGet are the canonical channels. Optionally:
 - **`Tag v3.0.0 does not match VersionPrefix 3.0.0-alpha`** (or similar): you're tagging a commit whose `Directory.Build.props` doesn't have `<VersionPrefix>3.0.0</VersionPrefix>`. Either retag after the pre-flight PR merges, or push a fixup commit and tag that.
 - **`RELEASE_NOTES.md has no '### 3.0.0' section`:** the pre-flight PR didn't rename `### Unreleased`. Push a fix to `main` and delete + re-create the tag.
 - **`Release notes section is N chars, over NuGet's 35,000 limit`:** the notes section is too long to embed as `PackageReleaseNotes`. NuGet.org would otherwise reject the push *after* a successful pack, so the workflow fails fast instead. Trim the section — keep headline features and breaking changes, and let the auto-generated PR list on the GitHub Release carry the per-commit detail.
+
+- **Pack fails with `CP0001`/`CP0002`/`PKV006` (or another `CP`/`PKV` code):** package validation found that a public type or member, or a target framework, that the baseline release shipped is missing. If it's accidental, restore it. If it's an intentional break (normally only in a major version), run `dotnet pack src/<Package>/<Package>.csproj -c Release -p:GenerateCompatibilitySuppressionFile=true` to write a `CompatibilitySuppressions.xml` next to the csproj, and commit it with the change so the break is reviewed. When starting a new major version, it's simpler to clear `<PackageValidationBaselineVersion>` in `src/Directory.Build.props` until its first stable release ships.
 
 ## See also
 

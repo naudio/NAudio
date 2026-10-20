@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -13,21 +14,21 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class DeEsserEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Crossover", "Hz", 2000f, 16000f, () => CrossoverFrequency, v => CrossoverFrequency = v),
         EffectParameter.Continuous("Threshold", "dB", -60f, 0f, () => ThresholdDb, v => ThresholdDb = v),
         EffectParameter.Continuous("Ratio", "", 1f, 20f, () => Ratio, v => Ratio = v),
         EffectParameter.Continuous("Attack", "ms", 0.1f, 20f, () => AttackMs, v => AttackMs = v),
         EffectParameter.Continuous("Release", "ms", 10f, 500f, () => ReleaseMs, v => ReleaseMs = v),
         EffectParameter.Meter("Gain Reduction", "dB", 0f, 24f, () => GainReductionDb)
-    };
+    ];
 
     private LinkwitzRileyCrossover[] crossovers = Array.Empty<LinkwitzRileyCrossover>();
-    private EnvelopeFollower reductionFollower;
+    private EnvelopeFollower? reductionFollower;
     private float[] low = Array.Empty<float>();
     private float[] high = Array.Empty<float>();
 
@@ -81,6 +82,8 @@ public sealed class DeEsserEffect : AudioEffect, IParameterized
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(reductionFollower is not null, "Configure must be called before ProcessBlock.");
+
         var channels = Channels;
         reductionFollower.AttackMilliseconds = AttackMs;
         reductionFollower.ReleaseMilliseconds = ReleaseMs;

@@ -73,7 +73,9 @@ internal static class SoundFileTestHelper
     /// <summary>
     /// Builds writer options for a quality value (0..1). FLAC maps it to
     /// compression level; the lossy codecs map it to VBR quality. Returns
-    /// <c>null</c> when no quality was requested.
+    /// <c>null</c> when no quality was requested or the format has no quality
+    /// setting (WAV, AIFF), since <see cref="SoundFileWriter"/> rejects VBR
+    /// quality for uncompressed formats.
     /// </summary>
     public static SoundFileWriterOptions? OptionsFor(SoundFileMajorFormat major, double? quality)
     {
@@ -81,16 +83,13 @@ internal static class SoundFileTestHelper
         {
             return null;
         }
-        var options = new SoundFileWriterOptions();
-        if (major == SoundFileMajorFormat.Flac)
+        return major switch
         {
-            options.CompressionLevel = q;
-        }
-        else
-        {
-            options.VbrQuality = q;
-        }
-        return options;
+            SoundFileMajorFormat.Flac => new SoundFileWriterOptions { CompressionLevel = q },
+            SoundFileMajorFormat.OggVorbis or SoundFileMajorFormat.Opus or SoundFileMajorFormat.Mp3
+                => new SoundFileWriterOptions { VbrQuality = q },
+            _ => null,
+        };
     }
 
     /// <summary>Writes <paramref name="seconds"/> of 440 Hz float sine into a writer.</summary>

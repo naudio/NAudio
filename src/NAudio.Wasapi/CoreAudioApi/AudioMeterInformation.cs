@@ -11,7 +11,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioMeterInformation : IDisposable
 {
-    private IAudioMeterInformation audioMeterInformation;
+    private IAudioMeterInformation? audioMeterInformation;
+
+    private IAudioMeterInformation MeterInformation => audioMeterInformation ?? throw new ObjectDisposedException(nameof(AudioMeterInformation));
     private readonly bool ownsInterface;
 
     /// <summary>
@@ -32,7 +34,7 @@ public class AudioMeterInformation : IDisposable
         }
         ownsInterface = true;
 
-        CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
+        CoreAudioException.ThrowIfFailed(MeterInformation.QueryHardwareSupport(out var hardwareSupp));
         HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
         PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
     }
@@ -47,7 +49,7 @@ public class AudioMeterInformation : IDisposable
         audioMeterInformation = borrowed;
         ownsInterface = false;
 
-        CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
+        CoreAudioException.ThrowIfFailed(MeterInformation.QueryHardwareSupport(out var hardwareSupp));
         HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
         PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
     }
@@ -71,7 +73,7 @@ public class AudioMeterInformation : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioMeterInformation.GetPeakValue(out var result));
+            CoreAudioException.ThrowIfFailed(MeterInformation.GetPeakValue(out var result));
             return result;
         }
     }

@@ -20,8 +20,12 @@ public class AudioSessionControl : IDisposable
 {
     private static readonly Guid IID_IAudioSessionEvents = new("24918ACC-64B3-37C1-8CA9-74A66E9957A8");
 
-    private IAudioSessionControl audioSessionControlInterface;
-    private IAudioSessionControl2 audioSessionControlInterface2;
+    private IAudioSessionControl? audioSessionControlInterface;
+
+    private IAudioSessionControl SessionControl => audioSessionControlInterface ?? throw new ObjectDisposedException(nameof(AudioSessionControl));
+    private IAudioSessionControl2? audioSessionControlInterface2;
+    private readonly AudioMeterInformation? audioMeterInformation;
+    private readonly SimpleAudioVolume? simpleAudioVolume;
     private readonly bool ownsInterface;
     private readonly Dictionary<IAudioSessionEventsHandler, AudioSessionEventsCallback> audioSessionEventCallbacks = new();
     private readonly Lock eventCallbackLock = new();
@@ -63,9 +67,9 @@ public class AudioSessionControl : IDisposable
         audioSessionControlInterface2 = audioSessionControlInterface as IAudioSessionControl2;
 
         if (audioSessionControlInterface is IAudioMeterInformation meters)
-            AudioMeterInformation = new AudioMeterInformation(meters);
+            audioMeterInformation = new AudioMeterInformation(meters);
         if (audioSessionControlInterface is ISimpleAudioVolume volume)
-            SimpleAudioVolume = new SimpleAudioVolume(volume);
+            simpleAudioVolume = new SimpleAudioVolume(volume);
     }
 
     /// <summary>
@@ -80,9 +84,9 @@ public class AudioSessionControl : IDisposable
         ownsInterface = false;
 
         if (audioSessionControlInterface is IAudioMeterInformation meters)
-            AudioMeterInformation = new AudioMeterInformation(meters);
+            audioMeterInformation = new AudioMeterInformation(meters);
         if (audioSessionControlInterface is ISimpleAudioVolume volume)
-            SimpleAudioVolume = new SimpleAudioVolume(volume);
+            simpleAudioVolume = new SimpleAudioVolume(volume);
     }
 
     /// <summary>
@@ -97,7 +101,7 @@ public class AudioSessionControl : IDisposable
                 var ptr = QueryEventsInterface(callback);
                 try
                 {
-                    audioSessionControlInterface.UnregisterAudioSessionNotification(ptr);
+                    SessionControl.UnregisterAudioSessionNotification(ptr);
                 }
                 finally
                 {
@@ -121,12 +125,16 @@ public class AudioSessionControl : IDisposable
     /// <summary>
     /// Audio meter information of the audio session.
     /// </summary>
-    public AudioMeterInformation AudioMeterInformation { get; }
+    /// <exception cref="NotSupportedException">The session does not expose IAudioMeterInformation.</exception>
+    public AudioMeterInformation AudioMeterInformation => audioMeterInformation
+        ?? throw new NotSupportedException("This audio session does not expose IAudioMeterInformation");
 
     /// <summary>
     /// Simple audio volume of the audio session (for volume and mute status).
     /// </summary>
-    public SimpleAudioVolume SimpleAudioVolume { get; }
+    /// <exception cref="NotSupportedException">The session does not expose ISimpleAudioVolume.</exception>
+    public SimpleAudioVolume SimpleAudioVolume => simpleAudioVolume
+        ?? throw new NotSupportedException("This audio session does not expose ISimpleAudioVolume");
 
     /// <summary>
     /// The current state of the audio session.
@@ -135,7 +143,7 @@ public class AudioSessionControl : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioSessionControlInterface.GetState(out var state));
+            CoreAudioException.ThrowIfFailed(SessionControl.GetState(out var state));
 
             return state;
         }
@@ -148,7 +156,7 @@ public class AudioSessionControl : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioSessionControlInterface.GetDisplayName(out var displayName));
+            CoreAudioException.ThrowIfFailed(SessionControl.GetDisplayName(out var displayName));
 
             return displayName;
         }
@@ -156,7 +164,7 @@ public class AudioSessionControl : IDisposable
         {
             if (value != String.Empty)
             {
-                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.SetDisplayName(value, Guid.Empty));
+                CoreAudioException.ThrowIfFailed(SessionControl.SetDisplayName(value, Guid.Empty));
             }
         }
     }
@@ -168,7 +176,7 @@ public class AudioSessionControl : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(audioSessionControlInterface.GetIconPath(out var iconPath));
+            CoreAudioException.ThrowIfFailed(SessionControl.GetIconPath(out var iconPath));
 
             return iconPath;
         }
@@ -176,7 +184,7 @@ public class AudioSessionControl : IDisposable
         {
             if (value != String.Empty)
             {
-                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.SetIconPath(value, Guid.Empty));
+                CoreAudioException.ThrowIfFailed(SessionControl.SetIconPath(value, Guid.Empty));
             }
         }
     }
@@ -255,7 +263,7 @@ public class AudioSessionControl : IDisposable
     /// <returns></returns>
     public Guid GetGroupingParam()
     {
-        CoreAudioException.ThrowIfFailed(audioSessionControlInterface.GetGroupingParam(out var groupingId));
+        CoreAudioException.ThrowIfFailed(SessionControl.GetGroupingParam(out var groupingId));
 
         return groupingId;
     }
@@ -267,7 +275,7 @@ public class AudioSessionControl : IDisposable
     /// <param name="context"></param>
     public void SetGroupingParam(Guid groupingId, Guid context)
     {
-        CoreAudioException.ThrowIfFailed(audioSessionControlInterface.SetGroupingParam(groupingId, context));
+        CoreAudioException.ThrowIfFailed(SessionControl.SetGroupingParam(groupingId, context));
     }
 
     /// <summary>
@@ -287,7 +295,7 @@ public class AudioSessionControl : IDisposable
             var ptr = QueryEventsInterface(callback);
             try
             {
-                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.RegisterAudioSessionNotification(ptr));
+                CoreAudioException.ThrowIfFailed(SessionControl.RegisterAudioSessionNotification(ptr));
             }
             finally
             {
@@ -313,7 +321,7 @@ public class AudioSessionControl : IDisposable
             var ptr = QueryEventsInterface(callback);
             try
             {
-                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.UnregisterAudioSessionNotification(ptr));
+                CoreAudioException.ThrowIfFailed(SessionControl.UnregisterAudioSessionNotification(ptr));
             }
             finally
             {

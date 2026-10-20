@@ -53,7 +53,7 @@ internal class RiffChunk
     /// at the end of this chunk first
     /// </summary>
     /// <returns>the new chunk</returns>
-    public RiffChunk GetNextSubChunk()
+    public RiffChunk? GetNextSubChunk()
     {
         // RIFF chunks are word-aligned: a chunk with an odd size is followed
         // by a pad byte that is NOT counted in its size. Skip it so the next
@@ -100,8 +100,6 @@ internal class RiffChunk
     public string GetDataAsString()
     {
         byte[] data = GetData();
-        if (data == null)
-            return null;
         return ByteEncoding.Instance.GetString(data, 0, data.Length);
     }
 

@@ -12,18 +12,18 @@ namespace NAudio.Wave;
 public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 {
     private readonly Lock waveOutLock;
-    private readonly SynchronizationContext syncContext;
+    private readonly SynchronizationContext? syncContext;
     private IntPtr hWaveOut; // WaveOut handle
-    private WaveOutBuffer[] buffers;
-    private IWaveProvider waveStream;
+    private WaveOutBuffer[]? buffers;
+    private IWaveProvider? waveStream;
     private volatile PlaybackState playbackState;
-    private AutoResetEvent callbackEvent;
+    private AutoResetEvent? callbackEvent;
     private bool isDisposed;
 
     /// <summary>
     /// Indicates playback has stopped automatically
     /// </summary>
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     /// <summary>
     /// Returns the number of Wave Out devices available in the system
@@ -129,7 +129,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
     /// </summary>
     public void Play()
     {
-        if (buffers == null || waveStream == null)
+        if (buffers == null || waveStream == null || callbackEvent == null)
         {
             throw new InvalidOperationException("Must call Init first");
         }
@@ -154,7 +154,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 
     private void PlaybackThread()
     {
-        Exception exception = null;
+        Exception? exception = null;
         try
         {
             DoPlayback();
@@ -173,10 +173,12 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 
     private void DoPlayback()
     {
-        // Cache the callback event in a local so a concurrent CloseWaveOut()
-        // (which nulls out the field) can't turn our dereferences into a
-        // NullReferenceException mid-playback. See issue #804.
+        // Cache the callback event and buffers in locals so a concurrent CloseWaveOut()
+        // or DisposeBuffers() (which null out the fields) can't turn our dereferences
+        // into a NullReferenceException mid-playback. See issue #804.
         var callback = callbackEvent;
+        var currentBuffers = buffers;
+        if (callback == null || currentBuffers == null) return;
         while (playbackState != PlaybackState.Stopped)
         {
             if (!callback.WaitOne(BufferMilliseconds * NumberOfBuffers))
@@ -192,7 +194,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
             if (playbackState == PlaybackState.Playing)
             {
                 int queued = 0;
-                foreach (var buffer in buffers)
+                foreach (var buffer in currentBuffers)
                 {
                     if (buffer.InQueue || buffer.OnDone())
                     {
@@ -266,7 +268,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
             {
                 throw new MmException(result, "waveOutReset");
             }
-            callbackEvent.Set(); // give the thread a kick, make sure we exit
+            callbackEvent?.Set(); // give the thread a kick, make sure we exit
         }
     }
 
@@ -281,7 +283,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
     /// <summary>
     /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
     /// </summary>
-    public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
+    public WaveFormat OutputWaveFormat => waveStream?.WaveFormat ?? throw new InvalidOperationException("Must call Init first");
 
     /// <inheritdoc/>
     /// <remarks>
@@ -394,7 +396,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 
     #endregion
 
-    private void RaisePlaybackStoppedEvent(Exception e)
+    private void RaisePlaybackStoppedEvent(Exception? e)
     {
         var handler = PlaybackStopped;
         if (handler != null)

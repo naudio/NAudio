@@ -15,7 +15,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class MMDeviceCollection : IEnumerable<MMDevice>, IDisposable
 {
-    private IMMDeviceCollection mmDeviceCollection;
+    private IMMDeviceCollection? mmDeviceCollection;
+
+    private IMMDeviceCollection Collection => mmDeviceCollection ?? throw new ObjectDisposedException(nameof(MMDeviceCollection));
 
     /// <summary>
     /// Number of endpoints in this collection.
@@ -24,7 +26,7 @@ public class MMDeviceCollection : IEnumerable<MMDevice>, IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(mmDeviceCollection.GetCount(out var result));
+            CoreAudioException.ThrowIfFailed(Collection.GetCount(out var result));
             return result;
         }
     }
@@ -37,7 +39,7 @@ public class MMDeviceCollection : IEnumerable<MMDevice>, IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(mmDeviceCollection.Item(index, out var ptr));
+            CoreAudioException.ThrowIfFailed(Collection.Item(index, out var ptr));
             try
             {
                 return new MMDevice((IMMDevice)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(

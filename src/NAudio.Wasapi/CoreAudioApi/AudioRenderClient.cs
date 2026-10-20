@@ -10,7 +10,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioRenderClient : IDisposable
 {
-    private IAudioRenderClient audioRenderClientInterface;
+    private IAudioRenderClient? audioRenderClientInterface;
+
+    private IAudioRenderClient RenderClient => audioRenderClientInterface ?? throw new ObjectDisposedException(nameof(AudioRenderClient));
 
     internal AudioRenderClient(IntPtr nativePointer)
     {
@@ -32,7 +34,7 @@ public class AudioRenderClient : IDisposable
     /// <returns>Pointer to the buffer</returns>
     public IntPtr GetBuffer(int numFramesRequested)
     {
-        CoreAudioException.ThrowIfFailed(audioRenderClientInterface.GetBuffer(numFramesRequested, out var bufferPointer));
+        CoreAudioException.ThrowIfFailed(RenderClient.GetBuffer(numFramesRequested, out var bufferPointer));
         return bufferPointer;
     }
 
@@ -46,7 +48,7 @@ public class AudioRenderClient : IDisposable
     /// <returns>A lease that provides a writable Span and releases the buffer on dispose</returns>
     public RenderBufferLease GetBufferLease(int numFramesRequested, int bytesPerFrame)
     {
-        CoreAudioException.ThrowIfFailed(audioRenderClientInterface.GetBuffer(numFramesRequested, out var bufferPointer));
+        CoreAudioException.ThrowIfFailed(RenderClient.GetBuffer(numFramesRequested, out var bufferPointer));
         return new RenderBufferLease(this, bufferPointer, numFramesRequested, bytesPerFrame);
     }
 
@@ -57,7 +59,7 @@ public class AudioRenderClient : IDisposable
     /// <param name="bufferFlags">Buffer flags</param>
     public void ReleaseBuffer(int numFramesWritten, AudioClientBufferFlags bufferFlags)
     {
-        CoreAudioException.ThrowIfFailed(audioRenderClientInterface.ReleaseBuffer(numFramesWritten, bufferFlags));
+        CoreAudioException.ThrowIfFailed(RenderClient.ReleaseBuffer(numFramesWritten, bufferFlags));
     }
 
     /// <summary>
@@ -87,7 +89,7 @@ public class AudioRenderClient : IDisposable
 /// </summary>
 public ref struct RenderBufferLease
 {
-    private AudioRenderClient owner;
+    private AudioRenderClient? owner;
     private readonly int frameCount;
 
     /// <summary>
@@ -114,10 +116,27 @@ public ref struct RenderBufferLease
     }
 
     /// <summary>
-    /// Releases the buffer with the full requested frame count.
+    /// Releases the buffer, discarding its contents if <see cref="Release(int?, AudioClientBufferFlags)"/>
+    /// was never called.
     /// </summary>
+    /// <remarks>
+    /// An unreleased lease reaching here means the caller never wrote any audio - typically because an
+    /// exception escaped the <c>using</c> block. Releasing the full frame count in that case would hand
+    /// WASAPI a buffer of undefined data and leave the stream padded full, so the next
+    /// <see cref="AudioRenderClient.GetBuffer"/> fails with AUDCLNT_E_BUFFER_TOO_LARGE (issue #1442);
+    /// releasing zero frames discards the packet instead. Never throws: a dispose running while an
+    /// exception is in flight must not replace it with a less useful one.
+    /// </remarks>
     public void Dispose()
     {
-        Release();
+        try
+        {
+            owner?.ReleaseBuffer(0, AudioClientBufferFlags.None);
+        }
+        catch
+        {
+            // The buffer is being abandoned; failing to hand it back is not actionable here.
+        }
+        owner = null;
     }
 }

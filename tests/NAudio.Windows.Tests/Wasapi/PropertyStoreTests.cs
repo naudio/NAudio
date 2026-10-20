@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using NAudio.CoreAudioApi;
-using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 
 namespace NAudio.Windows.Tests.Wasapi;
@@ -10,12 +9,6 @@ namespace NAudio.Windows.Tests.Wasapi;
 [Category("IntegrationTest")]
 public class PropertyStoreTests
 {
-    [SetUp]
-    public void SetUp()
-    {
-        OSUtils.RequireVista();
-    }
-
     [Test]
     public void CanReadFriendlyNameFormFactorAndStateForAllOutputDevices()
     {

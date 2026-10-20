@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
-using NAudio.Windows.Tests.Utils;
 
 namespace NAudio.Windows.Tests.Wasapi;
 
@@ -20,7 +19,6 @@ public class MMDeviceEnumeratorNotificationTests
     [Test]
     public void NotificationClientSurvivesGcAndReceivesNotifications()
     {
-        OSUtils.RequireVista();
 
         using var enumerator = new MMDeviceEnumerator();
         if (!enumerator.TryGetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia, out var device))

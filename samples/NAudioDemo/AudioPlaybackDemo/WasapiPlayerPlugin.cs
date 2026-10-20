@@ -52,7 +52,7 @@ internal class WasapiPlayerPlugin : IOutputDevicePlugin
 
     public string Name => "WasapiPlayer (NAudio 3)";
 
-    public bool IsAvailable => Environment.OSVersion.Version.Major >= 6;
+    public bool IsAvailable => true;
 
     public int Priority => 1;
 }

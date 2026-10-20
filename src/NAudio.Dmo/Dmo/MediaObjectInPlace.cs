@@ -11,7 +11,9 @@ namespace NAudio.Dmo;
 /// </summary>
 public class MediaObjectInPlace : IDisposable
 {
-    private IMediaObjectInPlace mediaObjectInPlace;
+    private IMediaObjectInPlace? mediaObjectInPlace;
+
+    private IMediaObjectInPlace ComInterface => mediaObjectInPlace ?? throw new ObjectDisposedException(nameof(MediaObjectInPlace));
 
     /// <summary>
     /// Creates a new Media Object InPlace
@@ -34,7 +36,7 @@ public class MediaObjectInPlace : IDisposable
     {
         fixed (byte* pData = data)
         {
-            var result = mediaObjectInPlace.Process(data.Length, (IntPtr)pData, timeStart, (int)inPlaceFlag);
+            var result = ComInterface.Process(data.Length, (IntPtr)pData, timeStart, (int)inPlaceFlag);
             Marshal.ThrowExceptionForHR(result);
             return (DmoInPlaceProcessReturn)result;
         }
@@ -46,7 +48,7 @@ public class MediaObjectInPlace : IDisposable
     /// <returns>Copyed MediaObjectInPlace</returns>
     public MediaObjectInPlace Clone()
     {
-        Marshal.ThrowExceptionForHR(this.mediaObjectInPlace.Clone(out IntPtr clonePtr));
+        Marshal.ThrowExceptionForHR(ComInterface.Clone(out IntPtr clonePtr));
         try
         {
             return new MediaObjectInPlace((IMediaObjectInPlace)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
@@ -66,7 +68,7 @@ public class MediaObjectInPlace : IDisposable
     /// <returns>The latency, in 100-nanosecond units</returns>
     public long GetLatency()
     {
-        Marshal.ThrowExceptionForHR(this.mediaObjectInPlace.GetLatency(out var latencyTime));
+        Marshal.ThrowExceptionForHR(ComInterface.GetLatency(out var latencyTime));
         return latencyTime;
     }
 
@@ -76,7 +78,7 @@ public class MediaObjectInPlace : IDisposable
     /// <returns>Media Object</returns>
     public MediaObject GetMediaObject()
     {
-        return new MediaObject((IMediaObject)mediaObjectInPlace);
+        return new MediaObject((IMediaObject)ComInterface);
     }
 
     /// <summary>

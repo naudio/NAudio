@@ -1,4 +1,4 @@
-# Migrating from NAudio 2 to NAudio 3
+﻿# Migrating from NAudio 2 to NAudio 3
 
 NAudio 3 is a major release. The single `NAudio` assembly has been split into
 focused packages, the minimum target framework is now `net9.0`, the core is
@@ -39,10 +39,17 @@ Everything else is detailed below.
   `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`,
   `NAudio.WinForms` and `NAudio.Dmo`, alongside the new `NAudio.Effects` (in
   `NAudio.Core`), `NAudio.Sampler`, `NAudio.Vst3`, `NAudio.Alsa` and
-  `NAudio.SoundFile`. The `NAudio` meta-package still pulls the Windows stack
-  together, so if you reference `NAudio` you generally don't need to change your
-  package references. If you reference individual packages, you may need to add
-  one or two (see the type moves below). See
+  `NAudio.SoundFile`. The `NAudio` meta-package pulls in `NAudio.Core`,
+  `NAudio.Midi`, `NAudio.WinMM` and `NAudio.Wasapi`, which covers `WaveOut` /
+  `WaveIn`, WASAPI, Media Foundation, MIDI and `AudioFileReader` /
+  `Mp3FileReader`, on any target framework. **It does not include
+  `NAudio.Asio`, `NAudio.Dmo` or `NAudio.WinForms`.** If you use ASIO
+  (`AsioOut`, `AsioDevice`), `DirectSoundOut` or the DMO effects, or the WinForms
+  types (`WaveOutWindow`, `WaveInWindow`, the `NAudio.Gui` controls), add those
+  packages explicitly. (NAudio 3.0–3.2 included all three in the meta-package on
+  Windows target frameworks.) Windows-only types are marked
+  `[SupportedOSPlatform("windows")]`, so unguarded calls from a project that
+  isn't Windows-specific show `CA1416` warnings. See
   [the assembly layout plan](https://github.com/naudio/NAudio/blob/main/Docs/Architecture/NAudio3AssemblyLayoutPlan.md).
 - **The `NAudio.Uap` package is removed.** The UWP/WinRT audio backend is gone; use
   `WasapiPlayerBuilder` / `WasapiRecorderBuilder` from `NAudio.Wasapi` instead.
@@ -84,6 +91,11 @@ so existing third-party decoders such as NLayer keep working).
 
 The abstract base classes changed to match: `WaveProvider32` now overrides
 `Read(Span<float>)` and `WaveProvider16` overrides `Read(Span<short>)`.
+
+If you are on **VB.NET**, which cannot name a `Span<T>` in a method signature, derive from
+`SampleProviderBase` or `WaveProviderBase` instead — they keep the NAudio 2
+`Read(buffer, offset, count)` signature and bridge to the span interfaces for you. See
+[Using NAudio from VB.NET](UsingNAudioFromVB.md) for the full picture.
 
 One related overload was dropped: **`Init(IWavePlayer, ISampleProvider, bool convertTo16Bit)`
 is removed**. Use `Init(IWavePlayer, ISampleProvider)`, which always initialises with IEEE
@@ -285,10 +297,10 @@ New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
   (`DmoMp3FrameDecompressor`), the DMO resampler (`ResamplerDmoStream`) and
   `DirectSoundOut` have been carved out of `NAudio.Wasapi` / `NAudio.Core`.
   Namespaces are preserved (`NAudio.Dmo`, `NAudio.Dmo.Effect`, and `NAudio.Wave`
-  for `DirectSoundOut`). Meta-package consumers see no change — `NAudio.Dmo`
-  comes in transitively. **Direct `NAudio.Wasapi` consumers** who use the
-  DMO/DirectSound types now need an explicit
-  `<PackageReference Include="NAudio.Dmo" />`.
+  for `DirectSoundOut`). If you use the DMO/DirectSound types, add an explicit
+  `<PackageReference Include="NAudio.Dmo" />`. This applies to `NAudio`
+  meta-package consumers too: the meta-package doesn't include `NAudio.Dmo`
+  (NAudio 3.0–3.2 did, on Windows target frameworks).
 - `DmoMp3FrameDecompressor` moved from `NAudio.FileFormats.Mp3` to `NAudio.Dmo`
   (update your `using`).
 - **The DMO interop enums are now `internal`** (`DmoInputStatusFlags`, `DmoEnumFlags`,
@@ -302,6 +314,12 @@ New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
   but `DmoMp3FrameDecompressor` remains the class you want for high-level MP3 decoding.
 - For new code, prefer `MediaFoundationResampler` over `ResamplerDmoStream`, and
   `WasapiPlayerBuilder` over `DirectSoundOut`.
+- **As of 3.2, the DMO resampler and DMO effects are obsolete.** `ResamplerDmoStream` and
+  `DmoResampler` → `MediaFoundationResampler` (the same Windows resampler) or the
+  cross-platform `WdlResamplingSampleProvider`. `DmoEffectWaveProvider` and the `Dmo*`
+  effects → the managed [`NAudio.Effects`](AudioEffects.md) (`DelayEffect`, `ChorusEffect`,
+  `CompressorEffect`, `ReverbEffect`, …) wrapped in an `EffectSampleProvider`. They still
+  work, but will be removed in a future major version.
 
 ## Effects (removed types and replacements)
 
@@ -340,7 +358,7 @@ Previously the stream constructor disposed the caller's stream unconditionally, 
 why `IgnoreDisposeStream` was needed to write to a `MemoryStream` you wanted to keep
 (`new WaveFileWriter(new IgnoreDisposeStream(ms), format)`). That wrapper is no longer
 necessary — passing the stream directly leaves it open. (`IgnoreDisposeStream` still
-exists and existing code that uses it keeps working.)
+exists so existing code keeps working, but it is obsolete as of 3.2.)
 
 **What to check when upgrading.** The one case that changes behaviour is passing a
 *throwaway* stream you didn't keep a reference to and relying on the writer to close it,
@@ -446,7 +464,7 @@ replacement on the same class, so the fix is mechanical.
 | --- | --- |
 | `WaveFileWriter.WriteData(byte[], int, int)` | `Write(byte[], int, int)` — or the new `Write(ReadOnlySpan<byte>)` |
 | `WaveFileWriter.WriteData(short[], int, int)` | `WriteSamples(short[], int, int)` |
-| `WaveFileReader.TryReadFloat(out float)` | `ReadNextSampleFrame()` |
+| `WaveFileReader.TryReadFloat(out float)` | `ToSampleProvider()`, then `Read` into a `float[]` |
 | `AcmStream.Convert(int)` | `Convert(int bytesToConvert, out int sourceBytesConverted)` |
 | `WaveFormatConversionStream.SourceToDest(int)` | *(no replacement — see below)* |
 | `WaveFormatConversionStream.DestToSource(int)` | *(no replacement — see below)* |
@@ -465,15 +483,22 @@ writer.WriteSamples(shortSamples, 0, count);
 ```
 
 **`TryReadFloat` silently dropped channels.** It returned only the first sample of each
-frame, so on stereo it read at half rate and discarded the right channel. `ReadNextSampleFrame`
-returns the whole frame:
+frame, so on stereo it read at half rate and discarded the right channel. Convert the reader to an
+`ISampleProvider` instead, which returns interleaved samples for every channel and supports more
+formats (`ReadNextSampleFrame` also works, but is obsolete as of 3.2):
 
 ```csharp
 // before — mono only, silently wrong on stereo
 while (reader.TryReadFloat(out var sample)) { ... }
 // after
-float[] frame;
-while ((frame = reader.ReadNextSampleFrame()) != null) { /* frame[0], frame[1], ... */ }
+var samples = reader.ToSampleProvider();
+var buffer = new float[reader.WaveFormat.SampleRate * reader.WaveFormat.Channels];
+int read;
+while ((read = samples.Read(buffer)) > 0)
+{
+    // buffer[0] to buffer[read - 1] hold the samples just read (the last read is usually
+    // shorter than the buffer). Channels are interleaved: for stereo, [0] = left, [1] = right, ...
+}
 ```
 
 **`AcmStream.Convert(int)` threw when the driver didn't consume everything.** It called the
@@ -579,7 +604,9 @@ your signal chain instead (for example with `VolumeSampleProvider`).
 
 - [Release notes](https://github.com/naudio/NAudio/blob/main/RELEASE_NOTES.md) — the full list of what's new in NAudio 3.
 - [Migrating from `AsioOut` to `AsioDevice`](AsioMigration.md) — the ASIO API is
-  redesigned; `AsioOut` is preserved as a facade, so this is optional.
+  redesigned; `AsioOut` is preserved as a facade, so this is optional. Either way,
+  ASIO now needs an explicit reference to `NAudio.Asio`, which the meta-package
+  doesn't include.
 - [Audio effects](AudioEffects.md), [the sampler](Sampler.md),
   [cross-platform audio files](CrossPlatformAudioFilesWithSoundFile.md) — guides
   to the major new subsystems.

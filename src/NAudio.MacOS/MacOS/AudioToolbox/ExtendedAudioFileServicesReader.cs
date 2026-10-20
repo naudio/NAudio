@@ -1,9 +1,8 @@
-
+﻿
 using System;
 using System.Numerics;
 using System.Threading;
 using System.Runtime.Versioning;
-using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
 using NAudio.Utils;
@@ -27,17 +26,17 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     private bool disposed;
     private long clientReadBytes;
     private IntPtr extFileHandle;
-    private WaveFormat targetFormat;
+    // Assigned by Init(), which every derived constructor calls.
+    private WaveFormat targetFormat = null!;
     private readonly Lock lockObject;
     private AudioStreamBasicDescription sourceAsbd;
-    private readonly ExtendedAudioFileReaderSettings settings;
+    private readonly ExtendedAudioFileReaderSettings? settings;
 
-    private protected ExtendedAudioFileServicesReader([AllowNull] ExtendedAudioFileReaderSettings settings)
+    private protected ExtendedAudioFileServicesReader(ExtendedAudioFileReaderSettings? settings)
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         disposed = false;
         lockObject = new();
-        targetFormat = null;
         clientReadBytes = 0L;
         this.settings = settings;
     }
@@ -58,46 +57,47 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
         // The wave format is constructed with minimal effort 
         // closest to the file's one, if no special options were given by the user.
 
-        bool allowNonPowerOfTwoRates = true;
+        bool allowNonPowerOfTwoDepths = true;
         bool needsIeeeFloatSpecifically = false;
         Speakers decodedSpeakers = Speakers.None;
 
+        WaveFormat? format = null;
         if (settings is not null)
         {
-            targetFormat = settings.OutputFormat;
-            if (targetFormat is null)
+            format = settings.OutputFormat;
+            if (format is null)
             {
                 needsIeeeFloatSpecifically = settings.RequestIeeeFloat;
-                allowNonPowerOfTwoRates = settings.AllowNonPowerOfTwoBitRates;
+                allowNonPowerOfTwoDepths = settings.AllowNonPowerOfTwoBitDepths;
             }
-            else if (targetFormat is WaveFormatExtensible ext)
+            else if (format is WaveFormatExtensible ext)
             {
                 decodedSpeakers = (Speakers)ext.ChannelMask;
             }
         }
 
-        if (targetFormat is null)
+        if (format is null)
         {
             // Source format may be wildly incomplete, so try to complete it and do validation on it.
-            bool bitRateSpecified = false;
-            int bitRate, sampleRate, channels;
+            bool bitDepthSpecified = false;
+            int bitDepth, sampleRate, channels;
             if (needsIeeeFloatSpecifically)
             {
-                bitRate = 32;
+                bitDepth = 32;
             }
             // Bit rate may be specified as zero, so define good defaults for it.
             else if (sourceAsbd.mBitsPerChannel == 0U)
             {
                 // 16 bit depth suffices for most cases.
-                bitRate = 16;
+                bitDepth = 16;
             }
             else
             {
-                // The bit rate might not be a power of two for some files,
+                // The bit depth might not be a power of two for some files,
                 // so we need to flag that to not lose any information 
-                // (if of course the user wants non-power of two bit depth rates)
-                bitRateSpecified = !allowNonPowerOfTwoRates;
-                bitRate = (int)sourceAsbd.mBitsPerChannel;
+                // (if of course the user wants non-power of two bit depths)
+                bitDepthSpecified = !allowNonPowerOfTwoDepths;
+                bitDepth = (int)sourceAsbd.mBitsPerChannel;
             }
 
             if (sourceAsbd.mSampleRate == 0d)
@@ -128,24 +128,26 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
             bool extensibleIsNeeded = false;
             decodedSpeakers = ComputeFileSpeakersValue(out extensibleIsNeeded);
 
-            if (extensibleIsNeeded || (bitRateSpecified && (!BitOperations.IsPow2(bitRate))))
+            if (extensibleIsNeeded || (bitDepthSpecified && (!BitOperations.IsPow2(bitDepth))))
             {
-                targetFormat = new WaveFormatExtensible(
+                format = new WaveFormatExtensible(
                     sampleRate,
-                    bitRateSpecified ? (int)BitOperations.RoundUpToPowerOf2((uint)bitRate) : bitRate,
+                    bitDepthSpecified ? (int)BitOperations.RoundUpToPowerOf2((uint)bitDepth) : bitDepth,
                     channels,
                     needsIeeeFloatSpecifically,
-                    bitRate,
+                    bitDepth,
                     decodedSpeakers
                 );
             }
             else
             {
-                targetFormat = needsIeeeFloatSpecifically ?
+                format = needsIeeeFloatSpecifically ?
                     WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels) :
-                    new(sampleRate, bitRate, channels);
+                    new(sampleRate, bitDepth, channels);
             }
         }
+
+        targetFormat = format;
 
         // Reinterpret the target format as a macOS ASBD structure.
         AudioStreamBasicDescription asbdOut = MacUtils.ConstructASBDFromWaveFormat(targetFormat);
@@ -230,8 +232,7 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     /// Gets the settings object provided to this instance
     /// during construction.
     /// </summary>
-    [MaybeNull]
-    public ExtendedAudioFileReaderSettings Settings => settings;
+    public ExtendedAudioFileReaderSettings? Settings => settings;
 
     /// <inheritdoc />
     public sealed override bool CanRead => !disposed;
@@ -403,7 +404,11 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     // produces accurate results.
     public sealed override TimeSpan CurrentTime
     {
-        get => TimeSpan.FromSeconds(PositionInFrames / sourceAsbd.mSampleRate);
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return TimeSpan.FromSeconds(PositionInFrames / sourceAsbd.mSampleRate);
+        }
         // mdcdi1315: We are calling base.CurrentTime instead to ensure
         // that the clientReadBytes field is correctly updated.
         // The overriden getter can be kept as-is.
@@ -414,7 +419,13 @@ public abstract class ExtendedAudioFileServicesReader : WaveStream
     /// <inheritdoc />
     /// <exception cref="ObjectDisposedException">This reader instance has been disposed of.</exception>
     public sealed override TimeSpan TotalTime
-        => TimeSpan.FromSeconds(LengthInFrames / sourceAsbd.mSampleRate);
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            return TimeSpan.FromSeconds(LengthInFrames / sourceAsbd.mSampleRate);
+        }
+    }
 
     /// <summary>
     /// Disposes of any native data the reader has allocated. <br />

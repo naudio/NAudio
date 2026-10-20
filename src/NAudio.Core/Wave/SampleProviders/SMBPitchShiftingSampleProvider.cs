@@ -31,8 +31,8 @@ public class SmbPitchShiftingSampleProvider : ISampleProvider
     private readonly SmbPitchShifter shifterRight = new();
 
     // Reused across Read calls on the stereo path to avoid per-Read allocations.
-    private float[] leftChannelBuffer;
-    private float[] rightChannelBuffer;
+    private float[]? leftChannelBuffer;
+    private float[]? rightChannelBuffer;
 
     //Limiter constants
     private const float LIM_THRESH = 0.95f;

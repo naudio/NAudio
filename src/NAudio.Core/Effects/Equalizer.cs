@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -14,7 +15,7 @@ namespace NAudio.Effects;
 public class Equalizer : AudioEffect
 {
     private readonly List<EqualizerBand> bands;
-    private CrossfadingBiQuadFilter[,] filters;
+    private CrossfadingBiQuadFilter[,]? filters;
     private int channels;
     private int crossfadeSamples = 1;
 
@@ -70,6 +71,8 @@ public class Equalizer : AudioEffect
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(filters is not null, "Configure must be called before ProcessBlock.");
+
         var bandCount = bands.Count;
         if (bandCount == 0)
             return;

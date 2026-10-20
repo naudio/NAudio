@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.IO;
 
@@ -80,7 +80,7 @@ public class ReaderSeekTests
         ExtendedAudioFileServicesWriter writer = null;
         try
         {
-            writer = ExtendedAudioFileWriter.CreateFromFilePath(
+            writer = ExtendedAudioFileWriter.CreateToFilePath(
                 path,
                 new() { FileType = "audio/aac", ProvidingFormat = new(44100, 16, 1) },
                 true

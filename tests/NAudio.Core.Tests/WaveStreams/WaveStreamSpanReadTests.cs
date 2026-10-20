@@ -23,7 +23,7 @@ public class WaveStreamSpanReadTests
     private static byte[] Build16BitMonoPcmWav(int sampleCount = 4096, int sampleRate = 44100)
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(sampleRate, 16, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(sampleRate, 16, 1)))
         {
             for (int i = 0; i < sampleCount; i++)
             {
@@ -144,14 +144,16 @@ public class WaveStreamSpanReadTests
     {
         // Build a 32-bit IEEE float source, then push it through Wave32To16Stream
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms),
+        using (var writer = new WaveFileWriter(ms,
                    WaveFormat.CreateIeeeFloatWaveFormat(44100, 1)))
         {
             for (int i = 0; i < 4096; i++)
                 writer.WriteSample((float)Math.Sin(2 * Math.PI * 1000.0 * i / 44100) * 0.8f);
         }
         var source = new WaveFileReader(new MemoryStream(ms.ToArray()));
+#pragma warning disable CS0618 // Wave32To16Stream is obsolete but still covered until it's removed
         using var converter = new Wave32To16Stream(source);
+#pragma warning restore CS0618
         AssertReadParity(converter);
     }
 
@@ -162,7 +164,7 @@ public class WaveStreamSpanReadTests
         for (int s = 0; s < 3; s++)
         {
             var ms = new MemoryStream();
-            using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms),
+            using (var writer = new WaveFileWriter(ms,
                        WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)))
             {
                 for (int i = 0; i < 2048; i++)
@@ -191,7 +193,7 @@ public class WaveStreamSpanReadTests
             ? new WaveFormatExtensible(sampleRate, bitsPerSample, 1)
             : new WaveFormat(sampleRate, bitsPerSample, 1);
         var ms = new MemoryStream();
-        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        using (var writer = new AiffFileWriter(ms, format))
         {
             for (int i = 0; i < sampleCount; i++)
             {

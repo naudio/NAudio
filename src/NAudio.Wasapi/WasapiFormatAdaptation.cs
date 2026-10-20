@@ -18,7 +18,7 @@ internal static class WasapiFormatAdaptation
     /// when it already matches (zero-copy), or null when adaptation would require resampling or an
     /// unsupported conversion.
     /// </summary>
-    public static IWaveProvider AdaptProvider(IWaveProvider source, WaveFormat target)
+    public static IWaveProvider? AdaptProvider(IWaveProvider source, WaveFormat target)
     {
         var sourceFormat = source.WaveFormat;
         if (!TryDescribeAdaptation(sourceFormat, target, null))
@@ -31,7 +31,7 @@ internal static class WasapiFormatAdaptation
         // so AdaptChannels and ConvertSamplesToWave will not return null here.
         var sample = source.ToSampleProvider();
         if (sample.WaveFormat.Channels != target.Channels)
-            sample = AdaptChannels(sample, target.Channels);
+            sample = AdaptChannels(sample, target.Channels)!;
         return ConvertSamplesToWave(sample, target);
     }
 
@@ -43,7 +43,7 @@ internal static class WasapiFormatAdaptation
     /// byte-compatible). Both <see cref="AdaptProvider"/> and the capability API go through here so the
     /// executed pipeline and the advertised capability never disagree.
     /// </summary>
-    public static bool TryDescribeAdaptation(WaveFormat source, WaveFormat target, List<string> conversions)
+    public static bool TryDescribeAdaptation(WaveFormat source, WaveFormat target, List<string>? conversions)
     {
         if (source.SampleRate != target.SampleRate)
             return false;
@@ -76,7 +76,7 @@ internal static class WasapiFormatAdaptation
     /// depths (16/24-bit PCM, 32-bit float) and channel counts we can actually convert to are
     /// considered. Returns null when no such format exists.
     /// </summary>
-    public static WaveFormatExtensible FindSupportedExclusiveFormatAtSampleRate(AudioClient audioClient, WaveFormat sourceFormat)
+    public static WaveFormatExtensible? FindSupportedExclusiveFormatAtSampleRate(AudioClient audioClient, WaveFormat sourceFormat)
     {
         int sampleRate = sourceFormat.SampleRate;
         int sourceChannels = sourceFormat.Channels;
@@ -130,7 +130,7 @@ internal static class WasapiFormatAdaptation
         (standardFormat.Encoding == WaveFormatEncoding.IeeeFloat && standardFormat.BitsPerSample == 32) ||
         (standardFormat.Encoding == WaveFormatEncoding.Pcm && (standardFormat.BitsPerSample == 16 || standardFormat.BitsPerSample == 24));
 
-    private static ISampleProvider AdaptChannels(ISampleProvider sample, int targetChannels)
+    private static ISampleProvider? AdaptChannels(ISampleProvider sample, int targetChannels)
     {
         int sourceChannels = sample.WaveFormat.Channels;
         if (sourceChannels == targetChannels) return sample;
@@ -139,7 +139,7 @@ internal static class WasapiFormatAdaptation
         return null;
     }
 
-    private static IWaveProvider ConvertSamplesToWave(ISampleProvider sample, WaveFormat target)
+    private static IWaveProvider? ConvertSamplesToWave(ISampleProvider sample, WaveFormat target)
     {
         var std = target.AsStandardWaveFormat();
         if (std.Encoding == WaveFormatEncoding.IeeeFloat && std.BitsPerSample == 32)

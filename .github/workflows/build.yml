@@ -38,6 +38,21 @@ jobs:
           --report-trx
           --results-directory ${{ runner.temp }}/TestResults
 
+      - name: Pack (package validation)
+        # Packs every shipping package (everything under src/; the same set the
+        # release workflow publishes) so package validation runs on every PR
+        # rather than first failing at release time. It checks that each
+        # package's TFM assets expose compatible APIs and that nothing the
+        # baseline release (PackageValidationBaselineVersion in
+        # src/Directory.Build.props) shipped has been removed. The packages
+        # themselves are discarded.
+        shell: pwsh
+        run: |
+          foreach ($proj in Get-ChildItem src -Filter *.csproj -Recurse) {
+            dotnet pack $proj.FullName --configuration Release --no-build --output "${{ runner.temp }}/packages"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -73,3 +88,15 @@ jobs:
         # this needs no extra flags. windows-latest ships the MSVC toolchain
         # that ILC needs for the native link step.
         run: dotnet publish tests/NAudioAotSmokeTest/NAudioAotSmokeTest.csproj --configuration Release
+
+      - name: Publish and run the ASIO fake-driver test (Native AOT)
+        # Unlike the smoke test above, this one needs no hardware: it drives NAudio.Asio's
+        # vtable binding, struct layouts and callbacks against an in-process fake driver, so CI
+        # can run the AOT-compiled executable, not just build it. That's what catches interop
+        # that compiles cleanly but misbehaves under AOT (#1425). Exits non-zero on any failure.
+        shell: pwsh
+        run: |
+          dotnet publish tests/NAudioAsioFakeDriverTest/NAudioAsioFakeDriverTest.csproj --configuration Release --runtime win-x64 --output "${{ runner.temp }}/asio-fake-driver"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "${{ runner.temp }}/asio-fake-driver/NAudioAsioFakeDriverTest.exe"
+          exit $LASTEXITCODE

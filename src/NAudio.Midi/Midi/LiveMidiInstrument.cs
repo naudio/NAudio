@@ -44,7 +44,7 @@ public sealed class LiveMidiInstrument : IMidiInstrument
     /// the event is applied on the audio thread at the start of the next block.
     /// Null events are ignored.
     /// </summary>
-    public void Send(MidiEvent midiEvent)
+    public void Send(MidiEvent? midiEvent)
     {
         if (midiEvent != null) queue.Enqueue(midiEvent);
     }

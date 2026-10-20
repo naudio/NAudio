@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 
@@ -15,8 +15,7 @@ public partial class CoreAudioRecorder
     // of the HAL regarding how the audio data should be retrieved.
     private abstract class RecorderProcedure : CoreAudioIOProcedure
     {
-        private Exception exception;
-        private uint streamsLatency;
+        private Exception? exception;
         private AudioStreamBasicDescription virtualFormat;
         private AudioTimeStamp inNowStamp, inInputTimeStamp;
 
@@ -43,6 +42,15 @@ public partial class CoreAudioRecorder
         // providing the audio data in an interleaved audio format.
         protected abstract void OnProvideData(uint bufferCount, IntPtr inInputData);
 
+        protected void OnDataAvailable(ReadOnlySpan<byte> buffer)
+        {
+            Event?.Invoke(
+                buffer,
+                ConstructStampTime(inNowStamp),
+                ConstructStampTime(inInputTimeStamp)
+            );
+        }
+
         private void TryStopRecording(Exception ex)
         {
             // Make sure to store any found exception (and remove any previous one)
@@ -55,15 +63,6 @@ public partial class CoreAudioRecorder
                 _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.InvokeStoppedEvent(), this, false);
             }
             catch { }
-        }
-
-        protected void OnDataAvailable(ReadOnlySpan<byte> buffer)
-        {
-            Event?.Invoke(
-                buffer,
-                ConstructStampTime(inNowStamp),
-                ConstructStampTime(inInputTimeStamp)
-            );
         }
 
         private double ConstructStampTime(AudioTimeStamp stamp)
@@ -99,7 +98,11 @@ public partial class CoreAudioRecorder
 
         private void InvokeStoppedEvent() => RecordingStopped?.Invoke(this, new(exception));
 
-        public Exception Exception
+        // Drains any buffered samples remaining in the recorder's buffers
+        // Currently, it is only used by the non-interleaved procedure implementation.
+        public virtual void DrainBuffers() { }
+
+        public Exception? Exception
         {
             get
             {
@@ -112,20 +115,14 @@ public partial class CoreAudioRecorder
             }
         }
 
-        public uint StreamLatency
-        {
-            get => streamsLatency;
-            set => streamsLatency = value;
-        }
-
         public virtual AudioStreamBasicDescription VirtualFormat
         {
             get => virtualFormat;
             set => virtualFormat = value;
         }
 
-        public event CoreAudioCaptureDataAvailableHandler Event;
+        public event CoreAudioCaptureDataAvailableHandler? Event;
 
-        public event EventHandler<StoppedEventArgs> RecordingStopped;
+        public event EventHandler<StoppedEventArgs>? RecordingStopped;
     }
 }

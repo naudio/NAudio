@@ -12,7 +12,7 @@ internal class SampleDataChunk
             throw new InvalidDataException($"Not a sample data chunk ({header})");
         }
 
-        RiffChunk c;
+        RiffChunk? c;
         while ((c = chunk.GetNextSubChunk()) != null)
         {
             switch (c.ChunkID)
@@ -29,7 +29,7 @@ internal class SampleDataChunk
             }
         }
 
-        SampleData ??= new byte[0];
+        SampleData ??= [];
 
         // sm24 is only meaningful when it pairs one byte per 16-bit smpl
         // sample; ignore it otherwise (the spec allows a padding byte, so a
@@ -50,5 +50,5 @@ internal class SampleDataChunk
     /// The optional 24-bit extension data (one byte per sample, the low 8
     /// bits of each sample), or null if the SoundFont is 16-bit.
     /// </summary>
-    public byte[] SampleData24 { get; private set; }
+    public byte[]? SampleData24 { get; private set; }
 }

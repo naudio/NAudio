@@ -7,6 +7,9 @@ using System.Diagnostics;
 using System;
 using NAudio.Core.Tests.Utils;
 
+// ReadNextSampleFrame is obsolete but still covered here until it's removed
+#pragma warning disable CS0618
+
 namespace NAudio.Core.Tests.WaveStreams;
 
 [TestFixture]
@@ -49,7 +52,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAMonoFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 1)))
         {
             writer.WriteSample(0.1f);
             writer.WriteSample(0.2f);
@@ -70,7 +73,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAStereoFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 2)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 2)))
         {
             writer.WriteSample(0.1f);
             writer.WriteSample(0.2f);
@@ -94,7 +97,7 @@ public class WaveFileReaderTests
     public void CanAccessSamplesIndividuallyInAStereo24BitFile()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 24, 2)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(44100, 24, 2)))
         {
             writer.WriteSample(0.1f);
             writer.WriteSample(0.2f);
@@ -166,7 +169,7 @@ public class WaveFileReaderTests
     public void ChunksPropertyIsAlwaysNonNullForValidWav()
     {
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 1)))
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 1)))
         {
             writer.WriteSample(0.5f);
         }
@@ -388,5 +391,95 @@ public class WaveFileReaderTests
         Assert.That(read, Is.EqualTo(audio.Length));
         Assert.That(buffer, Is.EqualTo(audio));
         Assert.That(reader.Read(buffer, 0, buffer.Length), Is.EqualTo(0));
+    }
+    [Test]
+    [Category("UnitTest")]
+    public void SeekReturnsBlockAlignedPosition()
+    {
+        // 16-bit stereo: BlockAlign = 4
+        using var reader = CreateReader(new WaveFormat(8000, 16, 2), 4000);
+
+        long result = reader.Seek(1001, SeekOrigin.Begin);
+
+        Assert.That(result, Is.EqualTo(1000));
+        Assert.That(result, Is.EqualTo(reader.Position));
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void SeekPastEndReturnsLength()
+    {
+        using var reader = CreateReader(new WaveFormat(8000, 16, 2), 4000);
+
+        long result = reader.Seek(reader.Length + 100, SeekOrigin.Begin);
+
+        Assert.That(result, Is.EqualTo(reader.Length));
+        Assert.That(result, Is.EqualTo(reader.Position));
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void CanAccessSamplesIndividuallyInAStereoIeeeFloatFile()
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(ms, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)))
+        {
+            writer.WriteSamples(new[] { 0.1f, -0.2f, 0.3f, -0.4f }, 0, 4);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.ReadNextSampleFrame(), Is.EqualTo(new[] { 0.1f, -0.2f }));
+        Assert.That(reader.ReadNextSampleFrame(), Is.EqualTo(new[] { 0.3f, -0.4f }));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void CanAccessSamplesIndividuallyInAStereo32BitPcmFile()
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(44100, 32, 2)))
+        {
+            // Write raw samples so this test doesn't depend on WaveFileWriter's float conversion
+            var samples = new[] { int.MaxValue / 2 + 1, int.MinValue / 4 };
+            var bytes = new byte[samples.Length * 4];
+            Buffer.BlockCopy(samples, 0, bytes, 0, bytes.Length);
+            writer.Write(bytes, 0, bytes.Length);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var frame = reader.ReadNextSampleFrame();
+        Assert.That(frame[0], Is.EqualTo(0.5f).Within(0.0001f));
+        Assert.That(frame[1], Is.EqualTo(-0.25f).Within(0.0001f));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
+    }
+
+    private static WaveFileReader CreateReader(WaveFormat format, int dataBytes)
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(ms, format))
+        {
+            writer.Write(new byte[dataBytes], 0, dataBytes);
+        }
+        ms.Position = 0;
+        return new WaveFileReader(ms);
+    }
+    [TestCase((short)-16)]
+    [TestCase((short)0)]
+    [Category("UnitTest")]
+    public void ReadNextSampleFrameRejectsInvalidBitsPerSample(short bitsPerSample)
+    {
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(8000, 16, 2)))
+        {
+            writer.Write(new byte[64], 0, 64);
+        }
+        var bytes = ms.ToArray();
+        // Corrupt the fmt chunk's wBitsPerSample field (offset 34 in a canonical WAV header).
+        // A negative value used to produce a negative stackalloc length, crashing the process
+        BitConverter.GetBytes(bitsPerSample).CopyTo(bytes, 34);
+
+        using var reader = new WaveFileReader(new MemoryStream(bytes));
+        Assert.Throws<InvalidDataException>(() => reader.ReadNextSampleFrame());
     }
 }

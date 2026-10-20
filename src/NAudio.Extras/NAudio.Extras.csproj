@@ -1,39 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- DocFX's metadata step cannot load a multi-targeted project (it reads the
-         reference-less outer build), so collapse to a single TFM when the docs site is
-         being generated. This lets every project sit in one DocFX metadata block, which
-         is what keeps the API table-of-contents unified. Collapse to the Windows leg,
-         matching NAudio.csproj: it is the superset (the Windows-gated AudioPlaybackEngine
-         only exists there), and because this project references NAudio, the two must
-         collapse to the same leg or the reference won't resolve. -->
-    <!-- Mirrors NAudio.csproj's three legs: a plain `net9.0-windows` leg so that
-         consumers on the template-default `netX.0-windows` (TargetPlatformVersion 7.0)
-         resolve a Windows asset instead of silently falling back to the portable one.
-         See the rationale note in NAudio.csproj (#1407). -->
-    <TargetFrameworks Condition=" '$(DocsBuild)' != 'true' ">net9.0;net9.0-windows;net9.0-windows10.0.19041.0</TargetFrameworks>
-    <TargetFramework Condition=" '$(DocsBuild)' == 'true' ">net9.0-windows10.0.19041.0</TargetFramework>
+    <!-- Plain net9.0. The NAudio meta-package carries the Windows backends on every leg,
+         so the Windows-only AudioPlaybackEngine compiles here and is marked
+         [SupportedOSPlatform("windows")] rather than gated behind a Windows TFM. -->
+    <TargetFramework>net9.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
     <Description>Optional extras (extra demo/sample providers and helpers) for the NAudio audio library.</Description>
-  </PropertyGroup>
-
-  <!-- Use $(TargetFramework), not $(TargetPlatformIdentifier): the latter isn't set
-       until an SDK import that runs after this body, so it would drop WINDOWS from the
-       Windows build. See the matching note in NAudio.csproj. -->
-  <PropertyGroup Condition=" $(TargetFramework.Contains('-windows')) ">
-    <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio\NAudio.csproj" />
-  </ItemGroup>
-  <!-- Gate on the platform, not on the 19041 floor: NAudio.Wasapi is plain net9.0 and
-       needs no minimum Windows version, so the plain net9.0-windows leg must get it too.
-       Testing IsTargetFrameworkCompatible against 19041 would drop it from that leg. -->
-  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
-    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
 
 </Project>

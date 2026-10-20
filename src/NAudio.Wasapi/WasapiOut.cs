@@ -14,26 +14,28 @@ namespace NAudio.Wave;
 [Obsolete("Use WasapiPlayerBuilder to create a WasapiPlayer instead. WasapiPlayer provides zero-copy buffers, MMCSS thread priority, and IAudioClient3 low-latency support.")]
 public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
 {
-    private AudioClient audioClient;
+    private AudioClient? audioClient;
+
+    private AudioClient Client => audioClient ?? throw new ObjectDisposedException(nameof(WasapiOut));
     private readonly MMDevice mmDevice;
     private readonly AudioClientShareMode shareMode;
-    private AudioRenderClient renderClient;
-    private IWaveProvider sourceProvider;
+    private AudioRenderClient? renderClient;
+    private IWaveProvider? sourceProvider;
     private int latencyMilliseconds;
     private int bufferFrameCount;
     private int bytesPerFrame;
     private readonly bool isUsingEventSync;
-    private EventWaitHandle frameEventWaitHandle;
+    private EventWaitHandle? frameEventWaitHandle;
     private readonly EventWaitHandle stopEventWaitHandle;
-    private byte[] readBuffer;
+    private byte[] readBuffer = [];
     private volatile PlaybackState playbackState;
-    private Thread playThread;
-    private readonly SynchronizationContext syncContext;
+    private Thread? playThread;
+    private readonly SynchronizationContext? syncContext;
 
     /// <summary>
     /// Playback Stopped
     /// </summary>
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     /// <summary>
     /// WASAPI Out shared mode, default
@@ -83,7 +85,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         latencyMilliseconds = latency;
         syncContext = SynchronizationContext.Current;
         stopEventWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
-        OutputWaveFormat = audioClient.MixFormat; // allow the user to query the default format for shared mode streams
+        OutputWaveFormat = Client.MixFormat; // allow the user to query the default format for shared mode streams
     }
 
     private static MMDevice GetDefaultAudioEndpoint()
@@ -94,15 +96,18 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
 
     private void PlayThread()
     {
-        IWaveProvider playbackProvider = sourceProvider;
-        Exception exception = null;
+        Exception? exception = null;
         try
         {
+            // Init sets both before Play can start this thread
+            var playbackProvider = sourceProvider ?? throw new InvalidOperationException("Init must be called before Play");
+            var render = renderClient ?? throw new InvalidOperationException("Init must be called before Play");
+
             // fill a whole buffer
-            bufferFrameCount = audioClient.BufferSize;
+            bufferFrameCount = Client.BufferSize;
             bytesPerFrame = OutputWaveFormat.Channels * OutputWaveFormat.BitsPerSample / 8;
             readBuffer = BufferHelpers.Ensure(readBuffer, bufferFrameCount * bytesPerFrame);
-            if (FillBuffer(playbackProvider, bufferFrameCount))
+            if (FillBuffer(render, playbackProvider, bufferFrameCount))
             {
                 // played a zero length stream - exit immediately
                 return;
@@ -110,17 +115,19 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
             // to calculate buffer duration but does always seem to match latency
             // var bufferDurationMilliseconds = (bufferFrameCount * 1000) /OutputWaveFormat.SampleRate;
             // Create WaitHandle for sync
-            var waitHandles = isUsingEventSync
-                ? new WaitHandle[] { frameEventWaitHandle, stopEventWaitHandle }
+            // Event-driven Init always creates frameEventWaitHandle
+            var frameEvent = frameEventWaitHandle;
+            var waitHandles = isUsingEventSync && frameEvent != null
+                ? new WaitHandle[] { frameEvent, stopEventWaitHandle }
                 : null;
             var reachedEndOfStream = false;
 
-            audioClient.Start();
+            Client.Start();
 
             while (playbackState != PlaybackState.Stopped)
             {
                 // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
-                if (isUsingEventSync)
+                if (waitHandles != null)
                 {
                     WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
                 }
@@ -134,7 +141,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                 {
                     if (reachedEndOfStream)
                     {
-                        if (shareMode == AudioClientShareMode.Exclusive || audioClient.CurrentPadding == 0)
+                        if (shareMode == AudioClientShareMode.Exclusive || Client.CurrentPadding == 0)
                         {
                             break;
                         }
@@ -145,17 +152,17 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                     int numFramesPadding;
                     if (isUsingEventSync)
                     {
-                        // In exclusive mode, always ask the max = bufferFrameCount = audioClient.BufferSize
-                        numFramesPadding = (shareMode == AudioClientShareMode.Shared) ? audioClient.CurrentPadding : 0;
+                        // In exclusive mode, always ask the max = bufferFrameCount = Client.BufferSize
+                        numFramesPadding = (shareMode == AudioClientShareMode.Shared) ? Client.CurrentPadding : 0;
                     }
                     else
                     {
-                        numFramesPadding = audioClient.CurrentPadding;
+                        numFramesPadding = Client.CurrentPadding;
                     }
                     int numFramesAvailable = bufferFrameCount - numFramesPadding;
                     if (numFramesAvailable > 10)
                     {
-                        if (FillBuffer(playbackProvider, numFramesAvailable))
+                        if (FillBuffer(render, playbackProvider, numFramesAvailable))
                         {
                             reachedEndOfStream = true;
                         }
@@ -168,10 +175,6 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                 // behavior of waiting briefly for the last buffer to play
                 Thread.Sleep(isUsingEventSync ? latencyMilliseconds : latencyMilliseconds / 2);
             }
-            audioClient.Stop();
-            // set if we got here by reaching the end
-            playbackState = PlaybackState.Stopped;
-            audioClient.Reset();
         }
         catch (Exception e)
         {
@@ -179,11 +182,27 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         }
         finally
         {
+            // Always stop, reset and report Stopped, however the thread left the loop - reaching the
+            // end of the source, an exception from Read, or the zero-length-stream early return above.
+            // Otherwise PlaybackState stays Playing with no thread behind it (issue #1442).
+            SafeStopAndReset();
+            playbackState = PlaybackState.Stopped;
             RaisePlaybackStopped(exception);
         }
     }
 
-    private void RaisePlaybackStopped(Exception e)
+    /// <summary>
+    /// Best-effort stop and reset of the audio client during teardown. A device that has been
+    /// removed mid-playback fails these calls (AUDCLNT_E_DEVICE_INVALIDATED); the failure is not
+    /// actionable here, and must not mask the real exception or escape and kill the play thread.
+    /// </summary>
+    private void SafeStopAndReset()
+    {
+        try { audioClient?.Stop(); } catch { /* device already gone */ }
+        try { audioClient?.Reset(); } catch { /* device already gone */ }
+    }
+
+    private void RaisePlaybackStopped(Exception? e)
     {
         var handler = PlaybackStopped;
         if (handler != null)
@@ -202,7 +221,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
     /// <summary>
     /// returns true if reached the end
     /// </summary>
-    private bool FillBuffer(IWaveProvider playbackProvider, int frameCount)
+    private bool FillBuffer(AudioRenderClient render, IWaveProvider playbackProvider, int frameCount)
     {
         var readLength = frameCount * bytesPerFrame;
         int read = playbackProvider.Read(readBuffer.AsSpan(0, readLength));
@@ -210,7 +229,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         {
             return true;
         }
-        var buffer = renderClient.GetBuffer(frameCount);
+        var buffer = render.GetBuffer(frameCount);
         Marshal.Copy(readBuffer, 0, buffer, read);
         if (this.isUsingEventSync && this.shareMode == AudioClientShareMode.Exclusive)
         {
@@ -228,7 +247,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                 }
             }
 
-            renderClient.ReleaseBuffer(frameCount, AudioClientBufferFlags.None);
+            render.ReleaseBuffer(frameCount, AudioClientBufferFlags.None);
         }
         else
         {
@@ -237,7 +256,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
             {
                 Debug.WriteLine($"WASAPI wanted {frameCount} frames, supplied {actualFrameCount}");
             }*/
-            renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
+            render.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
         }
         return false;
     }
@@ -256,13 +275,13 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
             case PlaybackState.Stopped:
                 return 0;
             case PlaybackState.Playing:
-                pos = audioClient.AudioClockClient.AdjustedPosition;
+                pos = Client.AudioClockClient.AdjustedPosition;
                 break;
             default: // PlaybackState.Paused
-                audioClient.AudioClockClient.GetPosition(out pos, out _);
+                Client.AudioClockClient.GetPosition(out pos, out _);
                 break;
         }
-        return ((long)pos * OutputWaveFormat.AverageBytesPerSecond) / (long)audioClient.AudioClockClient.Frequency;
+        return ((long)pos * OutputWaveFormat.AverageBytesPerSecond) / (long)Client.AudioClockClient.Frequency;
     }
 
     /// <summary>
@@ -292,7 +311,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                 return AverageLatency;
             try
             {
-                int padding = audioClient.CurrentPadding;
+                int padding = Client.CurrentPadding;
                 return TimeSpan.FromSeconds(padding / (double)OutputWaveFormat.SampleRate);
             }
             catch (COMException)
@@ -339,7 +358,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         {
             playbackState = PlaybackState.Stopped;
             stopEventWaitHandle.Set();
-            playThread.Join();
+            playThread?.Join();
             playThread = null;
         }
     }
@@ -371,15 +390,15 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         if (shareMode == AudioClientShareMode.Exclusive)
         {
             flags = AudioClientStreamFlags.None;
-            if (!audioClient.IsFormatSupported(shareMode, OutputWaveFormat, out WaveFormat closestSampleRateFormat))
+            if (!Client.IsFormatSupported(shareMode, OutputWaveFormat, out WaveFormat? closestSampleRateFormat))
             {
                 // The device won't take the source format natively. Adapt bit depth/channels (never the
                 // sample rate) to a supported format if we can — this restores the most common NAudio 2
                 // exclusive-mode case (e.g. a 32-bit float source on a 16/24-bit device) without the
                 // resampler that NAudio 3 removed. A sample-rate mismatch still can't be handled here.
-                var target = WasapiFormatAdaptation.FindSupportedExclusiveFormatAtSampleRate(audioClient, OutputWaveFormat);
+                var target = WasapiFormatAdaptation.FindSupportedExclusiveFormatAtSampleRate(Client, OutputWaveFormat);
                 var adapted = target != null ? WasapiFormatAdaptation.AdaptProvider(waveProvider, target) : null;
-                if (adapted == null)
+                if (adapted == null || target == null)
                 {
                     throw new NotSupportedException(
                         $"Exclusive-mode WasapiOut requires a natively-supported format. The source format " +
@@ -401,11 +420,11 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
             {
                 // With EventCallBack and Shared, both latencies must be set to 0 (update - not sure this is true anymore)
                 // 
-                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback | flags, latencyRefTimes, 0,
+                Client.Initialize(shareMode, AudioClientStreamFlags.EventCallback | flags, latencyRefTimes, 0,
                     OutputWaveFormat, Guid.Empty);
 
                 // Windows 10 returns 0 from stream latency, resulting in maxing out CPU usage later
-                var streamLatency = audioClient.StreamLatency;
+                var streamLatency = Client.StreamLatency;
                 if (streamLatency != 0)
                 {
                     // Get back the effective latency from AudioClient
@@ -417,7 +436,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                 try
                 {
                     // With EventCallBack and Exclusive, both latencies must equals
-                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback | flags, latencyRefTimes, latencyRefTimes,
+                    Client.Initialize(shareMode, AudioClientStreamFlags.EventCallback | flags, latencyRefTimes, latencyRefTimes,
                                         OutputWaveFormat, Guid.Empty);
                 }
                 catch (COMException ex)
@@ -430,28 +449,28 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
                     // Calculate the new latency.
                     long newLatencyRefTimes = (long)(10000000.0 /
                         this.OutputWaveFormat.SampleRate *
-                        this.audioClient.BufferSize + 0.5);
+                        Client.BufferSize + 0.5);
 
-                    this.audioClient.Dispose();
+                    Client.Dispose();
                     this.audioClient = this.mmDevice.CreateAudioClient();
-                    this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback | flags,
+                    Client.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback | flags,
                                         newLatencyRefTimes, newLatencyRefTimes, this.OutputWaveFormat, Guid.Empty);
                 }
             }
 
             // Create the Wait Event Handle
             frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
-            audioClient.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
+            Client.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
         }
         else
         {
             // Normal setup for both sharedMode
-            audioClient.Initialize(shareMode, flags, latencyRefTimes, 0,
+            Client.Initialize(shareMode, flags, latencyRefTimes, 0,
                                 OutputWaveFormat, Guid.Empty);
         }
 
         // Get the RenderClient
-        renderClient = audioClient.AudioRenderClient;
+        renderClient = Client.AudioRenderClient;
     }
 
     /// <summary>
@@ -496,7 +515,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
             {
                 throw new InvalidOperationException("AudioStreamVolume is ONLY supported for shared audio streams.");
             }
-            return audioClient.AudioStreamVolume;
+            return Client.AudioStreamVolume;
         }
     }
 
@@ -514,7 +533,7 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         {
             Stop();
 
-            audioClient.Dispose();
+            Client.Dispose();
             audioClient = null;
             renderClient = null;
         }

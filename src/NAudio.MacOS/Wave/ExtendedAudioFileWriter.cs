@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.IO;
 using System.Runtime.Versioning;
@@ -23,7 +23,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         : base(hExtFileObject, settings) { }
 
     // Initializes the writer.
-    private protected void Init() => AssignClientFormat(Settings.ProvidingFormat);
+    private protected void Init() => AssignClientFormat(ProvidingFormat);
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Usage",
@@ -85,7 +85,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
     /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="url"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     [SupportedOSPlatform("macos10.5")]
-    public static ExtendedAudioFileWriter CreateFromURL(
+    public static ExtendedAudioFileWriter CreateToURL(
         Uri url,
         ExtendedAudioFileWriterSettings settings,
         bool overwriteIfExists = false
@@ -138,7 +138,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
     /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="filePath"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     [SupportedOSPlatform("macos10.5")]
-    public static ExtendedAudioFileWriter CreateFromFilePath(
+    public static ExtendedAudioFileWriter CreateToFilePath(
         string filePath,
         ExtendedAudioFileWriterSettings settings,
         bool overwriteIfExists = false
@@ -223,7 +223,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
     /// <see cref="MemoryStream"/> instance to make sure the writer can work with it,
     /// then copy the data written to it to your target stream.
     /// </remarks>
-    public static ExtendedAudioFileWriter CreateFromStream(
+    public static ExtendedAudioFileWriter CreateToStream(
         Stream writeableStream,
         ExtendedAudioFileWriterSettings settings
     )
@@ -268,7 +268,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
             );
             if (status == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
             {
-                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target).Exception;
+                throw ((AudioFileCallbacks.CallbacksUserData)handle.Target!).Exception ?? new AudioFileException("The internal callback implementation failed, but no exception was returned.", AudioFileErrors.kAudioFileUnspecifiedError);
             }
             AudioFileException.ThrowIfError(status);
 
@@ -306,7 +306,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
             throw;
         }
 
-        StreamImpl writer = null;
+        StreamImpl? writer = null;
         try
         {
             writer = new StreamImpl(

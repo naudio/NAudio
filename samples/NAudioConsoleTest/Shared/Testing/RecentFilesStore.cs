@@ -15,7 +15,11 @@ internal static class RecentFilesStore
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "NAudioConsoleTest", "recent-files.json");
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        TypeInfoResolver = ConsoleTestJsonContext.Default,
+    };
 
     /// <summary>
     /// Returns the remembered paths for a category, most-recent first, filtered to files that still
@@ -62,7 +66,7 @@ internal static class RecentFilesStore
             if (File.Exists(StorePath))
             {
                 var json = File.ReadAllText(StorePath);
-                var data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
+                var data = JsonSerializer.Deserialize(json, JsonOptions.TypeInfo<Dictionary<string, List<string>>>());
                 if (data is not null)
                     return data;
             }
@@ -79,7 +83,7 @@ internal static class RecentFilesStore
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(StorePath)!);
-            File.WriteAllText(StorePath, JsonSerializer.Serialize(data, JsonOptions));
+            File.WriteAllText(StorePath, JsonSerializer.Serialize(data, JsonOptions.TypeInfo<Dictionary<string, List<string>>>()));
         }
         catch
         {

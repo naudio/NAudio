@@ -9,7 +9,7 @@ namespace NAudio.Mixer;
 /// </summary>
 public class UnsignedMixerControl : MixerControl
 {
-    private MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[] unsignedDetails;
+    private MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[] unsignedDetails = [];
 
     internal UnsignedMixerControl(MixerInterop.MIXERCONTROL mixerControl, IntPtr mixerHandle, MixerFlags mixerHandleType, int nChannels)
     {

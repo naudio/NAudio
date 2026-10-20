@@ -10,7 +10,7 @@ public sealed class AsioRecordingOptions
     /// The callback receives them in the order listed: <see cref="AsioAudioCapturedEventArgs.GetChannel"/> with
     /// index 0 returns samples from <c>InputChannels[0]</c>, etc.
     /// </summary>
-    public int[] InputChannels { get; init; }
+    public int[] InputChannels { get; init; } = null!; // required; validated by InitRecording
 
     /// <summary>
     /// Desired sample rate in Hz. If <c>null</c>, uses the driver's current sample rate

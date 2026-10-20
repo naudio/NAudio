@@ -19,11 +19,15 @@ namespace NAudio.Wave;
 /// </summary>
 public class MediaFoundationReader : WaveStream
 {
-    private WaveFormat waveFormat;
+    // waveFormat and settings are set by Init, which every constructor (including a derived class's) calls
+    private WaveFormat waveFormat = null!;
     private long length;
-    private MediaFoundationReaderSettings settings;
-    private readonly string file;
-    private IMFSourceReader pReader;
+    private MediaFoundationReaderSettings settings = null!;
+    private readonly string? file;
+    private IMFSourceReader? pReader;
+
+    // Created on demand: Dispose releases it, and Init keeps it only for SingleReaderObject
+    private IMFSourceReader Reader => pReader ??= CreateReader(settings);
 
     private long position;
 
@@ -79,7 +83,7 @@ public class MediaFoundationReader : WaveStream
     /// </summary>
     /// <param name="file">Filename</param>
     /// <param name="settings">Advanced settings</param>
-    public MediaFoundationReader(string file, MediaFoundationReaderSettings settings)
+    public MediaFoundationReader(string file, MediaFoundationReaderSettings? settings)
     {
         this.file = file;
         Init(settings);
@@ -88,7 +92,7 @@ public class MediaFoundationReader : WaveStream
     /// <summary>
     /// Initializes
     /// </summary>
-    protected void Init(MediaFoundationReaderSettings initialSettings)
+    protected void Init(MediaFoundationReaderSettings? initialSettings)
     {
         MediaFoundationApi.Startup();
         settings = initialSettings ?? new MediaFoundationReaderSettings();
@@ -146,7 +150,8 @@ public class MediaFoundationReader : WaveStream
     /// </summary>
     private protected virtual IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
     {
-        var reader = MediaFoundationApi.CreateSourceReaderFromUrl(file);
+        var reader = MediaFoundationApi.CreateSourceReaderFromUrl(
+            file ?? throw new InvalidOperationException("No file was supplied; derived readers must override CreateReader"));
         MediaFoundationException.ThrowIfFailed(
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, 0));
         MediaFoundationException.ThrowIfFailed(
@@ -214,8 +219,10 @@ public class MediaFoundationReader : WaveStream
             MediaFoundationException.ThrowIfFailed(hResult);
             var variant = Marshal.PtrToStructure<PropVariant>(variantPtr);
 
-            var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
-            return lengthInBytes;
+            // a successful MF_PD_DURATION query always returns a duration value
+            var lengthInBytes = (((long)variant.Value!) * waveFormat.AverageBytesPerSecond) / 10000000L;
+            // truncating the duration to bytes can leave a partial frame
+            return lengthInBytes - lengthInBytes % waveFormat.BlockAlign;
         }
         finally
         {
@@ -224,7 +231,7 @@ public class MediaFoundationReader : WaveStream
         }
     }
 
-    private byte[] decoderOutputBuffer;
+    private byte[] decoderOutputBuffer = [];
     private int decoderOutputOffset;
     private int decoderOutputCount;
 
@@ -305,7 +312,7 @@ public class MediaFoundationReader : WaveStream
         while (true)
         {
             MediaFoundationException.ThrowIfFailed(
-                pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0,
+                Reader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0,
                     out int actualStreamIndex, out int dwFlagsInt, out long sampleTimestamp, out IntPtr pSamplePtr));
             var dwFlags = (SourceReaderFlags)dwFlagsInt;
             if ((dwFlags & SourceReaderFlags.EndOfStream) != 0)
@@ -315,7 +322,7 @@ public class MediaFoundationReader : WaveStream
             }
             else if ((dwFlags & SourceReaderFlags.CurrentMediaTypeChanged) != 0)
             {
-                waveFormat = GetCurrentWaveFormat(pReader);
+                waveFormat = GetCurrentWaveFormat(Reader);
                 OnWaveFormatChanged();
             }
             else if ((dwFlags & (SourceReaderFlags.StreamTick | SourceReaderFlags.NewStream
@@ -339,9 +346,9 @@ public class MediaFoundationReader : WaveStream
                 continue;
             }
 
-            IMFSample pSample = null;
+            IMFSample? pSample = null;
             IntPtr pBufferPtr = IntPtr.Zero;
-            IMFMediaBuffer pBuffer = null;
+            IMFMediaBuffer? pBuffer = null;
             bool bufferLocked = false;
             try
             {
@@ -402,6 +409,8 @@ public class MediaFoundationReader : WaveStream
         {
             if (value < 0)
                 throw new ArgumentOutOfRangeException("value", "Position cannot be less than 0");
+            // never start mid-frame; that produces loud static
+            value -= value % BlockAlign;
             if (settings.RepositionInRead)
             {
                 repositionTo = value;
@@ -434,7 +443,7 @@ public class MediaFoundationReader : WaveStream
             Marshal.StructureToPtr(pv, ptr, false);
 
             // should pass in a variant of type VT_I8 which is a long containing time in 100nanosecond units
-            MediaFoundationException.ThrowIfFailed(pReader.SetCurrentPosition(Guid.Empty, ptr));
+            MediaFoundationException.ThrowIfFailed(Reader.SetCurrentPosition(Guid.Empty, ptr));
         }
         finally
         {
@@ -466,9 +475,12 @@ public class MediaFoundationReader : WaveStream
                 }
 
                 // The decoder output is PCM (constant bit rate), so the sample timestamp maps to an
-                // exact byte position. MF can return several buffers carrying the same timestamp, so
-                // we gate on the end of the buffer rather than its start.
-                long decoderPosition = (long)((ulong)timestamp * (ulong)averageBytesPerSecond / 10000000UL);
+                // exact frame. Round to the nearest frame rather than truncating to bytes: the
+                // timestamp is in 100ns units, so a byte truncation can land mid-frame and leave
+                // Position misaligned for every read that follows. MF can return several buffers
+                // carrying the same timestamp, so we gate on the end of the buffer rather than its start.
+                long decoderFrame = (long)(((ulong)timestamp * (ulong)waveFormat.SampleRate + 5000000UL) / 10000000UL);
+                long decoderPosition = decoderFrame * BlockAlign;
                 long bufferEnd = decoderPosition + decoderOutputCount;
 
                 if (bufferEnd <= desiredPosition)
@@ -481,10 +493,9 @@ public class MediaFoundationReader : WaveStream
 
                 if (decoderPosition < desiredPosition)
                 {
+                    // Both positions are frame aligned, so the skip is a whole number of frames
+                    // and we land exactly on the requested position.
                     int skip = (int)(desiredPosition - decoderPosition);
-                    // Round the skip down to a frame boundary; starting mid-sample produces loud
-                    // static. This lands us at most BlockAlign-1 bytes before the requested position.
-                    skip -= skip % BlockAlign;
                     decoderOutputOffset = skip;
                     decoderOutputCount -= skip;
                     achievedPosition = decoderPosition + skip;
@@ -518,7 +529,7 @@ public class MediaFoundationReader : WaveStream
     /// <summary>
     /// WaveFormat has changed
     /// </summary>
-    public event EventHandler WaveFormatChanged;
+    public event EventHandler? WaveFormatChanged;
 
     private void OnWaveFormatChanged()
     {

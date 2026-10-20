@@ -15,7 +15,7 @@ public static class MidiMessageConverter
     /// Returns <c>null</c> for sysex (handle those via the sysex event) and for any
     /// message NAudio cannot decode.
     /// </summary>
-    public static MidiEvent ToMidiEvent(IMidiMessage message)
+    public static MidiEvent? ToMidiEvent(IMidiMessage message)
     {
         switch (message.Type)
         {
@@ -57,7 +57,7 @@ public static class MidiMessageConverter
         }
     }
 
-    private static MidiEvent TryParseRawMessage(IMidiMessage message)
+    private static MidiEvent? TryParseRawMessage(IMidiMessage message)
     {
         byte[] raw = message.RawData.ToArray();
         if (raw.Length == 0) return null;

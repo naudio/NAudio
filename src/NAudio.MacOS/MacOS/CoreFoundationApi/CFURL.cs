@@ -28,7 +28,7 @@ internal sealed class CFURL : AbstractCoreFoundationObject
     public static CFURL CreateFromUri(Uri uri) => CreateFromUri(uri, null);
 
     [return: NotNull]
-    public static CFURL CreateFromUri(Uri uri, CFURL baseURL)
+    public static CFURL CreateFromUri(Uri uri, CFURL? baseURL)
     {
         ArgumentNullException.ThrowIfNull(uri);
         return CreateFromString(uri.ToString(), baseURL);
@@ -38,7 +38,7 @@ internal sealed class CFURL : AbstractCoreFoundationObject
     public static CFURL CreateFromString(string uri) => CreateFromString(uri, null);
 
     [return: NotNull]
-    public static CFURL CreateFromString(string uri, CFURL baseURL)
+    public static CFURL CreateFromString(string uri, CFURL? baseURL)
     {
         ArgumentNullException.ThrowIfNull(uri);
         using CFString c = CFString.CreateFromString(uri);
@@ -65,8 +65,7 @@ internal sealed class CFURL : AbstractCoreFoundationObject
 
     /// <summary>Gets the base URL of this URL object, if any.</summary>
     /// <returns>A new <see cref="CFURL"/> instance containing the base URL.</returns>
-    [return: MaybeNull]
-    public CFURL GetBaseURL()
+    public CFURL? GetBaseURL()
     {
         IntPtr h = NativeMethods.CFURLGetBaseURL(handle);
         return h == IntPtr.Zero ? null : new CFURL(h, true);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace NAudio.Midi;
 
@@ -8,6 +9,19 @@ namespace NAudio.Midi;
 /// </summary>
 public class MidiOut : IMidiOutput
 {
+    /// <summary>Fixed part of the time we allow a driver to release a long-message buffer.</summary>
+    private const int UnprepareBaseTimeoutMilliseconds = 5000;
+
+    /// <summary>
+    /// Extra time allowed per byte of a long message. A DIN connection runs at 31250 baud, or
+    /// about 0.32 ms per byte, so this leaves roughly threefold headroom - long enough that a
+    /// genuine sysex dump is never cut short, short enough to bound a wedged driver.
+    /// </summary>
+    private const int UnprepareMillisecondsPerByte = 1;
+
+    /// <summary>Ceiling on the backoff between <c>midiOutUnprepareHeader</c> retries.</summary>
+    private const int MaxUnprepareDelayMilliseconds = 50;
+
     private readonly IntPtr hMidiOut = IntPtr.Zero;
     private bool disposed = false;
     private readonly MidiInterop.MidiOutCallback callback;
@@ -117,8 +131,12 @@ public class MidiOut : IMidiOutput
     {
         if (!this.disposed)
         {
-            //if(disposing) Components.Dispose();
-            MidiInterop.midiOutClose(hMidiOut);
+            // The constructor throws if midiOutOpen fails, but the finalizer still runs on the
+            // half-constructed object, so there may be no handle to close.
+            if (hMidiOut != IntPtr.Zero)
+            {
+                MidiInterop.midiOutClose(hMidiOut);
+            }
         }
         disposed = true;
     }
@@ -130,23 +148,89 @@ public class MidiOut : IMidiOutput
     /// <summary>
     /// Send a long message, for example sysex.
     /// </summary>
+    /// <remarks>
+    /// Blocks until the driver has finished with the buffer. For a large sysex dump over a
+    /// 31250 baud DIN connection that can take a noticeable amount of time, so call this from a
+    /// worker thread rather than a UI thread.
+    /// </remarks>
     /// <param name="byteBuffer">The bytes to send.</param>
     public void SendBuffer(byte[] byteBuffer)
     {
-        var header = new MidiInterop.MIDIHDR();
-        header.lpData = Marshal.AllocHGlobal(byteBuffer.Length);
-        Marshal.Copy(byteBuffer, 0, header.lpData, byteBuffer.Length);
+        if (byteBuffer == null) throw new ArgumentNullException(nameof(byteBuffer));
 
-        header.dwBufferLength = byteBuffer.Length;
-        header.dwBytesRecorded = byteBuffer.Length;
-        int size = Marshal.SizeOf(header);
-        MidiInterop.midiOutPrepareHeader(this.hMidiOut, ref header, size);
-        var errcode = MidiInterop.midiOutLongMsg(this.hMidiOut, ref header, size);
-        if (errcode != MmResult.NoError)
+        var headerSize = Marshal.SizeOf<MidiInterop.MIDIHDR>();
+        var lpData = IntPtr.Zero;
+        var lpHeader = IntPtr.Zero;
+        var prepared = false;
+        var driverOwnsBuffer = false;
+        try
         {
-            MidiInterop.midiOutUnprepareHeader(this.hMidiOut, ref header, size);
+            lpData = Marshal.AllocHGlobal(byteBuffer.Length);
+            lpHeader = Marshal.AllocHGlobal(headerSize);
+            Marshal.Copy(byteBuffer, 0, lpData, byteBuffer.Length);
+
+            var header = new MidiInterop.MIDIHDR
+            {
+                lpData = lpData,
+                dwBufferLength = byteBuffer.Length,
+                dwBytesRecorded = byteBuffer.Length,
+            };
+            Marshal.StructureToPtr(header, lpHeader, false);
+
+            MmException.Try(MidiInterop.midiOutPrepareHeader(hMidiOut, lpHeader, headerSize), "midiOutPrepareHeader");
+            prepared = true;
+
+            // From here on the driver may own the buffer even if the send fails, so we can only
+            // free once midiOutUnprepareHeader tells us it has handed it back.
+            driverOwnsBuffer = true;
+            MmException.Try(MidiInterop.midiOutLongMsg(hMidiOut, lpHeader, headerSize), "midiOutLongMsg");
         }
-        Marshal.FreeHGlobal(header.lpData);
+        finally
+        {
+            if (prepared)
+            {
+                driverOwnsBuffer = !TryUnprepareHeader(lpHeader, headerSize, byteBuffer.Length);
+            }
+
+            // Leaking is the lesser evil: freeing a buffer the driver still holds corrupts the
+            // message being transmitted, or the heap.
+            if (!driverOwnsBuffer)
+            {
+                if (lpHeader != IntPtr.Zero) Marshal.FreeHGlobal(lpHeader);
+                if (lpData != IntPtr.Zero) Marshal.FreeHGlobal(lpData);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Unprepares a long-message header, waiting for the driver to release the buffer first.
+    /// </summary>
+    /// <returns>True if the header was unprepared and its buffers can safely be freed.</returns>
+    private bool TryUnprepareHeader(IntPtr lpHeader, int headerSize, int bufferLength)
+    {
+        // The driver may still own the buffer after midiOutLongMsg returns - that is what
+        // MHDR_INQUEUE, MOM_DONE and MIDIERR_STILLPLAYING exist to express - so poll rather than
+        // assuming the send completed synchronously. Back off instead of spinning.
+        var result = MidiInterop.midiOutUnprepareHeader(hMidiOut, lpHeader, headerSize);
+        var timeout = UnprepareBaseTimeoutMilliseconds + (long)bufferLength * UnprepareMillisecondsPerByte;
+        var deadline = Environment.TickCount64 + timeout;
+        var delayMilliseconds = 1;
+        while (result == MmResult.MidiStillPlaying && Environment.TickCount64 < deadline)
+        {
+            Thread.Sleep(delayMilliseconds);
+            delayMilliseconds = Math.Min(delayMilliseconds * 2, MaxUnprepareDelayMilliseconds);
+            result = MidiInterop.midiOutUnprepareHeader(hMidiOut, lpHeader, headerSize);
+        }
+
+        if (result == MmResult.MidiStillPlaying)
+        {
+            // midiOutReset marks every pending buffer as done, so this is the last way to get the
+            // buffer back from a driver that has stopped making progress.
+            MidiInterop.midiOutReset(hMidiOut);
+            result = MidiInterop.midiOutUnprepareHeader(hMidiOut, lpHeader, headerSize);
+        }
+
+        return result == MmResult.NoError;
     }
 
     /// <summary>
@@ -154,7 +238,7 @@ public class MidiOut : IMidiOutput
     /// </summary>
     ~MidiOut()
     {
-        System.Diagnostics.Debug.Assert(false);
+        System.Diagnostics.Debug.Assert(hMidiOut == IntPtr.Zero, "MIDI Out was not finalised");
         Dispose(false);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Wave.SampleProviders;
 
@@ -9,7 +10,7 @@ namespace NAudio.Wave.SampleProviders;
 public class MonoToStereoSampleProvider : ISampleProvider
 {
     private readonly ISampleProvider source;
-    private float[] sourceBuffer;
+    private float[]? sourceBuffer;
 
     /// <summary>
     /// Initializes a new instance of MonoToStereoSampleProvider
@@ -59,6 +60,7 @@ public class MonoToStereoSampleProvider : ISampleProvider
     /// </summary>
     public float RightVolume { get; set; }
 
+    [MemberNotNull(nameof(sourceBuffer))]
     private void EnsureSourceBuffer(int count)
     {
         if (sourceBuffer == null || sourceBuffer.Length < count)

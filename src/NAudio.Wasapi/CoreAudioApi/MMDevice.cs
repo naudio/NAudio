@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
@@ -14,12 +15,14 @@ namespace NAudio.CoreAudioApi;
 public class MMDevice : IDisposable
 {
     #region Variables
-    private IMMDevice deviceInterface;
-    private PropertyStore propertyStore;
-    private AudioMeterInformation audioMeterInformation;
-    private AudioEndpointVolume audioEndpointVolume;
-    private AudioSessionManager audioSessionManager;
-    private DeviceTopology deviceTopology;
+    private IMMDevice? deviceInterface;
+
+    private IMMDevice Device => deviceInterface ?? throw new ObjectDisposedException(nameof(MMDevice));
+    private PropertyStore? propertyStore;
+    private AudioMeterInformation? audioMeterInformation;
+    private AudioEndpointVolume? audioEndpointVolume;
+    private AudioSessionManager? audioSessionManager;
+    private DeviceTopology? deviceTopology;
     #endregion
 
     #region Guids
@@ -38,9 +41,10 @@ public class MMDevice : IDisposable
     /// </summary>
     /// <param name="stgmAccess">The storage-access mode to open store for.</param>
     /// <remarks>Administrative client is required for Write and ReadWrite modes.</remarks>
+    [MemberNotNull(nameof(propertyStore))]
     public void GetPropertyInformation(StorageAccessMode stgmAccess = StorageAccessMode.Read)
     {
-        CoreAudioException.ThrowIfFailed(deviceInterface.OpenPropertyStore(stgmAccess, out var ptr));
+        CoreAudioException.ThrowIfFailed(Device.OpenPropertyStore(stgmAccess, out var ptr));
         try
         {
             propertyStore = new PropertyStore((IPropertyStore)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
@@ -54,7 +58,7 @@ public class MMDevice : IDisposable
 
     private AudioClient GetAudioClient()
     {
-        CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out var ptr));
+        CoreAudioException.ThrowIfFailed(Device.Activate(IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out var ptr));
         try
         {
             return new AudioClient((IAudioClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
@@ -66,27 +70,31 @@ public class MMDevice : IDisposable
         }
     }
 
+    [MemberNotNull(nameof(audioMeterInformation))]
     private void GetAudioMeterInformation()
     {
-        CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out var ptr));
+        CoreAudioException.ThrowIfFailed(Device.Activate(IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out var ptr));
         audioMeterInformation = new AudioMeterInformation(ptr);
     }
 
+    [MemberNotNull(nameof(audioEndpointVolume))]
     private void GetAudioEndpointVolume()
     {
-        CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out var ptr));
+        CoreAudioException.ThrowIfFailed(Device.Activate(IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out var ptr));
         audioEndpointVolume = new AudioEndpointVolume(ptr);
     }
 
+    [MemberNotNull(nameof(audioSessionManager))]
     private void GetAudioSessionManager()
     {
-        CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out var ptr));
+        CoreAudioException.ThrowIfFailed(Device.Activate(IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out var ptr));
         audioSessionManager = new AudioSessionManager(ptr);
     }
 
+    [MemberNotNull(nameof(deviceTopology))]
     private void GetDeviceTopology()
     {
-        CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var ptr));
+        CoreAudioException.ThrowIfFailed(Device.Activate(IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var ptr));
         try
         {
             deviceTopology = new DeviceTopology((IDeviceTopology)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
@@ -184,6 +192,7 @@ public class MMDevice : IDisposable
         }
     }
 
+    [MemberNotNull(nameof(propertyStore))]
     private void EnsurePropertyStoreExists()
     {
         if (propertyStore == null)
@@ -257,7 +266,7 @@ public class MMDevice : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(deviceInterface.GetId(out var result));
+            CoreAudioException.ThrowIfFailed(Device.GetId(out var result));
             return result;
         }
     }
@@ -269,7 +278,7 @@ public class MMDevice : IDisposable
     {
         get
         {
-            var ep = (IMMEndpoint)deviceInterface;
+            var ep = (IMMEndpoint)Device;
             CoreAudioException.ThrowIfFailed(ep.GetDataFlow(out var result));
             return result;
         }
@@ -282,7 +291,7 @@ public class MMDevice : IDisposable
     {
         get
         {
-            CoreAudioException.ThrowIfFailed(deviceInterface.GetState(out var result));
+            CoreAudioException.ThrowIfFailed(Device.GetState(out var result));
             return result;
         }
     }

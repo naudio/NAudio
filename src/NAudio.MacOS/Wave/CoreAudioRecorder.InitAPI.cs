@@ -1,4 +1,4 @@
-
+﻿
 using System;
 
 using NAudio.Utils;
@@ -155,7 +155,10 @@ public partial class CoreAudioRecorder
                     virtualFormat.mSampleRate != streamAsbd.mSampleRate ||
                     virtualFormat.mBitsPerChannel != streamAsbd.mBitsPerChannel ||
                     virtualFormat.mFormatFlags != streamAsbd.mFormatFlags ||
-                    virtualFormat.mChannelsPerFrame != streamAsbd.mChannelsPerFrame ||
+                    // The channel interleaver cannot support buffers with multiple channels, so for now make it to throw explicitly.
+                    // mdcdi1315: I might revisit this at some day, probably when I will have a proper device to test this on,
+                    // or think a better way to implement it.
+                    streamAsbd.mChannelsPerFrame != 1 ||
                     virtualFormat.mBytesPerFrame != streamAsbd.mBytesPerFrame
                 )
                 {
@@ -187,9 +190,10 @@ public partial class CoreAudioRecorder
             for (int I = 0; I < streams.Length; I++) { streamSelection[I] = I == selectedIndex; }
         }
 
-        selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
-        ioProcedure.StreamLatency = selectedDevice.BufferFrameSize;
-        ioProcedure.VirtualFormat = virtualFormat;
+        // Both branches above leave a procedure assigned.
+        var procedure = InitializedProcedure;
+        selectedDevice.SetStreamUsage(procedure, AudioObjectPropertyScopeConstants.Input, streamSelection);
+        procedure.VirtualFormat = virtualFormat;
         virtualFormatChanged = streams[selectedIndex].ConstructVirtualFormatChangedEvent();
         virtualFormatChanged.Event += OnVirtualFormatChanged;
         try

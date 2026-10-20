@@ -2,6 +2,7 @@
 // See https://developer.apple.com/documentation/coreaudio for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Diagnostics;
 using System.Runtime.Versioning;
@@ -245,7 +246,7 @@ public abstract class AudioObject :
         return returnValue;
     }
 
-    private protected unsafe T GetAudioObjectValue<T>(AudioObjectPropertyAddress address, Func<AudioObjectID, T> factory)
+    private protected unsafe T? GetAudioObjectValue<T>(AudioObjectPropertyAddress address, Func<AudioObjectID, T> factory)
         where T : AudioObject
     {
         AudioObjectID id;
@@ -257,7 +258,7 @@ public abstract class AudioObject :
         return AudioObjectID.IsUnknownID(id) ? null : factory(id);
     }
 
-    private protected unsafe T GetAudioObjectValue<T, TQualifier>(AudioObjectPropertyAddress address, Func<AudioObjectID, T> factory, Span<TQualifier> qualifier_data)
+    private protected unsafe T? GetAudioObjectValue<T, TQualifier>(AudioObjectPropertyAddress address, Func<AudioObjectID, T> factory, Span<TQualifier> qualifier_data)
         where T : AudioObject
         where TQualifier : unmanaged
     {
@@ -288,17 +289,22 @@ public abstract class AudioObject :
                 NativeMethods.AudioObjectGetPropertyData(objectId, address, ref size, new(pids))
             );
         }
-        AudioObjectID id;
         // Make sure to recompute the buffer's size, an update could happen 
         // after querying the property's size and before getting 
         // the actual data.
-        var values = new T[size / sizeof(AudioObjectID)];
-        for (int I = 0; I < values.Length; I++)
+        int count = (int)(size / (uint)sizeof(AudioObjectID));
+        // Skip any unknown IDs rather than returning null entries,
+        // so callers can safely enumerate the result.
+        var values = new List<T>(count);
+        for (int I = 0; I < count; I++)
         {
-            id = ids[I];
-            values[I] = AudioObjectID.IsUnknownID(id) ? null : factory(id);
+            AudioObjectID id = ids[I];
+            if (!AudioObjectID.IsUnknownID(id))
+            {
+                values.Add(factory(id));
+            }
         }
-        return values;
+        return [.. values];
     }
 
     private protected unsafe Uri GetUriObjectValue(AudioObjectPropertyAddress address)
@@ -452,7 +458,7 @@ public abstract class AudioObject :
     /// Note that all AudioObjects are owned by some other <see cref="AudioObject"/>. <br />
     /// The only exception is the <see cref="AudioSystemObject"/>, for which the value of this property is <see langword="null"/>.
     /// </summary>
-    public AudioObject Owner => GetAudioObjectValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyOwner), AudioObjectsConstructors.ConstructAudioObject);
+    public AudioObject? Owner => GetAudioObjectValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyOwner), AudioObjectsConstructors.ConstructAudioObject);
 
     /// <summary>
     /// An array of <see cref="AudioObject"/>s that represent all the AudioObjects owned by this object. 
@@ -473,10 +479,9 @@ public abstract class AudioObject :
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>
     /// <returns>A value whether the two objects are both non-null and are pointing to the same Core Audio object.</returns>
-    public static bool operator ==(AudioObject object1, AudioObject object2)
+    public static bool operator ==(AudioObject? object1, AudioObject? object2)
     {
-        bool object2IsNull = object2 is null;
-        return object1 is null ? object2IsNull : !object2IsNull && object1.objectId == object2.objectId;
+        return object1 is null ? object2 is null : object2 is not null && object1.objectId == object2.objectId;
     }
 
     /// <summary>
@@ -489,10 +494,9 @@ public abstract class AudioObject :
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>
     /// <returns>A value whether the two objects are both non-null and are pointing to a different Core Audio object.</returns>
-    public static bool operator !=(AudioObject object1, AudioObject object2)
+    public static bool operator !=(AudioObject? object1, AudioObject? object2)
     {
-        bool object2IsNull = object2 is null;
-        return object1 is null ? !object2IsNull : object2IsNull || object1.objectId != object2.objectId;
+        return object1 is null ? object2 is not null : object2 is null || object1.objectId != object2.objectId;
     }
 
     /// <summary>Retrieves a hash code for this Core Audio object instance.</summary>
@@ -504,10 +508,10 @@ public abstract class AudioObject :
     /// </summary>
     /// <param name="obj">The other Core Audio object to compare against.</param>
     /// <returns>A value whether the <paramref name="obj"/> is non-null and the instances are pointing to the same Core Audio object.</returns>
-    public bool Equals(AudioObject obj) => obj is not null && objectId == obj.objectId;
+    public bool Equals(AudioObject? obj) => obj is not null && objectId == obj.objectId;
 
     /// <inheritdoc />
-    public override bool Equals(object obj) => obj is AudioObject interopObject && objectId == interopObject.objectId;
+    public override bool Equals(object? obj) => obj is AudioObject interopObject && objectId == interopObject.objectId;
 
     /// <inheritdoc />
     public override string ToString() => $"{GetType().Name} of handle 0x{objectId.GetHashCode()}";

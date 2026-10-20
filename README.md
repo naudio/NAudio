@@ -4,7 +4,10 @@
 
 NAudio is an open source .NET audio library written by [Mark Heath](https://markheath.net)
 
-![NAudio logo](naudio-logo.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="naudio-logo-dark.svg">
+  <img alt="NAudio logo" src="naudio-logo.svg" width="400">
+</picture>
 
 📖 **[Documentation site](https://naudio.github.io/NAudio/)** — tutorials and the full API reference.
 
@@ -12,7 +15,7 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
 
 NAudio 3 is a major release. The headlines:
 
-* **The single `NAudio` assembly is split into focused packages** — take only what you need. The `NAudio` meta-package still pulls the Windows stack together, so existing consumers see no change.
+* **The single `NAudio` assembly is split into focused packages** — take only what you need. The `NAudio` meta-package pulls in the core Windows stack (WASAPI, Media Foundation, WinMM); ASIO, DMO/DirectSound and WinForms are separate packages.
 * **The core is cross-platform and Native-AOT compatible.** `NAudio.Core`, `NAudio.Midi`, `NAudio.Effects`, `NAudio.Sampler` and `NAudio.SoundFile` run on Windows, Linux and macOS.
 * **Minimum target framework is `net9.0`** — legacy .NET Framework and .NET Standard 2.0 support is dropped.
 * **New subsystems:** an audio effects framework, a software sampler, VST 3 hosting, ALSA playback/capture on Linux, and cross-platform file I/O via libsndfile.
@@ -22,11 +25,11 @@ Upgrading from NAudio 2? Start with **[Migrating from NAudio 2 to NAudio 3](Docs
 
 ## Packages
 
-Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package gets you the full Windows stack and is the right default. On a non-Windows target framework it resolves to the cross-platform pieces only. Reference the individual packages directly if you want a smaller surface.
+Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package is the right default on Windows, from any `netX.0` or `netX.0-windows` project: it gets you WASAPI, Media Foundation and WinMM playback and recording, MIDI, and `AudioFileReader`. Add `NAudio.Asio`, `NAudio.Dmo` (DirectSound and DMO effects) or `NAudio.WinForms` if you need them. The Windows backends are marked `[SupportedOSPlatform("windows")]`, so the compiler flags unguarded calls in cross-platform code. On Linux or macOS, reference `NAudio.Core` and the backend you need directly rather than the meta-package.
 
 | Package | Platform | What it gives you |
 | --- | --- | --- |
-| [NAudio](https://www.nuget.org/packages/NAudio/) | any | Meta-package — the Windows stack plus `AudioFileReader` and `Mp3FileReader` |
+| [NAudio](https://www.nuget.org/packages/NAudio/) | any | Meta-package — Core, Midi, WinMM and Wasapi, plus `AudioFileReader` and `Mp3FileReader` |
 | [NAudio.Core](https://www.nuget.org/packages/NAudio.Core/) | cross-platform | `WaveStream` / `ISampleProvider` model, WAV & AIFF I/O, mixing, resampling, DSP, `NAudio.Effects`, sequencing |
 | [NAudio.Midi](https://www.nuget.org/packages/NAudio.Midi/) | cross-platform (+ WinRT MIDI on Windows) | MIDI event model, Standard MIDI File reading & writing |
 | [NAudio.Wasapi](https://www.nuget.org/packages/NAudio.Wasapi/) | Windows | WASAPI playback, capture and loopback; Media Foundation codecs |
@@ -40,7 +43,7 @@ Installing the [`NAudio`](https://www.nuget.org/packages/NAudio/) meta-package g
 | [NAudio.Vst3](https://www.nuget.org/packages/NAudio.Vst3/) | Windows | VST 3 plug-in hosting (preview) — effects and instruments |
 | [NAudio.Extras](https://www.nuget.org/packages/NAudio.Extras/) | cross-platform (+ Windows extras) | Opinionated helpers — playback engine, capture mixing, ID3 tags |
 
-`NAudio.Core`, `NAudio.Midi`, `NAudio.Wasapi`, `NAudio.Dmo`, `NAudio.Sampler`, `NAudio.SoundFile` and `NAudio.Alsa` are Native-AOT compatible. See [the assembly layout plan](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) for the reasoning behind the split.
+`NAudio.Core`, `NAudio.Midi`, `NAudio.Wasapi`, `NAudio.WinMM`, `NAudio.Asio`, `NAudio.Dmo`, `NAudio.Sampler`, `NAudio.SoundFile` and `NAudio.Alsa` are Native-AOT compatible. See [the assembly layout plan](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) for the reasoning behind the split.
 
 ## Documentation
 

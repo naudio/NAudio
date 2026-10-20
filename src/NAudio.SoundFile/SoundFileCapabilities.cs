@@ -10,7 +10,7 @@ namespace NAudio.SoundFile;
 /// </summary>
 public sealed class SoundFileFormatInfo
 {
-    internal SoundFileFormatInfo(int rawFormat, string name, string extension)
+    internal SoundFileFormatInfo(int rawFormat, string? name, string? extension)
     {
         RawFormat = rawFormat;
         Name = name ?? string.Empty;

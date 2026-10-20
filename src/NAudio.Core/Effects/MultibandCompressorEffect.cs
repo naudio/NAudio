@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -41,7 +42,7 @@ public sealed class MultibandCompressorEffect : AudioEffect
     private readonly MultibandCompressorBand[] bands;
     private LinkwitzRileyCrossover[] crossovers = Array.Empty<LinkwitzRileyCrossover>();
     private EnvelopeFollower[] followers = Array.Empty<EnvelopeFollower>();
-    private float[,] bandSamples;
+    private float[,]? bandSamples;
 
     /// <summary>
     /// Creates a multiband compressor.
@@ -78,6 +79,8 @@ public sealed class MultibandCompressorEffect : AudioEffect
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
+        Debug.Assert(bandSamples is not null, "Configure must be called before ProcessBlock.");
+
         var channels = Channels;
         var bandCount = bands.Length;
         Span<float> split = stackalloc float[bandCount];

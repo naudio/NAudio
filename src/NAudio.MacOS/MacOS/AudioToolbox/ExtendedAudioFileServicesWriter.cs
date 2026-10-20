@@ -28,6 +28,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     private IntPtr extFileObject;
     private readonly Lock lockObject;
     private readonly ExtendedAudioFileWriterSettings settings;
+    private readonly WaveFormat providingFormat;
 
     private protected ExtendedAudioFileServicesWriter(IntPtr hExtFileObject, ExtendedAudioFileWriterSettings settings)
     {
@@ -36,6 +37,9 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         disposed = false;
         lockObject = new();
         this.settings = settings;
+        // Captured once so that later changes to the settings object
+        // cannot change the format the client data are interpreted as.
+        providingFormat = settings.ProvidingFormat ?? throw new ArgumentException("ProvidingFormat property in settings object was not assigned to a valid WaveFormat instance.", nameof(settings));
         extFileObject = hExtFileObject;
     }
 
@@ -146,7 +150,8 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     {
         bool providedResults = false;
         AudioFileTypeAndFormatID ffid = new();
-        foreach (var id in AudioFileLibraryInformation.GetFileTypeIDsForMimeType(settings.FileType))
+        // FileType is validated by the public Create methods before BuildWriter is called.
+        foreach (var id in AudioFileLibraryInformation.GetFileTypeIDsForMimeType(settings.FileType!))
         {
             foreach (var fmtId in SelectBestIDForFileType(ffid.mFileType = id))
             {
@@ -187,7 +192,8 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     {
         id = default;
         description = default;
-        uint requiredBitsPerSample = (uint)settings.ProvidingFormat.BitsPerSample;
+        // ProvidingFormat is validated by BuildWriter before this is called.
+        uint requiredBitsPerSample = (uint)settings.ProvidingFormat!.BitsPerSample;
         // A list of all the stream formats that are very approximate to
         // the target bit depth and IEEE mode. Will be used if and only
         // if there is not a format that matches the requirements imposed
@@ -312,7 +318,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         "CA2208:Instantiate argument exceptions correctly",
         Justification = "Internal helper method"
     )]
-    private static void CheckValidFormat(WaveFormat fmt)
+    private static void CheckValidFormat([NotNull] WaveFormat? fmt)
     {
         if (fmt is null) { throw new ArgumentException("ProvidingFormat property in settings object was not assigned to a valid WaveFormat instance.", "settings"); }
         if (fmt is WaveFormatExtensible extensible)
@@ -334,10 +340,12 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
 
     private protected IntPtr GetExtAudioFileHandle() => extFileObject;
 
+    // The format of the data provided to the writer.
+    private protected WaveFormat ProvidingFormat => providingFormat;
+
     /// <summary>
     /// Gets the currently defined settings object for this extended file writer instance.
     /// </summary>
-    [NotNull]
     public ExtendedAudioFileWriterSettings Settings => settings;
 
     /// <inheritdoc />
@@ -380,7 +388,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     public unsafe sealed override void Write(ReadOnlySpan<byte> buffer)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        var outFormat = settings.ProvidingFormat;
+        var outFormat = providingFormat;
         uint bufferLength = (uint)buffer.Length;
         uint numFramesToWrite = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outFormat);
         if (numFramesToWrite == 0U && bufferLength > 0U)

@@ -83,8 +83,8 @@ internal sealed class WaveWindowNative : NativeWindow
 /// </summary>
 internal sealed class WaveCallbackHost : IDisposable
 {
-    private WaveWindow ownedWindow;
-    private WaveWindowNative subclassedWindow;
+    private WaveWindow? ownedWindow;
+    private WaveWindowNative? subclassedWindow;
 
     /// <summary>
     /// The HWND to pass to waveOutOpen / waveInOpen with CALLBACK_WINDOW.

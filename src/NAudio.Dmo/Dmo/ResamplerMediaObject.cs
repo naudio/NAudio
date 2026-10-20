@@ -7,6 +7,7 @@ namespace NAudio.Dmo;
 /// <summary>
 /// DMO Resampler
 /// </summary>
+[System.Obsolete("Use MediaFoundationResampler or WdlResamplingSampleProvider instead. DmoResampler will be removed in a future major version.")]
 public class DmoResampler : IDisposable
 {
     // CLSID_CResamplerMediaObject — wmcodecdsp.h
@@ -14,7 +15,7 @@ public class DmoResampler : IDisposable
     // IID_IMediaObject — mediaobj.h
     private static readonly Guid IID_IMediaObject = new("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
-    private MediaObject mediaObject;
+    private MediaObject? mediaObject;
 
     /// <summary>
     /// Creates a new Resampler based on the DMO Resampler.
@@ -34,7 +35,7 @@ public class DmoResampler : IDisposable
     /// <summary>
     /// Media Object
     /// </summary>
-    public MediaObject MediaObject => mediaObject;
+    public MediaObject MediaObject => mediaObject ?? throw new ObjectDisposedException(nameof(DmoResampler));
 
     #region IDisposable Members
 

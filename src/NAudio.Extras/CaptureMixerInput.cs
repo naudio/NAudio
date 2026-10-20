@@ -58,7 +58,8 @@ public class CaptureMixerInput
         buffer = new BufferedWaveProvider(sourceFormat, bufferDuration ?? TimeSpan.FromSeconds(2))
         {
             // The capture callback and the mixer read run on different threads, and a capture
-            // callback may briefly outrun the mixer; drop the oldest audio rather than throw.
+            // callback may briefly outrun the mixer; drop the incoming audio that doesn't fit
+            // rather than throw.
             DiscardOnBufferOverflow = true,
             // Hand back silence when empty so the mixer never starves waiting on this source.
             ReadFully = true,

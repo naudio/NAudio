@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.Asio)](https://www.nuget.org/packages/NAudio.Asio/)
 
-ASIO driver support for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net9.0-windows`).
+ASIO driver support for [NAudio](https://github.com/naudio/NAudio). Targets `net9.0` and is Windows-only at runtime (guarded by `[SupportedOSPlatform("windows")]`), so it can be referenced from a plain `netX.0` project as well as a `netX.0-windows` one. It is Native AOT compatible.
 
 ## What's included
 

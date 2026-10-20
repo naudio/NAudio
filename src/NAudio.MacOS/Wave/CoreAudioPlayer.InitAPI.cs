@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Diagnostics;
 
@@ -12,7 +12,7 @@ namespace NAudio.Wave;
 // Anything that manages the player and the I/O procedure should be here.
 public partial class CoreAudioPlayer
 {
-    private PropertyListenerHandle virtFormatChanged;
+    private PropertyListenerHandle? virtFormatChanged;
 
     /// <summary>
     /// Provides the actions to perform when an audio 
@@ -51,11 +51,11 @@ public partial class CoreAudioPlayer
 
         try
         {
-            selectedSource.Dispose();
+            selectedSource?.Dispose();
 
             Initialize();
 
-            if (wasRunning) { ioProcedure.Start(); }
+            if (wasRunning) { InitializedProcedure.Start(); }
         }
         catch (Exception ex)
         {
@@ -78,12 +78,12 @@ public partial class CoreAudioPlayer
         try
         {
             // Dispose the resampler, if we have one.
-            selectedSource.Dispose();
+            selectedSource?.Dispose();
 
             // Perform initialization from the beginning.
             Initialize();
 
-            if (wasRunning) { ioProcedure.Start(); }
+            if (wasRunning) { InitializedProcedure.Start(); }
         }
         catch (Exception ex)
         {
@@ -132,7 +132,9 @@ public partial class CoreAudioPlayer
         // Initial variables
         int selectedStream = -1;
         bool requiresResampler = false;
-        var providerFormat = originalProvider.WaveFormat;
+        // Init assigns the provider before the first call, and it is never cleared afterwards.
+        var provider = originalProvider ?? throw new InvalidOperationException("Player not yet initialized!");
+        var providerFormat = provider.WaveFormat;
         // Clear the player's non-interleaved flag.
         flags &= ~CoreAudioPlayerStateFlags.NonInterleaved;
         // Get the streams.
@@ -206,7 +208,10 @@ public partial class CoreAudioPlayer
                     asbdToUse.mSampleRate != streamAsbd.mSampleRate ||
                     asbdToUse.mBitsPerChannel != streamAsbd.mBitsPerChannel ||
                     asbdToUse.mFormatFlags != streamAsbd.mFormatFlags ||
-                    asbdToUse.mChannelsPerFrame != streamAsbd.mChannelsPerFrame ||
+                    // The channel deinterleaver cannot support buffers with multiple channels, so for now make it to throw explicitly.
+                    // mdcdi1315: I might revisit this at some day, probably when I will have a proper device to test this on,
+                    // or think a better way to implement it.
+                    streamAsbd.mChannelsPerFrame != 1 ||
                     asbdToUse.mBytesPerFrame != streamAsbd.mBytesPerFrame
                 )
                 {
@@ -251,7 +256,7 @@ public partial class CoreAudioPlayer
         // we inject the resampler and pass the provider through it.
         if (requiresResampler)
         {
-            ChannelLayoutHandle handle = null;
+            ChannelLayoutHandle? handle = null;
             // Attempt to get from the HAL the expected channel layout.
             try
             {
@@ -278,7 +283,7 @@ public partial class CoreAudioPlayer
             {
                 // Configure the resampler as appropriate.
                 selectedSource = new ResamplerSource(
-                    originalProvider,
+                    provider,
                     asbdToUse,
                     handle, // we can pass null here!
                     reportedLatency
@@ -292,7 +297,7 @@ public partial class CoreAudioPlayer
         else
         {
             // Otherwise, just use our wave provider directly.
-            selectedSource = new RawSource(originalProvider, asbdToUse, reportedLatency);
+            selectedSource = new RawSource(provider, asbdToUse, reportedLatency);
         }
 
         try
@@ -345,10 +350,12 @@ public partial class CoreAudioPlayer
                 // procedure must therefore fill only the buffer belonging to
                 // the stream we enabled, or the source is consumed several
                 // times over and most of it thrown away.
-                ((InterleavedProcedure)ioProcedure).EnabledBufferIndex = (uint)Math.Max(selectedStream, 0);
+                ((InterleavedProcedure)InitializedProcedure).EnabledBufferIndex = (uint)Math.Max(selectedStream, 0);
             }
-            ioProcedure.Source = selectedSource;
-            selectedDevice.SetStreamUsage(ioProcedure, AudioObjectPropertyScopeConstants.Output, enabledStreams);
+            // Both branches above leave a procedure assigned.
+            var procedure = InitializedProcedure;
+            procedure.Source = selectedSource;
+            selectedDevice.SetStreamUsage(procedure, AudioObjectPropertyScopeConstants.Output, enabledStreams);
 
             virtFormatChanged?.Dispose();
             virtFormatChanged = streams[HasStateFlagFast(CoreAudioPlayerStateFlags.NonInterleaved) ? 0 : selectedStream].ConstructVirtualFormatChangedEvent();

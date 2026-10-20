@@ -28,13 +28,16 @@ namespace NAudio.Wave;
 /// </remarks>
 public class AsioOut : IWavePlayer, IWaveLatency
 {
-    private AsioDevice device;
-    private IWaveProvider sourceStream;
+    private AsioDevice? device;
+    private IWaveProvider? sourceStream;
     private PlaybackState playbackState;
     private int nbSamples;
-    private byte[] waveBuffer;
-    private AsioSampleConvertor.SampleConvertor convertor;
+    private byte[]? waveBuffer;
+    private AsioSampleConvertor.SampleConvertor? convertor;
+    private WaveFormat? outputWaveFormat;
     private bool isInitialized;
+
+    private AsioDevice Device => device ?? throw new ObjectDisposedException(nameof(AsioOut));
     // Pause performs a silent driver stop. We forward AsioDevice.Stopped as PlaybackStopped, but Pause
     // historically did not raise PlaybackStopped — this flag lets the next Stopped event bypass the forward.
     private bool suppressNextStopped;
@@ -42,17 +45,18 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// Playback Stopped
     /// </summary>
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     /// <summary>
     /// When recording, fires whenever recorded audio is available
     /// </summary>
-    public event EventHandler<AsioAudioAvailableEventArgs> AudioAvailable;
+    [Obsolete("Use AsioDevice.InitRecording or AsioDevice.InitDuplex instead (see Docs/AsioMigration.md). AsioOut's recording support will be removed in a future major version.")]
+    public event EventHandler<AsioAudioAvailableEventArgs>? AudioAvailable;
 
     /// <summary>
     /// Occurs when the driver settings are changed by the user, e.g. in the control panel.
     /// </summary>
-    public event EventHandler DriverResetRequest;
+    public event EventHandler? DriverResetRequest;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AsioOut"/> class with the first
@@ -66,7 +70,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// Initializes a new instance of the <see cref="AsioOut"/> class with the driver name.
     /// </summary>
-    /// <param name="driverName">Name of the device.</param>
+    /// <param name="driverName">Name of the Device.</param>
     public AsioOut(string driverName)
     {
         device = AsioDevice.Open(driverName);
@@ -123,7 +127,13 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <returns>
     ///     <c>true</c> if ASIO is supported; otherwise, <c>false</c>.
     /// </returns>
-    public static bool isSupported() => GetDriverNames().Length > 0;
+    public static bool IsSupported() => GetDriverNames().Length > 0;
+
+    /// <summary>
+    /// Determines whether ASIO is supported.
+    /// </summary>
+    [Obsolete("Use IsSupported() instead. isSupported() will be removed in a future major version.")]
+    public static bool isSupported() => IsSupported();
 
     /// <summary>
     /// Determines whether this driver supports the specified sample rate.
@@ -132,15 +142,15 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <returns>
     ///   <c>true</c> if the specified sample rate is supported otherwise, <c>false</c>.
     /// </returns>
-    public bool IsSampleRateSupported(int sampleRate) => device.IsSampleRateSupported(sampleRate);
+    public bool IsSampleRateSupported(int sampleRate) => Device.IsSampleRateSupported(sampleRate);
 
     private void WireDeviceEvents()
     {
-        device.Stopped += OnDeviceStopped;
-        device.DriverResetRequest += (_, _) => DriverResetRequest?.Invoke(this, EventArgs.Empty);
+        Device.Stopped += OnDeviceStopped;
+        Device.DriverResetRequest += (_, _) => DriverResetRequest?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnDeviceStopped(object sender, StoppedEventArgs e)
+    private void OnDeviceStopped(object? sender, StoppedEventArgs e)
     {
         playbackState = PlaybackState.Stopped;
         HasReachedEnd = false;
@@ -155,7 +165,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// Shows the control panel
     /// </summary>
-    public void ShowControlPanel() => device.ShowControlPanel();
+    public void ShowControlPanel() => Device.ShowControlPanel();
 
     /// <summary>
     /// Starts playback
@@ -166,7 +176,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
         {
             playbackState = PlaybackState.Playing;
             HasReachedEnd = false;
-            device.Start();
+            Device.Start();
         }
     }
 
@@ -176,7 +186,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     public void Stop()
     {
         playbackState = PlaybackState.Stopped;
-        device.Stop();
+        Device.Stop();
         // OnDeviceStopped clears HasReachedEnd and forwards PlaybackStopped via the captured SynchronizationContext.
     }
 
@@ -188,7 +198,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
         playbackState = PlaybackState.Paused;
         // Pause historically did not raise PlaybackStopped — swallow the next Stopped that this triggers.
         suppressNextStopped = true;
-        device.Stop();
+        Device.Stop();
     }
 
     /// <summary>
@@ -197,7 +207,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <param name="waveProvider">Source audio source</param>
     public void Init(IWaveProvider waveProvider)
     {
-        InitRecordAndPlayback(waveProvider, 0, -1);
+        InitCore(waveProvider, 0, -1);
     }
 
     /// <summary>
@@ -206,7 +216,13 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <param name="waveProvider">Source audio source - set to null for record only</param>
     /// <param name="recordChannels">Number of channels to record</param>
     /// <param name="recordOnlySampleRate">Specify sample rate here if only recording, ignored otherwise</param>
-    public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
+    [Obsolete("Use AsioDevice.InitRecording (record only) or AsioDevice.InitDuplex (record and play) instead (see Docs/AsioMigration.md). AsioOut's recording support will be removed in a future major version.")]
+    public void InitRecordAndPlayback(IWaveProvider? waveProvider, int recordChannels, int recordOnlySampleRate)
+    {
+        InitCore(waveProvider, recordChannels, recordOnlySampleRate);
+    }
+
+    private void InitCore(IWaveProvider? waveProvider, int recordChannels, int recordOnlySampleRate)
     {
         if (isInitialized)
         {
@@ -214,7 +230,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
         }
         isInitialized = true;
         int desiredSampleRate = waveProvider != null ? waveProvider.WaveFormat.SampleRate : recordOnlySampleRate;
-        var underlyingDriver = device.UnderlyingDriver;
+        var underlyingDriver = Device.UnderlyingDriver;
 
         if (waveProvider != null)
         {
@@ -229,16 +245,16 @@ public class AsioOut : IWavePlayer, IWaveLatency
             switch (asioSampleType)
             {
                 case AsioSampleType.Float32LSB:
-                    OutputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(waveProvider.WaveFormat.SampleRate, waveProvider.WaveFormat.Channels);
+                    outputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(waveProvider.WaveFormat.SampleRate, waveProvider.WaveFormat.Channels);
                     break;
                 case AsioSampleType.Int32LSB:
-                    OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 32, waveProvider.WaveFormat.Channels);
+                    outputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 32, waveProvider.WaveFormat.Channels);
                     break;
                 case AsioSampleType.Int16LSB:
-                    OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 16, waveProvider.WaveFormat.Channels);
+                    outputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 16, waveProvider.WaveFormat.Channels);
                     break;
                 case AsioSampleType.Int24LSB:
-                    OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 24, waveProvider.WaveFormat.Channels);
+                    outputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 24, waveProvider.WaveFormat.Channels);
                     break;
                 default:
                     throw new NotSupportedException($"{asioSampleType} not currently supported");
@@ -269,7 +285,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
             waveBuffer = new byte[nbSamples * NumberOfOutputChannels * waveProvider.WaveFormat.BitsPerSample / 8];
         }
 
-        device.ConfigureLegacyRawCallback(driver_BufferUpdate);
+        Device.ConfigureLegacyRawCallback(driver_BufferUpdate);
     }
 
     /// <summary>
@@ -281,32 +297,38 @@ public class AsioOut : IWavePlayer, IWaveLatency
     {
         if (this.NumberOfInputChannels > 0)
         {
+#pragma warning disable CS0618 // the legacy recording path is obsolete but still supported until it's removed
             var audioAvailable = AudioAvailable;
             if (audioAvailable != null)
             {
                 var args = new AsioAudioAvailableEventArgs(inputChannels, outputChannels, nbSamples,
-                                                           device.UnderlyingDriver.Capabilities.InputChannelInfos[0].type);
+                                                           Device.UnderlyingDriver.Capabilities.InputChannelInfos[0].type);
                 audioAvailable(this, args);
                 if (args.WrittenToOutputBuffers)
                     return;
             }
+#pragma warning restore CS0618
         }
 
-        if (this.NumberOfOutputChannels > 0)
+        // sourceStream, waveBuffer and convertor are all set whenever there are output channels
+        var source = sourceStream;
+        var buffer = waveBuffer;
+        var sampleConvertor = convertor;
+        if (this.NumberOfOutputChannels > 0 && source != null && buffer != null && sampleConvertor != null)
         {
-            int read = sourceStream.Read(waveBuffer.AsSpan());
-            if (read < waveBuffer.Length)
+            int read = source.Read(buffer.AsSpan());
+            if (read < buffer.Length)
             {
                 // we have reached the end of the input data - clear out the end
-                Array.Clear(waveBuffer, read, waveBuffer.Length - read);
+                Array.Clear(buffer, read, buffer.Length - read);
             }
 
             // Call the convertor
             unsafe
             {
-                fixed (void* pBuffer = &waveBuffer[0])
+                fixed (void* pBuffer = &buffer[0])
                 {
-                    convertor(new IntPtr(pBuffer), outputChannels, NumberOfOutputChannels, nbSamples);
+                    sampleConvertor(new IntPtr(pBuffer), outputChannels, NumberOfOutputChannels, nbSamples);
                 }
             }
 
@@ -329,7 +351,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// Gets the latency (in samples) of the playback driver
     /// </summary>
-    public int PlaybackLatency => device.OutputLatencySamples;
+    public int PlaybackLatency => Device.OutputLatencySamples;
 
     /// <summary>
     /// Automatically stop when the end of the input stream is reached
@@ -352,7 +374,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// Driver Name
     /// </summary>
-    public string DriverName => device.DriverName;
+    public string DriverName => Device.DriverName;
 
     /// <summary>
     /// The number of output channels we are currently using for playback
@@ -369,12 +391,12 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <summary>
     /// The maximum number of input channels this ASIO driver supports
     /// </summary>
-    public int DriverInputChannelCount => device.Capabilities.NbInputChannels;
+    public int DriverInputChannelCount => Device.Capabilities.NbInputChannels;
 
     /// <summary>
     /// The maximum number of output channels this ASIO driver supports
     /// </summary>
-    public int DriverOutputChannelCount => device.Capabilities.NbOutputChannels;
+    public int DriverOutputChannelCount => Device.Capabilities.NbOutputChannels;
 
     /// <summary>
     /// The number of samples per channel, per buffer.
@@ -426,7 +448,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     }
 
     /// <inheritdoc/>
-    public WaveFormat OutputWaveFormat { get; private set; }
+    public WaveFormat OutputWaveFormat => outputWaveFormat ?? throw new InvalidOperationException("No playback source has been initialised");
 
     /// <inheritdoc/>
     /// <remarks>
@@ -439,7 +461,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
         {
             if (!isInitialized) return TimeSpan.Zero;
             return TimeSpan.FromSeconds(
-                device.OutputLatencySamples / (double)device.CurrentSampleRate);
+                Device.OutputLatencySamples / (double)Device.CurrentSampleRate);
         }
     }
 
@@ -460,7 +482,7 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <returns>channel name</returns>
     public string AsioInputChannelName(int channel)
     {
-        return channel > DriverInputChannelCount ? "" : device.Capabilities.InputChannelInfos[channel].name;
+        return channel > DriverInputChannelCount ? "" : Device.Capabilities.InputChannelInfos[channel].name;
     }
 
     /// <summary>
@@ -470,6 +492,6 @@ public class AsioOut : IWavePlayer, IWaveLatency
     /// <returns>channel name</returns>
     public string AsioOutputChannelName(int channel)
     {
-        return channel > DriverOutputChannelCount ? "" : device.Capabilities.OutputChannelInfos[channel].name;
+        return channel > DriverOutputChannelCount ? "" : Device.Capabilities.OutputChannelInfos[channel].name;
     }
 }

@@ -4,7 +4,7 @@ This file gives AI agents (Claude, etc.) the conventions for contributing to NAu
 
 ## Orientation
 
-- **Repository layout.** Projects are grouped by role: `src/` holds the shipping libraries (the NuGet packages), `tests/` holds the test, benchmark and diagnostic projects (including `NAudio.Benchmarks`, `NAudioAotSmokeTest`, `MfStressTest`), and `samples/` holds the runnable demo/tool apps (`NAudioDemo`, `NAudioWpfDemo`, `NAudioConsoleTest`, `AudioFileInspector`, `MidiFileConverter`, `MixDiff`) plus their `SampleData/`. DocFX lives entirely under `docfx/` (`docfx.json`, `index.md`, `toc.yml`, `templates/`, generated `api/`); tutorial Markdown stays in `Docs/`.
+- **Repository layout.** Projects are grouped by role: `src/` holds the shipping libraries (the NuGet packages), `tests/` holds the test, benchmark and diagnostic projects (including `NAudio.Benchmarks`, `NAudioAotSmokeTest`, `NAudioAsioFakeDriverTest`, `MfStressTest`), and `samples/` holds the runnable demo/tool apps (`NAudioDemo`, `NAudioWpfDemo`, `NAudioConsoleTest`, `AudioFileInspector`, `MidiFileConverter`, `MixDiff`) plus their `SampleData/`. DocFX lives entirely under `docfx/` (`docfx.json`, `index.md`, `toc.yml`, `templates/`, generated `api/`); tutorial Markdown stays in `Docs/`.
 - **NAudio 3 development happens on `main`.** NAudio 2 maintenance happens on `release/2.x`. Default to targeting `main` unless explicitly told otherwise. `main` and `release/*` are protected — all changes go through PRs.
 - **Use descriptive branch names.** Cloud agents are often started on an auto-generated branch (e.g. `claude/loving-galileo-Wpz4o`). Do not push that name to the NAudio repo. Before the first push, rename the branch to something that describes the work, referencing an issue or PR number where relevant — e.g. `feature/channel-mixer-sample-provider`, `fix/1234-wasapi-leak`, `docs/release-strategy`. Keep your existing commits; just move them with `git branch -m <new-name>` before `git push -u origin <new-name>`.
 - **Architecture docs** in [Docs/Architecture/](Docs/Architecture/) are the source of truth for cross-cutting decisions:
@@ -38,17 +38,19 @@ Package versions are centralised in [Directory.Build.props](Directory.Build.prop
 
 Some cloud and CI environments start without a .NET SDK on the PATH — this isn't a property of the repo but of the host. The default Anthropic cloud-agent sandbox is one example, and other infrastructure (GitHub Copilot agents, fresh CI runners, etc.) may differ now or in the future. So **first check whether `dotnet` is available**; only install it if it isn't. On Debian/Ubuntu, install .NET 10 via apt: add Microsoft's feed with `wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O /tmp/ms.deb && sudo dpkg -i /tmp/ms.deb && sudo apt-get update`, then `sudo apt-get install -y dotnet-sdk-10.0` (the SDK builds the `net9.0` libraries fine).
 
-`NAudio.Core.Tests` only references the cross-platform projects (`NAudio.Core`, `NAudio.Midi`), so it builds and runs on Linux/macOS without any extra flags. Build and run the cross-platform tests with:
+`NAudio.Core.Tests` references only cross-platform-buildable projects (`NAudio.Core`, `NAudio.Midi` and the `NAudio` meta-package, which is plain `net9.0`, as are the Windows backends it pulls in), so it builds and runs on Linux/macOS without any extra flags. Build and run the cross-platform tests with:
 
 ```
 dotnet build tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj
 dotnet test --project tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj --filter "TestCategory!=IntegrationTest"
 ```
 
-(`NAudio.Windows.Tests` references the `NAudio` meta-package and the Windows backends, so it targets a Windows TFM — building it on Linux still needs `-p:EnableWindowsTargeting=true`, and it can only run on Windows. Tests that exercise the meta-package's `AudioFileReader` live there for this reason.)
+(`NAudio.Windows.Tests` targets a Windows TFM (it references `NAudio.WinForms` and exercises the Windows backends), so building it on Linux still needs `-p:EnableWindowsTargeting=true`, and it can only run on Windows. `AudioFileReader` tests that need Media Foundation or ACM live there; its cross-platform behaviour is tested in `NAudio.Core.Tests`.)
 
 The `TestCategory!=IntegrationTest` filter skips tests needing real audio hardware; note that .NET 10's `dotnet test` wants `--project` rather than a positional path.
 
 ## CI
 
 Every PR runs build + test on `windows-latest` via [.github/workflows/build.yml](.github/workflows/build.yml). Tests requiring real audio hardware should be marked with `TestCategory=IntegrationTest` so they're filtered out of the headless run.
+
+CI also packs every package under `src/` to run [package validation](https://learn.microsoft.com/dotnet/fundamentals/apicompat/package-validation/overview) against the last stable release (`PackageValidationBaselineVersion` in [src/Directory.Build.props](src/Directory.Build.props)). A `CP`/`PKV` error at pack time means you removed or changed public API or a target framework that release shipped: restore it unless the break is intentional, and see the troubleshooting section of [ReleaseInstructions.md](ReleaseInstructions.md) if it is. To check locally, run `dotnet pack src/<Package>/<Package>.csproj -c Release` after building.

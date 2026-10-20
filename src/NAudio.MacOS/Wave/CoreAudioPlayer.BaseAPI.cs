@@ -1,10 +1,9 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
@@ -30,34 +29,34 @@ namespace NAudio.Wave;
 public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePosition, IAsyncDisposable
 {
     private readonly Lock lockObject;
-    private PlayerProcedure ioProcedure;
-    private IPlayerSource selectedSource;
+    private PlayerProcedure? ioProcedure;
+    private IPlayerSource? selectedSource;
     // Bytes played in runs of this playback that have already finished. Pause
     // adds to it so that a following Play carries on counting; Stop clears it,
     // because the next Play is a new playback. This mirrors WaveOut, where
     // waveOutReset clears the position and waveOutPause does not.
     private long positionAccumulatedBytes;
-    private IWaveProvider originalProvider;
+    private IWaveProvider? originalProvider;
     private CoreAudioPlayerStateFlags flags;
     // The AudioDevice where audio data are rendered to.
     private readonly AudioDevice selectedDevice;
-    private PropertyListenerHandle streamsChanged;
-    private readonly SynchronizationContext syncContext;
+    private PropertyListenerHandle? streamsChanged;
+    private readonly SynchronizationContext? syncContext;
     private readonly PropertyListenerHandle deviceWillGoAway;
 
     /// <summary>
     /// Initializes a new Core Audio player instance that renders
     /// audio to the system's default output device. <br />
     /// If a synchronization context is assigned for the thread where this instance
-    /// is created to, it is used during playback stopped events.
+    /// is created to, it is used when a playback stopped event is dispatching.
     /// </summary>
-    public CoreAudioPlayer() : this(AudioSystemObject.Instance.DefaultOutputDevice) { }
+    public CoreAudioPlayer() : this(AudioSystemObject.Instance.DefaultOutputDevice ?? throw new InvalidOperationException("No default output device is available.")) { }
 
     /// <summary>
     /// Initializes a new Core Audio player instance that renders audio
     /// to the specified Core Audio <see cref="AudioDevice"/> instance. <br />
     /// If a synchronization context is assigned for the thread where this instance
-    /// is created to, it is used during playback stopped events.
+    /// is created to, it is used when a playback stopped event is dispatching.
     /// </summary>
     /// <param name="device">The audio device where the audio will be rendered to</param>
     /// <exception cref="ArgumentNullException"><paramref name="device"/> is <see langword="null"/>.</exception>
@@ -122,8 +121,8 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     {
         private void PostEvent() => Handler.Invoke(Player, Args);
 
-        public static void UnwrapContextAndDispatch(object state)
-            => ((SyncContextStoppedEventData)state).PostEvent();
+        public static void UnwrapContextAndDispatch(object? state)
+            => ((SyncContextStoppedEventData)state!).PostEvent();
     }
 
     private void FirePlaybackStopped(StoppedEventArgs e) => FirePlaybackStopped(null, e);
@@ -131,7 +130,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     // Fires the PlaybackStopped event.
     // If required, the SynchronizationContext is unwrapped
     // and the event dispatch happens on the context instead.
-    private void FirePlaybackStopped(object sender, StoppedEventArgs e)
+    private void FirePlaybackStopped(object? sender, StoppedEventArgs e)
     {
         var handler = PlaybackStopped;
         if (handler is null) { return; }
@@ -178,12 +177,20 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         }
     }
 
+    // The I/O procedure and source; both are assigned whenever the Initialized flag is set,
+    // so these never throw once ThrowIfInvalidOrDisposed has passed.
+    private PlayerProcedure InitializedProcedure => ioProcedure ?? throw new InvalidOperationException("Player not yet initialized!");
+
+    private IPlayerSource InitializedSource => selectedSource ?? throw new InvalidOperationException("Player not yet initialized!");
+
     // Bytes played by the run currently in progress.
     private long CurrentRunBytes()
     {
-        if (ioProcedure is null) { return 0L; }
-        uint blockAlign = selectedSource.ReinterpretedFormat.mBytesPerFrame;
-        long position = (long)(ioProcedure.PlayedFrames * blockAlign);
+        var procedure = ioProcedure;
+        var source = selectedSource;
+        if (procedure is null || source is null) { return 0L; }
+        uint blockAlign = source.ReinterpretedFormat.mBytesPerFrame;
+        long position = (long)(procedure.PlayedFrames * blockAlign);
         long drift = position % blockAlign;
         if (drift > 0L) { position += blockAlign - drift; }
         return position;
@@ -297,7 +304,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         get
         {
             ThrowIfInvalidOrDisposed();
-            return MacUtils.ConstructWaveFormatFromASBD(selectedSource.ReinterpretedFormat);
+            return MacUtils.ConstructWaveFormatFromASBD(InitializedSource.ReinterpretedFormat);
         }
     }
 
@@ -307,8 +314,9 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         get
         {
             ThrowIfInvalidOrDisposed();
-            double latencyFrames = selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) + selectedSource.StreamsLatency;
-            return TimeSpan.FromSeconds(latencyFrames / selectedSource.ReinterpretedFormat.mSampleRate);
+            var source = InitializedSource;
+            double latencyFrames = selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) + source.StreamsLatency;
+            return TimeSpan.FromSeconds(latencyFrames / source.ReinterpretedFormat.mSampleRate);
         }
     }
 
@@ -318,18 +326,17 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         get
         {
             ThrowIfInvalidOrDisposed();
-            var timeInSeconds = ioProcedure.CurrentLatencyInSeconds();
+            var timeInSeconds = InitializedProcedure.CurrentLatencyInSeconds();
             return timeInSeconds == -1d ? AverageLatency : TimeSpan.FromSeconds(timeInSeconds);
         }
     }
 
     /// <inheritdoc />
-    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    public event EventHandler<StoppedEventArgs>? PlaybackStopped;
 
     /// <summary>
     /// Gets the selected audio device where the player renders data to.
     /// </summary>
-    [NotNull]
     public AudioDevice Device => selectedDevice;
 
     /// <inheritdoc />
@@ -384,14 +391,12 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     /// </remarks>
     public void Pause()
     {
-        // The below function call is not required; it is implicitly 
-        // handled by the call of OutputWaveFormat property, passed
-        // to the CurrentRunBytes method.
         ThrowIfInvalidOrDisposed();
-        ioProcedure.Stop();
+        var procedure = InitializedProcedure;
+        procedure.Stop();
         // Bank what this run played, so a following Play continues the count.
         positionAccumulatedBytes += CurrentRunBytes();
-        ioProcedure.RestartFrameCount();
+        procedure.RestartFrameCount();
     }
 
     /// <inheritdoc />
@@ -399,8 +404,9 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
     {
         ThrowIfInvalidOrDisposed();
         // Count this run from its own first cycle.
-        ioProcedure.RestartFrameCount();
-        ioProcedure.Start();
+        var procedure = InitializedProcedure;
+        procedure.RestartFrameCount();
+        procedure.Start();
     }
 
     /// <inheritdoc />
@@ -413,10 +419,11 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         // Play(); ... Stop(); shape raises the event twice whenever the source
         // reached its end first, and every further Stop() raises another.
         if (PlaybackState == PlaybackState.Stopped) { return; }
-        ioProcedure.Stop();
+        var procedure = InitializedProcedure;
+        procedure.Stop();
         // A stop ends the playback; the next Play counts from zero.
         positionAccumulatedBytes = 0L;
-        ioProcedure.RestartFrameCount();
+        procedure.RestartFrameCount();
         FirePlaybackStopped(new());
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using NAudio.Dsp;
 using NAudio.SoundFont;
 
@@ -68,8 +69,8 @@ internal sealed class SamplerVoice
     // retuned at Start rather than re-allocated, so note-on is allocation-free
     // in steady state. The readers are created lazily on the first Start
     // (they need a SampleSource); the filters are created up front.
-    private InterpolatingSampleReader reader;       // mono / left channel
-    private InterpolatingSampleReader readerRight;  // right channel (stereo only), advanced in lockstep
+    private InterpolatingSampleReader? reader;       // mono / left channel
+    private InterpolatingSampleReader? readerRight;  // right channel (stereo only, non-null whenever stereo), advanced in lockstep
     private bool stereo;
     private readonly DahdsrEnvelope ampEnvelope;
     private readonly DahdsrEnvelope modEnvelope;
@@ -108,7 +109,7 @@ internal sealed class SamplerVoice
     private float filterGainComp = 1f;  // resonance gain compensation (SF2 §8.1.2 gen 8)
 
     // the resolved SF2 modulator list and the fixed note state it reads
-    private ModulatorSet modulators;
+    private ModulatorSet? modulators;
     private int velocity;
     private int key;
     // per-control-block modulator output, summed by GeneratorEnum destination
@@ -198,6 +199,7 @@ internal sealed class SamplerVoice
     }
 
     /// <summary>Whether this voice is currently producing sound.</summary>
+    [MemberNotNullWhen(true, nameof(reader), nameof(Region))]
     public bool IsActive { get; private set; }
 
     /// <summary>
@@ -221,7 +223,7 @@ internal sealed class SamplerVoice
     /// behaviour (SFZ <c>off_mode</c>) and the per-region <c>polyphony</c>
     /// cap (counted by reference identity). Null only before the first Start.
     /// </summary>
-    public SamplerRegion Region { get; private set; }
+    public SamplerRegion? Region { get; private set; }
 
     /// <summary>Whether this voice ignores note-off and plays to the end (one-shot).</summary>
     public bool IgnoreNoteOff { get; private set; }
@@ -279,7 +281,7 @@ internal sealed class SamplerVoice
         // lockstep (same bounds, loop and increment), so the core reader stays
         // mono; for a mono note the right reader (if any) is simply unused
         stereo = sourceRight != null;
-        if (stereo)
+        if (sourceRight != null)
         {
             if (readerRight == null) readerRight = new InterpolatingSampleReader(sourceRight);
             else readerRight.Reset(sourceRight);
@@ -374,7 +376,7 @@ internal sealed class SamplerVoice
         ampEnvelope.Gate(false);
         modEnvelope.Gate(false);
         reader.Release();
-        if (stereo) readerRight.Release();
+        if (stereo) readerRight!.Release();
     }
 
     /// <summary>
@@ -389,7 +391,7 @@ internal sealed class SamplerVoice
         ampEnvelope.Gate(false);
         modEnvelope.Gate(false);
         reader.Release();
-        if (stereo) readerRight.Release();
+        if (stereo) readerRight!.Release();
     }
 
     /// <summary>
@@ -530,6 +532,8 @@ internal sealed class SamplerVoice
     private bool RenderSpan(Span<float> buffer, Span<float> reverbSend, Span<float> chorusSend,
         ref int pos, int count)
     {
+        // Mix only calls this while active; the check also tells the compiler reader is set
+        if (!IsActive) return false;
         double increment = currentIncrement;
         float volGain = currentVolGain;
         float reverbSendGain = currentReverbSendGain;
@@ -593,7 +597,7 @@ internal sealed class SamplerVoice
                 // lockstep: same bounds, loop and increment => same count; the
                 // defensive clear keeps any (impossible) shortfall identical to
                 // the per-sample path, where an ended reader reads as 0
-                int gotR = readerRight.Read(blockRight.AsSpan(0, got), increment);
+                int gotR = readerRight!.Read(blockRight.AsSpan(0, got), increment);
                 if (gotR < got) blockRight.AsSpan(gotR, got - gotR).Clear();
             }
 
@@ -738,7 +742,7 @@ internal sealed class SamplerVoice
     /// also the SoundFont path, where velocity rides the modulator list
     /// instead).
     /// </summary>
-    private static float VelocityGain(float percent, int velocity, float[] curve)
+    private static float VelocityGain(float percent, int velocity, float[]? curve)
     {
         if (percent == 0f) return 1f;
         double p = Math.Clamp(percent / 100.0, -1.0, 1.0);
@@ -901,7 +905,7 @@ internal sealed class SamplerVoice
         }
     }
 
-    private void ConfigureEq(System.Collections.Generic.IReadOnlyList<SamplerEqBand> bands)
+    private void ConfigureEq(System.Collections.Generic.IReadOnlyList<SamplerEqBand>? bands)
     {
         if (bands == null || bands.Count == 0) { eqBandCount = 0; return; }
 

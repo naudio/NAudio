@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -14,11 +15,11 @@ namespace NAudio.Effects;
 /// </summary>
 public sealed class AutomaticGainControlEffect : AudioEffect, IParameterized
 {
-    private IReadOnlyList<EffectParameter> parameters;
+    private IReadOnlyList<EffectParameter>? parameters;
 
     /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
-    public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
-    {
+    public IReadOnlyList<EffectParameter> Parameters => parameters ??=
+    [
         EffectParameter.Continuous("Target", "dB", -40f, 0f, () => TargetDb, v => TargetDb = v),
         EffectParameter.Continuous("Max Gain", "dB", 0f, 40f, () => MaxGainDb, v => MaxGainDb = v),
         EffectParameter.Continuous("Min Gain", "dB", -40f, 0f, () => MinGainDb, v => MinGainDb = v),
@@ -26,9 +27,9 @@ public sealed class AutomaticGainControlEffect : AudioEffect, IParameterized
         EffectParameter.Continuous("Release", "ms", 10f, 2000f, () => ReleaseMs, v => ReleaseMs = v),
         EffectParameter.Toggle("Voice Detect", () => UseVoiceDetection, v => UseVoiceDetection = v),
         EffectParameter.Meter("Gain", "dB", -40f, 40f, () => GainDb)
-    };
+    ];
 
-    private VoiceActivityDetector vad;
+    private VoiceActivityDetector? vad;
     private float meanSquare;
     private float rmsCoefficient;
     private float rmsWindowMs = 50f;
@@ -105,6 +106,7 @@ public sealed class AutomaticGainControlEffect : AudioEffect, IParameterized
             }
             meanSquare += rmsCoefficient * (sumSquares / channels - meanSquare);
 
+            Debug.Assert(vad is not null, "Configure must be called before ProcessBlock.");
             var voiced = vad.Process(mono);
             if (!UseVoiceDetection || voiced)
             {

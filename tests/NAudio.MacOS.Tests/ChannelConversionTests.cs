@@ -1,4 +1,4 @@
-
+﻿
 using System.Text;
 using System.Collections.Generic;
 
@@ -35,11 +35,12 @@ public class ChannelConversionTests
     {
         var l = MacUtils.ConstructAudioChannelLayoutFromSpeakers(valueToTest);
 
-        Assert.IsTrue(
+        Assert.That(
             MatchAudioChannelLayoutTagByConstantValueIgnoringSpeakerCount(
                 l.mChannelLayoutTag,
                 AudioChannelLayoutTag.kAudioChannelLayoutTag_UseChannelBitmap
             ),
+            Is.True,
             "The channel layout tag was not an audio channel bitmap!"
         );
 

@@ -11,13 +11,30 @@ public class ChunkIdentifier
     /// <summary>
     /// Chunk identifier to Int32 (replaces mmioStringToFOURCC)
     /// </summary>
-    /// <param name="s">four character chunk identifier</param>
+    /// <param name="identifier">four character chunk identifier</param>
     /// <returns>Chunk identifier as int 32</returns>
-    public static int ChunkIdentifierToInt32(string s)
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="identifier"/> is not four characters, or does not encode to exactly four bytes.</exception>
+    public static int ChunkIdentifierToInt32(string identifier)
     {
-        if (s.Length != 4) throw new ArgumentException("Must be a four character string");
-        var bytes = Encoding.UTF8.GetBytes(s);
-        if (bytes.Length != 4) throw new ArgumentException("Must encode to exactly four bytes");
-        return BitConverter.ToInt32(bytes, 0);
+        ArgumentNullException.ThrowIfNull(identifier);
+        ArgumentOutOfRangeException.ThrowIfNotEqual(identifier.Length, 4, nameof(identifier));
+        Span<byte> bytes = stackalloc byte[4];
+        if (!Encoding.UTF8.TryGetBytes(identifier, bytes, out int bytesWritten) || bytesWritten != 4)
+        {
+            throw new ArgumentOutOfRangeException(nameof(identifier), identifier, "Chunk identifier must encode to exactly four bytes");
+        }
+        return ChunkIdentifierToInt32(bytes);
+    }
+
+    /// <summary>
+    /// Chunk identifier to Int32 (replaces mmioStringToFOURCC)
+    /// </summary>
+    /// <param name="identifier">four character chunk identifier</param>
+    /// <returns>Chunk identifier as int 32</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="identifier"/> is not exactly four bytes long.</exception>
+    public static int ChunkIdentifierToInt32(ReadOnlySpan<byte> identifier)
+    {
+        ArgumentOutOfRangeException.ThrowIfNotEqual(identifier.Length, 4, nameof(identifier));
+        return BitConverter.ToInt32(identifier);
     }
 }

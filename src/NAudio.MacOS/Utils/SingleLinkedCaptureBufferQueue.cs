@@ -14,7 +14,7 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
 {
     private sealed class Node
     {
-        public Node Next;
+        public Node? Next;
         public readonly CoreAudioCaptureBuffer Buffer;
 
         public Node(CoreAudioCaptureBuffer buffer)
@@ -24,7 +24,7 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
         }
     }
 
-    private Node root, current;
+    private Node? root, current;
     private readonly SemaphoreSlim lockSemaphore;
 
     public SingleLinkedCaptureBufferQueue()
@@ -33,7 +33,7 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
         lockSemaphore = new(1);
     }
 
-    public CoreAudioCaptureBuffer Dequeue()
+    public CoreAudioCaptureBuffer? Dequeue()
     {
         // Make the check whether we have a buffer to dequeue
         // outside the critical region to avoid paying additional
@@ -44,6 +44,7 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
         lockSemaphore.Wait();
         try
         {
+            if (root is null) { return null; }
             var cb = root.Buffer;
             root = root.Next;
             return cb;
@@ -66,7 +67,8 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
             }
             else
             {
-                current.Next = newNode;
+                // current is always set whenever root is
+                current!.Next = newNode;
                 current = newNode;
             }
         }

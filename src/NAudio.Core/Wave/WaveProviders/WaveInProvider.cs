@@ -22,7 +22,7 @@ public class WaveInProvider : IWaveProvider
         bufferedWaveProvider = new BufferedWaveProvider(WaveFormat);
     }
 
-    private void OnDataAvailable(object sender, WaveInEventArgs e)
+    private void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
         // BufferSpan avoids materialising e.Buffer when the event is backed by a
         // ReadOnlyMemory<byte> wrapping a native WASAPI buffer (zero-copy capture path).

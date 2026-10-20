@@ -13,6 +13,8 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Added `BufferedWaveProvider.CompleteAdding()` and `IsAddingCompleted`, so a producer can end the stream: `Read` drains the buffer, returns one unpadded short read even with `ReadFully`, then 0. Added `UnderrunSilenceBytes`, `DiscardedBytes` and `ResetCounters()` to show silence inserted on underrun and audio dropped on overflow (#1492)
+ * Added `MixingSampleProvider.CompleteAdding()` and `IsAddingCompleted`, so a `ReadFully` mixer ends once its current inputs have ended; `AddMixerInput` after it throws `InvalidOperationException` (#1492)
  * **`WdlResamplingSampleProvider` now defaults to sinc resampling** - a new `WdlResamplerQuality` constructor argument selects the algorithm, and the default is now `Sinc64` (64-tap windowed sinc) instead of linear interpolation with IIR filtering, which lost about 2 dB at 10 kHz and 20 dB at 18 kHz and let aliasing through. This is a behaviour change: output samples differ, CPU use is a little higher and about 0.8 ms of latency is added. Pass `WdlResamplerQuality.Linear` to keep the old output exactly. See [Resampling](Docs/Resampling.md) (#1491)
  * Added `WdlResamplingSampleProvider.HoldBackOnShortReads` for sources that return short reads mid-stream (e.g. `BufferedWaveProvider` with `ReadFully` off): in sinc mode it holds back the last few output samples of a short read until their input arrives, instead of computing them from silence. `WdlResampler.ResampleOut` gains a matching overload with a `flush` argument (#1491)
 

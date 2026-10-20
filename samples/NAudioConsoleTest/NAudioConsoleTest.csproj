@@ -7,6 +7,10 @@
     <Nullable>enable</Nullable>
     <!-- Required for the legacy-AsioOut duplex passthrough test, which has to read/write driver buffers via raw IntPtr. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Runs the trim/AOT analyzers on every build, so the app stays publishable with
+         `dotnet publish -r win-x64 -p:PublishAot=true` for testing the AOT-compatible NAudio
+         packages against real hardware. JSON goes through ConsoleTestJsonContext for this reason. -->
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

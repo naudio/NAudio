@@ -20,8 +20,8 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                         <TextBlock Text="Network:" Width="70" VerticalAlignment="Center" />
-                        <ComboBox Width="200" ItemsSource="{Binding Sizes}"
-                                  SelectedIndex="{Binding SelectedSizeIndex, Mode=TwoWay}"
+                        <ComboBox Width="200" ItemsSource="{Binding Networks}" DisplayMemberPath="Label"
+                                  SelectedItem="{Binding SelectedNetwork, Mode=TwoWay}"
                                   ToolTip="A2 files hold A2-Lite (cheaper) and A2-Full (more accurate) versions of the same capture." />
                         <CheckBox Content="Enabled" Margin="12,0,0,0" VerticalAlignment="Center"
                                   IsChecked="{Binding AmpEnabled, Mode=TwoWay}" />

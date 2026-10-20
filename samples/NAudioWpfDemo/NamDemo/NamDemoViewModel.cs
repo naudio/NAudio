@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -38,7 +39,8 @@ internal class NamDemoViewModel : ViewModelBase, IDisposable
     private CabinetEffect cabinet;
     private string modelPath;
     private string modelInfo = "No model loaded.";
-    private int selectedSizeIndex = -1;
+    private IReadOnlyList<NetworkOption> networks = [];
+    private NetworkOption selectedNetwork;
     private bool ampEnabled = true;
     private string irPath;
     private string irInfo = "No cabinet IR loaded: the amp's output is heard directly.";
@@ -66,7 +68,6 @@ internal class NamDemoViewModel : ViewModelBase, IDisposable
         SetGain(inputGain, inputGainDb);
         SetGain(outputGain, outputGainDb);
 
-        Sizes = new ObservableCollection<string>();
         Drivers = new ObservableCollection<string>(AsioDevice.GetDriverNames());
         if (Drivers.Count > 0)
         {
@@ -103,20 +104,44 @@ internal class NamDemoViewModel : ViewModelBase, IDisposable
         private set { modelInfo = value; OnPropertyChanged(nameof(ModelInfo)); }
     }
 
-    /// <summary>The networks in the loaded file (A2 files have A2-Lite and A2-Full).</summary>
-    public ObservableCollection<string> Sizes { get; }
+    /// <summary>A network in the loaded file, as shown in the combo box.</summary>
+    public sealed record NetworkOption(string Label, int Index);
 
-    public int SelectedSizeIndex
+    /// <summary>
+    /// The networks in the loaded file (A2 files have A2-Lite and A2-Full). Each load
+    /// publishes a new list rather than editing the bound one: clearing a bound
+    /// collection makes the ComboBox drop its selection, after which it no longer
+    /// shows the selected network even though the binding still holds it.
+    /// </summary>
+    public IReadOnlyList<NetworkOption> Networks
     {
-        get => selectedSizeIndex;
+        get => networks;
+        private set { networks = value; OnPropertyChanged(nameof(Networks)); }
+    }
+
+    public NetworkOption SelectedNetwork
+    {
+        get => selectedNetwork;
         set
         {
-            if (value == selectedSizeIndex || value < 0 || model == null)
+            // While the list is being replaced the ComboBox pushes null (or a stale
+            // item) back; only a pick from the current list changes the amp.
+            if (value == null || ReferenceEquals(value, selectedNetwork) || !Contains(networks, value))
                 return;
-            selectedSizeIndex = value;
-            OnPropertyChanged(nameof(SelectedSizeIndex));
+            selectedNetwork = value;
+            OnPropertyChanged(nameof(SelectedNetwork));
             CreateAmp();
         }
+    }
+
+    private static bool Contains(IReadOnlyList<NetworkOption> options, NetworkOption option)
+    {
+        foreach (var o in options)
+        {
+            if (ReferenceEquals(o, option))
+                return true;
+        }
+        return false;
     }
 
     public bool AmpEnabled
@@ -280,13 +305,15 @@ internal class NamDemoViewModel : ViewModelBase, IDisposable
 
             model = loaded;
             ModelPath = path;
-            Sizes.Clear();
-            foreach (var submodel in loaded.Submodels)
-                Sizes.Add(Describe(submodel));
+            var options = new NetworkOption[loaded.Submodels.Count];
+            for (var i = 0; i < options.Length; i++)
+                options[i] = new NetworkOption(Describe(loaded.Submodels[i]), i);
+            Networks = options;
             ModelInfo = DescribeModel(loaded);
-            // Default to the largest network, as NamEffect does.
-            selectedSizeIndex = loaded.Submodels.Count - 1;
-            OnPropertyChanged(nameof(SelectedSizeIndex));
+            // Default to the largest network, as NamEffect does. Set after the list so
+            // the ComboBox finds the item in its new ItemsSource.
+            selectedNetwork = options[^1];
+            OnPropertyChanged(nameof(SelectedNetwork));
             CreateAmp();
             Status = $"Loaded {Path.GetFileName(path)} in {loadMs} ms.";
         }
@@ -300,11 +327,12 @@ internal class NamDemoViewModel : ViewModelBase, IDisposable
     /// <summary>Creates the amp for the selected network and swaps it into the running chain.</summary>
     private void CreateAmp()
     {
-        if (model == null || selectedSizeIndex < 0)
+        if (model == null || selectedNetwork == null)
             return;
+        var index = selectedNetwork.Index;
         // NamModel.GetSubmodel picks the first network whose MaxSize is above the size,
         // so the previous network's MaxSize selects this one.
-        var size = selectedSizeIndex == 0 ? 0.0 : model.Submodels[selectedSizeIndex - 1].MaxSize;
+        var size = index == 0 ? 0.0 : model.Submodels[index - 1].MaxSize;
         var newAmp = new NamEffect(model, size) { Bypass = !ampEnabled };
         ampSlot.Swap(newAmp);
         amp = newAmp;

@@ -19,6 +19,7 @@ namespace NAudio.Nam;
 /// A new processor starts in the state the network settles to after silence, so the
 /// first samples are clean. Feed it audio at the submodel's
 /// <see cref="NamSubmodel.SampleRate"/>; NAM models are normally trained at 48 kHz.
+/// Unlike <see cref="NamEffect"/>, a processor does not resample.
 /// </para>
 /// </remarks>
 public sealed class NamProcessor

@@ -1,5 +1,6 @@
 using System;
 using NAudio.Effects;
+using NAudio.Nam.Internal;
 using NAudio.Wave;
 
 namespace NAudio.Nam;
@@ -18,16 +19,20 @@ namespace NAudio.Nam;
 /// the capture.
 /// </para>
 /// <para>
-/// The effect must run at the model's sample rate (normally 48 kHz);
-/// <see cref="IAudioEffect.Configure"/> throws otherwise. Resample other rates, for
-/// example with <c>WdlResamplingSampleProvider</c>. It adds no latency and does not
-/// allocate while processing.
+/// NAM models are trained at one sample rate (normally 48 kHz) and must run at it. At
+/// that rate the effect adds no latency. At any other rate it resamples internally:
+/// the audio is converted to the model's rate, processed, and converted back with
+/// 64-tap sinc interpolation, which adds a fixed latency of about 1.5 ms, reported by
+/// <see cref="AudioEffect.LatencySamples"/>. See <see cref="IsResampling"/>. Either way it
+/// does not allocate while processing.
 /// </para>
 /// </remarks>
 public sealed class NamEffect : AudioEffect
 {
     private readonly NamProcessor processor;
+    private readonly ResamplingBridge.BlockProcessor processAtModelRate;
     private readonly float[] mono = new float[256];
+    private ResamplingBridge? bridge;
 
     /// <summary>
     /// Creates an effect from a loaded model. <paramref name="size"/> picks the network
@@ -39,6 +44,7 @@ public sealed class NamEffect : AudioEffect
         ArgumentNullException.ThrowIfNull(model);
         Model = model;
         processor = model.CreateProcessor(size);
+        processAtModelRate = samples => processor.Process(samples, samples);
     }
 
     /// <summary>The model this effect runs.</summary>
@@ -47,14 +53,25 @@ public sealed class NamEffect : AudioEffect
     /// <summary>The network within <see cref="Model"/> that this effect runs.</summary>
     public NamSubmodel Submodel => processor.Submodel;
 
+    /// <summary>
+    /// True when the configured sample rate differs from the model's, so the effect
+    /// resamples internally and reports the resulting delay in
+    /// <see cref="AudioEffect.LatencySamples"/>. False before the effect is configured.
+    /// </summary>
+    public bool IsResampling => bridge != null;
+
+    /// <inheritdoc />
+    public override int LatencySamples => bridge?.LatencySamples ?? 0;
+
+    internal long UnderrunSamples => bridge?.UnderrunSamples ?? 0;
+
     /// <inheritdoc />
     protected override void OnConfigure(WaveFormat format)
     {
-        var expected = Submodel.SampleRate;
-        if (expected.HasValue && expected.Value != format.SampleRate)
-            throw new ArgumentException(
-                $"This NAM model was trained at {expected.Value} Hz but the audio is {format.SampleRate} Hz. Resample the audio to {expected.Value} Hz before the effect.",
-                nameof(format));
+        var modelRate = Submodel.SampleRate;
+        bridge = modelRate.HasValue && modelRate.Value != format.SampleRate
+            ? new ResamplingBridge(format.SampleRate, modelRate.Value)
+            : null;
         processor.Reset();
     }
 
@@ -64,7 +81,7 @@ public sealed class NamEffect : AudioEffect
         var channels = Channels;
         if (channels == 1)
         {
-            processor.Process(buffer, buffer);
+            ProcessMono(buffer);
             return;
         }
 
@@ -84,7 +101,7 @@ public sealed class NamEffect : AudioEffect
                     sum += interleaved[f * channels + ch];
                 chunk[f] = sum * scale;
             }
-            processor.Process(chunk, chunk);
+            ProcessMono(chunk);
             for (var f = 0; f < frames; f++)
             {
                 var y = chunk[f];
@@ -99,5 +116,15 @@ public sealed class NamEffect : AudioEffect
     {
         base.Reset();
         processor.Reset();
+        bridge?.Reset();
+    }
+
+    private void ProcessMono(Span<float> samples)
+    {
+        var active = bridge;
+        if (active == null)
+            processor.Process(samples, samples);
+        else
+            active.Process(samples, processAtModelRate);
     }
 }

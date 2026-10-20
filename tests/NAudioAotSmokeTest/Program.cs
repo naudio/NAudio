@@ -76,9 +76,10 @@ using NAudio.Wave.SampleProviders;
 //
 // (7) NAudio.Nam — neural amp model inference (this section). Builds an A2-Lite WaveNet,
 //     a legacy A1-style WaveNet and an LSTM in code, plus a SlimmableContainer holding all
-//     three, and runs audio through each with NamEffect. Covers the System.Text.Json model
-//     parsing, the generic-struct SIMD kernels (A2 fast path and general WaveNet) and the
-//     TensorPrimitives activations under whole-program compilation. Needs no audio hardware.
+//     three, and runs audio through each with NamEffect, once with the built-in resampling.
+//     Covers the System.Text.Json model parsing, the generic-struct SIMD kernels (A2 fast path
+//     and general WaveNet), the TensorPrimitives activations and the WdlResampler bridge under
+//     whole-program compilation. Needs no audio hardware.
 
 // PublishAot only takes effect on `dotnet publish`; `dotnet run` executes this under the JIT,
 // where every path below passed even while it was broken under AOT — which is how issue #1425 went
@@ -567,14 +568,20 @@ try
     var namModel = NAudio.Nam.NamModel.Parse(namContainer);
     NamCheck("container submodels", namModel.Submodels.Count == 3, namModel.Submodels.Count);
 
-    foreach (var (size, label) in new[] { (0.0, "LSTM"), (0.5, "general WaveNet"), (1.0, "A2-Lite fast path") })
+    foreach (var (size, rate, label) in new[]
+    {
+        (0.0, 48000, "LSTM"),
+        (0.5, 48000, "general WaveNet"),
+        (1.0, 48000, "A2-Lite fast path"),
+        (1.0, 44100, "A2-Lite resampled from 44.1 kHz"),
+    })
     {
         var effect = new NAudio.Nam.NamEffect(namModel, size);
-        effect.Configure(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
+        effect.Configure(WaveFormat.CreateIeeeFloatWaveFormat(rate, 2));
         var buffer = new float[4800 * 2];
         for (int n = 0; n < 4800; n++)
         {
-            buffer[2 * n] = buffer[2 * n + 1] = (float)(0.3 * Math.Sin(2 * Math.PI * 110 * n / 48000));
+            buffer[2 * n] = buffer[2 * n + 1] = (float)(0.3 * Math.Sin(2 * Math.PI * 110 * n / rate));
         }
         var first = (float[])buffer.Clone();
         effect.Process(first);

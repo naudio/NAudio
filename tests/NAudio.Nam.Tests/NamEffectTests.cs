@@ -54,15 +54,6 @@ public class NamEffectTests
     }
 
     [Test]
-    public void ConfigureRejectsAMismatchedSampleRate()
-    {
-        var effect = new NamEffect(TestData.LoadA2());
-
-        var ex = Assert.Throws<ArgumentException>(() => effect.Configure(WaveFormat.CreateIeeeFloatWaveFormat(44100, 1)));
-        Assert.That(ex!.Message, Does.Contain("48000"));
-    }
-
-    [Test]
     public void ResetRestartsFromSilence()
     {
         var model = TestData.LoadA2();

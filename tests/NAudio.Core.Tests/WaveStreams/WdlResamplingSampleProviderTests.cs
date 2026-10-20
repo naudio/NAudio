@@ -722,6 +722,40 @@ public class WdlResamplingSampleProviderTests
             Assert.That(afterReset[i], Is.EqualTo(reference[i]).Within(1e-6f), $"sample {i} differs after Reset");
     }
 
+    [TestCase(false, 44100, 48000)]
+    [TestCase(false, 48000, 44100)]
+    [TestCase(true, 44100, 48000)]
+    [TestCase(true, 48000, 44100)]
+    public void SteadyStateResamplingDoesNotAllocateWhenBlockSizesVary(bool inputDriven, int from, int to)
+    {
+        // The input buffer only grows, so once it has reached the largest block a caller uses,
+        // blocks of any smaller size reuse it. Real-time callers rely on this.
+        var resampler = new WdlResampler();
+        resampler.SetMode(false, 0, true, 64, 32);
+        resampler.SetFeedMode(inputDriven);
+        resampler.SetRates(from, to);
+        var output = new float[2048];
+        var random = new Random(3);
+
+        void Step(int frames)
+        {
+            int prepared = resampler.ResamplePrepare(frames, 1, out var input);
+            input[..prepared].Fill(0.25f);
+            resampler.ResampleOut(output, prepared, inputDriven ? output.Length : frames, 1);
+        }
+
+        for (int i = 0; i < 20; i++)
+            Step(512);
+        for (int i = 0; i < 200; i++)
+            Step(1 + random.Next(512));
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 2000; i++)
+            Step(1 + random.Next(512));
+
+        Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.Zero);
+    }
+
     [Test]
     public void GetCurrentLatencyReportsSubSamplePrecision()
     {

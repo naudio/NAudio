@@ -46,7 +46,8 @@ The program runs in several phases against the default render endpoint:
 
 5. **NAudio.Nam inference.** Builds an A2-Lite WaveNet, a legacy A1-style
    WaveNet and an LSTM in code, plus a `SlimmableContainer` holding all three,
-   and runs audio through each with `NamEffect`, checking the output is finite,
+   and runs audio through each with `NamEffect` (once at 44.1 kHz, which
+   exercises its built-in resampling), checking the output is finite,
    not silent, and repeats exactly after `Reset`. This puts the
    `System.Text.Json` model parsing, the generic-struct SIMD kernels and the
    `TensorPrimitives` activations through whole-program compilation. Like the

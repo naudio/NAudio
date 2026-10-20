@@ -27,7 +27,7 @@ The output matches the official C++ implementation ([NeuralAmpModelerCore](https
 
 ## Run a capture on an audio file
 
-`NamEffect` is an ordinary `IAudioEffect`, so it goes in an `EffectChain` like any other effect. NAM models are trained at 48 kHz and must be run at that rate, so resample first if your audio is at another rate. `WdlResamplingSampleProvider` uses 64-tap sinc interpolation by default, which matters here: aliasing from a cheap resampler feeds into the amp model's distortion and comes out as audible intermodulation:
+`NamEffect` is an ordinary `IAudioEffect`, so it goes in an `EffectChain` like any other effect:
 
 ```c#
 using NAudio.Effects;
@@ -40,8 +40,6 @@ var model = NamModel.Load("my-amp.nam");
 ISampleProvider guitar = new AudioFileReader("di-guitar.wav");    // a dry DI recording
 if (guitar.WaveFormat.Channels == 2)
     guitar = new StereoToMonoSampleProvider(guitar);
-if (guitar.WaveFormat.SampleRate != 48000)
-    guitar = new WdlResamplingSampleProvider(guitar, 48000);
 
 var chain = new EffectChain(guitar)
     .Add(new NamEffect(model))                // the amp
@@ -51,6 +49,8 @@ using var player = new WasapiPlayerBuilder().Build();
 player.Init(chain);
 player.Play();
 ```
+
+NAM models are trained at one sample rate, almost always 48 kHz, and must run at it. `NamEffect` takes care of that: at any other rate it converts the audio to the model's rate, runs the model, and converts back, using 64-tap sinc interpolation so that no aliasing reaches the amp model's distortion (where it would come out as audible intermodulation). This adds a fixed latency of about 1.5 ms, which the effect reports in `LatencySamples`; `IsResampling` tells you whether it is happening. At the model's own rate there is no latency.
 
 NAM networks are mono. Given more than one channel, `NamEffect` processes the average of the channels and writes the result to every channel. A guitar recorded on one side of a stereo file would then reach the model at half level and sound less driven, which is why the example converts to mono first.
 
@@ -95,7 +95,7 @@ device.InitDuplex(new AsioDuplexOptions
 {
     InputChannels  = [0],         // guitar input
     OutputChannels = [0, 1],
-    SampleRate     = 48000,       // the model's training rate
+    SampleRate     = 48000,       // NamProcessor doesn't resample: use the model's rate
     Processor      = (in AsioProcessBuffers b) =>
     {
         var left = b.GetOutput(0);
@@ -139,7 +139,7 @@ recorder.StartRecording();
 player.Play();
 ```
 
-This assumes a 48 kHz stereo device. At 44.1 kHz, put a `WdlResamplingSampleProvider` to 48 kHz before the `NamEffect`; it uses 64-tap sinc interpolation by default, which is flat across the audio band.
+This assumes a stereo device. If it runs at 44.1 kHz rather than 48 kHz, `NamEffect` resamples internally, adding about 1.5 ms.
 
 `BufferedWaveProvider` counts the glitches it hides. Poll them from a timer or the UI, never from the audio thread:
 

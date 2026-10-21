@@ -53,8 +53,8 @@ target stream.
 
 ### Settings supported by the writer
 
-The writer accepts a settings object that you must complete it in order for the writer
-to be correctly initialized. That settings object is the `ExtendedAudioFileWriterSettings` class,
+The writer requires a settings object, which you must fill in before creating the writer.
+That settings object is the `ExtendedAudioFileWriterSettings` class,
 located into the `NAudio.MacOS.AudioToolbox` namespace:
 
 ```c#
@@ -125,7 +125,7 @@ layout for you.
 
 #### The `FramesPerPacket` property.
 
-This property controls the number of samples to store in each compressed
+This property controls the number of sample frames to store in each compressed
 packet in the format under which the writer is writing data into.
 It might be helpful in some cases to modify this property to achieve better
 compression of your audio data in the target file. Note that this property

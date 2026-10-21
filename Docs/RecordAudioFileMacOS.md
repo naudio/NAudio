@@ -30,8 +30,12 @@ using System.Threading;
 using NAudio.Wave;
 
 using var input = new CoreAudioRecorder();   // default input device
+
+// Prepare the recorder for recording
 input.InitializeRecording();
 
+// The CaptureFormat property can be only
+// read after the recorder is initialized!
 var writer = new WaveFileWriter("recorded.wav", input.CaptureFormat);
 
 input.DataAvailable += (audioData, currentTime, firstByteTime) =>
@@ -60,6 +64,7 @@ each with its own `byte[] Buffer`, and initializes the recorder for you:
 
 ```c#
 using var input = new CoreAudioRecorder();
+// Record 5 seconds.
 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
 await foreach (var buffer in input.CaptureAsync(cts.Token))
@@ -78,6 +83,11 @@ As it was mentioned before, the capture format may be changed multiple
 times during capture. Once that happens, the recording is stopped,
 and the `CaptureFormatChanged` event dispatches.
 You can restart the recording, or completely abort it.
+
+> [!NOTE]
+Creating a `CoreAudioRecorder` instance with the parameterless constructor
+may result in a `InvalidOperationException` exception, if there is not a proper
+input device that macOS can use to capture audio.
 
 ### Recording permissions
 

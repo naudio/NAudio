@@ -1,8 +1,8 @@
 ﻿
 ## Creating new audio files with Extended Audio File Services (macOS)
 
-Along with the new `CoreAudio` HAL backend, the new `NAudio.MacOS` package 
-also ships wrappers for the Extended Audio File Services API (Audio Toolbox), 
+Along with the new `CoreAudio` HAL backend, the new `NAudio.MacOS` package
+also ships wrappers for the Extended Audio File Services API (Audio Toolbox),
 which is equivalent to `MediaFoundationEncoder`. Let's see what it offers.
 
 First of all, you need to reference the `NAudio.MacOS` package into your project.
@@ -48,7 +48,7 @@ in `ExtendedAudioFileWriter` for more information.
 For the writer to write files into a .NET `System.IO.Stream`, the object
 must support all the operations, that is, reading, writing and seeking.
 If your object is not that capable, use a `MemoryStream` so that
-the writer can handle the stream, then copy it's data to your 
+the writer can handle the stream, then copy it's data to your
 target stream.
 
 ### Settings supported by the writer
@@ -64,34 +64,26 @@ namespace NAudio.MacOS.AudioToolbox;
 
 public class ExtendedAudioFileWriterSettings
 {
-    public string? FileType { get; set; }
+    public required string FileType { get; init; }
 
-    public WaveFormat? ProvidingFormat { get; set; }
+    public required WaveFormat ProvidingFormat { get; init; }
 
-    public bool EmitIEEEFloatSamples { get; set; } = false;
+    public bool EmitIEEEFloatSamples { get; init; } = false;
 
-    public int FramesPerPacket { get; set; } = 1024;
+    public int FramesPerPacket { get; init; } = 1024;
 }
 ```
 
 #### The `FileType` property
 
-This property controls the final container and audio data format of 
-the file. With this property you define the format of the resulting 
+This property controls the final container and audio data format of
+the file. With this property you define the format of the resulting
 file and as such it is a required property.
-
-> [!NOTE]
-Although the property is marked as a nullable property, the writer
-requires this property to have been defined so that it can pick 
-the format you want to save your audio data into.
 
 > [!CAUTION]
 Do not try to hardcode this property as it's acceptable values
 may vary by macOS version. You can read the supported values at
-run-time from the `AudioFileLibraryInformation.SupportedMimeTypes` property.
-Note too that the `SupportedMimeTypes` property advertises the readable
-formats as well, so several types reported by the property may not be
-supported. The writer will reject the value of the property if it is not supported.
+run-time from the `AudioFileLibraryInformation.SupportedWritableMimeTypes` property.
 
 #### The `ProvidingFormat` property
 
@@ -99,17 +91,10 @@ This property controls the audio data format you provide your audio as.
 The writer requires that this property contains a valid PCM or an IEEE floating-point
 format. Anything else will be rejected by the writer right away.
 
-> [!NOTE]
-Although the property is marked as a nullable property, the writer
-requires this property to have been defined so that it can choose
-the audio data format under which you provide data to it. The file's
-data format is decided by the writer's algorithms based on the format
-that you provide in this property and you cannot modify it however you like.
-
 #### The `EmitIEEEFloatSamples` property.
 
-When you write a file into an uncompressed format, this property 
-controls whether the samples in the file should be saved as 32-bit IEEE 
+When you write a file into an uncompressed format, this property
+controls whether the samples in the file should be saved as 32-bit IEEE
 floating-point samples. This property is only supported for uncompressed
 formats, and only if the uncompressed format supports using it.
 
@@ -133,5 +118,5 @@ is just a hint to the writer and whether this property will be used or not
 depends on the active encoder.
 
 > [!NOTE]
-This property is not effective on uncompressed formats, as they are 
+This property is not effective on uncompressed formats, as they are
 simply storing the samples as-is into the target file.

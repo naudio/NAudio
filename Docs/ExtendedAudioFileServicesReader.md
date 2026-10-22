@@ -1,8 +1,8 @@
 ﻿
 ### Reading audio files with Extended Audio File Services (macOS)
 
-Along with the new `CoreAudio` HAL backend, the new `NAudio.MacOS` package 
-also ships wrappers for the Extended Audio File Services API (Audio Toolbox), 
+Along with the new `CoreAudio` HAL backend, the new `NAudio.MacOS` package
+also ships wrappers for the Extended Audio File Services API (Audio Toolbox),
 which is equivalent to `MediaFoundationReader`. Let's see what it offers.
 
 First of all, you need to reference the `NAudio.MacOS` package into your project.
@@ -57,7 +57,7 @@ The reader has been tested and verified to work with:
 - FLAC
 - OGG Vorbis
 
-Which of those formats is actually supported and which not depends on 
+Which of those formats is actually supported and which not depends on
 the macOS version you use.
 You are able to query the supported file formats as MIME types at run-time:
 
@@ -65,7 +65,7 @@ You are able to query the supported file formats as MIME types at run-time:
 using System;
 using NAudio.MacOS.AudioToolbox;
 
-foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
+foreach (var mimeType in AudioFileLibraryInformation.SupportedReadableMimeTypes)
 {
     Console.WriteLine(mimeType);
 }
@@ -73,7 +73,7 @@ foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
 
 ### Modifying the initialization behavior of the reader.
 
-Both of these reader classes do accept a settings object that modifies 
+Both of these reader classes do accept a settings object that modifies
 how the reader should initialize. That settings class is the `ExtendedAudioFileReaderSettings`
 class, and it is located into `NAudio.MacOS.AudioToolbox`:
 
@@ -84,18 +84,18 @@ namespace NAudio.MacOS.AudioToolbox;
 
 public class ExtendedAudioFileReaderSettings
 {
-    public bool RequestIeeeFloat { get; set; }
+    public bool RequestIeeeFloat { get; init; }
 
-    public bool AllowNonPowerOfTwoBitDepths { get; set; }
+    public bool AllowNonPowerOfTwoBitDepths { get; init; }
 
-    public WaveFormat? OutputFormat { get; set; }
+    public WaveFormat? OutputFormat { get; init; }
 }
 ```
 
 #### The `RequestIeeeFloat` property
 
-When you assign this property to `true`, you instruct the reader 
-to return 32-bit IEEE floating-point audio samples. It is useful 
+When you assign this property to `true`, you instruct the reader
+to return 32-bit IEEE floating-point audio samples. It is useful
 for injecting the reader into an `ISampleProvider` chain,
 and you can also very easily manipulate the samples.
 
@@ -126,7 +126,7 @@ you might need a very specific format that you need to read the file into.
 With this property, you can specify a completely specified PCM or IEEE floating-point format
 to use. It also supports specifying the format with `WaveFormatExtensible` and honours the provided `ChannelMask`.
 
-The default value of this property is `null`, which instructs 
+The default value of this property is `null`, which instructs
 the reader to use the internal algorithm to define the output format.
 
 > [!WARNING]
@@ -147,9 +147,9 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
 {
     public sealed class ExtendedAudioFileReaderFromStreamSettings : ExtendedAudioFileReaderSettings
     {
-        public string? MimeType { get; set; }
+        public string? MimeType { get; init; }
 
-        public string? FileName { get; set; }
+        public string? FileName { get; init; }
     }
 }
 ```
@@ -161,13 +161,13 @@ of the audio file being decoded.
 
 It is optional, and the reader does a decent job finding the audio file type of the provided stream.
 
-The MIME types can be queried at run-time using this code:
+The readable MIME types can be queried at run-time using this code:
 
 ```c#
 using System;
 using NAudio.MacOS.AudioToolbox;
 
-foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
+foreach (var mimeType in AudioFileLibraryInformation.SupportedReadableMimeTypes)
 {
     Console.WriteLine(mimeType);
 }
@@ -175,7 +175,7 @@ foreach (var mimeType in AudioFileLibraryInformation.SupportedMimeTypes)
 
 > [!CAUTION]
 Try not to hardcode the MIME type given to the property as it subject to change
-in different macOS versions. Make sure to call first the `SupportedMimeTypes` property
+in different macOS versions. Make sure to call first the `SupportedReadableMimeTypes` property
 and use one of those values.
 
 #### The `FileName` property
@@ -198,14 +198,14 @@ The supported file types (by extension) can be also queried with this snippet:
 using System;
 using NAudio.MacOS.AudioToolbox;
 
-foreach (var extension in AudioFileLibraryInformation.RecognizedFileExtensions)
+foreach (var extension in AudioFileLibraryInformation.RecognizedReadableFileExtensions)
 {
-    Console.WriteLine(mimeType);
+    Console.WriteLine(extension);
 }
 ```
 
 > [!CAUTION]
-The file extensions returned through the `RecognizedFileExtensions` property
+The file extensions returned through the `RecognizedReadableFileExtensions` property
 do *not* have a dot prepended to them. Make sure to prepend a dot if you want
 to use them with the `System.IO` API's.
 

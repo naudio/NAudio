@@ -23,7 +23,7 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         : base(hExtFileObject, settings) { }
 
     // Initializes the writer.
-    private protected void Init() => AssignClientFormat(ProvidingFormat);
+    private protected void Init() => AssignClientFormat(Settings.ProvidingFormat);
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Usage",
@@ -105,7 +105,9 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
 
         ExtendedAudioFileException.ThrowIfError(
             NativeMethods.ExtAudioFileCreateWithURL(
-                urlNative.NativeObject,
+                // No need to use the NativeObject property here,
+                // as we created the CFURL instance ourselves above.
+                urlNative.DangerousGetObject(),
                 ft,
                 asbd,
                 layout.mChannelLayoutTag == 0 ? IntPtr.Zero : new(&layout),
@@ -172,6 +174,8 @@ public unsafe partial class ExtendedAudioFileWriter : ExtendedAudioFileServicesW
         {
             ExtendedAudioFileException.ThrowIfError(
                 NativeMethods.ExtAudioFileCreateWithURL(
+                    // No need to use the NativeObject property here,
+                    // as we created the CFURL instance ourselves above.
                     urlNative.DangerousGetObject(),
                     ft,
                     asbd,

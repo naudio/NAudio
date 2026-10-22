@@ -35,13 +35,13 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
         /// <summary>
         /// Gets/sets the MIME type of the provided data stream.
         /// </summary>
-        public string? MimeType { get; set; }
+        public string? MimeType { get; init; }
 
         /// <summary>
         /// Gets/sets the name of the file that it's data are provided to 
         /// the stream that will be used to deduce the file type.
         /// </summary>
-        public string? FileName { get; set; }
+        public string? FileName { get; init; }
     }
 
     /// <summary>

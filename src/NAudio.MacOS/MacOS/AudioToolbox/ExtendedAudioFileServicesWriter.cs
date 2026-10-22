@@ -28,7 +28,6 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     private IntPtr extFileObject;
     private readonly Lock lockObject;
     private readonly ExtendedAudioFileWriterSettings settings;
-    private readonly WaveFormat providingFormat;
 
     private protected ExtendedAudioFileServicesWriter(IntPtr hExtFileObject, ExtendedAudioFileWriterSettings settings)
     {
@@ -37,9 +36,6 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         disposed = false;
         lockObject = new();
         this.settings = settings;
-        // Captured once so that later changes to the settings object
-        // cannot change the format the client data are interpreted as.
-        providingFormat = settings.ProvidingFormat ?? throw new ArgumentException("ProvidingFormat property in settings object was not assigned to a valid WaveFormat instance.", nameof(settings));
         extFileObject = hExtFileObject;
     }
 
@@ -276,7 +272,20 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         CheckValidFormat(providingFormat);
         if (!FindBestFormat(settings, out var fileAsbd, out fileTypeID))
         {
-            throw new InvalidOperationException($"No valid formats for the MIME Type {settings.FileType} were found!");
+            var exception = new InvalidOperationException("No valid formats for the selected MIME type were found!");
+            try
+            {
+                exception.Data.Add("SelectedFormat", providingFormat);
+                exception.Data.Add("SelectedMimeType", settings.FileType);
+                // If possible, add the list of writable MIME types to the exception data.
+                // Users can use this to find out what MIME types are supported by the system.
+                exception.Data.Add("WritableMimeTypes", AudioFileLibraryInformation.SupportedWritableMimeTypes);
+            }
+            // Swallow any exception(s) that might occur while trying to add the supported
+            // writable MIME types, as it would hide the real exception that will be thrown,
+            // which is the one that matters to the user.
+            catch { }
+            throw exception;
         }
         fileAsbd.mSampleRate = providingFormat.SampleRate;
         fileAsbd.mChannelsPerFrame = (uint)providingFormat.Channels;
@@ -318,8 +327,11 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         "CA2208:Instantiate argument exceptions correctly",
         Justification = "Internal helper method"
     )]
-    private static void CheckValidFormat([NotNull] WaveFormat? fmt)
+    private static void CheckValidFormat(WaveFormat? fmt)
     {
+        // We leave the null check here as-is, if in the future 
+        // there are code changes that could allow a null value
+        // to be defined in the settings object.
         if (fmt is null) { throw new ArgumentException("ProvidingFormat property in settings object was not assigned to a valid WaveFormat instance.", "settings"); }
         if (fmt is WaveFormatExtensible extensible)
         {
@@ -339,9 +351,6 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     }
 
     private protected IntPtr GetExtAudioFileHandle() => extFileObject;
-
-    // The format of the data provided to the writer.
-    private protected WaveFormat ProvidingFormat => providingFormat;
 
     /// <summary>
     /// Gets the currently defined settings object for this extended file writer instance.
@@ -365,7 +374,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
             ObjectDisposedException.ThrowIf(disposed, this);
             return length;
         }
-        set => throw new NotSupportedException("Seeking not supported on extended file writer instances");
+        set => throw new NotSupportedException("Seeking is not supported on extended audio file writer instances");
     }
 
     /// <inheritdoc />
@@ -373,23 +382,19 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
 
     /// <inheritdoc />
     public sealed override int Read(byte[] buffer, int offset, int count)
-    {
-        throw new NotSupportedException("Reading not supported on extended file writer instances");
-    }
+        => throw new NotSupportedException("Reading is not supported on extended audio file writer instances");
 
     /// <inheritdoc />
     public sealed override int Read(Span<byte> buffer)
-    {
-        throw new NotSupportedException("Reading not supported on extended file writer instances");
-    }
+        => throw new NotSupportedException("Reading is not supported on extended audio file writer instances");
 
     /// <summary>Writes audio data to the current writer.</summary>
     /// <param name="buffer">The buffer of audio data to provide to the file writer.</param>
     public unsafe sealed override void Write(ReadOnlySpan<byte> buffer)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        var outFormat = providingFormat;
         uint bufferLength = (uint)buffer.Length;
+        var outFormat = settings.ProvidingFormat;
         uint numFramesToWrite = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outFormat);
         if (numFramesToWrite == 0U && bufferLength > 0U)
         {
@@ -417,16 +422,12 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     public sealed override void Flush() { }
 
     /// <inheritdoc />
-    public override long Seek(long offset, SeekOrigin origin)
-    {
-        throw new NotSupportedException("Seeking not supported on extended file writer instances");
-    }
+    public sealed override long Seek(long offset, SeekOrigin origin)
+        => throw new NotSupportedException("Seeking is not supported on extended audio file writer instances");
 
     /// <inheritdoc />
-    public override void SetLength(long value)
-    {
-        throw new NotSupportedException("Can't set the length on extended file writer instances");
-    }
+    public sealed override void SetLength(long value)
+        => throw new NotSupportedException("Setting length is not supported on extended audio file writer instances");
 
     /// <summary>
     /// Disposes of any native data the writer has allocated. <br />

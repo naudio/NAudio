@@ -120,7 +120,7 @@
   items:
     - name: Use the Extended Audio File Services reader to read compressed files
       href: ExtendedAudioFileServicesReader.md
-    - name: Use the Extended Audio File Services reader to write compressed files
+    - name: Use the Extended Audio File Services writer to write compressed files
       href: ExtendedAudioFileServicesWriter.md
     - name: Play an audio file on macOS (Core Audio)
       href: PlayAudioFileMacOS.md

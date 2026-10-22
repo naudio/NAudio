@@ -69,6 +69,11 @@ by calling the `DeviceUID` property on the device object.
 For the `CoreAudioPlayer`, you can retrieve the device object 
 that it uses to do playback by invoking the `Device` property.
 
+> [!NOTE]
+Creating a `CoreAudioPlayer` instance with the parameterless constructor
+may result in a `InvalidOperationException` exception, if there is not a proper
+output device that macOS can use to render your audio.
+
 ### Changing the gain (volume) of the device
 
 The device's volume can be changed by setting the `Volume` property on the `CoreAudioPlayer` instance:
@@ -81,7 +86,7 @@ createdPlayer.Volume = 0.8f;
 Unlike many other `IWavePlayer` implementations, this implementation directly modifies the 
 hardware volume control of the device. It is not recommended to modify this value as the
 user of the OS sets this to a desired value. If you want to modify the gain without 
-disrupting the user's value, use a `VolumeSampleProvider`.
+disrupting the user's value, use a `VolumeSampleProvider` first.
 
 In some cases, you might be able to modify the volume of the device per-channel.
 To do this, retrieve the device's control list and enumerate through the controls:

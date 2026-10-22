@@ -88,7 +88,7 @@ public class ExtendedAudioFileReaderSettings
 
     public bool AllowNonPowerOfTwoBitDepths { get; set; }
 
-    public WaveFormat OutputFormat { get; set; }
+    public WaveFormat? OutputFormat { get; set; }
 }
 ```
 
@@ -147,9 +147,9 @@ public sealed class ExtendedAudioFileReaderFromStream : ExtendedAudioFileService
 {
     public sealed class ExtendedAudioFileReaderFromStreamSettings : ExtendedAudioFileReaderSettings
     {
-        public string MimeType { get; set; }
+        public string? MimeType { get; set; }
 
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
     }
 }
 ```
@@ -225,7 +225,7 @@ using var reader = ExtendedAudioFileReaderFromURL.CreateFromFile(
     "/Users/user_name/a_second_file.mp3"
 );
 
-using var player = new CoreAudioPlayer();
+using var player = new CoreAudioPlayer(); // Use the default playback device for playback.
 
 player.Init(reader);
 player.Play();

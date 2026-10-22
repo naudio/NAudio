@@ -221,7 +221,6 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     {
         id = default;
         description = default;
-        // ProvidingFormat is validated by BuildWriter before this is called.
         uint requiredBitsPerSample = (uint)settings.ProvidingFormat.BitsPerSample;
         // A list of all the stream formats that are very approximate to
         // the target bit depth and IEEE mode. Will be used if and only

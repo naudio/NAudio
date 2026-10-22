@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Runtime.Versioning;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 using NAudio.Wave;
@@ -42,6 +43,32 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     // A record class describing the available formats for
     // a given file type that the writer is able to write.
     private record FormatInfo(AudioFileTypeID ID, params AudioStreamBasicDescription[] Descriptions) { }
+
+    // Helper method to create an InvalidOperationException with a message that includes the list of writable MIME types on the system.
+    private static InvalidOperationException CreateNoSuitableFormatException(ExtendedAudioFileWriterSettings settings)
+    {
+        string writableTypes;
+        ImmutableArray<string> types = default;
+        try
+        {
+            types = AudioFileLibraryInformation.SupportedWritableMimeTypes;
+            writableTypes = string.Join(", ", types);
+        }
+        catch
+        {
+            // Don't let a failure to build the hint hide the real error.
+            writableTypes = "(could not be retrieved)";
+        }
+        var e = new InvalidOperationException(
+            $"Could not find a suitable audio format to write MIME type '{settings.FileType}' " +
+            $"from {settings.ProvidingFormat}. Writable MIME types on this system: {writableTypes}");
+        // Provide the supported writable MIME types and the selected MIME type
+        // and format in the exception data, if the users want to inspect them.
+        e.Data.Add("WritableMimeTypes", types);
+        e.Data.Add("SelectedMimeType", settings.FileType);
+        e.Data.Add("SelectedFormat", settings.ProvidingFormat);
+        return e;
+    }
 
     private static AudioFormatID[] SelectBestIDForFileType(AudioFileTypeID id)
     {
@@ -146,8 +173,14 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
     {
         bool providedResults = false;
         AudioFileTypeAndFormatID ffid = new();
-        // FileType is validated by the public Create methods before BuildWriter is called.
-        foreach (var id in AudioFileLibraryInformation.GetFileTypeIDsForMimeType(settings.FileType!))
+        AudioFileTypeID[] fileTypeIDs = [];
+        try
+        {
+            fileTypeIDs = AudioFileLibraryInformation.GetFileTypeIDsForMimeType(settings.FileType);
+        }
+        // See the end of this method.
+        catch { }
+        foreach (var id in fileTypeIDs)
         {
             foreach (var fmtId in SelectBestIDForFileType(ffid.mFileType = id))
             {
@@ -172,7 +205,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         }
         if (!providedResults)
         {
-            throw new InvalidOperationException("Could not find a suitable audio format for the specified MIME type: " + settings.FileType);
+            throw CreateNoSuitableFormatException(settings);
         }
     }
 
@@ -189,7 +222,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         id = default;
         description = default;
         // ProvidingFormat is validated by BuildWriter before this is called.
-        uint requiredBitsPerSample = (uint)settings.ProvidingFormat!.BitsPerSample;
+        uint requiredBitsPerSample = (uint)settings.ProvidingFormat.BitsPerSample;
         // A list of all the stream formats that are very approximate to
         // the target bit depth and IEEE mode. Will be used if and only
         // if there is not a format that matches the requirements imposed
@@ -272,20 +305,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         CheckValidFormat(providingFormat);
         if (!FindBestFormat(settings, out var fileAsbd, out fileTypeID))
         {
-            var exception = new InvalidOperationException("No valid formats for the selected MIME type were found!");
-            try
-            {
-                exception.Data.Add("SelectedFormat", providingFormat);
-                exception.Data.Add("SelectedMimeType", settings.FileType);
-                // If possible, add the list of writable MIME types to the exception data.
-                // Users can use this to find out what MIME types are supported by the system.
-                exception.Data.Add("WritableMimeTypes", AudioFileLibraryInformation.SupportedWritableMimeTypes);
-            }
-            // Swallow any exception(s) that might occur while trying to add the supported
-            // writable MIME types, as it would hide the real exception that will be thrown,
-            // which is the one that matters to the user.
-            catch { }
-            throw exception;
+            throw CreateNoSuitableFormatException(settings);
         }
         fileAsbd.mSampleRate = providingFormat.SampleRate;
         fileAsbd.mChannelsPerFrame = (uint)providingFormat.Channels;

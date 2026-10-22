@@ -128,6 +128,34 @@ public static class AudioFileLibraryInformation
 
     private static string[] GetFileExtensionsForFileTypeID(AudioFileTypeID id) => GetStringArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_ExtensionsForType, [id]);
 
+    private static ImmutableArray<string> CollectPropertyStrings(AudioFilePropertyID property, Func<AudioFileTypeID, string[]> fileTypeIdGetter)
+    {
+        var types = GetAudioFileTypeIDArrayAsResult(property);
+        // The property query may return duplicate file type IDs, 
+        // which would result in duplicate MIME types or file extensions being returned.
+        // Using a HashSet here avoids those duplicates appearing in user code.
+        HashSet<string> strings = new(types.Length, StringComparer.Ordinal);
+        foreach (var id in types)
+        {
+            try
+            {
+                strings.UnionWith(fileTypeIdGetter.Invoke(id));
+            }
+            catch (NotSupportedException)
+            {
+                // Sometimes, the ID reported by the AudioFile API
+                // is not recognized by the property,
+                // and throws NotSupportedException, saying that 
+                // the property is not supported.
+                // So, we just ignore it and continue with the next ID.
+            }
+        }
+        // Note that we deliberately return an ImmutableArray here
+        // to avoid exposing the HashSet to user code, which with
+        // a simple instance check or cast they could modify the HashSet.
+        return strings.ToImmutableArray().Sort(StringComparer.Ordinal);
+    }
+
     internal static AudioFileTypeID[] GetTypesForExtension(string value)
     {
         using var stringNative = CoreFoundationApi.CFString.CreateFromString(value);
@@ -194,69 +222,13 @@ public static class AudioFileLibraryInformation
     /// Gets all the MIME types that are readable by the Audio File Services.
     /// </summary>
     public static ImmutableArray<string> SupportedReadableMimeTypes
-    {
-        get
-        {
-            var readableTypes = GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_ReadableTypes);
-            // Some file types may correspond in one or more MIME types,
-            // with some of them sharing the same MIME type.
-            // Using a HashSet here avoids those duplicates appearing in user code.
-            HashSet<string> mimeTypes = new(readableTypes.Length, StringComparer.Ordinal);
-            foreach (var id in readableTypes)
-            {
-                try
-                {
-                    mimeTypes.UnionWith(GetMimeTypesForFileTypeID(id));
-                }
-                catch (NotSupportedException)
-                {
-                    // Sometimes, the ID reported by the AudioFile API
-                    // is not recognized by the MIMETypesForType property,
-                    // and throws NotSupportedException, saying that 
-                    // the property is not supported.
-                    // So, we just ignore it and continue with the next ID. 
-                }
-            }
-            // Note that we deliberately return an ImmutableArray here
-            // to avoid exposing the HashSet to user code, which with
-            // a simple instance check or cast they could modify the HashSet.
-            return mimeTypes.ToImmutableArray();
-        }
-    }
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_ReadableTypes, new(GetMimeTypesForFileTypeID));
 
     /// <summary>
     /// Gets all the MIME types that are writable by the Audio File Services.
     /// </summary>
     public static ImmutableArray<string> SupportedWritableMimeTypes
-    {
-        get
-        {
-            var writableTypes = GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_WritableTypes);
-            // Some file types may correspond in one or more MIME types,
-            // with some of them sharing the same MIME type.
-            // Using a HashSet here avoids those duplicates appearing in user code.
-            HashSet<string> mimeTypes = new(writableTypes.Length, StringComparer.Ordinal);
-            foreach (var id in writableTypes)
-            {
-                try
-                {
-                    mimeTypes.UnionWith(GetMimeTypesForFileTypeID(id));
-                }
-                catch (NotSupportedException)
-                {
-                    // Sometimes, the ID reported by the AudioFile API
-                    // is not recognized by the MIMETypesForType property,
-                    // and throws NotSupportedException, saying that 
-                    // the property is not supported.
-                    // So, we just ignore it and continue with the next ID.
-                }
-            }
-            // Note that we deliberately return an ImmutableArray here
-            // to avoid exposing the HashSet to user code, which with
-            // a simple instance check or cast they could modify the HashSet.
-            return mimeTypes.ToImmutableArray();
-        }
-    }
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_WritableTypes, new(GetMimeTypesForFileTypeID));
 
     /// <summary>
     /// Gets all the file extensions that are readable by the Audio File Services. <br />
@@ -264,35 +236,7 @@ public static class AudioFileLibraryInformation
     /// unlike the <see cref="System.IO"/> API's.
     /// </summary>
     public static ImmutableArray<string> RecognizedReadableFileExtensions
-    {
-        get
-        {
-            var readableTypes = GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_ReadableTypes);
-            // Some file types may correspond in one or more file extensions,
-            // with some of them sharing the same extension.
-            // Using a HashSet here avoids those duplicates appearing in user code.
-            HashSet<string> extensions = new(readableTypes.Length, StringComparer.Ordinal);
-            foreach (var id in readableTypes)
-            {
-                try
-                {
-                    extensions.UnionWith(GetFileExtensionsForFileTypeID(id));
-                }
-                catch (NotSupportedException)
-                {
-                    // Sometimes, the ID reported by the AudioFile API
-                    // is not recognized by the ExtensionsForType property,
-                    // and throws NotSupportedException, saying that 
-                    // the property is not supported.
-                    // So, we just ignore it and continue with the next file type.
-                }
-            }
-            // Note that we deliberately return an ImmutableArray here
-            // to avoid exposing the HashSet to user code, which with
-            // a simple instance check or cast they could modify the HashSet.
-            return extensions.ToImmutableArray();
-        }
-    }
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_ReadableTypes, new(GetFileExtensionsForFileTypeID));
 
     /// <summary>
     /// Gets all the file extensions that are writable by the Audio File Services. <br />
@@ -300,33 +244,5 @@ public static class AudioFileLibraryInformation
     /// unlike the <see cref="System.IO"/> API's.
     /// </summary>
     public static ImmutableArray<string> RecognizedWritableFileExtensions
-    {
-        get
-        {
-            var writableTypes = GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_WritableTypes);
-            // Some file types may correspond in one or more file extensions,
-            // with some of them sharing the same extension.
-            // Using a HashSet here avoids those duplicates appearing in user code.
-            HashSet<string> extensions = new(writableTypes.Length, StringComparer.Ordinal);
-            foreach (var id in writableTypes)
-            {
-                try
-                {
-                    extensions.UnionWith(GetFileExtensionsForFileTypeID(id));
-                }
-                catch (NotSupportedException)
-                {
-                    // Sometimes, the ID reported by the AudioFile API
-                    // is not recognized by the ExtensionsForType property,
-                    // and throws NotSupportedException, saying that 
-                    // the property is not supported.
-                    // So, we just ignore it and continue with the next file type.
-                }
-            }
-            // Note that we deliberately return an ImmutableArray here
-            // to avoid exposing the HashSet to user code, which with
-            // a simple instance check or cast they could modify the HashSet.
-            return extensions.ToImmutableArray();
-        }
-    }
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_WritableTypes, new(GetFileExtensionsForFileTypeID));
 }

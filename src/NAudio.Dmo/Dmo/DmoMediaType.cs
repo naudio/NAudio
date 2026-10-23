@@ -25,8 +25,8 @@ public struct DmoMediaType
     private readonly int lSampleSize;
     private Guid formattype;
     private readonly IntPtr pUnk; // not used
-    private readonly int cbFormat;
-    private readonly IntPtr pbFormat;
+    private int cbFormat;
+    private IntPtr pbFormat;
 
     /// <summary>
     /// Major type
@@ -103,9 +103,24 @@ public struct DmoMediaType
     {
         if (formattype == DmoMediaTypeGuids.FORMAT_WaveFormatEx)
         {
+            if (pbFormat == IntPtr.Zero)
+            {
+                // Media types returned by MediaObject.GetInputType / GetOutputType /
+                // GetOutputCurrentType have already had their format block freed.
+                throw new InvalidOperationException("This media type has no format block");
+            }
             return WaveFormat.MarshalFromPtr(pbFormat);
         }
         throw new InvalidOperationException("Not a WaveFormat type");
+    }
+
+    /// <summary>
+    /// Forgets the format block after it has been freed with MoFreeMediaType
+    /// </summary>
+    internal void ClearFormatBlock()
+    {
+        cbFormat = 0;
+        pbFormat = IntPtr.Zero;
     }
 
     /// <summary>

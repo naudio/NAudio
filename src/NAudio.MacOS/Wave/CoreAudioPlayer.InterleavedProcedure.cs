@@ -34,7 +34,7 @@ public partial class CoreAudioPlayer
             int read;
             // Make sure that during streams change, we won't attempt
             // to write bytes somewhere we cannot write.
-            if (enabledBufferIndex > cBuffers) { return true; }
+            if (enabledBufferIndex >= cBuffers) { return true; }
             var buffer = AudioBufferList
                 .GetAudioBufferFromPointer(outOutputData, enabledBufferIndex);
             // Otherwise, we could get an access violation.

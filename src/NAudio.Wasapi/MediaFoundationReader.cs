@@ -205,6 +205,10 @@ public class MediaFoundationReader : WaveStream
     private long GetLength(IMFSourceReader reader)
     {
         var variantPtr = Marshal.AllocHGlobal(Marshal.SizeOf<PropVariant>());
+        // AllocHGlobal doesn't zero, and the finally block clears the variant even when
+        // GetPresentationAttribute fails without writing it - PropVariantClear on garbage
+        // could free an arbitrary pointer. Start from VT_EMPTY.
+        Marshal.StructureToPtr(default(PropVariant), variantPtr, false);
         try
         {
 

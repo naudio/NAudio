@@ -28,6 +28,26 @@ public static partial class SfzParser
 {
     private const int MaxIncludeDepth = 32;
 
+    /// <summary>
+    /// Most <c>#include</c> directives followed in one parse. The depth limit alone
+    /// doesn't bound a file that includes itself twice (2^32 expansions).
+    /// </summary>
+    private const int MaxIncludeCount = 4096;
+
+    /// <summary>
+    /// Most characters of SFZ text read (top-level file plus includes) or produced by
+    /// preprocessing. Real instruments are well under a megabyte; this stops a
+    /// <c>#define</c> that doubles itself on every line, or include fan-out, from
+    /// exhausting memory.
+    /// </summary>
+    private const int MaxPreprocessedLength = 64 * 1024 * 1024;
+
+    private sealed class PreprocessLimits
+    {
+        public int Includes;
+        public long CharactersRead;
+    }
+
     [GeneratedRegex(@"^\s*#define\s+(\$[A-Za-z0-9_]+)\s+(.+?)\s*$")]
     private static partial Regex DefineRegex { get; }
     [GeneratedRegex(@"^\s*#include\s+""([^""]+)""\s*$")]
@@ -46,7 +66,7 @@ public static partial class SfzParser
         if (text == null) throw new ArgumentNullException(nameof(text));
 
         var preprocessed = new StringBuilder();
-        Preprocess(text, includeResolver, new Dictionary<string, string>(), 0, preprocessed);
+        Preprocess(text, includeResolver, new Dictionary<string, string>(), 0, preprocessed, new PreprocessLimits());
 
         var sections = ParseSections(preprocessed.ToString());
         return Flatten(sections);
@@ -67,10 +87,13 @@ public static partial class SfzParser
     // ---- preprocessing: comments, #define/$var, #include ----
 
     private static void Preprocess(string text, ISfzIncludeResolver? resolver,
-        Dictionary<string, string> defines, int depth, StringBuilder output)
+        Dictionary<string, string> defines, int depth, StringBuilder output, PreprocessLimits limits)
     {
         if (depth > MaxIncludeDepth)
             throw new InvalidDataException("SFZ #include nesting too deep (possible cycle)");
+        limits.CharactersRead += text.Length;
+        if (limits.CharactersRead > MaxPreprocessedLength)
+            throw new InvalidDataException("SFZ text (including #include files) is too large");
 
         text = BlockCommentRegex.Replace(text, " ");
 
@@ -83,23 +106,39 @@ public static partial class SfzParser
             if (define.Success)
             {
                 // a define's value may reference earlier defines
-                defines[define.Groups[1].Value] = Substitute(define.Groups[2].Value, defines);
+                defines[define.Groups[1].Value] = CheckLength(Substitute(define.Groups[2].Value, defines));
                 continue;
             }
 
-            line = Substitute(line, defines);
+            line = CheckLength(Substitute(line, defines));
 
             var include = IncludeRegex.Match(line);
             if (include.Success)
             {
-                var included = resolver?.Resolve(include.Groups[1].Value);
+                if (resolver == null) continue;
+                if (++limits.Includes > MaxIncludeCount)
+                    throw new InvalidDataException($"SFZ has more than {MaxIncludeCount} #includes");
+                var included = resolver.Resolve(include.Groups[1].Value);
                 if (included != null)
-                    Preprocess(included, resolver, defines, depth + 1, output);
+                    Preprocess(included, resolver, defines, depth + 1, output, limits);
                 continue;
             }
 
             output.Append(line).Append('\n');
+            CheckLength(output.Length);
         }
+    }
+
+    private static string CheckLength(string value)
+    {
+        CheckLength(value.Length);
+        return value;
+    }
+
+    private static void CheckLength(int length)
+    {
+        if (length > MaxPreprocessedLength)
+            throw new InvalidDataException("SFZ text is too large after #define/#include expansion");
     }
 
     private static string StripLineComment(string line)

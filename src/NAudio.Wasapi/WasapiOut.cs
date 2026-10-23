@@ -229,6 +229,10 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
         {
             return true;
         }
+        // readBuffer is sized for the whole endpoint buffer, but GetBuffer only hands out
+        // frameCount frames, so a provider that over-reports what it read must not be allowed
+        // to make Marshal.Copy run past the end of the native region.
+        read = Math.Min(read, readLength);
         var buffer = render.GetBuffer(frameCount);
         Marshal.Copy(readBuffer, 0, buffer, read);
         if (this.isUsingEventSync && this.shareMode == AudioClientShareMode.Exclusive)

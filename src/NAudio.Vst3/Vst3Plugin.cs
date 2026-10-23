@@ -1212,7 +1212,9 @@ public sealed unsafe class Vst3Plugin : IDisposable
 
     private void AllocateNativeBuffers()
     {
-        var blockBytes = (nuint)(MaxBlockSize * sizeof(float));
+        // checked: an unchecked int multiply wraps for a huge maxBlockSize, allocating tiny
+        // buffers that Process would then write MaxBlockSize samples into.
+        var blockBytes = checked((nuint)MaxBlockSize * sizeof(float));
 
         _inputBuffers = (float**)NativeMemory.AllocZeroed((nuint)(_inputChannels * sizeof(float*)));
         _inputChannelPtrs = (IntPtr*)NativeMemory.AllocZeroed((nuint)(_inputChannels * sizeof(IntPtr)));
@@ -1283,12 +1285,12 @@ public sealed unsafe class Vst3Plugin : IDisposable
         }
         ArgumentOutOfRangeException.ThrowIfNegative(numSamples);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(numSamples, MaxBlockSize);
-        if (interleavedInput.Length < numSamples * _inputChannels)
+        if (interleavedInput.Length < (long)numSamples * _inputChannels)
         {
             throw new ArgumentException(
                 $"Input buffer too small for numSamples * {_inputChannels} floats.", nameof(interleavedInput));
         }
-        if (interleavedOutput.Length < numSamples * _outputChannels)
+        if (interleavedOutput.Length < (long)numSamples * _outputChannels)
         {
             throw new ArgumentException(
                 $"Output buffer too small for numSamples * {_outputChannels} floats.", nameof(interleavedOutput));

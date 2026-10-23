@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
+using NAudio.Sfz;
 using NAudio.SoundFile;
 
 namespace NAudio.Sampler;
@@ -36,11 +36,24 @@ public interface ISfzSampleLoader
 public sealed class FileSfzSampleLoader : ISfzSampleLoader
 {
     private readonly string baseDirectory;
+    private readonly string? rootDirectory;
 
     /// <summary>Creates a loader rooted at the given base directory.</summary>
     public FileSfzSampleLoader(string? baseDirectory)
+        : this(baseDirectory, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates a loader that resolves relative sample paths against
+    /// <paramref name="baseDirectory"/> and, if <paramref name="rootDirectory"/> is not
+    /// null, refuses any sample that resolves outside it. Use a root directory to
+    /// sandbox SFZ files from untrusted sources. See <see cref="SfzFilePath"/> for the rules.
+    /// </summary>
+    public FileSfzSampleLoader(string? baseDirectory, string? rootDirectory)
     {
         this.baseDirectory = baseDirectory ?? "";
+        this.rootDirectory = rootDirectory;
     }
 
     /// <inheritdoc />
@@ -51,12 +64,9 @@ public sealed class FileSfzSampleLoader : ISfzSampleLoader
         right = null;
         sampleRate = 0;
         embeddedLoop = null;
-        if (string.IsNullOrEmpty(path)) return false;
-
-        var normalised = path.Replace('\\', Path.DirectorySeparatorChar)
-                             .Replace('/', Path.DirectorySeparatorChar);
-        var full = Path.IsPathRooted(normalised) ? normalised : Path.Combine(baseDirectory, normalised);
-        if (!File.Exists(full)) return false;
+        // refuses absolute/network paths (and anything outside rootDirectory, if set)
+        var full = SfzFilePath.Resolve(baseDirectory, path, rootDirectory);
+        if (full == null) return false;
 
         // WAV reads directly, including smpl-chunk loop points; FLAC/Ogg/Opus/
         // etc. go through libsndfile, which doesn't surface loop instrument

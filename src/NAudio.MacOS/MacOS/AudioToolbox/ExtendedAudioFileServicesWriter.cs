@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.IO;
 using System.Threading;
@@ -59,9 +59,22 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
             // Don't let a failure to build the hint hide the real error.
             writableTypes = "(could not be retrieved)";
         }
+        // Ensure that the exception data property 'WritableMimeTypes' always
+        // gets a valid result. Enumerating directly on default ImmutableArray instances
+        // throws NullReferenceException, because it's backing array is null.
+        //
+        // Do not put the empty immutable array assignment to the variable
+        // declaration. While that avoids the below if check, it does not
+        // guarantee to us that it's backing array will keep a valid
+        // non-null value, because if the 'SupportedWritableMimeTypes'
+        // property is misbehaving, it could return 'default' which again
+        // would make the enumeration to fail.
+        if (types.IsDefault) { types = ImmutableArray<string>.Empty; }
+
         var e = new InvalidOperationException(
             $"Could not find a suitable audio format to write MIME type '{settings.FileType}' " +
-            $"from {settings.ProvidingFormat}. Writable MIME types on this system: {writableTypes}");
+            $"from {settings.ProvidingFormat}. Writable MIME types on this system: {writableTypes}"
+        );
         // Provide the supported writable MIME types and the selected MIME type
         // and format in the exception data, if the users want to inspect them.
         e.Data.Add("WritableMimeTypes", types);
@@ -162,10 +175,10 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
         }
         else
         {
-            throw new ArgumentException(
-                $"No mapping can be found for ID \"{MacUtils.GetCharCodeFromUIntConstantValue((uint)id)}\".",
-                nameof(id)
-            );
+            // We cannot find suitable audio formats for the provided ID,
+            // or the native headers were updated and declare
+            // new type ID's we are not aware of.
+            return [];
         }
     }
 
@@ -190,7 +203,7 @@ public abstract class ExtendedAudioFileServicesWriter : Stream
                 {
                     descriptions = AudioFileLibraryInformation.GetAvailableStreamDescriptionsForFormat(ffid);
                 }
-                // Ignore the exception, move to tne next format
+                // Ignore the exception, move to the next format
                 catch { descriptions = []; }
                 // If there are descriptions for this file type, return them.
                 if (descriptions.Length > 0)

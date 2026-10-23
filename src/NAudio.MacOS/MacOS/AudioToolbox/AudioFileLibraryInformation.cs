@@ -1,5 +1,8 @@
 
 using System;
+using System.Runtime.Versioning;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.AudioToolbox.Interop;
@@ -10,6 +13,8 @@ namespace NAudio.MacOS.AudioToolbox;
 /// Provides various global information about the Audio File Services of the 
 /// Audio Toolbox framework.
 /// </summary>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.3")]
 public static class AudioFileLibraryInformation
 {
     private static unsafe string[] GetStringArrayAsResult(AudioFilePropertyID property)
@@ -89,7 +94,7 @@ public static class AudioFileLibraryInformation
         where T : unmanaged
     {
         uint size;
-        uint specifierSize = (uint)(specifier.Length * sizeof(T));
+        uint specifierSize = (uint)(specifier.Length * (long)sizeof(T));
         AudioFileTypeID[] retArray;
         fixed (T* specifierPointer = specifier)
         {
@@ -119,18 +124,58 @@ public static class AudioFileLibraryInformation
         return retArray;
     }
 
-    internal static string[] GetMimeTypesForFileTypeID(AudioFileTypeID id) => GetStringArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_MIMETypesForType, [id]);
+    private static string[] GetMimeTypesForFileTypeID(AudioFileTypeID id) => GetStringArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_MIMETypesForType, [id]);
+
+    private static string[] GetFileExtensionsForFileTypeID(AudioFileTypeID id) => GetStringArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_ExtensionsForType, [id]);
+
+    private static ImmutableArray<string> CollectPropertyStrings(AudioFilePropertyID property, Func<AudioFileTypeID, string[]> fileTypeIdGetter)
+    {
+        var types = GetAudioFileTypeIDArrayAsResult(property);
+        // The property query may return duplicate file type IDs, 
+        // which would result in duplicate MIME types or file extensions being returned.
+        // Using a HashSet here avoids those duplicates appearing in user code.
+        HashSet<string> strings = new(types.Length, StringComparer.Ordinal);
+        foreach (var id in types)
+        {
+            try
+            {
+                strings.UnionWith(fileTypeIdGetter.Invoke(id));
+            }
+            catch (NotSupportedException)
+            {
+                // Sometimes, the ID reported by the AudioFile API
+                // is not recognized by the property,
+                // and throws NotSupportedException, saying that 
+                // the property is not supported.
+                // So, we just ignore it and continue with the next ID.
+            }
+        }
+        // Note that we deliberately return an ImmutableArray here
+        // to avoid exposing the HashSet to user code, which with
+        // a simple instance check or cast they could modify the HashSet.
+        return strings.ToImmutableArray().Sort(StringComparer.Ordinal);
+    }
 
     internal static AudioFileTypeID[] GetTypesForExtension(string value)
     {
-        using CoreFoundationApi.CFString cFString = CoreFoundationApi.CFString.CreateFromString(value);
-        return GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_TypesForExtension, [cFString.NativeObject]);
+        using var stringNative = CoreFoundationApi.CFString.CreateFromString(value);
+        return GetAudioFileTypeIDArrayAsResult(
+            GlobalAudioFileProperties.kAudioFileGlobalInfo_TypesForExtension,
+            // No need to use the NativeObject property here,
+            // as we created the CFString instance ourselves above.
+            [stringNative.DangerousGetObject()]
+        );
     }
 
     internal static AudioFileTypeID[] GetFileTypeIDsForMimeType(string value)
     {
-        using CoreFoundationApi.CFString cFString = CoreFoundationApi.CFString.CreateFromString(value);
-        return GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_TypesForMIMEType, [cFString.NativeObject]);
+        using var stringNative = CoreFoundationApi.CFString.CreateFromString(value);
+        return GetAudioFileTypeIDArrayAsResult(
+            GlobalAudioFileProperties.kAudioFileGlobalInfo_TypesForMIMEType,
+            // No need to use the NativeObject property here,
+            // as we created the CFString instance ourselves above.
+            [stringNative.DangerousGetObject()]
+        );
     }
 
     internal static unsafe AudioStreamBasicDescription[] GetAvailableStreamDescriptionsForFormat(AudioFileTypeAndFormatID fileTypeAndFormatID)
@@ -172,4 +217,32 @@ public static class AudioFileLibraryInformation
     /// unlike the <see cref="System.IO"/> API's.
     /// </summary>
     public static string[] RecognizedFileExtensions => GetStringArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_AllExtensions);
+
+    /// <summary>
+    /// Gets all the MIME types that are readable by the Audio File Services.
+    /// </summary>
+    public static ImmutableArray<string> SupportedReadableMimeTypes
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_ReadableTypes, new(GetMimeTypesForFileTypeID));
+
+    /// <summary>
+    /// Gets all the MIME types that are writable by the Audio File Services.
+    /// </summary>
+    public static ImmutableArray<string> SupportedWritableMimeTypes
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_WritableTypes, new(GetMimeTypesForFileTypeID));
+
+    /// <summary>
+    /// Gets all the file extensions that are readable by the Audio File Services. <br />
+    /// Note that the elements of the returned array do not have a dot prepended,
+    /// unlike the <see cref="System.IO"/> API's.
+    /// </summary>
+    public static ImmutableArray<string> RecognizedReadableFileExtensions
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_ReadableTypes, new(GetFileExtensionsForFileTypeID));
+
+    /// <summary>
+    /// Gets all the file extensions that are writable by the Audio File Services. <br />
+    /// Note that the elements of the returned array do not have a dot prepended,
+    /// unlike the <see cref="System.IO"/> API's.
+    /// </summary>
+    public static ImmutableArray<string> RecognizedWritableFileExtensions
+        => CollectPropertyStrings(GlobalAudioFileProperties.kAudioFileGlobalInfo_WritableTypes, new(GetFileExtensionsForFileTypeID));
 }

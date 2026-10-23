@@ -36,8 +36,7 @@ public class ReaderTests
         {
             if (specifyFileNameInSettings)
             {
-                settings ??= new();
-                settings.FileName = fs.Name;
+                settings ??= new() { FileName = fs.Name };
             }
             ReaderCommon(new ExtendedAudioFileReaderFromStream(fs, settings));
         }

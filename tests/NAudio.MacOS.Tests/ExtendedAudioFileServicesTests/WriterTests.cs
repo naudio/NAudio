@@ -20,34 +20,39 @@ public class WriterTests
     public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
 
     [Test]
-    public void WriteAAC() => UseURLWriter(new() { FileType = "audio/aac" });
+    public void WriteAAC() => UseURLWriter("audio/aac");
 
     [Test]
-    public void WriteMPEG4() => UseURLWriter(new() { FileType = "audio/mp4" });
+    public void WriteMPEG4() => UseURLWriter("audio/mp4");
 
     [Test]
-    public void WriteMPEG4ByStreamCallbacks() => UseWriterWithStream(new() { FileType = "audio/mp4" });
+    public void WriteMPEG4ByStreamCallbacks() => UseWriterWithStream("audio/mp4");
 
     [Test]
-    public void WriteAACByStreamCallbacks() => UseWriterWithStream(new() { FileType = "audio/aac" });
+    public void WriteAACByStreamCallbacks() => UseWriterWithStream("audio/aac");
 
-    private static void UseURLWriter(ExtendedAudioFileWriterSettings settings)
+    private static void UseURLWriter(string fileType)
     {
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
-        settings ??= new();
-        settings.ProvidingFormat = sg.WaveFormat;
+        var settings = new ExtendedAudioFileWriterSettings()
+        {
+            FileType = fileType,
+            ProvidingFormat = sg.WaveFormat
+        };
         var path = CreateRandomFileName();
         var wr = ExtendedAudioFileWriter.CreateToFilePath(path, settings, true);
         WriteAndDisposeWriter(wr, sg);
         TryDeleteTheCreatedFile(path);
     }
 
-    private static void UseWriterWithStream(ExtendedAudioFileWriterSettings settings)
+    private static void UseWriterWithStream(string fileType)
     {
         var sg = new SignalGenerator(48000, 2).Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
-        settings ??= new();
-        settings.ProvidingFormat = sg.WaveFormat;
-
+        var settings = new ExtendedAudioFileWriterSettings()
+        {
+            FileType = fileType,
+            ProvidingFormat = sg.WaveFormat
+        };
         var path = CreateRandomFileName();
 
         var fs = new FileStream(

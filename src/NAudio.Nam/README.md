@@ -7,7 +7,7 @@ Run [Neural Amp Modeler](https://www.neuralampmodeler.com/) (NAM) captures of gu
 ## What's included
 
 - **`NamModel`** loads `.nam` files: Architecture 2 (A2) models, as the A2-Lite/A2-Full container TONE3000 distributes or as a single network; A1 WaveNet models (standard, lite, feather, nano) and similar custom WaveNets; and LSTM models. It exposes the capture's metadata (gear, loudness, input calibration).
-- **`NamEffect`** is an `IAudioEffect` for `EffectChain` / `EffectSampleProvider`. At the model's sample rate (normally 48 kHz) it adds no latency; at any other rate it resamples internally with 64-tap sinc interpolation, adding about 1.5 ms. It does not allocate while processing, and has bypass and dry/wet mix from the `AudioEffect` base.
+- **`NamEffect`** is an `IAudioEffect` for `EffectChain` / `EffectSampleProvider`. At the model's sample rate (normally 48 kHz) it adds no latency; at any other rate it resamples internally with 64-tap sinc interpolation, adding a fixed latency of about 1 to 2.5 ms depending on the rate (1.5 ms at 44.1 kHz). It does not allocate while processing, and has bypass and dry/wet mix from the `AudioEffect` base.
 - **`NamProcessor`** is the mono engine underneath, for driving from your own buffers (e.g. an ASIO duplex callback).
 
 A2-Full uses about 4% of one desktop core at 48 kHz, A2-Lite about 1.5%, an A1 "standard" WaveNet about 5% and a typical LSTM 2–6%. Output matches the official C++ implementation to within float rounding.

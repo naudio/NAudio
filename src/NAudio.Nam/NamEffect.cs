@@ -22,9 +22,9 @@ namespace NAudio.Nam;
 /// NAM models are trained at one sample rate (normally 48 kHz) and must run at it. At
 /// that rate the effect adds no latency. At any other rate it resamples internally:
 /// the audio is converted to the model's rate, processed, and converted back with
-/// 64-tap sinc interpolation, which adds a fixed latency of about 1.5 ms, reported by
-/// <see cref="AudioEffect.LatencySamples"/>. See <see cref="IsResampling"/>. Either way it
-/// does not allocate while processing.
+/// 64-tap sinc interpolation. That adds a fixed latency of about 1 to 2.5 ms depending
+/// on the rate (1.5 ms at 44.1 kHz), reported by <see cref="AudioEffect.LatencySamples"/>.
+/// See <see cref="IsResampling"/>. Either way it does not allocate while processing.
 /// </para>
 /// </remarks>
 public sealed class NamEffect : AudioEffect

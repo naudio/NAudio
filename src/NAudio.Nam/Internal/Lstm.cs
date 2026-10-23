@@ -190,15 +190,16 @@ internal sealed class LstmSpec
     public required int HiddenSize { get; init; }
     public required int NumLayers { get; init; }
 
-    public int WeightCount
+    // In long, so huge sizes in a corrupt file cannot overflow into a plausible count.
+    public long WeightCount
     {
         get
         {
-            var total = 0;
+            long total = 0;
             for (var l = 0; l < NumLayers; l++)
             {
-                var inputs = l == 0 ? InputSize : HiddenSize;
-                total += 4 * HiddenSize * (inputs + HiddenSize) + 4 * HiddenSize + 2 * HiddenSize;
+                long inputs = l == 0 ? InputSize : HiddenSize;
+                total += 4L * HiddenSize * (inputs + HiddenSize) + 4L * HiddenSize + 2L * HiddenSize;
             }
             return total + HiddenSize + 1;
         }

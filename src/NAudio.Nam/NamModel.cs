@@ -43,7 +43,7 @@ public sealed class NamModel
     /// <summary>The NAM file format version, e.g. "0.7.0".</summary>
     public string Version { get; }
 
-    /// <summary>The file's top-level architecture: "SlimmableContainer" or "WaveNet".</summary>
+    /// <summary>The file's top-level architecture: "SlimmableContainer", "WaveNet" or "LSTM".</summary>
     public string Architecture { get; }
 
     /// <summary>
@@ -78,6 +78,12 @@ public sealed class NamModel
         {
             throw new FormatException("The model is not valid JSON: " + ex.Message, ex);
         }
+        catch (Exception ex) when (ex is InvalidOperationException or IndexOutOfRangeException or KeyNotFoundException or OverflowException)
+        {
+            // Backstop for JSON of the wrong shape that a specific check missed (e.g. a
+            // number where an object was expected): report it as the malformed file it is.
+            throw new FormatException("The model file is malformed: " + ex.Message, ex);
+        }
     }
 
     /// <summary>Loads a model from a string of <c>.nam</c> JSON.</summary>
@@ -93,6 +99,12 @@ public sealed class NamModel
         catch (JsonException ex)
         {
             throw new FormatException("The model is not valid JSON: " + ex.Message, ex);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IndexOutOfRangeException or KeyNotFoundException or OverflowException)
+        {
+            // Backstop for JSON of the wrong shape that a specific check missed (e.g. a
+            // number where an object was expected): report it as the malformed file it is.
+            throw new FormatException("The model file is malformed: " + ex.Message, ex);
         }
     }
 
@@ -131,6 +143,10 @@ public sealed class NamModel
         List<NamSubmodel> submodels;
         if (architecture == "SlimmableContainer")
         {
+            if (config.ValueKind != JsonValueKind.Object)
+                throw new FormatException("A SlimmableContainer's config must be an object.");
+            // Submodels normally carry their own sample_rate; fall back to the container's.
+            var containerRate = ReadSampleRate(root);
             if (!config.TryGetProperty("submodels", out var entries) || entries.ValueKind != JsonValueKind.Array || entries.GetArrayLength() == 0)
                 throw new FormatException("A SlimmableContainer must have a non-empty submodels array.");
             submodels = [];
@@ -143,15 +159,17 @@ public sealed class NamModel
                 if (submodels.Count > 0 && maxSize <= submodels[^1].MaxSize)
                     throw new FormatException("Submodels must be sorted by ascending max_value.");
                 var model = GetRequired(entry, "model");
+                if (model.ValueKind != JsonValueKind.Object)
+                    throw new FormatException("Each submodel's model must be an object.");
                 CheckVersion(model);
-                submodels.Add(ParseNetwork(model, maxSize));
+                submodels.Add(ParseNetwork(model, maxSize, containerRate));
             }
             if (submodels[^1].MaxSize < 1.0)
                 throw new FormatException("The last submodel's max_value must be at least 1.0.");
         }
         else
         {
-            submodels = [ParseNetwork(root, 1.0)];
+            submodels = [ParseNetwork(root, 1.0, fallbackSampleRate: null)];
         }
 
         var metadata = NamModelMetadata.Parse(root);
@@ -160,19 +178,12 @@ public sealed class NamModel
         return new NamModel(version, architecture, metadata, submodels.AsReadOnly());
     }
 
-    private static NamSubmodel ParseNetwork(JsonElement model, double maxSize)
+    private static NamSubmodel ParseNetwork(JsonElement model, double maxSize, int? fallbackSampleRate)
     {
         var architecture = GetRequiredString(model, "architecture");
         var config = GetRequired(model, "config");
         var weights = ReadWeights(model);
-
-        int? sampleRate = null;
-        if (model.TryGetProperty("sample_rate", out var sr) && sr.ValueKind == JsonValueKind.Number)
-        {
-            var rate = sr.GetDouble();
-            if (rate > 0)
-                sampleRate = (int)Math.Round(rate);
-        }
+        var sampleRate = ReadSampleRate(model) ?? fallbackSampleRate;
         var metadata = NamModelMetadata.Parse(model);
 
         switch (architecture)
@@ -198,6 +209,22 @@ public sealed class NamModel
         }
     }
 
+    // Highest sample rate accepted from a file; anything above is treated as corrupt.
+    private const double MaxSampleRate = 1_536_000;
+
+    /// <summary>The model's "sample_rate" in Hz, or null if absent, zero or negative (NAM's "unknown").</summary>
+    private static int? ReadSampleRate(JsonElement model)
+    {
+        if (!model.TryGetProperty("sample_rate", out var sr) || sr.ValueKind != JsonValueKind.Number)
+            return null;
+        var rate = sr.GetDouble();
+        if (rate <= 0)
+            return null;
+        if (!double.IsFinite(rate) || rate > MaxSampleRate)
+            throw new FormatException($"The sample rate {rate} Hz is not plausible.");
+        return (int)Math.Round(rate);
+    }
+
     private static float[] ReadWeights(JsonElement model)
     {
         var weightsElement = GetRequired(model, "weights");
@@ -216,7 +243,7 @@ public sealed class NamModel
         return weights;
     }
 
-    private static void CheckWeightCount(float[] weights, int expected, string description)
+    private static void CheckWeightCount(float[] weights, long expected, string description)
     {
         if (weights.Length != expected)
             throw new FormatException($"{description} has {expected} weights, but this model has {weights.Length}.");

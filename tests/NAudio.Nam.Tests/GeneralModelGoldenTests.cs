@@ -168,6 +168,62 @@ public class GeneralModelGoldenTests
         Assert.That(ex!.Message, Does.Contain("PReLU"));
     }
 
+    [TestCase(50_000_000)]
+    [TestCase(1_000_000_000)] // (kernel - 1) * dilation overflows an int
+    public void RejectsAHugeDilationWhenLoading(int dilation)
+    {
+        // A dilation does not change the weight count, so this file is otherwise valid.
+        // It must be rejected by the loader, not discovered when a processor tries to
+        // allocate gigabytes of history.
+        var json = Synthetic();
+        FirstLayerArray(json)["dilations"]![2] = dilation;
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var ex = Assert.Throws<NotSupportedException>(() => NamModel.Parse(json.ToJsonString()));
+        Assert.That(ex!.Message, Does.Contain("looks back"));
+        Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(5)));
+    }
+
+    [Test]
+    public void AcceptsAReceptiveFieldWellBeyondTrainerPresets()
+    {
+        // 100,000 samples is ~2 s at 48 kHz, 15 times A2's receptive field.
+        var json = Synthetic();
+        FirstLayerArray(json)["dilations"]![2] = 100_000 / 3;
+
+        Assert.That(NamModel.Parse(json.ToJsonString()).Submodels, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void RejectsANumericGatingMode()
+    {
+        var json = Synthetic();
+        FirstLayerArray(json)["gating_mode"]![0] = 1;
+
+        Assert.Throws<FormatException>(() => NamModel.Parse(json.ToJsonString()));
+    }
+
+    [Test]
+    public void RejectsAGatingModeThatIsNeitherStringNorArray()
+    {
+        var json = Synthetic();
+        FirstLayerArray(json)["gating_mode"] = 5;
+
+        Assert.Throws<FormatException>(() => NamModel.Parse(json.ToJsonString()));
+    }
+
+    [Test]
+    public void RejectsTooFewSecondaryActivations()
+    {
+        // The synthetic model gates its last layer, which this leaves without an entry.
+        var json = Synthetic();
+        var secondary = FirstLayerArray(json)["secondary_activation"]!.AsArray();
+        secondary.RemoveAt(secondary.Count - 1);
+        secondary.RemoveAt(secondary.Count - 1);
+
+        Assert.Throws<FormatException>(() => NamModel.Parse(json.ToJsonString()));
+    }
+
     [Test]
     public void RejectsWrongLstmWeightCount()
     {

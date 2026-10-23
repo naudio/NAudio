@@ -33,7 +33,10 @@ public sealed class CabinetEffect : AudioEffect
 
     private float[][]? sourceIrs;
     private int sourceRate;
-    private PartitionedConvolver[] convolvers = Array.Empty<PartitionedConvolver>();
+    // Everything the audio thread needs, built off the audio thread and published with
+    // one reference write, so a block never sees convolvers from one configuration and
+    // settings from another. Null when there is no IR (pass-through).
+    private volatile Engine? engine;
     private int partitionSize = 64;
     private bool normalize = true;
     private bool trimSilence = true;
@@ -200,19 +203,19 @@ public sealed class CabinetEffect : AudioEffect
     /// <inheritdoc />
     protected override void ProcessBlock(Span<float> buffer)
     {
-        var active = convolvers;
-        if (active.Length == 0)
-            return;
+        var active = engine;
         var channels = Channels;
+        // No IR, or a rebuild for a new channel count has not been published yet.
+        if (active == null || active.Channels != channels)
+            return;
+        var convolvers = active.Convolvers;
 
-        if (!monoInput || channels == 1)
+        if (!active.MonoInput || channels == 1)
         {
-            if (active.Length < channels)
-                return; // a rebuild for a new channel count is in flight
             for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
                 for (var ch = 0; ch < channels; ch++)
-                    buffer[i + ch] = active[ch].Process(buffer[i + ch]);
+                    buffer[i + ch] = convolvers[ch].Process(buffer[i + ch]);
             }
             return;
         }
@@ -224,16 +227,16 @@ public sealed class CabinetEffect : AudioEffect
             for (var ch = 0; ch < channels; ch++)
                 sum += buffer[i + ch];
             var x = sum * scale;
-            if (active.Length == 1)
+            if (convolvers.Length == 1)
             {
-                var y = active[0].Process(x);
+                var y = convolvers[0].Process(x);
                 for (var ch = 0; ch < channels; ch++)
                     buffer[i + ch] = y;
             }
             else
             {
                 for (var ch = 0; ch < channels; ch++)
-                    buffer[i + ch] = active[Math.Min(ch, active.Length - 1)].Process(x);
+                    buffer[i + ch] = convolvers[ch].Process(x);
             }
         }
     }
@@ -242,8 +245,11 @@ public sealed class CabinetEffect : AudioEffect
     public override void Reset()
     {
         base.Reset();
-        foreach (var convolver in convolvers)
-            convolver.Reset();
+        if (engine is { } active)
+        {
+            foreach (var convolver in active.Convolvers)
+                convolver.Reset();
+        }
     }
 
     private void Rebuild()
@@ -252,7 +258,7 @@ public sealed class CabinetEffect : AudioEffect
         var irs = sourceIrs;
         if (format == null || irs == null)
         {
-            convolvers = Array.Empty<PartitionedConvolver>();
+            engine = null;
             ImpulseResponseLength = 0;
             return;
         }
@@ -285,12 +291,21 @@ public sealed class CabinetEffect : AudioEffect
             ImpulseResponseTools.NormalizeEnergy(prepared);
 
         var channels = format.Channels;
-        var count = monoInput && prepared.Length == 1 ? 1 : channels;
+        var mono = monoInput;
+        var count = mono && prepared.Length == 1 ? 1 : channels;
         var built = new PartitionedConvolver[count];
         for (var ch = 0; ch < count; ch++)
             built[ch] = new PartitionedConvolver(prepared[Math.Min(ch, prepared.Length - 1)], partitionSize, zeroLatency: true);
 
         ImpulseResponseLength = length;
-        convolvers = built;
+        engine = new Engine(built, mono, channels);
+    }
+
+    /// <summary>One prepared configuration: a convolver per channel (or one shared, for a mono IR with <see cref="MonoInput"/>).</summary>
+    private sealed class Engine(PartitionedConvolver[] convolvers, bool monoInput, int channels)
+    {
+        public PartitionedConvolver[] Convolvers { get; } = convolvers;
+        public bool MonoInput { get; } = monoInput;
+        public int Channels { get; } = channels;
     }
 }

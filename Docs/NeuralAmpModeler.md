@@ -52,7 +52,7 @@ player.Init(chain);
 player.Play();
 ```
 
-NAM models are trained at one sample rate, almost always 48 kHz, and must run at it. `NamEffect` takes care of that: at any other rate it converts the audio to the model's rate, runs the model, and converts back, using 64-tap sinc interpolation so that no aliasing reaches the amp model's distortion (where it would come out as audible intermodulation). This adds a fixed latency of about 1.5 ms, which the effect reports in `LatencySamples`; `IsResampling` tells you whether it is happening. At the model's own rate there is no latency.
+NAM models are trained at one sample rate, almost always 48 kHz, and must run at it. `NamEffect` takes care of that: at any other rate it converts the audio to the model's rate, runs the model, and converts back, using 64-tap sinc interpolation so that no aliasing reaches the amp model's distortion (where it would come out as audible intermodulation). This adds a fixed latency of about 1 to 2.5 ms depending on the rate (1.5 ms at 44.1 kHz, 2.3 ms at 22.05 kHz, 1.1 ms at 96 kHz), which the effect reports in `LatencySamples`; `IsResampling` tells you whether it is happening. At the model's own rate there is no latency.
 
 NAM networks are mono. Given more than one channel, `NamEffect` processes the average of the channels and writes the result to every channel. A guitar recorded on one side of a stereo file would then reach the model at half level and sound less driven, which is why the example converts to mono first.
 
@@ -141,7 +141,7 @@ recorder.StartRecording();
 player.Play();
 ```
 
-This assumes a stereo device. If it runs at 44.1 kHz rather than 48 kHz, `NamEffect` resamples internally, adding about 1.5 ms.
+This assumes a stereo device. If it runs at 44.1 kHz rather than 48 kHz, `NamEffect` resamples internally, adding about 1.5 ms of latency.
 
 `BufferedWaveProvider` counts the glitches it hides. Poll them from a timer or the UI, never from the audio thread:
 

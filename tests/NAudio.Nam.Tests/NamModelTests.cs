@@ -135,6 +135,47 @@ public class NamModelTests
     }
 
     [Test]
+    public void RejectsAContainerWhoseConfigIsNotAnObject()
+    {
+        var json = A2Json();
+        json["config"] = new JsonArray();
+
+        Assert.Throws<FormatException>(() => NamModel.Parse(json.ToJsonString()));
+    }
+
+    [Test]
+    public void SubmodelsWithoutASampleRateUseTheContainers()
+    {
+        var json = A2Json();
+        json["sample_rate"] = 44100;
+        foreach (var entry in json["config"]!["submodels"]!.AsArray())
+            entry!["model"]!.AsObject().Remove("sample_rate");
+
+        var model = NamModel.Parse(json.ToJsonString());
+
+        Assert.That(model.Submodels[0].SampleRate, Is.EqualTo(44100));
+        Assert.That(model.Submodels[1].SampleRate, Is.EqualTo(44100));
+    }
+
+    [Test]
+    public void ASubmodelsOwnSampleRateWinsOverTheContainers()
+    {
+        var json = A2Json();
+        json["sample_rate"] = 44100;
+
+        Assert.That(NamModel.Parse(json.ToJsonString()).Submodels[1].SampleRate, Is.EqualTo(48000));
+    }
+
+    [Test]
+    public void RejectsAnImplausibleSampleRate()
+    {
+        var json = FullSubmodelJson();
+        json["sample_rate"] = 1e12;
+
+        Assert.Throws<FormatException>(() => NamModel.Parse(json.ToJsonString()));
+    }
+
+    [Test]
     public void RejectsUnsortedContainer()
     {
         var json = A2Json();

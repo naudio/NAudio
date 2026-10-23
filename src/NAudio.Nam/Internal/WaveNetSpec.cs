@@ -22,13 +22,21 @@ internal sealed class WaveNetSpec
         "activation_pre_film", "activation_post_film", "layer1x1_post_film", "head1x1_post_film",
     ];
 
+    /// <summary>
+    /// The longest receptive field (look-back, in samples) accepted. Trainer presets stay
+    /// far below this (A2's is 6,331 samples, A1's 4,093). A dilation does not change the
+    /// weight count, so without a cap a corrupt or hostile file with a huge dilation would
+    /// load and then try to allocate gigabytes of history and prewarm for minutes.
+    /// </summary>
+    public const long MaxReceptiveField = 1 << 18;
+
     public required IReadOnlyList<LayerArraySpec> LayerArrays { get; init; }
 
-    public int WeightCount
+    public long WeightCount
     {
         get
         {
-            var total = 0;
+            long total = 0;
             foreach (var la in LayerArrays)
                 total += la.WeightCount;
             return total + 1; // head scale
@@ -51,20 +59,34 @@ internal sealed class WaveNetSpec
         public required int HeadDilation { get; init; }
         public required bool HeadBias { get; init; }
 
-        public int WeightCount
+        // In long: the sizes come from the file, and an overflowing int product could
+        // otherwise happen to equal the number of weights supplied.
+        public long WeightCount
         {
             get
             {
-                var total = InputSize * Channels; // rechannel, no bias
+                long total = (long)InputSize * Channels; // rechannel, no bias
                 for (var i = 0; i < Dilations.Length; i++)
                 {
-                    var zRows = GateActivations[i] != null ? 2 * Bottleneck : Bottleneck;
-                    total += KernelSizes[i] * Channels * zRows + zRows; // dilated conv with bias
+                    long zRows = GateActivations[i] != null ? 2L * Bottleneck : Bottleneck;
+                    total += (long)KernelSizes[i] * Channels * zRows + zRows; // dilated conv with bias
                     total += zRows;                                     // input mixin, no bias
                     if (Layer1x1)
-                        total += Bottleneck * Channels + Channels;      // 1x1 with bias
+                        total += (long)Bottleneck * Channels + Channels; // 1x1 with bias
                 }
-                return total + HeadKernelSize * Bottleneck * HeadSize + (HeadBias ? HeadSize : 0);
+                return total + (long)HeadKernelSize * Bottleneck * HeadSize + (HeadBias ? HeadSize : 0);
+            }
+        }
+
+        /// <summary>The array's look-back in samples: its layers' and its head's.</summary>
+        public long ReceptiveField
+        {
+            get
+            {
+                long total = (long)(HeadKernelSize - 1) * HeadDilation;
+                for (var i = 0; i < Dilations.Length; i++)
+                    total += (long)(KernelSizes[i] - 1) * Dilations[i];
+                return total;
             }
         }
     }
@@ -97,6 +119,13 @@ internal sealed class WaveNetSpec
         }
         if (arrays[^1].HeadSize != 1)
             throw new NotSupportedException("Only single-output WaveNet models are supported.");
+
+        long receptiveField = 0;
+        foreach (var array in arrays)
+            receptiveField += array.ReceptiveField;
+        if (receptiveField > MaxReceptiveField)
+            throw new NotSupportedException(
+                $"This WaveNet looks back {receptiveField} samples, more than the {MaxReceptiveField} supported; the file is probably corrupt.");
 
         return new WaveNetSpec { LayerArrays = arrays };
     }
@@ -190,17 +219,32 @@ internal sealed class WaveNetSpec
         var gates = new Activation?[n];
         if (la.TryGetProperty("gating_mode", out var gating) && gating.ValueKind != JsonValueKind.Null)
         {
+            if (gating.ValueKind == JsonValueKind.Array && gating.GetArrayLength() != n)
+                throw new FormatException(Where("gating_mode must have one entry per layer"));
+            if (gating.ValueKind is not (JsonValueKind.Array or JsonValueKind.String))
+                throw new FormatException(Where("gating_mode must be a string or an array of strings"));
             la.TryGetProperty("secondary_activation", out var secondary);
             for (var i = 0; i < n; i++)
             {
-                var mode = gating.ValueKind == JsonValueKind.Array
-                    ? (gating.GetArrayLength() == n ? gating[i].GetString() : throw new FormatException(Where("gating_mode must have one entry per layer")))
-                    : gating.GetString();
+                var entry = gating.ValueKind == JsonValueKind.Array ? gating[i] : gating;
+                if (entry.ValueKind != JsonValueKind.String)
+                    throw new FormatException(Where("gating_mode entries must be strings"));
+                var mode = entry.GetString();
                 if (mode == "none")
                     continue;
                 if (mode != "gated")
                     throw new NotSupportedException(Where($"gating_mode '{mode}' is not supported"));
-                var s = secondary.ValueKind == JsonValueKind.Array ? secondary[i] : secondary;
+                JsonElement s;
+                if (secondary.ValueKind == JsonValueKind.Array)
+                {
+                    if (i >= secondary.GetArrayLength())
+                        throw new FormatException(Where("secondary_activation has fewer entries than there are gated layers"));
+                    s = secondary[i];
+                }
+                else
+                {
+                    s = secondary;
+                }
                 gates[i] = s.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? Activation.Sigmoid : Activation.Parse(s);
             }
         }

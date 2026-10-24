@@ -187,12 +187,18 @@ public class CueList
     /// <param name="listChunkData">The data contained in the list chunk</param>
     internal CueList(byte[] cueChunkData, byte[]? listChunkData)
     {
-        int cueCount = BitConverter.ToInt32(cueChunkData, 0);
+        // dwCuePoints says how many cue points follow, but it is only trusted as far as the
+        // chunk actually holds them: it sizes the arrays below, so a corrupt count must not be
+        // able to demand gigabytes (or, if smaller than the entries present, overrun them).
+        const int cuePointSize = 24;
+        int declaredCount = cueChunkData.Length >= 4 ? BitConverter.ToInt32(cueChunkData, 0) : 0;
+        int presentCount = Math.Max(cueChunkData.Length - 4, 0) / cuePointSize;
+        int cueCount = Math.Clamp(declaredCount, 0, presentCount);
         Dictionary<int, int> cueIndex = new Dictionary<int, int>();
         int[] positions = new int[cueCount];
         int cue = 0;
 
-        for (int p = 4; cueChunkData.Length - p >= 24; p += 24, cue++)
+        for (int p = 4; cue < cueCount; p += cuePointSize, cue++)
         {
             cueIndex[BitConverter.ToInt32(cueChunkData, p)] = cue;
             positions[cue] = BitConverter.ToInt32(cueChunkData, p + 20);

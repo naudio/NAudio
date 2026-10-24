@@ -99,8 +99,16 @@ internal class WaveInBuffer : IDisposable
         // free unmanaged resources
         if (waveInHandle != IntPtr.Zero)
         {
-            WaveInterop.waveInUnprepareHeader(waveInHandle, headerPtr, headerSize);
+            var result = WaveInterop.waveInUnprepareHeader(waveInHandle, headerPtr, headerSize);
             waveInHandle = IntPtr.Zero;
+            if (result == MmResult.WaveStillPlaying)
+            {
+                // The driver still owns this buffer (it wasn't reset first) and may yet write
+                // into it. Freeing it would hand the driver freed memory, so deliberately leak
+                // the header and leave the data buffer pinned instead.
+                headerPtr = IntPtr.Zero;
+                return;
+            }
         }
         // only after unpreparing, while the driver could still be holding the address.
         // Clear the field before freeing so a concurrent reader of Done/InQueue/BytesRecorded

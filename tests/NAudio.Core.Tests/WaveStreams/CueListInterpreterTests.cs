@@ -296,6 +296,39 @@ public class CueListInterpreterTests
     /// Minimal "cue " chunk body: 1 cue point, no label. Used to exercise the "no adtl"
     /// branch of the interpreter (the real writer always emits matching adtl).
     /// </summary>
+    [TestCase(int.MaxValue, 2)]   // huge count: must not size arrays from it
+    [TestCase(-1, 0)]             // negative count
+    [TestCase(1, 1)]              // fewer declared than present: extra entries ignored
+    [TestCase(5, 2)]              // more declared than present: only the real ones
+    public void CuePointCountIsBoundedByTheChunk(int declaredCount, int expectedCues)
+    {
+        var cueBytes = BuildCueChunkBody((1, 100), (2, 200));
+        BitConverter.TryWriteBytes(cueBytes.AsSpan(0, 4), declaredCount);
+        var cues = ReadCues(cueBytes);
+        Assert.That(cues.Count, Is.EqualTo(expectedCues));
+        if (expectedCues > 0) Assert.That(cues[0].Position, Is.EqualTo(100));
+    }
+
+    [TestCase(0)]
+    [TestCase(2)]
+    public void TruncatedCueChunkGivesAnEmptyList(int length)
+    {
+        Assert.That(ReadCues(new byte[length]).Count, Is.EqualTo(0));
+    }
+
+    private static CueList ReadCues(byte[] cueChunkBody)
+    {
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(ms, Format))
+        {
+            w.AddChunk("cue ", cueChunkBody, ChunkPosition.AfterData);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        return reader.Chunks.Read(CueListInterpreter.Instance);
+    }
+
     private static byte[] BuildOrphanCueChunkBody(int cueId, int samplePosition)
     {
         using var ms = new MemoryStream();

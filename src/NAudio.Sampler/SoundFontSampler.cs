@@ -156,6 +156,9 @@ public sealed class SoundFontSampler : SamplerEngine
             // what makes ROM-based SoundFonts (samples in hardware ROM, so smpl
             // is empty) load and play as silence instead of failing.
             if (sh.Start >= sh.End || sh.End > samplePool.Length) continue;
+            // likewise a sample rate the voice can't play (zero, or too big for an int):
+            // left in, it would throw on every note-on, on the audio thread
+            if (sh.SampleRate == 0 || sh.SampleRate > int.MaxValue) continue;
 
             result.Add(new SamplerRegion
             {

@@ -164,8 +164,10 @@ public class MidiIn : IMidiInput
                     var hdr = Marshal.PtrToStructure<MidiInterop.MIDIHDR>(messageParameter1);
 
                     //  Copy the bytes received into an array so that the buffer is immediately available for re-use
-                    var sysexBytes = new byte[hdr.dwBytesRecorded];
-                    Marshal.Copy(hdr.lpData, sysexBytes, 0, hdr.dwBytesRecorded);
+                    // never trust the driver's count past the buffer we gave it
+                    int bytesRecorded = Math.Clamp(hdr.dwBytesRecorded, 0, hdr.dwBufferLength);
+                    var sysexBytes = new byte[bytesRecorded];
+                    Marshal.Copy(hdr.lpData, sysexBytes, 0, bytesRecorded);
 
                     if (sysexBytes.Length != 0) // do not trigger the sysex event if no data in SYSEX message
                         SysexMessageReceived(this, new MidiInSysexMessageEventArgs(sysexBytes, TimeSpan.FromMilliseconds(messageParameter2.ToInt32())));
@@ -227,7 +229,13 @@ public class MidiIn : IMidiInput
                     foreach (var lpHeader in SysexBufferHeaders)
                     {
                         var hdr = Marshal.PtrToStructure<MidiInterop.MIDIHDR>(lpHeader);
-                        MidiInterop.midiInUnprepareHeader(hMidiIn, lpHeader, Marshal.SizeOf<MidiInterop.MIDIHDR>());
+                        var result = MidiInterop.midiInUnprepareHeader(hMidiIn, lpHeader, Marshal.SizeOf<MidiInterop.MIDIHDR>());
+                        if (result == MmResult.MidiStillPlaying)
+                        {
+                            // the driver still owns this buffer and may write into it, so leak
+                            // it rather than hand the driver freed memory
+                            continue;
+                        }
                         Marshal.FreeHGlobal(hdr.lpData);
                         Marshal.FreeHGlobal(lpHeader);
                     }

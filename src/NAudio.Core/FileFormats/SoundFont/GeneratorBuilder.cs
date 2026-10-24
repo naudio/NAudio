@@ -29,6 +29,8 @@ internal class GeneratorBuilder : StructureBuilder<Generator>
         {
             if (g.GeneratorType == GeneratorEnum.Instrument)
             {
+                if (g.UInt16Amount >= instruments.Length)
+                    throw new InvalidDataException($"Preset generator refers to instrument {g.UInt16Amount}, but there are only {instruments.Length}");
                 g.Instrument = instruments[g.UInt16Amount];
             }
         }
@@ -40,6 +42,8 @@ internal class GeneratorBuilder : StructureBuilder<Generator>
         {
             if (g.GeneratorType == GeneratorEnum.SampleID)
             {
+                if (g.UInt16Amount >= sampleHeaders.Length)
+                    throw new InvalidDataException($"Instrument generator refers to sample {g.UInt16Amount}, but there are only {sampleHeaders.Length}");
                 g.SampleHeader = sampleHeaders[g.UInt16Amount];
             }
         }

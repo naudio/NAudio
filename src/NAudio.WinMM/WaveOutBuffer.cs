@@ -103,8 +103,16 @@ internal class WaveOutBuffer : IDisposable
             {
                 if (hWaveOut != IntPtr.Zero)
                 {
-                    WaveInterop.waveOutUnprepareHeader(hWaveOut, headerPtr, headerSize);
+                    var result = WaveInterop.waveOutUnprepareHeader(hWaveOut, headerPtr, headerSize);
                     hWaveOut = IntPtr.Zero;
+                    if (result == MmResult.WaveStillPlaying)
+                    {
+                        // The driver still owns this buffer (it wasn't reset first) and may yet
+                        // read from it. Freeing it would hand the driver freed memory, so
+                        // deliberately leak the header and leave the data buffer pinned instead.
+                        headerPtr = IntPtr.Zero;
+                        return;
+                    }
                 }
                 // Only after unpreparing, while the driver could still be holding the address.
                 // Clear the field before freeing so a concurrent reader of Done/InQueue/

@@ -4,6 +4,7 @@ using System.Text;
 using System.Collections.Generic;
 using NAudio.Utils;
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Midi;
 
@@ -116,7 +117,7 @@ public class MidiFile
                 // running status; meta and sysex events leave the running status anchor intact
                 // (issue #205).
                 MidiEvent? runningStatus = null;
-                var outstandingNoteOns = new List<NoteOnEvent>();
+                var outstandingNoteOns = new OutstandingNoteOns();
                 while (inputStream.Position < startPos + chunkSize)
                 {
                     try
@@ -202,6 +203,45 @@ public class MidiFile
     }
 
     /// <summary>
+    /// Note ons still waiting for their note off, queued per channel and note so that pairing
+    /// a note off is constant time. A single list scanned on every note off made a file with
+    /// many held notes quadratic to load. Within a channel and note, the oldest note on is
+    /// paired first, as before.
+    /// </summary>
+    private sealed class OutstandingNoteOns
+    {
+        private const int Notes = 128;
+        private readonly Dictionary<int, Queue<NoteOnEvent>> queues = new();
+
+        public int Count { get; private set; }
+
+        public void Add(NoteOnEvent noteOn)
+        {
+            int key = Key(noteOn.Channel, noteOn.NoteNumber);
+            if (!queues.TryGetValue(key, out var queue))
+            {
+                queue = new Queue<NoteOnEvent>();
+                queues[key] = queue;
+            }
+            queue.Enqueue(noteOn);
+            Count++;
+        }
+
+        public bool TryTakeOldest(int channel, int noteNumber, [NotNullWhen(true)] out NoteOnEvent? noteOn)
+        {
+            if (queues.TryGetValue(Key(channel, noteNumber), out var queue) && queue.TryDequeue(out noteOn))
+            {
+                Count--;
+                return true;
+            }
+            noteOn = null;
+            return false;
+        }
+
+        private static int Key(int channel, int noteNumber) => channel * Notes + noteNumber;
+    }
+
+    /// <summary>
     /// The collection of events in this MIDI file
     /// </summary>
     public MidiEventCollection Events => events;
@@ -216,20 +256,13 @@ public class MidiFile
     /// </summary>
     public int DeltaTicksPerQuarterNote => deltaTicksPerQuarterNote;
 
-    private void FindNoteOn(NoteEvent offEvent, List<NoteOnEvent> outstandingNoteOns)
+    private void FindNoteOn(NoteEvent offEvent, OutstandingNoteOns outstandingNoteOns)
     {
-        bool found = false;
-        foreach (NoteOnEvent noteOnEvent in outstandingNoteOns)
+        if (outstandingNoteOns.TryTakeOldest(offEvent.Channel, offEvent.NoteNumber, out var noteOnEvent))
         {
-            if ((noteOnEvent.Channel == offEvent.Channel) && (noteOnEvent.NoteNumber == offEvent.NoteNumber))
-            {
-                noteOnEvent.OffEvent = offEvent;
-                outstandingNoteOns.Remove(noteOnEvent);
-                found = true;
-                break;
-            }
+            noteOnEvent.OffEvent = offEvent;
         }
-        if (!found)
+        else
         {
             if (strictChecking)
             {

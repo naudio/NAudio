@@ -211,6 +211,10 @@ public sealed class Vst3Module : IDisposable
 
     private static string ResolveBundleBinary(string path)
     {
+        // NativeLibrary.Load searches the DLL search path (application directory, System32,
+        // PATH...) for a relative name, so the binary it loaded could differ from the one
+        // File.Exists checked here. A full path pins it to that file.
+        path = System.IO.Path.GetFullPath(path);
         if (File.Exists(path))
         {
             return path;

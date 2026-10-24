@@ -57,6 +57,20 @@ public class SoundFontSamplerTests
     }
 
     [Test]
+    public void ZeroSampleRateRegionIsSkippedRatherThanThrowingOnNoteOn()
+    {
+        var data = new byte[8];
+        var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Gen(53, 0));
+        var sf = SoundFontTestBuilder.BuildSingleRegion(data, igen,
+            sampleStart: 0, sampleEnd: 4, loopStart: 0, loopEnd: 4,
+            sampleRate: 0, originalPitch: 60);
+        var sampler = NewSampler(sf);
+
+        Assert.DoesNotThrow(() => sampler.NoteOn(0, 60, 127));
+        Assert.That(Peak(Render(sampler, 64)), Is.EqualTo(0f));
+    }
+
+    [Test]
     public void SilentBeforeAnyNote()
     {
         var sampler = NewSampler(BuildConstantInstrument());

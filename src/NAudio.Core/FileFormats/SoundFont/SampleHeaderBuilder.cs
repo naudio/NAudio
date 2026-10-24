@@ -32,6 +32,8 @@ internal class SampleHeaderBuilder : StructureBuilder<SampleHeader>
 
     internal void RemoveEOS()
     {
+        if (data.Count == 0)
+            throw new InvalidDataException("SoundFont has no sample headers (missing EOS record)");
         data.RemoveAt(data.Count - 1);
     }
 

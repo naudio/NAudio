@@ -76,6 +76,15 @@ internal class RiffChunk
         {
             RiffChunk chunk = new RiffChunk(riffFile);
             chunk.ReadChunk();
+            // Every reader of a chunk allocates from its size before reading, so a size
+            // running past the end of the file would let a few bytes of header demand
+            // gigabytes. (Not checked against the parent's size: writers that get an outer
+            // size wrong are tolerated, as before.)
+            if (chunk.DataOffset + chunk.ChunkSize > riffFile.BaseStream.Length)
+            {
+                throw new InvalidDataException(
+                    $"Chunk {chunk.ChunkID} size {chunk.ChunkSize} at offset {chunk.DataOffset} runs past the end of the file");
+            }
             return chunk;
         }
         //Console.WriteLine("DEBUG Failed to GetNextSubChunk because Position is {0}, dataOffset{1}, chunkSize {2}",riffFile.BaseStream.Position,dataOffset,chunkSize);

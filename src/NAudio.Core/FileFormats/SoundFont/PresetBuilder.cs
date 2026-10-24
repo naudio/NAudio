@@ -38,12 +38,19 @@ internal class PresetBuilder : StructureBuilder<Preset>
 
     public void LoadZones(Zone[] presetZones)
     {
+        if (data.Count == 0)
+            throw new InvalidDataException("SoundFont has no preset headers (missing EOP record)");
         // don't do the last preset, which is simply EOP
         for (int preset = 0; preset < data.Count - 1; preset++)
         {
             Preset p = data[preset];
-            p.Zones = new Zone[p.endPresetZoneIndex - p.startPresetZoneIndex + 1];
-            Array.Copy(presetZones, p.startPresetZoneIndex, p.Zones, 0, p.Zones.Length);
+            // measured from the next header's start as an int: the ushort end index wraps
+            // when start indices decrease, which only a corrupt file does
+            int start = p.startPresetZoneIndex;
+            int count = data[preset + 1].startPresetZoneIndex - start;
+            ZoneBuilder.CheckRange(start, count, presetZones.Length, "preset zone");
+            p.Zones = new Zone[count];
+            Array.Copy(presetZones, start, p.Zones, 0, count);
         }
         // we can get rid of the EOP record now
         data.RemoveAt(data.Count - 1);

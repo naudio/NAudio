@@ -72,6 +72,14 @@ public class XingHeader
             // throw new FormatException("Unsupported MPEG Version");
         }
 
+        // A tiny first frame (e.g. MPEG-2 at 8 kbps is 24 bytes) can't hold a Xing header at
+        // all; a frame that holds the tag but not the fields its flags announce is truncated
+        // or corrupt. Either way there is no usable header, not an out-of-range read.
+        if (rawData.Length < offset + 8)
+        {
+            return null;
+        }
+
         if ((rawData[offset + 0] == 'X') &&
             (rawData[offset + 1] == 'i') &&
             (rawData[offset + 2] == 'n') &&
@@ -95,6 +103,15 @@ public class XingHeader
 
         XingHeaderOptions flags = (XingHeaderOptions)ReadBigEndian(rawData, offset);
         offset += 4;
+
+        int fieldsLength = ((flags & XingHeaderOptions.Frames) != 0 ? 4 : 0)
+            + ((flags & XingHeaderOptions.Bytes) != 0 ? 4 : 0)
+            + ((flags & XingHeaderOptions.Toc) != 0 ? 100 : 0)
+            + ((flags & XingHeaderOptions.VbrScale) != 0 ? 4 : 0);
+        if (rawData.Length < offset + fieldsLength)
+        {
+            return null;
+        }
 
         if ((flags & XingHeaderOptions.Frames) != 0)
         {

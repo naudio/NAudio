@@ -500,6 +500,51 @@ public class MidiFileTests
         }
     }
 
+    [Test]
+    public void NoteOffsPairWithTheOldestMatchingNoteOnPerChannelAndNote()
+    {
+        var track = new byte[]
+        {
+            0x00, 0x90, 0x3C, 0x64, // A: ch1 note 60 on
+            0x01, 0x91, 0x3C, 0x64, // B: ch2 note 60 on
+            0x01, 0x90, 0x3C, 0x50, // C: ch1 note 60 on again (overlapping)
+            0x01, 0x90, 0x3E, 0x64, // D: ch1 note 62 on
+            0x01, 0x80, 0x3C, 0x40, // ch1 note 60 off -> A (oldest)
+            0x01, 0x90, 0x3E, 0x00, // ch1 note 62 on vel 0 -> D
+            0x01, 0x81, 0x3C, 0x40, // ch2 note 60 off -> B
+            0x01, 0x80, 0x3C, 0x40, // ch1 note 60 off -> C
+            0x00, 0xFF, 0x2F, 0x00
+        };
+        var midiFile = new MidiFile(new MemoryStream(CreateMidiFileBytes(0, 480, track)), true);
+        var events = midiFile.Events[0];
+
+        Assert.That(((NoteOnEvent)events[0]).OffEvent.AbsoluteTime, Is.EqualTo(4));
+        Assert.That(((NoteOnEvent)events[1]).OffEvent.AbsoluteTime, Is.EqualTo(6));
+        Assert.That(((NoteOnEvent)events[2]).OffEvent.AbsoluteTime, Is.EqualTo(7));
+        Assert.That(((NoteOnEvent)events[3]).OffEvent.AbsoluteTime, Is.EqualTo(5));
+    }
+
+    [Test]
+    public void ManyHeldNotesDoNotMakeLoadingQuadratic()
+    {
+        // 200k note ons that are never released, then 200k on/off pairs on another note.
+        // Scanning one list of outstanding note ons on every note off made this ~4e10
+        // comparisons (minutes); it should take well under a second.
+        const int held = 200_000, pairs = 200_000;
+        using var ms = new MemoryStream();
+        ms.Write(new byte[] { 0x00, 0x90, 0x00, 0x40 });
+        for (int i = 1; i < held; i++) ms.Write(new byte[] { 0x00, 0x00, 0x40 }); // running status
+        for (int i = 0; i < pairs; i++) ms.Write(new byte[] { 0x00, 0x01, 0x40, 0x00, 0x01, 0x00 }); // on, then vel-0 off
+        ms.Write(new byte[] { 0x00, 0xFF, 0x2F, 0x00 });
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var midiFile = new MidiFile(new MemoryStream(CreateMidiFileBytes(0, 480, ms.ToArray())), false);
+        stopwatch.Stop();
+
+        Assert.That(midiFile.Events[0].Count, Is.EqualTo(held + pairs * 2 + 1));
+        Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(10)));
+    }
+
     private static byte[] CreateMidiFileBytes(ushort format, ushort division, params byte[][] tracks)
     {
         using var stream = new MemoryStream();

@@ -38,12 +38,19 @@ internal class InstrumentBuilder : StructureBuilder<Instrument>
 
     public void LoadZones(Zone[] zones)
     {
+        if (data.Count == 0)
+            throw new InvalidDataException("SoundFont has no instrument headers (missing EOI record)");
         // don't do the last preset, which is simply EOP
         for (int instrument = 0; instrument < data.Count - 1; instrument++)
         {
             Instrument i = data[instrument];
-            i.Zones = new Zone[i.endInstrumentZoneIndex - i.startInstrumentZoneIndex + 1];
-            Array.Copy(zones, i.startInstrumentZoneIndex, i.Zones, 0, i.Zones.Length);
+            // measured from the next header's start as an int: the ushort end index wraps
+            // when start indices decrease, which only a corrupt file does
+            int start = i.startInstrumentZoneIndex;
+            int count = data[instrument + 1].startInstrumentZoneIndex - start;
+            ZoneBuilder.CheckRange(start, count, zones.Length, "instrument zone");
+            i.Zones = new Zone[count];
+            Array.Copy(zones, start, i.Zones, 0, count);
         }
         // we can get rid of the EOP record now
         data.RemoveAt(data.Count - 1);

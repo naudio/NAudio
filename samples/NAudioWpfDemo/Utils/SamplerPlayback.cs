@@ -9,7 +9,7 @@ namespace NAudioWpfDemo.Utils;
 /// Creates an audio output for the sampler demos. Prefers the modern WASAPI
 /// player (shared mode, the device's default — well-tested — path), and falls
 /// back to <see cref="WaveOut"/> if WASAPI can't be initialised on this device.
-/// Playback-thread errors are surfaced to <paramref name="onError"/> on the UI
+/// Playback-thread errors are surfaced to the <c>onError</c> callback on the UI
 /// thread, so a backend failure shows a message instead of vanishing silently.
 /// </summary>
 internal static class SamplerPlayback

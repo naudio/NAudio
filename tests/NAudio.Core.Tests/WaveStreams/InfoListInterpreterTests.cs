@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Linq;
-using NAudio.Utils;
 using NAudio.Wave;
 using NUnit.Framework;
 

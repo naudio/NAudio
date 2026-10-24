@@ -10,7 +10,7 @@ namespace NAudio.Benchmarks;
 /// The hot loop reproduces what <c>AsioDevice.OnBufferUpdateDuplex</c> does each buffer switch:
 /// for every selected channel, run the native→float input converter, zero the float staging buffer,
 /// run a tiny user processor (gain+copy), then run the float→native output converter. The buffers and
-/// converters are pre-allocated in <see cref="GlobalSetup"/> so anything BenchmarkDotNet's MemoryDiagnoser
+/// converters are pre-allocated in <see cref="Setup"/> so anything BenchmarkDotNet's MemoryDiagnoser
 /// reports as allocated bytes per op is a real regression — the pipeline must read 0 B/op once warm.
 ///
 /// 16 channels × 1024 frames is the documented gate scenario; 2 × 256 covers the common stereo case.

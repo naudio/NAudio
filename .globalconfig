@@ -5,7 +5,10 @@ global_level = 0
 # Code Analysis Rules
 # =============================================================================
 
-# Default all code analysis to suggestion - visible in IDE but doesn't break build
+# Default all code analysis to suggestion - visible in IDE but doesn't break build.
+# Note this only reaches the IDE* code-style rules: with AnalysisLevel=latest-none
+# (Directory.Build.props) the SDK switches each CA rule off individually, which
+# beats this catch-all, so only the CA rules named below actually run.
 dotnet_analyzer_diagnostic.severity = suggestion
 
 # --- Rules SUPPRESSED (not applicable to this codebase) ---
@@ -80,9 +83,10 @@ dotnet_diagnostic.IDE0055.severity = warning
 # IDE0161: Use file-scoped namespaces
 dotnet_diagnostic.IDE0161.severity = warning
 
-# IDE0005 (remove unnecessary usings) is enforced per-path in .editorconfig:
-# it requires GenerateDocumentationFile=true, which the library projects set
-# but the sample/tool projects don't, so it's scoped to src/ there.
+# IDE0005: Remove unnecessary usings. Only runs on build when
+# GenerateDocumentationFile=true, which every project sets (the src/ csprojs
+# themselves, tests/ and samples/ via their Directory.Build.props).
+dotnet_diagnostic.IDE0005.severity = warning
 
 # IDE0004: Remove unnecessary casts
 dotnet_diagnostic.IDE0004.severity = warning

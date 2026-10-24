@@ -53,7 +53,7 @@ internal sealed class Vst3RealtimeInstrumentEngine : IDisposable
     /// <summary>
     /// Open the ASIO driver in playback-only mode, create the instrument at its negotiated
     /// sample rate, and start the chain. The MIDI device must already have been chosen —
-    /// see <see cref="ConnectMidi"/>. Throws on any failure; caller should <see cref="Stop"/>.
+    /// see <see cref="ConnectMidiAsync"/>. Throws on any failure; caller should <see cref="Stop"/>.
     /// </summary>
     public void Start(string asioDriverName, Vst3ModuleInfo moduleInfo, Vst3ClassInfo instrumentClass,
         float initialGain)

@@ -8,7 +8,7 @@ namespace NAudio.Core.Tests.WaveStreams;
 /// <summary>
 /// Exercises the two ctors of <see cref="WaveInEventArgs"/> and verifies the accessor
 /// semantics — <see cref="WaveInEventArgs.Buffer"/>, <see cref="WaveInEventArgs.BufferSpan"/>,
-/// <see cref="WaveInEventArgs.BufferMemory"/>, and <see cref="WaveInEventArgs.BytesRecorded"/>.
+/// and <see cref="WaveInEventArgs.BytesRecorded"/>.
 /// </summary>
 [TestFixture]
 [Category("UnitTest")]

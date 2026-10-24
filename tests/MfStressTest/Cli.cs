@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 
 namespace MfStressTest;
 

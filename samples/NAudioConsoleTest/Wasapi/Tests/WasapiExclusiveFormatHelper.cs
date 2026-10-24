@@ -48,7 +48,7 @@ internal static class WasapiExclusiveFormatHelper
         => new(rate, bits, channels, useIeeeFloat: encoding == "Float", validBitsPerSample: bits, channelMask);
 
     /// <summary>
-    /// The canonical channel mask for a channel count &mdash; the first <paramref name="channels"/>
+    /// The canonical channel mask for a channel count — the first <paramref name="channels"/>
     /// speaker positions, which is what <see cref="WaveFormatExtensible(int, int, int, int)"/> derives
     /// when no mask is given and what <c>WasapiPlayer</c> therefore ends up probing with.
     /// Many drivers (e.g. Realtek) reject a <c>dwChannelMask</c> of 0 outright, so probing with 0

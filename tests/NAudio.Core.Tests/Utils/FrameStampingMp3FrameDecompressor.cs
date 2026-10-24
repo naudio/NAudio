@@ -14,7 +14,7 @@ namespace NAudio.Core.Tests.Utils;
 /// little-endian low half in the left channel, high half in the right. Decode with
 /// <see cref="ReadStamp"/>.
 /// <para>
-/// Set <paramref name="legacyByteArrayOnly"/> to mimic the shape of a pre-Span third-party
+/// Set the <c>legacyByteArrayOnly</c> constructor argument to mimic the shape of a pre-Span third-party
 /// decoder such as NLayer's <c>Mp3FrameDecompressor</c>, which overrides only the byte[]
 /// overload and reaches the reader through the default-interface-method fallback.
 /// </para>

@@ -4,7 +4,7 @@ using NAudio.Dsp;
 namespace NAudio.Benchmarks;
 
 /// <summary>
-/// Measures the current static <see cref="FastFourierTransform.FFT"/> path. The two shapes
+/// Measures the current static <see cref="FastFourierTransform.FFT(bool, int, Complex[])"/> path. The two shapes
 /// mirror how NAudio itself uses FFT today:
 ///   - <see cref="ForwardFftOnly"/> — just the FFT kernel.
 ///   - <see cref="WindowedThenFft"/> — Hamming window applied per sample in a loop, then FFT.

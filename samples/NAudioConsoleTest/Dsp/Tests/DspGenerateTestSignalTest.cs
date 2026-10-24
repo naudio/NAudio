@@ -26,6 +26,8 @@ internal sealed class DspGenerateTestSignalTest : IConsoleTest
         new("float", typeof(bool), Required: false, Default: false, Help: "write 32-bit IEEE float instead of PCM"),
         new("channels", typeof(int), Required: false, Default: 2, Help: "channel count"),
         new("duration", typeof(TimeSpan), Required: false, Default: TimeSpan.FromSeconds(3), Help: "signal length"),
+        new("amplitude", typeof(float), Required: false, Default: 0.25f,
+            Help: "peak amplitude (0..1); 0.25 is -12dBFS. Go lower for exclusive-mode or ASIO playback, which bypass the Windows mixer"),
     ];
 
     public TestResult Run(TestContext ctx)
@@ -36,7 +38,9 @@ internal sealed class DspGenerateTestSignalTest : IConsoleTest
         var isFloat = ctx.Get<bool>("float");
         var channels = ctx.Get<int>("channels");
         var duration = ctx.Get<TimeSpan>("duration");
+        var amplitude = ctx.Get<float>("amplitude");
         if (channels < 1) return TestResult.Fail("channels must be at least 1");
+        if (amplitude is <= 0 or > 1) return TestResult.Fail("amplitude must be greater than 0 and at most 1");
         if (!isFloat && bits is not (16 or 24 or 32)) return TestResult.Fail($"Unsupported bitsPerSample {bits}");
 
         WaveFormat format = isFloat
@@ -56,8 +60,8 @@ internal sealed class DspGenerateTestSignalTest : IConsoleTest
             {
                 for (var ch = 0; ch < channels; ch++)
                 {
-                    // 220Hz, 330Hz, 440Hz... at -12dBFS
-                    frame[ch] = 0.25f * MathF.Sin(2 * MathF.PI * 110 * (ch + 2) * n / sampleRate);
+                    // 220Hz, 330Hz, 440Hz... (-12dBFS at the default amplitude)
+                    frame[ch] = amplitude * MathF.Sin(2 * MathF.PI * 110 * (ch + 2) * n / sampleRate);
                 }
                 writer.WriteSamples(frame, 0, channels);
             }

@@ -8,9 +8,13 @@
   "stopOnFail": false,
   "timeoutSeconds": 30,
   "tests": [
+    // Exclusive mode bypasses the Windows mixer, so the 50% endpoint-volume cap the WASAPI tests
+    // apply doesn't reach it; play a fixture ~18dB quieter than the -12dBFS default instead.
+    { "id": "Dsp.GenerateTestSignal", "params": { "output": "Reports/fixtures/stereo16-quiet.wav", "amplitude": 0.03 } },
+
     { "id": "WinMm.PlayFile", "params": { "input": "Reports/fixtures/stereo.mp3", "volume": 0.2, "maxDuration": "2s" } },
     { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo16.wav", "mode": "Shared", "maxDuration": "2s" } },
-    { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo16.wav", "mode": "Exclusive", "maxDuration": "2s" } },
+    { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo16-quiet.wav", "mode": "Exclusive", "maxDuration": "2s" } },
     { "id": "Wasapi.PlayFile", "params": { "input": "Reports/fixtures/stereo.m4a", "mode": "Shared", "maxDuration": "2s" } },
     { "id": "DirectSound.PlayTone", "params": { "gain": 0.05, "duration": "1s" } },
     { "id": "SoundFile.PlayFile", "params": { "input": "Reports/fixtures/stereo16.wav", "volume": 0.2, "maxDuration": "2s" } },

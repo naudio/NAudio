@@ -14,12 +14,13 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" FontWeight="Bold" Margin="0,0,0,6"
-                   Text="Convolution reverb test bench — offline render"/>
+                   Text="Convolution reverb test bench — live playback and offline render"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
             <Button Content="Choose input…" Width="120" Command="{Binding ChooseInputCommand}"/>
@@ -38,21 +39,38 @@
                  Margin="0,4"/>
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4">
+            <TextBlock Text="Mix" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <Slider Width="160" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1"
+                    VerticalAlignment="Center" Value="{Binding Mix, Mode=TwoWay}"/>
+            <TextBlock Text="{Binding MixText}" Width="60" Margin="6,0,12,0" VerticalAlignment="Center"/>
+            <CheckBox Content="Sum input to mono" VerticalAlignment="Center" Margin="0,0,12,0"
+                      IsChecked="{Binding SumToMono, Mode=TwoWay}"
+                      ToolTip="Feed L+R to both channels of the IR - the usual way to drive a mono-in/stereo-out hardware reverb capture"/>
+            <CheckBox Content="Zero latency" VerticalAlignment="Center"
+                      IsChecked="{Binding ZeroLatency, Mode=TwoWay}"
+                      ToolTip="Apply the IR's first partition directly so the wet signal lines up with the dry. Off, a partial mix blends dry against wet one partition (256 samples) late"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,4">
+            <Button Content="Play live" Width="90" Margin="0,0,4,0"
+                    Command="{Binding PlayLiveCommand}"/>
+            <Button Content="Stop" Width="60" Margin="0,0,16,0"
+                    Command="{Binding StopLiveCommand}"/>
             <Button Content="Process selected" Width="140" Margin="0,0,8,0"
                     Command="{Binding ProcessSelectedCommand}"/>
             <Button Content="Process all IRs" Width="140"
                     Command="{Binding ProcessAllCommand}"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="5" Text="{Binding Status}" Margin="0,4" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="6" Text="{Binding Status}" Margin="0,4" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="6" Text="Renders (in temp folder)" FontWeight="Bold" Margin="0,8,0,2"/>
+        <TextBlock Grid.Row="7" Text="Renders (in temp folder)" FontWeight="Bold" Margin="0,8,0,2"/>
 
-        <ListBox Grid.Row="7" ItemsSource="{Binding Renders}"
+        <ListBox Grid.Row="8" ItemsSource="{Binding Renders}"
                  SelectedItem="{Binding SelectedRender, Mode=TwoWay}"
                  Margin="0,0,0,4"/>
 
-        <StackPanel Grid.Row="8" Orientation="Horizontal">
+        <StackPanel Grid.Row="9" Orientation="Horizontal">
             <Button Content="Play" Width="60" Margin="0,0,4,0" Command="{Binding PlayRenderCommand}"/>
             <Button Content="Delete" Width="60" Margin="0,0,4,0" Command="{Binding DeleteRenderCommand}"/>
             <Button Content="Open folder" Width="100" Command="{Binding OpenOutputFolderCommand}"/>

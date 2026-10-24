@@ -201,6 +201,26 @@ public class SfzSampleLoaderTests
     }
 
     [Test]
+    public void FileLoaderRefusesAbsolutePathsUnlessInsideRoot()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string path = Path.Combine(dir, "a.wav");
+        try
+        {
+            using (var writer = new WaveFileWriter(path, WaveFormat.CreateIeeeFloatWaveFormat(44100, 1)))
+            {
+                writer.WriteSamples(new float[] { 0.1f, 0.2f, 0.3f }, 0, 3);
+            }
+            Assert.That(new FileSfzSampleLoader(dir).TryLoad(path, out _, out _, out _, out _), Is.False);
+            Assert.That(new FileSfzSampleLoader(dir, dir).TryLoad(path, out _, out _, out _, out _), Is.True);
+            Assert.That(new FileSfzSampleLoader(Path.GetTempPath(), dir)
+                .TryLoad(Path.GetFileName(dir) + "/a.wav", out _, out _, out _, out _), Is.True);
+        }
+        finally { Directory.Delete(dir, recursive: true); }
+    }
+
+    [Test]
     public void FileLoaderReturnsFalseForMissingFile()
     {
         var loader = new FileSfzSampleLoader("/nonexistent");

@@ -62,6 +62,17 @@ public class MediaObject : IDisposable
     #region Get Input and Output Types
 
     /// <summary>
+    /// Frees the format block the DMO allocated for an enumerated media type and clears the
+    /// struct's pointer to it, so the copy handed back to the caller can't be used to read
+    /// (GetWaveFormat) or pass on (SetInputType) memory that has already been freed.
+    /// </summary>
+    private static void FreeFormatBlock(ref DmoMediaType mediaType)
+    {
+        DmoInterop.MoFreeMediaType(ref mediaType);
+        mediaType.ClearFormatBlock();
+    }
+
+    /// <summary>
     /// Gets the input media type for the specified input stream
     /// </summary>
     /// <param name="inputStream">Input stream index</param>
@@ -73,7 +84,7 @@ public class MediaObject : IDisposable
         int hresult = ComInterface.GetInputType(inputStream, inputTypeIndex, (IntPtr)(&mediaType));
         if (hresult == HResult.S_OK)
         {
-            DmoInterop.MoFreeMediaType(ref mediaType);
+            FreeFormatBlock(ref mediaType);
             return mediaType;
         }
         if (hresult == (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
@@ -96,7 +107,7 @@ public class MediaObject : IDisposable
         int hresult = ComInterface.GetOutputType(outputStream, outputTypeIndex, (IntPtr)(&mediaType));
         if (hresult == HResult.S_OK)
         {
-            DmoInterop.MoFreeMediaType(ref mediaType);
+            FreeFormatBlock(ref mediaType);
             return mediaType;
         }
         if (hresult == (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
@@ -118,7 +129,7 @@ public class MediaObject : IDisposable
         int hresult = ComInterface.GetOutputCurrentType(outputStreamIndex, (IntPtr)(&mediaType));
         if (hresult == HResult.S_OK)
         {
-            DmoInterop.MoFreeMediaType(ref mediaType);
+            FreeFormatBlock(ref mediaType);
             return mediaType;
         }
         if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_SET)

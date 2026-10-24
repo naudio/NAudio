@@ -63,7 +63,7 @@ public partial class MediaBuffer : IMediaBuffer, IDisposable
     /// <returns>HRESULT</returns>
     public int SetLength(int length)
     {
-        if (length > maxLength)
+        if (length < 0 || length > maxLength)
         {
             return HResult.E_INVALIDARG;
         }
@@ -111,9 +111,9 @@ public partial class MediaBuffer : IMediaBuffer, IDisposable
         get { return length; }
         set
         {
-            if (length > maxLength)
+            if (value < 0 || value > maxLength)
             {
-                throw new ArgumentException("Cannot be greater than maximum buffer size");
+                throw new ArgumentOutOfRangeException(nameof(value), value, $"Must be between 0 and the maximum buffer size ({maxLength})");
             }
             length = value;
         }
@@ -125,8 +125,10 @@ public partial class MediaBuffer : IMediaBuffer, IDisposable
     /// <param name="data">Data to load</param>
     public unsafe void LoadData(ReadOnlySpan<byte> data)
     {
-        this.Length = data.Length;
+        ObjectDisposedException.ThrowIf(buffer == IntPtr.Zero, this);
+        // copy before setting Length, so a too-large span leaves the buffer as it was
         data.CopyTo(new Span<byte>((void*)buffer, maxLength));
+        this.Length = data.Length;
     }
 
     /// <summary>
@@ -135,6 +137,7 @@ public partial class MediaBuffer : IMediaBuffer, IDisposable
     /// <param name="destination">Span to copy data into</param>
     public unsafe void RetrieveData(Span<byte> destination)
     {
+        ObjectDisposedException.ThrowIf(buffer == IntPtr.Zero, this);
         int bytesToCopy = Math.Min(Length, destination.Length);
         new Span<byte>((void*)buffer, bytesToCopy).CopyTo(destination);
     }

@@ -11,6 +11,7 @@
             "src/NAudio.SoundFile/NAudio.SoundFile.csproj",
             "src/NAudio.Alsa/NAudio.Alsa.csproj",
             "src/NAudio.Sampler/NAudio.Sampler.csproj",
+            "src/NAudio.Nam/NAudio.Nam.csproj",
             "src/NAudio.Extras/NAudio.Extras.csproj",
             "src/NAudio.Asio/NAudio.Asio.csproj",
             "src/NAudio.WinMM/NAudio.WinMM.csproj",

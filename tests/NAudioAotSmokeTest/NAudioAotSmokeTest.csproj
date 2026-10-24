@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\src\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\..\src\NAudio.Dmo\NAudio.Dmo.csproj" />
     <ProjectReference Include="..\..\src\NAudio.WinMM\NAudio.WinMM.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Nam\NAudio.Nam.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +39,7 @@
     <TrimmableAssembly Include="NAudio.Dmo" />
     <TrimmableAssembly Include="NAudio.WinMM" />
     <TrimmableAssembly Include="NAudio.Core" />
+    <TrimmableAssembly Include="NAudio.Nam" />
   </ItemGroup>
 
 </Project>

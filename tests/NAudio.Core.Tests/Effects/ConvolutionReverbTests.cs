@@ -81,6 +81,50 @@ public class PartitionedConvolverTests
             Assert.That(output[n + c.LatencySamples], Is.EqualTo(expected[n]).Within(5e-3f));
     }
 
+    [TestCase(1)]
+    [TestCase(10)]
+    [TestCase(64)]
+    [TestCase(65)]
+    [TestCase(200)]
+    [TestCase(1000)]
+    public void ZeroLatencyMatchesDirectConvolutionWithNoDelay(int irLength)
+    {
+        var rng = new Random(irLength);
+        var h = new float[irLength];
+        for (var i = 0; i < h.Length; i++)
+            h[i] = (float)(rng.NextDouble() * 2.0 - 1.0) * MathF.Exp(-i * 0.01f);
+        var c = new PartitionedConvolver(h, 64, zeroLatency: true);
+        Assert.That(c.LatencySamples, Is.EqualTo(0));
+
+        var x = new float[2000];
+        for (var i = 0; i < x.Length; i++)
+            x[i] = (float)(rng.NextDouble() * 2.0 - 1.0);
+
+        var output = RunStream(c, x, h.Length);
+        var expected = NaiveConvolution(x, h);
+
+        for (var n = 0; n < expected.Length; n++)
+            Assert.That(output[n], Is.EqualTo(expected[n]).Within(1e-4f), $"sample {n}");
+    }
+
+    [Test]
+    public void ZeroLatencyResetClearsHistory()
+    {
+        var h = new float[300];
+        for (var i = 0; i < h.Length; i++)
+            h[i] = MathF.Exp(-i * 0.02f) * MathF.Sin(i * 0.3f);
+        var c = new PartitionedConvolver(h, 32, zeroLatency: true);
+        var x = new float[700];
+        for (var i = 0; i < x.Length; i++)
+            x[i] = MathF.Sin(i * 0.05f);
+
+        var first = RunStream(c, x, 0);
+        c.Reset();
+        var second = RunStream(c, x, 0);
+
+        Assert.That(second, Is.EqualTo(first));
+    }
+
     [Test]
     public void ConstructorValidatesArguments()
     {
@@ -129,6 +173,25 @@ public class ConvolutionReverbEffectTests
         Assert.That(buffer[64 * 2], Is.EqualTo(1f).Within(1e-3f));
         Assert.That(buffer[64 * 2 + 1], Is.EqualTo(1f).Within(1e-3f));
         Assert.That(MathF.Abs(buffer[10 * 2]), Is.LessThan(1e-3f));
+    }
+
+    [Test]
+    public void ZeroLatencyRemovesThePartitionDelay()
+    {
+        var fx = new ConvolutionReverbEffect { PartitionSize = 64, Mix = 1f, ZeroLatency = true };
+        fx.SetImpulseResponse(new[] { 1f, 0.5f });
+        fx.Configure(Stereo);
+
+        Assert.That(fx.LatencySamples, Is.EqualTo(0));
+
+        var buffer = new float[256];
+        buffer[0] = 1f;
+        buffer[1] = 1f;
+        fx.Process(buffer);
+
+        Assert.That(buffer[0], Is.EqualTo(1f).Within(1e-5f));
+        Assert.That(buffer[2], Is.EqualTo(0.5f).Within(1e-5f));
+        Assert.That(MathF.Abs(buffer[4]), Is.LessThan(1e-5f));
     }
 
     [Test]

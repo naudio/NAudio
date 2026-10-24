@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\..\src\NAudio.Extras\NAudio.Extras.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Nam\NAudio.Nam.csproj" />
     <ProjectReference Include="..\..\src\NAudio.Sampler\NAudio.Sampler.csproj" />
     <ProjectReference Include="..\..\src\NAudio.WinForms\NAudio.WinForms.csproj" />
     <ProjectReference Include="..\..\src\NAudio\NAudio.csproj" />

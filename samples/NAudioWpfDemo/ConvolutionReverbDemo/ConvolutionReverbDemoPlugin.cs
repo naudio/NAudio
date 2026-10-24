@@ -2,28 +2,12 @@
 
 namespace NAudioWpfDemo.ConvolutionReverbDemo;
 
-internal class ConvolutionReverbDemoPlugin : IModule
+internal class ConvolutionReverbDemoPlugin : ModuleBase
 {
-    private ConvolutionReverbDemoView view;
-    private ConvolutionReverbDemoViewModel viewModel;
+    public override string Name => "Convolution Reverb";
 
-    public string Name => "Convolution Reverb";
-
-    public UserControl UserInterface
+    protected override UserControl CreateViewAndViewModel()
     {
-        get { if (view == null) CreateView(); return view; }
-    }
-
-    private void CreateView()
-    {
-        view = new ConvolutionReverbDemoView();
-        viewModel = new ConvolutionReverbDemoViewModel();
-        view.DataContext = viewModel;
-    }
-
-    public void Deactivate()
-    {
-        view = null;
-        viewModel = null;
+        return new ConvolutionReverbDemoView { DataContext = new ConvolutionReverbDemoViewModel() };
     }
 }

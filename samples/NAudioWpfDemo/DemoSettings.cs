@@ -6,8 +6,8 @@ namespace NAudioWpfDemo;
 
 /// <summary>
 /// Tiny persisted-settings layer for the demo app: the last-used ASIO driver, audio-input
-/// selection (mono/stereo + base channel) and WinRT MIDI input device are remembered across
-/// runs so the user doesn't keep re-picking the same combo each launch. Typical setups have
+/// selection (mono/stereo + base channel), WinRT MIDI input device and convolution-reverb
+/// input file / IR folder are remembered across runs so the user doesn't keep re-picking the same combo each launch. Typical setups have
 /// one ASIO interface + one keyboard wired up — auto-restoring those is a clear UX win.
 /// </summary>
 /// <remarks>
@@ -47,6 +47,24 @@ internal static class DemoSettings
         set { data.LastMidiDeviceId = value ?? string.Empty; Save(); }
     }
 
+    public static string LastConvolutionInputFile
+    {
+        get => data.LastConvolutionInputFile;
+        set { data.LastConvolutionInputFile = value ?? string.Empty; Save(); }
+    }
+
+    public static string LastConvolutionIrFolder
+    {
+        get => data.LastConvolutionIrFolder;
+        set { data.LastConvolutionIrFolder = value ?? string.Empty; Save(); }
+    }
+
+    public static string LastConvolutionIr
+    {
+        get => data.LastConvolutionIr;
+        set { data.LastConvolutionIr = value ?? string.Empty; Save(); }
+    }
+
     private static SettingsData Load()
     {
         try
@@ -78,5 +96,8 @@ internal static class DemoSettings
         public int LastInputChannelsIndex { get; set; } = 1; // 0 = mono, 1 = stereo
         public int LastInputChannelOffset { get; set; } = 1;
         public string LastMidiDeviceId { get; set; } = string.Empty;
+        public string LastConvolutionInputFile { get; set; } = string.Empty;
+        public string LastConvolutionIrFolder { get; set; } = string.Empty;
+        public string LastConvolutionIr { get; set; } = string.Empty;
     }
 }

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Settings for the sample and tool projects. The repo-wide settings still apply. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- IDE0005 (unnecessary usings, enforced in .globalconfig) only runs on build
+         when a documentation file is generated. These projects aren't packaged,
+         so the XML file is just a side effect and missing doc comments (CS1591)
+         are not required. Malformed doc comments are still reported. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

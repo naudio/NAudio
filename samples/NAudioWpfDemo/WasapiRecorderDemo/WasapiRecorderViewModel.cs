@@ -497,6 +497,7 @@ internal class WasapiRecorderViewModel : ViewModelBase, IDisposable
     /// doesn't understand rather than guessing from the bit depth alone — misreading float data
     /// as integer produces a plausible-looking but meaningless level.
     /// </summary>
+    /// <param name="buffer">Captured audio bytes in <paramref name="format"/>.</param>
     /// <param name="format">
     /// Must be a standard PCM or IEEE float format. Reduce a <see cref="WaveFormatExtensible"/>
     /// with <see cref="WaveFormatExtensible.ToStandardWaveFormat"/> before calling.

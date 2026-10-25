@@ -59,8 +59,9 @@ public class XingHeader
             else
                 offset = 17 + 4;
         }
-        else if (frame.MpegVersion == MpegVersion.Version2)
+        else if (frame.MpegVersion == MpegVersion.Version2 || frame.MpegVersion == MpegVersion.Version25)
         {
+            // MPEG-2.5 has the same side info size as MPEG-2
             if (frame.ChannelMode != ChannelMode.Mono)
                 offset = 17 + 4;
             else

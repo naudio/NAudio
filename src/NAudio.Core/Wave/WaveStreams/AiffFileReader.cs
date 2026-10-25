@@ -84,7 +84,7 @@ public class AiffFileReader : WaveStream
 
         while (stream.Position < stream.Length)
         {
-            AiffChunk nextChunk = ReadChunkHeader(stream);
+            AiffChunk nextChunk = ReadChunkHeader(stream, out uint chunkSize);
             if (nextChunk.ChunkName == "\0\0\0\0") break;
 
             if (stream.Position + nextChunk.ChunkLength > stream.Length)
@@ -120,7 +120,9 @@ public class AiffFileReader : WaveStream
                 // the first sample frame (used to block-align the sound data), so it counts
                 // against the chunk length as well as advancing the start. A file declaring a
                 // bigger offset than the chunk holds has no readable sound data at all.
-                long soundDataLength = (long)nextChunk.ChunkLength - 8 - offset;
+                // ChunkLength includes the pad byte of an odd-sized chunk, which is not sound
+                // data, so use the size from the chunk header.
+                long soundDataLength = (long)chunkSize - 8 - offset;
                 if (soundDataLength > int.MaxValue)
                 {
                     // ckSize is a signed 32-bit long in the AIFF spec, so sound data cannot
@@ -393,9 +395,12 @@ public class AiffFileReader : WaveStream
         }
     }
 
-    private static AiffChunk ReadChunkHeader(Stream stream)
+    private static AiffChunk ReadChunkHeader(Stream stream, out uint chunkSize)
     {
-        return new AiffChunk((uint)stream.Position, ReadChunkName(stream).ToString(), ReadUInt(stream));
+        uint start = (uint)stream.Position;
+        string name = ReadChunkName(stream).ToString();
+        chunkSize = ReadUInt(stream);
+        return new AiffChunk(start, name, chunkSize);
     }
 
     private static double ReadIeeeExtended(Stream stream)

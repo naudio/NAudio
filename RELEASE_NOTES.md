@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * `AiffFileReader` no longer reads the pad byte after an odd-sized SSND chunk as sound data, so 8-bit files with an odd number of sample bytes no longer gain an extra sample frame
  * `Mp3FileReader` now reads the Xing/Info header of MPEG-2.5 files, so VBR files at 8, 11.025 and 12 kHz get an exact length instead of a bitrate estimate, and the header frame is no longer decoded as an extra frame of silence
  * Hardened file parsers against malformed input: SoundFont files with chunk sizes past the end of the file, or out-of-range/out-of-order preset, instrument, bag, generator or sample indices now throw `InvalidDataException` instead of attempting multi-GB allocations or throwing `IndexOutOfRangeException`/`OverflowException`/`ArgumentException`; WAV cue chunks with a corrupt cue-point count no longer over-allocate or throw; an MP3 whose first frame is too small for the Xing/Info fields it flags is treated as having no Xing header instead of throwing from the `Mp3FileReader` constructor (#1502)
  * `SoundFontSampler` skips SoundFont regions with a zero (or out-of-range) sample rate instead of throwing on every note-on (#1502)

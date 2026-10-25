@@ -228,6 +228,21 @@ public class AiffReaderTests
         }
     }
 
+    // An odd-sized SSND chunk is followed by a pad byte that is not counted in its size and is
+    // not sound data: 8-bit mono with an odd number of frames must not gain an extra frame.
+    [Test]
+    [Category("UnitTest")]
+    public void OddSizedSsndChunkPadByteIsNotSoundData()
+    {
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 8, soundData: new byte[] { 1, 2, 3 });
+        Array.Resize(ref aiff, aiff.Length + 1); // pad byte after the odd-sized SSND chunk
+
+        using var reader = new AiffFileReader(new MemoryStream(aiff));
+        Assert.That(reader.Length, Is.EqualTo(3));
+        var buffer = new byte[16];
+        Assert.That(reader.Read(buffer, 0, buffer.Length), Is.EqualTo(3));
+    }
+
     // Serves a small header and reports a much larger Length, so a test can present an
     // oversized chunk without allocating gigabytes. Everything past the header reads as zero.
     private sealed class SparseStream : Stream

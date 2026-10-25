@@ -243,6 +243,21 @@ public class AiffReaderTests
         Assert.That(reader.Read(buffer, 0, buffer.Length), Is.EqualTo(3));
     }
 
+    // Some writers leave off the pad byte after an odd-sized SSND chunk at the end of the
+    // file. The sound data is all there, so the file should still be readable.
+    [Test]
+    [Category("UnitTest")]
+    public void OddSizedSsndChunkWithoutPadByteAtEndOfFileIsRead()
+    {
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 8, soundData: new byte[] { 1, 2, 3 });
+
+        using var reader = new AiffFileReader(new MemoryStream(aiff));
+        Assert.That(reader.Length, Is.EqualTo(3));
+        var buffer = new byte[16];
+        Assert.That(reader.Read(buffer, 0, buffer.Length), Is.EqualTo(3));
+        Assert.That(buffer[..3], Is.EqualTo(new byte[] { 129, 130, 131 })); // signed 8-bit to unsigned
+    }
+
     // Serves a small header and reports a much larger Length, so a test can present an
     // oversized chunk without allocating gigabytes. Everything past the header reads as zero.
     private sealed class SparseStream : Stream

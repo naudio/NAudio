@@ -87,7 +87,9 @@ public class AiffFileReader : WaveStream
             AiffChunk nextChunk = ReadChunkHeader(stream, out uint chunkSize);
             if (nextChunk.ChunkName == "\0\0\0\0") break;
 
-            if (stream.Position + nextChunk.ChunkLength > stream.Length)
+            // Check against the size in the chunk header rather than ChunkLength: some writers
+            // leave off the pad byte after an odd-sized chunk at the end of the file.
+            if (stream.Position + chunkSize > stream.Length)
             {
                 break;
             }

@@ -250,8 +250,6 @@ public partial class CoreAudioPlayer
             _ = selectedDevice.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output, out requiresResampler, out _);
         }
 
-        uint reportedLatency = selectedDevice.BufferFrameSize;
-
         // Configure the player source. If we need the resampler,
         // we inject the resampler and pass the provider through it.
         if (requiresResampler)
@@ -285,8 +283,7 @@ public partial class CoreAudioPlayer
                 selectedSource = new ResamplerSource(
                     provider,
                     asbdToUse,
-                    handle, // we can pass null here!
-                    reportedLatency
+                    handle // we can pass null here!
                 );
             }
             finally
@@ -297,7 +294,7 @@ public partial class CoreAudioPlayer
         else
         {
             // Otherwise, just use our wave provider directly.
-            selectedSource = new RawSource(provider, asbdToUse, reportedLatency);
+            selectedSource = new RawSource(provider, asbdToUse);
         }
 
         try

@@ -88,9 +88,6 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
         // The format of the audio that will be written from the source provider during reads.
         AudioStreamBasicDescription ReinterpretedFormat { get; }
-
-        // Reported stream latency computed during the player's initialization.
-        uint StreamsLatency { get; }
     }
 
     /// <summary>
@@ -315,7 +312,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
         {
             ThrowIfInvalidOrDisposed();
             var source = InitializedSource;
-            double latencyFrames = selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) + source.StreamsLatency;
+            double latencyFrames = selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) + selectedDevice.BufferFrameSize;
             return TimeSpan.FromSeconds(latencyFrames / source.ReinterpretedFormat.mSampleRate);
         }
     }

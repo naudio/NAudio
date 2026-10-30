@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Diagnostics;
 using System.Runtime.Versioning;
@@ -20,7 +20,7 @@ public abstract class CoreAudioIOProcedure : SafeHandle
 {
     private static readonly unsafe AudioDeviceIOProc procedureInstance = &IOProcedureNative;
 
-    private bool isRunning;
+    private volatile bool isRunning;
     private GCHandle delegateGcHandle;
     private readonly AudioDevice device;
 
@@ -89,16 +89,16 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     }
 
     /// <summary>
-    /// Provides the method that is called automatically by the HAL IO thread as needed. <br />
+    /// Provides the method that is called automatically by the HAL I/O thread as needed. <br />
     /// Data can be retrieved from this, as well as providing data to this.
     /// </summary>
     /// <seealso href="https://developer.apple.com/documentation/coreaudio/audiodeviceioproc?language=objc"/>
     /// <param name="inNow">
     /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiotimestamp?language=objc">AudioTimeStamp</see> pointer that indicates the IO cycle started. 
-    /// Note that this time includes any scheduling latency that may have been incurred waking the thread on which IO is being done.
+    /// Note that this time includes any scheduling latency that may have been incurred waking the thread on which I/O is being done.
     /// </param>
     /// <param name="inInputData">
-    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiobufferlist?language=objc">AudioBufferList</see> pointer containing the input data for the current IO cycle.
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiobufferlist?language=objc">AudioBufferList</see> pointer containing the input data for the current I/O cycle.
     /// For streams that are disabled, the AudioBuffer’s mData field will be NULL but the mDataByteSize field will still say how much data would have been there if it was enabled. 
     /// Note that the contents of this structure should never be modified.
     /// </param>
@@ -107,7 +107,7 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     /// If the device has no input streams, the time stamp will be zeroed out.
     /// </param>
     /// <param name="outOutputData">
-    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiobufferlist?language=objc">AudioBufferList</see> pointer in which the output data for the current IO cycle is to be placed.
+    /// An <see href="https://developer.apple.com/documentation/coreaudiotypes/audiobufferlist?language=objc">AudioBufferList</see> pointer in which the output data for the current I/O cycle is to be placed.
     /// On entry, each AudioBuffer’s mDataByteSize field indicates the maximum amount of data that can be placed in the buffer and the buffer’s memory has been zeroed out. 
     /// For formats where the number of bytes per packet can vary (as with AC-3, for example), the client has to fill out on exit each mDataByteSize field in each AudioBuffer with the amount of data that was put in the buffer. 
     /// Otherwise, the mDataByteSize field should not be changed.
@@ -127,13 +127,13 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     );
 
     /// <summary>
-    /// Gets the <see cref="AudioDevice"/> that the IO procedure ID was created for.
+    /// Gets the <see cref="AudioDevice"/> that the I/O procedure ID was created for.
     /// </summary>
     public AudioDevice Device => device;
 
-    /// <summary>Stops IO.</summary>
+    /// <summary>Stops I/O.</summary>
     /// <remarks>
-    /// This can be called from the IO procedure, 
+    /// This can be called from the I/O procedure, 
     /// especially if playback happens and your source of audio data has no more data to provide.
     /// </remarks>
     public void Stop()
@@ -141,20 +141,28 @@ public abstract class CoreAudioIOProcedure : SafeHandle
         ObjectDisposedException.ThrowIf(IsClosed || IsInvalid, this);
         if (isRunning)
         {
+            // Setting isRunning to false here is actually correct,
+            // because if even AudioDeviceStop fails, the procedure
+            // state is the expected: the procedure was stopped.
             isRunning = false;
             CoreAudioException.ThrowIfError(NativeMethods.AudioDeviceStop(device.objectId, handle));
         }
     }
 
-    /// <summary>Starts IO.</summary>
+    /// <summary>Starts I/O.</summary>
     public void Start()
     {
         ObjectDisposedException.ThrowIf(IsClosed || IsInvalid, this);
-        if (!isRunning)
-        {
-            isRunning = true;
-            CoreAudioException.ThrowIfError(NativeMethods.AudioDeviceStart(device.objectId, handle));
-        }
+        if (isRunning) { return; }
+        // Update the isRunning field immediately to avoid multiple
+        // threads accessing the rest of the below code.
+        isRunning = true;
+        int osStatus = NativeMethods.AudioDeviceStart(device.objectId, handle);
+        // Update the isRunning variable by the error code returned by AudioDeviceStart.
+        // Previously, if AudioDeviceStart threw an exception, it would left the isRunning
+        // field to true, while the device is not actually active.
+        isRunning = osStatus == ErrorConstants.kAudioHardwareNoError;
+        CoreAudioException.ThrowIfError(osStatus);
     }
 
     /// <summary>
@@ -164,12 +172,12 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     public bool IsRunning => isRunning;
 
     /// <summary>
-    /// Gets a value whether this IO procedure is invalid.
+    /// Gets a value whether this I/O procedure is invalid.
     /// </summary>
     public sealed override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <summary>
-    /// Release the I/O procedure and all the required interoperation objects that it needs to communicate over .NET.
+    /// Releases the I/O procedure and all the required interoperation objects that it needs to communicate over .NET.
     /// </summary>
     /// <returns>A value whether the I/O procedure was freed sucessfully.</returns>
     protected sealed override bool ReleaseHandle()

@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * **macOS wrappers (preview)**: Fixed `Start`/`Stop` threading race bug in `CoreAudioIOProcedure`. (#1510)
  * `AiffFileReader` no longer reads the pad byte after an odd-sized SSND chunk as sound data, so 8-bit files with an odd number of sample bytes no longer gain an extra sample frame
  * `AiffFileReader` now reads files that leave off the pad byte after an odd-sized SSND chunk at the end of the file, instead of throwing "No SSND chunk found"
  * `Mp3FileReader` now reads the Xing/Info header of MPEG-2.5 files, so VBR files at 8, 11.025 and 12 kHz get an exact length instead of a bitrate estimate, and the header frame is no longer decoded as an extra frame of silence

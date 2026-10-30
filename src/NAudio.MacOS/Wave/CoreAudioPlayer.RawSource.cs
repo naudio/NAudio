@@ -1,4 +1,4 @@
-
+﻿
 using System;
 
 using NAudio.MacOS.CoreAudioTypes;
@@ -9,18 +9,14 @@ public partial class CoreAudioPlayer
 {
     private class RawSource : IPlayerSource
     {
-        private readonly uint streamsLatency;
         private readonly IWaveProvider provider;
         private readonly AudioStreamBasicDescription playerDescription;
 
-        public RawSource(IWaveProvider provider, AudioStreamBasicDescription pd, uint streamsLatency)
+        public RawSource(IWaveProvider provider, AudioStreamBasicDescription pd)
         {
             playerDescription = pd;
             this.provider = provider;
-            this.streamsLatency = streamsLatency;
         }
-
-        public uint StreamsLatency => streamsLatency;
 
         public AudioStreamBasicDescription ReinterpretedFormat => playerDescription;
 

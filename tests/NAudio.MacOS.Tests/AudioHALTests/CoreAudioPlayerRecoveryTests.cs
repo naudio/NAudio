@@ -113,4 +113,52 @@ public class CoreAudioPlayerRecoveryTests
         Assert.That(player.PlaybackState, Is.EqualTo(PlaybackState.Stopped),
             "a source that ended before the first buffer left PlaybackState reporting Playing");
     }
+
+    [Test]
+    public void PauseAndResume_KeepsPosition()
+    {
+        var source = new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.05 }.ToWaveProvider();
+
+        using var player = new CoreAudioPlayer();
+        player.Init(source);
+        player.Play();
+        Thread.Sleep(400);
+
+        player.Pause();
+        Assert.That(player.PlaybackState, Is.EqualTo(PlaybackState.Paused));
+        long paused = player.GetPosition();
+        Assert.That(paused, Is.GreaterThan(0L));
+        Thread.Sleep(200);
+        Assert.That(player.GetPosition(), Is.EqualTo(paused).Within(source.WaveFormat.AverageBytesPerSecond / 10));
+
+        player.Play();
+        Thread.Sleep(400);
+        Assert.That(player.PlaybackState, Is.EqualTo(PlaybackState.Playing));
+        Assert.That(player.GetPosition(), Is.GreaterThan(paused));
+
+        player.Stop();
+        Assert.That(player.GetPosition(), Is.EqualTo(0L));
+    }
+
+    [Test]
+    public void ShortSource_PlaysToItsEnd()
+    {
+        var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+        var signal = new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.05 };
+
+        using var player = new CoreAudioPlayer { DesiredLatency = 200 };
+        using var stopped = new ManualResetEventSlim(false);
+        Exception reported = null;
+        player.PlaybackStopped += (_, e) => { reported = e.Exception; stopped.Set(); };
+
+        player.Init(signal.Take(TimeSpan.FromMilliseconds(500)).ToWaveProvider());
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        player.Play();
+
+        Assert.That(stopped.Wait(5000), Is.True, "PlaybackStopped never fired");
+        Assert.That(watch.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(450));
+        Assert.That(reported, Is.Null);
+        Assert.That(player.PlaybackState, Is.EqualTo(PlaybackState.Stopped));
+        Assert.That(player.GetPosition(), Is.EqualTo(format.AverageBytesPerSecond / 2).Within(format.BlockAlign * 4096));
+    }
 }

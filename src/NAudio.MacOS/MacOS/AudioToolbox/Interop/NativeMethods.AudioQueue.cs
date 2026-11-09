@@ -1,0 +1,6 @@
+
+
+internal partial class NativeMethods
+{
+
+}

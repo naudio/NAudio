@@ -11,19 +11,6 @@ global using unsafe AudioObjectPropertyListenerProc = delegate* unmanaged[Cdecl]
 
 /*
 typedef OSStatus
-(*AudioDeviceIOProc)(   AudioObjectID           inDevice,
-                        const AudioTimeStamp*   inNow,
-                        const AudioBufferList*  inInputData,
-                        const AudioTimeStamp*   inInputTime,
-                        AudioBufferList*        outOutputData,
-                        const AudioTimeStamp*   inOutputTime,
-                        void* __nullable        inClientData);
-*/
-
-global using unsafe AudioDeviceIOProc = delegate* unmanaged[Cdecl]<NAudio.MacOS.CoreAudio.Interop.AudioObjectID, nint, nint, nint, nint, nint, nint, int /* OSStatus */>;
-
-/*
-typedef OSStatus
 (*AudioConverterComplexInputDataProc)(  AudioConverterRef               inAudioConverter,
                                         UInt32 *                        ioNumberDataPackets,
                                         AudioBufferList *               ioData,

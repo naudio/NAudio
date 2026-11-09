@@ -49,7 +49,7 @@ public static class CoreAudioFunctions
     /// An interleaved sample contains all the sampled values for each channel. <br />
     /// A non-interleaved sample contains a single sampled value for a single channel. <br />
     /// This important distinction is existing in HAL and is used in top-notch professional
-    /// audio devices and aggregate devices, and as such when writing a custom <see cref="CoreAudioIOProcedure"/>
+    /// audio devices and aggregate devices, and as such when writing a custom I/O procedure
     /// this is only way to know about this distinction.
     /// </summary>
     /// <param name="stream">The <see cref="AudioStream"/> whose virtual format is to be queried.</param>

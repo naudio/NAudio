@@ -432,7 +432,7 @@ public class AudioDevice : AudioObject
     /// </summary>
     /// <returns>
     /// A new <see cref="PropertyListenerHandle"/> that can be used to
-    /// listen to an event that is fired when the <see cref="AudioDevice"/> is having a <see cref="CoreAudioIOProcedure"/> that has run past it's deadline. <br />
+    /// listen to an event that is fired when the <see cref="AudioDevice"/> is having an I/O procedure that has run past it's deadline. <br />
     /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
     /// </returns>
     public PropertyListenerHandle ConstructProcessorOverloadedEvent() => new(
@@ -462,7 +462,7 @@ public class AudioDevice : AudioObject
     /// AudioDevice or a value of <see langword="false"/> indicating that the device is currently
     /// available to all processes. If the <see cref="AudioDevice"/> is in a non-mixable mode,
     /// the HAL will automatically take hog mode on behalf of the first process to
-    /// start an <see cref="CoreAudioIOProcedure"/>. <br /> <br />
+    /// start an I/O procedure. <br /> <br />
     /// Note that when setting this property, the value passed in is ignored. If
     /// another process owns exclusive access, that remains unchanged. If the
     /// current process owns exclusive access, it is released and made available to
@@ -525,95 +525,6 @@ public class AudioDevice : AudioObject
     {
         get => GetFloatPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyIOCycleUsage));
         set => SetFloatPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyIOCycleUsage), value);
-    }
-
-    /// <summary>
-    /// A <see cref="bool"/> array which details the stream usage of a given I/O procedure. 
-    /// If a stream is marked as not being used (which the value of that array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
-    /// will see a corresponding NULL buffer pointer in the AudioBufferList
-    /// passed to its IO proc. Note that the number of streams detailed in the
-    /// <see cref="bool"/> array must include all the streams of that
-    /// direction on the device.
-    /// </summary>
-    /// <param name="procedure">The Core Audio I/O procedure to query the usage for.</param>
-    /// <param name="scope">The scope that the stream usage is to be retrieved for.</param>
-    /// <returns>A <see cref="bool"/> array that indicates which streams are enabled and which are not. Use the <see cref="GetStreams"/> method to map each index to an <see cref="AudioStream"/> object.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="procedure"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The specified <paramref name="procedure"/> is invalid.</exception>
-    public unsafe bool[] GetStreamUsage(CoreAudioIOProcedure procedure, AudioObjectPropertyScope scope)
-    {
-        ArgumentNullException.ThrowIfNull(procedure);
-        if (procedure.IsClosed || procedure.IsInvalid)
-        {
-            throw new InvalidOperationException("The specified IO procedure has been disposed of.");
-        }
-        else
-        {
-            var address = AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
-                AudioDeviceProperties.kAudioDevicePropertyIOProcStreamUsage,
-                scope
-            );
-            var size = QueryPropertySize(address);
-            var memBlock = AudioHardwareIOProcStreamUsage.CreateStreamUsage((AudioDeviceIOProc)procedure.DangerousGetHandle(), size);
-            try
-            {
-                GetPropertyValueCustom(address, ref size, memBlock);
-                var cBuffers = AudioHardwareIOProcStreamUsage.GetNumberOfStreams(memBlock);
-                var data = new bool[cBuffers];
-                for (var I = 0U; I < cBuffers; I++)
-                {
-                    data[I] = AudioHardwareIOProcStreamUsage.GetStream(memBlock, I);
-                }
-                return data;
-            }
-            finally
-            {
-                AudioHardwareIOProcStreamUsage.DeleteStreamUsage(memBlock);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Set a <see cref="bool"/> array which details the stream usage of a given I/O procedure. 
-    /// If a stream is marked as not being used (which the value of that array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
-    /// will see a corresponding NULL buffer pointer in the AudioBufferList
-    /// passed to its IO proc. Note that the number of streams detailed in the
-    /// <see cref="bool"/> array must include all the streams of that
-    /// direction on the device.
-    /// </summary>
-    /// <param name="procedure">The Core Audio I/O procedure to assign the usage for.</param>
-    /// <param name="scope">The scope that the stream usage is to be retrieved for.</param>
-    /// <param name="streamsToEnableOrDisable">The streams to enable/disable.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="procedure"/> and/or <paramref name="streamsToEnableOrDisable"/> are <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">The specified <paramref name="procedure"/> is invalid.</exception>
-    public unsafe void SetStreamUsage(CoreAudioIOProcedure procedure, AudioObjectPropertyScope scope, bool[] streamsToEnableOrDisable)
-    {
-        ArgumentNullException.ThrowIfNull(procedure);
-        ArgumentNullException.ThrowIfNull(streamsToEnableOrDisable);
-        if (procedure.IsClosed || procedure.IsInvalid)
-        {
-            throw new InvalidOperationException("The specified IO procedure has been disposed of.");
-        }
-        else
-        {
-            var address = AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
-                AudioDeviceProperties.kAudioDevicePropertyIOProcStreamUsage,
-                scope
-            );
-            var memBlock = AudioHardwareIOProcStreamUsage.CreateStreamUsage((AudioDeviceIOProc)procedure.DangerousGetHandle(), (uint)streamsToEnableOrDisable.LongLength, out var size);
-            for (uint I = 0; I < AudioHardwareIOProcStreamUsage.GetNumberOfStreams(memBlock); I++)
-            {
-                AudioHardwareIOProcStreamUsage.SetStream(memBlock, I, streamsToEnableOrDisable[I]);
-            }
-            try
-            {
-                SetPropertyCustom(address, size, memBlock);
-            }
-            finally
-            {
-                AudioHardwareIOProcStreamUsage.DeleteStreamUsage(memBlock);
-            }
-        }
     }
 
     /// <summary>

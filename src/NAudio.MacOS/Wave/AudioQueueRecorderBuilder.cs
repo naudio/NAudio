@@ -1,6 +1,8 @@
+
 using System;
-using System.Runtime.Versioning;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
 
 using NAudio.MacOS.CoreAudio;
 
@@ -70,9 +72,14 @@ public sealed class AudioQueueRecorderBuilder
 
     /// <summary>Creates a recorder with the current settings.</summary>
     /// <returns>A new <see cref="AudioQueueRecorder"/> instance.</returns>
-    public AudioQueueRecorder Build() => new(latencyMilliseconds, numberOfBuffers, device, levelMetering);
+    public AudioQueueRecorder Build() => new(latencyMilliseconds, numberOfBuffers, device, levelMetering, SynchronizationContext.Current);
 
     /// <summary>Creates a recorder with the current settings without blocking the caller.</summary>
     /// <returns>A task that provides a new <see cref="AudioQueueRecorder"/> instance.</returns>
-    public Task<AudioQueueRecorder> BuildAsync() => Task.Run(Build);
+    public Task<AudioQueueRecorder> BuildAsync()
+    {
+        // The events are raised on the context of the caller, which the thread pool does not have.
+        var context = SynchronizationContext.Current;
+        return Task.Run(() => new AudioQueueRecorder(latencyMilliseconds, numberOfBuffers, device, levelMetering, context));
+    }
 }

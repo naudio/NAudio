@@ -1,6 +1,8 @@
+
 using System;
-using System.Runtime.Versioning;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
 
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudio;
@@ -81,9 +83,14 @@ public sealed class AudioQueuePlayerBuilder
 
     /// <summary>Creates a player with the current settings.</summary>
     /// <returns>A new <see cref="AudioQueuePlayer"/> instance.</returns>
-    public AudioQueuePlayer Build() => new(latencyMilliseconds, numberOfBuffers, device, levelMetering, timePitchAlgorithm);
+    public AudioQueuePlayer Build() => new(latencyMilliseconds, numberOfBuffers, device, levelMetering, timePitchAlgorithm, SynchronizationContext.Current);
 
     /// <summary>Creates a player with the current settings without blocking the caller.</summary>
     /// <returns>A task that provides a new <see cref="AudioQueuePlayer"/> instance.</returns>
-    public Task<AudioQueuePlayer> BuildAsync() => Task.Run(Build);
+    public Task<AudioQueuePlayer> BuildAsync()
+    {
+        // The events are raised on the context of the caller, which the thread pool does not have.
+        var context = SynchronizationContext.Current;
+        return Task.Run(() => new AudioQueuePlayer(latencyMilliseconds, numberOfBuffers, device, levelMetering, timePitchAlgorithm, context));
+    }
 }

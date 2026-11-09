@@ -1,6 +1,6 @@
+namespace NAudio.MacOS.AudioToolbox.Interop;
 
-
-internal partial class NativeMethods
+internal static partial class NativeMethods
 {
 
 }

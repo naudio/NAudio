@@ -473,7 +473,7 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
             }
             catch
             {
-                if (thisQueueHandle.IsAllocated) { thisQueueHandle.Free(); }
+                DisposeInternal(true);
                 throw;
             }
         }

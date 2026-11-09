@@ -2,7 +2,9 @@ using System;
 using System.Threading;
 using System.Runtime.InteropServices;
 
+using NAudio.MacOS;
 using NAudio.Utils;
+using NAudio.MacOS.AudioToolbox.Interop;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreFoundationApi;
 using NAudio.MacOS.CoreAudioTypes;
@@ -32,12 +34,12 @@ public partial class CoreAudioPlayer
 
         IntPtr created;
         ThrowIfQueueError(
-            AudioQueueNewOutput(&description, &OnBufferCompleted, GCHandle.ToIntPtr(queueHandle), IntPtr.Zero, IntPtr.Zero, 0, &created),
+            AudioQueueNewOutput(in description, &OnBufferCompleted, GCHandle.ToIntPtr(queueHandle), IntPtr.Zero, IntPtr.Zero, 0, out created),
             nameof(AudioQueueNewOutput));
         queue = created;
 
         ThrowIfQueueError(
-            AudioQueueAddPropertyListener(queue, kAudioQueueProperty_IsRunning, &OnIsRunningChanged, GCHandle.ToIntPtr(queueHandle)),
+            AudioQueueAddPropertyListener(queue, AudioQueueProperties.kAudioQueueProperty_IsRunning, &OnIsRunningChanged, GCHandle.ToIntPtr(queueHandle)),
             nameof(AudioQueueAddPropertyListener));
 
         if (!followsDefaultDevice)
@@ -45,7 +47,7 @@ public partial class CoreAudioPlayer
             using CFString uid = CFString.CreateFromString(selectedDevice.DeviceUID);
             IntPtr uidRef = uid.NativeObject;
             ThrowIfQueueError(
-                AudioQueueSetProperty(queue, kAudioQueueProperty_CurrentDevice, &uidRef, (uint)sizeof(IntPtr)),
+                AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_CurrentDevice, (IntPtr)(&uidRef), (uint)sizeof(IntPtr)),
                 nameof(AudioQueueSetProperty));
         }
 
@@ -53,7 +55,7 @@ public partial class CoreAudioPlayer
         {
             AudioChannelLayout layout = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)extensible.ChannelMask);
             ThrowIfQueueError(
-                AudioQueueSetProperty(queue, kAudioQueueProperty_ChannelLayout, &layout, (uint)sizeof(AudioChannelLayout)),
+                AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_ChannelLayout, (IntPtr)(&layout), (uint)sizeof(AudioChannelLayout)),
                 nameof(AudioQueueSetProperty));
         }
 
@@ -61,7 +63,7 @@ public partial class CoreAudioPlayer
         for (int i = 0; i < buffers.Length; i++)
         {
             AudioQueueBuffer* buffer;
-            ThrowIfQueueError(AudioQueueAllocateBuffer(queue, (uint)bufferBytes, &buffer), nameof(AudioQueueAllocateBuffer));
+            ThrowIfQueueError(AudioQueueAllocateBuffer(queue, (uint)bufferBytes, out buffer), nameof(AudioQueueAllocateBuffer));
             buffers[i] = (IntPtr)buffer;
         }
     }
@@ -77,7 +79,7 @@ public partial class CoreAudioPlayer
         if (queue != IntPtr.Zero)
         {
             // An immediate disposal waits for a running callback and guarantees no further ones.
-            _ = AudioQueueDispose(queue, true);
+            _ = AudioQueueDispose(queue, MacBoolean.True);
             queue = IntPtr.Zero;
         }
 
@@ -113,7 +115,7 @@ public partial class CoreAudioPlayer
 
         buffer->mAudioDataByteSize = (uint)read;
         Interlocked.Add(ref submittedFrames, read / blockAlign);
-        return AudioQueueEnqueueBuffer(queue, buffer, 0, IntPtr.Zero) == 0;
+        return AudioQueueEnqueueBuffer(queue, buffer, 0, null) == 0;
     }
 
     private void ScheduleCompletion()
@@ -142,12 +144,12 @@ public partial class CoreAudioPlayer
         {
             // Lets the buffers that are still queued play out; the listener reports the end.
             player.draining = true;
-            _ = AudioQueueStop(queue, false);
+            _ = AudioQueueStop(queue, MacBoolean.False);
         }
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-    private static unsafe void OnIsRunningChanged(IntPtr userData, IntPtr queue, uint propertyId)
+    private static unsafe void OnIsRunningChanged(IntPtr userData, IntPtr queue, AudioQueuePropertyID propertyId)
     {
         if (GCHandle.FromIntPtr(userData).Target is not CoreAudioPlayer player || !player.draining)
         {
@@ -156,7 +158,7 @@ public partial class CoreAudioPlayer
 
         uint isRunning = 1;
         uint size = sizeof(uint);
-        if (AudioQueueGetProperty(queue, kAudioQueueProperty_IsRunning, &isRunning, &size) == 0 && isRunning == 0)
+        if (AudioQueueGetProperty(queue, AudioQueueProperties.kAudioQueueProperty_IsRunning, (IntPtr)(&isRunning), ref size) == 0 && isRunning == 0)
         {
             player.ScheduleCompletion();
         }
@@ -201,7 +203,7 @@ public partial class CoreAudioPlayer
     private void StopQueue()
     {
         stopping = true;
-        _ = AudioQueueStop(queue, true);
+        _ = AudioQueueStop(queue, MacBoolean.True);
         state = PlaybackState.Stopped;
     }
 }

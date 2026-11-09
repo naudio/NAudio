@@ -2,7 +2,9 @@ using System;
 using System.Threading;
 using System.Runtime.InteropServices;
 
+using NAudio.MacOS;
 using NAudio.Utils;
+using NAudio.MacOS.AudioToolbox.Interop;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreFoundationApi;
 using NAudio.MacOS.CoreAudioTypes;
@@ -117,7 +119,7 @@ public partial class CoreAudioRecorder
 
             IntPtr created;
             ThrowIfQueueError(
-                AudioQueueNewInput(&format, &OnBufferFilled, GCHandle.ToIntPtr(queueHandle), IntPtr.Zero, IntPtr.Zero, 0, &created),
+                AudioQueueNewInput(in format, &OnBufferFilled, GCHandle.ToIntPtr(queueHandle), IntPtr.Zero, IntPtr.Zero, 0, out created),
                 nameof(AudioQueueNewInput));
             queue = created;
 
@@ -125,7 +127,7 @@ public partial class CoreAudioRecorder
             {
                 IntPtr uidRef = uid.NativeObject;
                 ThrowIfQueueError(
-                    AudioQueueSetProperty(queue, kAudioQueueProperty_CurrentDevice, &uidRef, (uint)sizeof(IntPtr)),
+                    AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_CurrentDevice, (IntPtr)(&uidRef), (uint)sizeof(IntPtr)),
                     nameof(AudioQueueSetProperty));
             }
 
@@ -136,7 +138,7 @@ public partial class CoreAudioRecorder
             for (int i = 0; i < buffers.Length; i++)
             {
                 AudioQueueBuffer* buffer;
-                ThrowIfQueueError(AudioQueueAllocateBuffer(queue, bytes, &buffer), nameof(AudioQueueAllocateBuffer));
+                ThrowIfQueueError(AudioQueueAllocateBuffer(queue, bytes, out buffer), nameof(AudioQueueAllocateBuffer));
                 buffers[i] = (IntPtr)buffer;
             }
 
@@ -158,7 +160,7 @@ public partial class CoreAudioRecorder
         if (queue != IntPtr.Zero)
         {
             // An immediate disposal waits for a running callback and guarantees no further ones.
-            _ = AudioQueueDispose(queue, true);
+            _ = AudioQueueDispose(queue, MacBoolean.True);
             queue = IntPtr.Zero;
         }
 
@@ -180,10 +182,10 @@ public partial class CoreAudioRecorder
         {
             foreach (IntPtr buffer in buffers)
             {
-                ThrowIfQueueError(AudioQueueEnqueueBuffer(queue, (AudioQueueBuffer*)buffer, 0, IntPtr.Zero), nameof(AudioQueueEnqueueBuffer));
+                ThrowIfQueueError(AudioQueueEnqueueBuffer(queue, (AudioQueueBuffer*)buffer, 0, null), nameof(AudioQueueEnqueueBuffer));
             }
 
-            ThrowIfQueueError(AudioQueueStart(queue, IntPtr.Zero), nameof(AudioQueueStart));
+            ThrowIfQueueError(AudioQueueStart(queue, null), nameof(AudioQueueStart));
             capturing = true;
         }
         catch
@@ -197,7 +199,7 @@ public partial class CoreAudioRecorder
     private void StopQueue()
     {
         stopping = true;
-        _ = AudioQueueStop(queue, true);
+        _ = AudioQueueStop(queue, MacBoolean.True);
         capturing = false;
         sink = null;
         state = CaptureState.Stopped;
@@ -216,7 +218,7 @@ public partial class CoreAudioRecorder
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-    private static unsafe void OnBufferFilled(IntPtr userData, IntPtr queue, AudioQueueBuffer* buffer, AudioTimeStamp* startTime, uint packetCount, IntPtr packetDescriptions)
+    private static unsafe void OnBufferFilled(IntPtr userData, IntPtr queue, AudioQueueBuffer* buffer, AudioTimeStamp* startTime, uint packetCount, AudioStreamPacketDescription* packetDescriptions)
     {
         if (GCHandle.FromIntPtr(userData).Target is not CoreAudioRecorder recorder || recorder.failure is not null)
         {
@@ -241,7 +243,7 @@ public partial class CoreAudioRecorder
 
         if (!recorder.stopping)
         {
-            _ = AudioQueueEnqueueBuffer(queue, buffer, 0, IntPtr.Zero);
+            _ = AudioQueueEnqueueBuffer(queue, buffer, 0, null);
         }
     }
 

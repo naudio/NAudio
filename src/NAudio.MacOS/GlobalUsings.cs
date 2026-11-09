@@ -104,3 +104,43 @@ typedef signed long CFIndex;
 #endif
 */
 global using CFIndex = System.Runtime.InteropServices.CLong;
+
+
+/*
+typedef void (*AudioQueueOutputCallback)(
+                                    void * __nullable       inUserData,
+                                    AudioQueueRef           inAQ,
+                                    AudioQueueBufferRef     inBuffer);
+*/
+global using unsafe AudioQueueOutputCallback = delegate* unmanaged[Cdecl]<System.IntPtr, System.IntPtr, NAudio.MacOS.AudioToolbox.Interop.AudioQueueBuffer*, void>;
+
+/*
+typedef void (*AudioQueueInputCallback)(
+                                    void * __nullable               inUserData,
+                                    AudioQueueRef                   inAQ,
+                                    AudioQueueBufferRef             inBuffer,
+                                    const AudioTimeStamp *          inStartTime,
+                                    UInt32                          inNumberPacketDescriptions,
+                                    const AudioStreamPacketDescription * __nullable inPacketDescs);
+*/
+global using unsafe AudioQueueInputCallback = delegate* unmanaged[Cdecl]<System.IntPtr, System.IntPtr, NAudio.MacOS.AudioToolbox.Interop.AudioQueueBuffer*, NAudio.MacOS.CoreAudioTypes.AudioTimeStamp*, uint, NAudio.MacOS.CoreAudioTypes.AudioStreamPacketDescription*, void>;
+
+/*
+typedef void (*AudioQueuePropertyListenerProc)(
+                                    void * __nullable       inUserData,
+                                    AudioQueueRef           inAQ,
+                                    AudioQueuePropertyID    inID);
+*/
+global using unsafe AudioQueuePropertyListenerProc = delegate* unmanaged[Cdecl]<System.IntPtr, System.IntPtr, NAudio.MacOS.AudioToolbox.Interop.AudioQueuePropertyID, void>;
+
+/*
+typedef void (*AudioQueueProcessingTapCallback)(
+                                    void *                          inClientData,
+                                    AudioQueueProcessingTapRef      inAQTap,
+                                    UInt32                          inNumberFrames,
+                                    AudioTimeStamp *                ioTimeStamp,
+                                    AudioQueueProcessingTapFlags *  ioFlags,
+                                    UInt32 *                        outNumberFrames,
+                                    AudioBufferList *               ioData);
+*/
+global using unsafe AudioQueueProcessingTapCallback = delegate* unmanaged[Cdecl]<System.IntPtr, System.IntPtr, uint, NAudio.MacOS.CoreAudioTypes.AudioTimeStamp*, NAudio.MacOS.AudioToolbox.Interop.AudioQueueProcessingTapFlags*, uint*, nint, void>;

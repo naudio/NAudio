@@ -7,7 +7,9 @@ using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
+using NAudio.MacOS;
 using NAudio.MacOS.CoreAudio;
+using NAudio.MacOS.AudioToolbox.Interop;
 
 using static NAudio.MacOS.AudioToolbox.Interop.NativeMethods;
 
@@ -402,7 +404,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
 
             if (state == PlaybackState.Paused)
             {
-                ThrowIfQueueError(AudioQueueStart(queue, IntPtr.Zero), "AudioQueueStart");
+                ThrowIfQueueError(AudioQueueStart(queue, null), "AudioQueueStart");
                 state = PlaybackState.Playing;
                 return;
             }
@@ -431,7 +433,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
                 return;
             }
 
-            int status = AudioQueueStart(queue, IntPtr.Zero);
+            int status = AudioQueueStart(queue, null);
             if (status != 0)
             {
                 StopQueue();
@@ -441,7 +443,7 @@ public sealed partial class CoreAudioPlayer : IWavePlayer, IWaveLatency, IWavePo
             if (sourceEnded)
             {
                 draining = true;
-                _ = AudioQueueStop(queue, false);
+                _ = AudioQueueStop(queue, MacBoolean.False);
             }
         }
     }

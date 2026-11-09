@@ -7,7 +7,7 @@ using NAudio.Wave;
 namespace NAudio.Utils;
 
 /// <summary>
-/// Provides a queue for capture buffers returned from CoreAudioRecorder instances. <br />
+/// Provides a queue for capture buffers returned from AudioQueueRecorder instances. <br />
 /// This queue serializes access to enqueues/dequeues.
 /// </summary>
 internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
@@ -15,9 +15,9 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
     private sealed class Node
     {
         public Node? Next;
-        public readonly CoreAudioCaptureBuffer Buffer;
+        public readonly AudioQueueCaptureBuffer Buffer;
 
-        public Node(CoreAudioCaptureBuffer buffer)
+        public Node(AudioQueueCaptureBuffer buffer)
         {
             Next = null;
             Buffer = buffer;
@@ -33,7 +33,7 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
         lockSemaphore = new(1);
     }
 
-    public CoreAudioCaptureBuffer? Dequeue()
+    public AudioQueueCaptureBuffer? Dequeue()
     {
         // Make the check whether we have a buffer to dequeue
         // outside the critical region to avoid paying additional
@@ -55,7 +55,7 @@ internal sealed class SingleLinkedCaptureBufferQueue : IDisposable
         }
     }
 
-    public void Enqueue(CoreAudioCaptureBuffer buffer)
+    public void Enqueue(AudioQueueCaptureBuffer buffer)
     {
         Node newNode = new(buffer);
         lockSemaphore.Wait();

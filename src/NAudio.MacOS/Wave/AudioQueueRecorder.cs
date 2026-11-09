@@ -9,7 +9,8 @@ namespace NAudio.Wave;
 /// <summary>
 /// An audio recorder based on Audio Queue Services. Create it with <see cref="AudioQueueRecorderBuilder"/>.
 /// </summary>
-/// <remarks>This is an API skeleton: the capture members are not implemented yet.</remarks>
+/// <remarks>This is an API skeleton: the capture members throw <see cref="NotImplementedException"/> for now.</remarks>
+/// <seealso cref="AudioQueueRecorderBuilder"/>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.5")]
 public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLatency

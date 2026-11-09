@@ -2,6 +2,7 @@ using System;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
+using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudio;
 
 namespace NAudio.Wave;
@@ -9,14 +10,15 @@ namespace NAudio.Wave;
 /// <summary>
 /// An audio player based on Audio Queue Services. Create it with <see cref="AudioQueuePlayerBuilder"/>.
 /// </summary>
-/// <remarks>This is an API skeleton: the playback members are not implemented yet.</remarks>
+/// <remarks>This is an API skeleton: the playback members throw <see cref="NotImplementedException"/> for now.</remarks>
+/// <seealso cref="AudioQueuePlayerBuilder"/>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.5")]
 public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition, IAsyncDisposable
 {
     private const string NotImplementedMessage = "AudioQueuePlayer is an API skeleton.";
 
-    internal AudioQueuePlayer(int latencyMilliseconds, int numberOfBuffers, AudioDevice? device, bool levelMeteringEnabled, TimePitchAlgorithm? timePitchAlgorithm)
+    internal AudioQueuePlayer(int latencyMilliseconds, int numberOfBuffers, AudioDevice? device, bool levelMeteringEnabled, TimePitchAlgorithm timePitchAlgorithm)
     {
         LatencyMilliseconds = latencyMilliseconds;
         NumberOfBuffers = numberOfBuffers;
@@ -37,8 +39,8 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     /// <summary>Whether level metering is enabled.</summary>
     public bool LevelMeteringEnabled { get; }
 
-    /// <summary>The time-pitch algorithm, or <see langword="null"/> for the system default.</summary>
-    public TimePitchAlgorithm? TimePitchAlgorithm { get; }
+    /// <summary>The time-pitch algorithm of the queue.</summary>
+    public TimePitchAlgorithm TimePitchAlgorithm { get; }
 
     /// <inheritdoc />
     public float Volume

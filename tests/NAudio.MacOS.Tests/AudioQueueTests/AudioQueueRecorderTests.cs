@@ -7,11 +7,11 @@ using NAudio.Wave;
 
 using NUnit.Framework;
 
-namespace NAudio.MacOS.Tests.AudioHALTests;
+namespace NAudio.MacOS.Tests.AudioQueueTests;
 
 [TestFixture]
 [Category("IntegrationTest")]
-public class CoreAudioRecorderTests
+public class AudioQueueRecorderTests
 {
     [OneTimeSetUp]
     public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
@@ -19,11 +19,7 @@ public class CoreAudioRecorderTests
     [Test]
     public void RecordFromDefaultDevice_TryWithEvent()
     {
-        CoreAudioRecorder recorder = new();
-
-        Assert.Throws<InvalidOperationException>(recorder.StartRecording);
-
-        Assert.DoesNotThrow(recorder.InitializeRecording);
+        AudioQueueRecorder recorder = new AudioQueueRecorderBuilder().Build();
 
         int recordedBytes = 0;
 
@@ -54,13 +50,13 @@ public class CoreAudioRecorderTests
     [Test]
     public async Task RecordFromDefaultDevice_TryWithAsyncModel()
     {
-        CoreAudioRecorder recorder = new();
-
-        Assert.Throws<InvalidOperationException>(recorder.StartRecording);
+        AudioQueueRecorder recorder = new AudioQueueRecorderBuilder().Build();
 
         Exception capturedException = null;
         bool dataAvailableDetected = false;
-        int recordedBytes = 0, I = 0;
+        int recordedBytes = 0;
+        // PENDING: Adding async support to the recorder.
+        // int I = 0;
 
         recorder.DataAvailable += (o, _, _) =>
         {
@@ -72,6 +68,10 @@ public class CoreAudioRecorderTests
             capturedException = args.Exception;
         };
 
+        // PENDING: Adding async support to the recorder.
+
+        /*
+
         // Attempt to capture 15 buffers.
         await foreach (CoreAudioCaptureBuffer buffer in recorder.CaptureAsync())
         {
@@ -79,6 +79,7 @@ public class CoreAudioRecorderTests
             if (I == 15) { break; }
             I++;
         }
+        */
 
         if (dataAvailableDetected)
         {
@@ -150,16 +151,14 @@ public class CoreAudioRecorderTests
     [Test]
     public void VerifyThatReinitializationIsSafe()
     {
-        var recorder = new CoreAudioRecorder();
+        var recorder = new AudioQueueRecorderBuilder().Build();
 
         Exception exception = null;
         ManualResetEventSlim stopEventWasCalled = new(false);
 
         recorder.RecordingStopped += (sender, e) => { stopEventWasCalled.Set(); exception = e.Exception; };
 
-        Assert.DoesNotThrow(recorder.InitializeRecording);
-
-        // Start recording: Initialize the recorder, stop it and re-initialize again.
+        // Start recording: start the recorder, stop it and re-initialize again.
         Assert.DoesNotThrow(recorder.StartRecording);
 
         // Simulate that we are doing some work.

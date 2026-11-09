@@ -305,7 +305,7 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
     /// Raised on a thread of the queue when a buffer of captured audio is available. <br />
     /// The handler must not stop or dispose the recorder, because both wait for the handler to return.
     /// </summary>
-    public event CoreAudioCaptureDataAvailableHandler? DataAvailable;
+    public event AudioQueueCaptureDataAvailableHandler? DataAvailable;
 
     /// <summary>Raised when the capture stops.</summary>
     public event EventHandler<StoppedEventArgs>? RecordingStopped;

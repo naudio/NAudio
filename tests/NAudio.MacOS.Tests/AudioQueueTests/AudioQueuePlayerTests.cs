@@ -7,11 +7,11 @@ using NAudio.Wave.SampleProviders;
 
 using NUnit.Framework;
 
-namespace NAudio.MacOS.Tests.AudioHALTests;
+namespace NAudio.MacOS.Tests.AudioQueueTests;
 
 [TestFixture]
 [Category("IntegrationTest")]
-public class CoreAudioPlayerTests
+public class AudioQueuePlayerTests
 {
     [OneTimeSetUp]
     public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
@@ -47,7 +47,7 @@ public class CoreAudioPlayerTests
 
         IWaveProvider provider = useIeeeFloat ? sg.Take(TimeSpan.FromSeconds(3)).ToWaveProvider() : sg.Take(TimeSpan.FromSeconds(3)).ToWaveProvider16();
 
-        CoreAudioPlayer player = new();
+        AudioQueuePlayer player = new AudioQueuePlayerBuilder().Build();
 
         Assert.DoesNotThrow(() => player.Init(provider));
 

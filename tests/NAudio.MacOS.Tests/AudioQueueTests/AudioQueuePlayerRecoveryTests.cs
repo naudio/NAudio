@@ -1,3 +1,4 @@
+
 using System;
 using System.Threading;
 
@@ -7,7 +8,7 @@ using NAudio.Wave;
 using NAudio.MacOS.CoreAudio;
 using NAudio.Wave.SampleProviders;
 
-namespace NAudio.MacOS.Tests.AudioHALTests;
+namespace NAudio.MacOS.Tests.AudioQueueTests;
 
 /// <summary>
 /// Regression cover for issue #1442: a play thread that left without reaching the orderly shutdown at
@@ -15,7 +16,7 @@ namespace NAudio.MacOS.Tests.AudioHALTests;
 /// behind it, and — when the exit was an exception thrown from inside FillBuffer's buffer lease — left
 /// the render buffer released as fully written, so the next Play() asked GetBuffer for more frames than
 /// were free and died with AUDCLNT_E_BUFFER_TOO_LARGE.
-/// These tests are also brought in macOS to ensure that the the same issue does not also surface in CoreAudioPlayer.
+/// These tests are also brought in macOS to ensure that the the same issue does not also surface in AudioQueuePlayer.
 /// <para>
 /// These need a real HAL output device, so they are integration tests.
 /// They play a brief quiet sine.
@@ -23,7 +24,7 @@ namespace NAudio.MacOS.Tests.AudioHALTests;
 /// </summary>
 [TestFixture]
 [Category("IntegrationTest")]
-public class CoreAudioPlayerRecoveryTests
+public class AudioQueuePlayerRecoveryTests
 {
     [SetUp]
     public void SetUp()
@@ -69,7 +70,7 @@ public class CoreAudioPlayerRecoveryTests
         var source = new ThrowOnFirstRead(
             new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.05 }.ToWaveProvider());
 
-        using var player = new CoreAudioPlayer();
+        using var player = new AudioQueuePlayerBuilder().Build();
         using var stopped = new ManualResetEventSlim(false);
         Exception reported = null;
         player.PlaybackStopped += (_, e) => { reported = e.Exception; stopped.Set(); };
@@ -83,8 +84,9 @@ public class CoreAudioPlayerRecoveryTests
             "the failed play thread left PlaybackState reporting Playing");
 
         // The regression itself: this second Play() used to fail with AUDCLNT_E_BUFFER_TOO_LARGE
-        // because the abandoned buffer lease had been released as fully written. Waiting on the
-        // event rather than reading `reported` after a sleep keeps the cross-thread read ordered.
+        // in WASAPI because the abandoned buffer lease had been released as fully written. 
+        // Waiting on the event rather than reading `reported` after a sleep keeps 
+        // the cross-thread read ordered.
         stopped.Reset();
         player.Play();
         if (stopped.Wait(500))
@@ -98,9 +100,9 @@ public class CoreAudioPlayerRecoveryTests
     [Test]
     public void SourceEndingBeforeFirstBuffer_ReportsStopped()
     {
-        // This test reports the case that the audio provider has already ended before the first buffer is requested. 
+        // This test covers the case that the audio provider has already ended before the first buffer is requested. 
         // The player should report PlaybackState.Stopped, not Playing.
-        using var player = new CoreAudioPlayer();
+        using var player = new AudioQueuePlayerBuilder().Build();
         using var stopped = new ManualResetEventSlim(false);
         Exception reported = null;
         player.PlaybackStopped += (_, e) => { reported = e.Exception; stopped.Set(); };
@@ -119,7 +121,7 @@ public class CoreAudioPlayerRecoveryTests
     {
         var source = new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.05 }.ToWaveProvider();
 
-        using var player = new CoreAudioPlayer();
+        using var player = new AudioQueuePlayerBuilder().Build();
         player.Init(source);
         player.Play();
         Thread.Sleep(400);
@@ -146,7 +148,7 @@ public class CoreAudioPlayerRecoveryTests
         var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
         var signal = new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.05 };
 
-        using var player = new CoreAudioPlayer { DesiredLatency = 200 };
+        using var player = new AudioQueuePlayerBuilder().Build();
         using var stopped = new ManualResetEventSlim(false);
         Exception reported = null;
         player.PlaybackStopped += (_, e) => { reported = e.Exception; stopped.Set(); };

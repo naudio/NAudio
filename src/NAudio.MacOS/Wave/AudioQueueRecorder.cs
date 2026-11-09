@@ -219,7 +219,7 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
             {
                 double firstByte = recorder.ToSeconds(*startTime);
                 double current = firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / recorder.queueFormat.mSampleRate);
-                recorder.DataAvailable?.Invoke(new ReadOnlySpan<byte>(buffer->mAudioData, (int)buffer->mAudioDataByteSize), current, firstByte);
+                recorder.DataAvailable?.Invoke(buffer->GetSpanToReadBuffer(), current, firstByte);
             }
         }
         catch (Exception ex)

@@ -1,6 +1,7 @@
 // This interop definition was derived from the file AudioQueue.h of the Audio Toolbox Framework.
 // See https://developer.apple.com/documentation/audiotoolbox for more information.
 
+using System;
 using System.Runtime.InteropServices;
 
 using NAudio.MacOS.CoreAudioTypes;
@@ -31,4 +32,10 @@ internal unsafe struct AudioQueueBuffer
     public readonly AudioStreamPacketDescription* mPacketDescriptions;
     /// <summary>The number of valid packet descriptions in the buffer.</summary>
     public uint mPacketDescriptionCount;
+
+    // Gets a Span that can be used to write to this AudioQueueBuffer.
+    public Span<byte> GetSpanToWriteBuffer() => new(mAudioData, (int)mAudioDataBytesCapacity);
+
+    // Gets a ReadOnlySpan that can be used to read from this AudioQueueBuffer.
+    public ReadOnlySpan<byte> GetSpanToReadBuffer() => new(mAudioData, (int)mAudioDataByteSize);
 }

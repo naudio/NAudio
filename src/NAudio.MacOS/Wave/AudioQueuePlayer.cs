@@ -2,17 +2,14 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-using NAudio.MacOS;
 using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudioTypes;
-using NAudio.MacOS.CoreFoundationApi;
 using NAudio.MacOS.AudioToolbox.Interop;
 
 using static NAudio.MacOS.AudioToolbox.Interop.NativeMethods;
@@ -28,26 +25,25 @@ namespace NAudio.Wave;
 /// <seealso cref="AudioQueuePlayerBuilder"/>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.5")]
-public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition, IAsyncDisposable
+public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency, IWavePosition
 {
-    private readonly Lock lockObject;
-    private readonly SynchronizationContext? syncContext;
-    private readonly PropertyListenerHandle? deviceWillGoAway;
+    private int runId;
+    private int blockAlign;
+    private long playedFrames;
     private PlayerFlags flags;
     private PlaybackState state;
-    private IWaveProvider? provider;
-    private IntPtr queue;
-    private GCHandle queueHandle;
-    private IntPtr[] buffers;
-    private int blockAlign;
-    private int runId;
     private long submittedFrames;
-    private long playedFrames;
-    private float volume;
-    // These are written under the lock or by the queue, and are read by the callbacks of the queue.
+    private IWaveProvider? provider;
+    private GCHandle thisQueueHandle;
+    private readonly Lock lockObject;
+    private readonly IntPtr[] buffers;
+    private readonly SynchronizationContext? syncContext;
+    private readonly PropertyListenerHandle? deviceWillGoAway;
+
+    // The below four fields are written under the lock or by the queue, and are read by the callbacks of the queue.
     private volatile bool stopping;
-    private volatile bool sourceEnded;
     private volatile bool draining;
+    private volatile bool sourceEnded;
     private volatile Exception? failure;
 
     internal AudioQueuePlayer(
@@ -65,16 +61,16 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
             throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a playback device.");
         }
 
-        LatencyMilliseconds = latencyMilliseconds;
-        NumberOfBuffers = numberOfBuffers;
         Device = device;
-        LevelMeteringEnabled = levelMeteringEnabled;
-        TimePitchAlgorithm = timePitchAlgorithm;
-        this.syncContext = syncContext;
-        lockObject = new();
         state = PlaybackState.Stopped;
-        buffers = [];
-        volume = 1f;
+        this.syncContext = syncContext;
+        TimePitchAlgorithm = timePitchAlgorithm;
+        LatencyMilliseconds = latencyMilliseconds;
+        LevelMeteringEnabled = levelMeteringEnabled;
+
+        lockObject = new();
+        buffers = new IntPtr[numberOfBuffers];
+
         if (device is not null)
         {
             deviceWillGoAway = device.ConstructIsAliveChangedEvent();
@@ -146,64 +142,63 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
         FirePlaybackStopped(new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError));
     }
 
-    private unsafe void SetUInt32Property(AudioQueuePropertyID property, uint value)
-        => AudioQueueException.ThrowIfError(AudioQueueSetProperty(queue, property, (IntPtr)(&value), sizeof(uint)));
-
     private unsafe void CreateQueue(WaveFormat format)
     {
-        AudioStreamBasicDescription description = MacUtils.ConstructASBDFromWaveFormat(format);
-        long frames = Math.Max(1L, format.SampleRate * (long)LatencyMilliseconds / (1000L * NumberOfBuffers));
-        uint bufferBytes = checked((uint)(frames * format.BlockAlign));
+        thisQueueHandle = GCHandle.Alloc(this);
 
-        queueHandle = GCHandle.Alloc(this);
-        AudioQueueException.ThrowIfError(AudioQueueNewOutput(in description, &OnBufferCompleted, GCHandle.ToIntPtr(queueHandle), IntPtr.Zero, IntPtr.Zero, 0, out queue));
-        AudioQueueException.ThrowIfError(AudioQueueAddPropertyListener(queue, AudioQueueProperties.kAudioQueueProperty_IsRunning, &OnIsRunningChanged, GCHandle.ToIntPtr(queueHandle)));
+        AudioQueueException.ThrowIfError(
+            AudioQueueNewOutput(
+                MacUtils.ConstructASBDFromWaveFormat(format),
+                &OnBufferCompleted,
+                GCHandle.ToIntPtr(thisQueueHandle),
+                IntPtr.Zero,
+                IntPtr.Zero,
+                0U,
+                out queueHandle
+            )
+        );
+
+        RegisterPropertyListener(
+            AudioQueueProperties.kAudioQueueProperty_IsRunning,
+            &OnIsRunningChanged,
+            GCHandle.ToIntPtr(thisQueueHandle)
+        );
+
+        long frames = Math.Max(1L, format.SampleRate * (long)LatencyMilliseconds / (TimeSpan.MillisecondsPerSecond * NumberOfBuffers));
+        int bufferBytes = checked((int)(frames * format.BlockAlign));
 
         if (Device is not null)
         {
-            using CFString uid = CFString.CreateFromString(Device.DeviceUID);
-            IntPtr uidRef = uid.NativeObject;
-            AudioQueueException.ThrowIfError(AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_CurrentDevice, (IntPtr)(&uidRef), (uint)sizeof(IntPtr)));
+            SetStringProperty(AudioQueueProperties.kAudioQueueProperty_CurrentDevice, Device.DeviceUID);
         }
 
         if (format is WaveFormatExtensible extensible && extensible.ChannelMask != 0)
         {
-            AudioChannelLayout layout = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)extensible.ChannelMask);
-            AudioQueueException.ThrowIfError(AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_ChannelLayout, (IntPtr)(&layout), (uint)sizeof(AudioChannelLayout)));
+            SetChannelLayoutProperty(
+                AudioQueueProperties.kAudioQueueProperty_ChannelLayout,
+                MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)extensible.ChannelMask)
+            );
         }
 
         if (LevelMeteringEnabled)
         {
-            SetUInt32Property(AudioQueueProperties.kAudioQueueProperty_EnableLevelMetering, 1U);
+            SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_EnableLevelMetering, 1U);
         }
 
         // Both of these properties may only be set while the queue is stopped.
         if (TimePitchAlgorithm != TimePitchAlgorithm.Default)
         {
-            SetUInt32Property(AudioQueueProperties.kAudioQueueProperty_EnableTimePitch, 1U);
-            SetUInt32Property(AudioQueueProperties.kAudioQueueProperty_TimePitchAlgorithm, (uint)TimePitchAlgorithm);
+            SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_EnableTimePitch, 1U);
+            SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_TimePitchAlgorithm, (uint)TimePitchAlgorithm);
         }
 
-        AudioQueueException.ThrowIfError(AudioQueueSetParameter(queue, AudioQueueParameterID.kAudioQueueParam_Volume, volume));
+        // Force volume to be 1f during first-shot startup.
+        SetParameter(AudioQueueParameterID.kAudioQueueParam_Volume, 1f);
 
-        buffers = new IntPtr[NumberOfBuffers];
         for (int I = 0; I < buffers.Length; I++)
         {
-            AudioQueueException.ThrowIfError(AudioQueueAllocateBuffer(queue, bufferBytes, out AudioQueueBuffer* buffer));
-            buffers[I] = (IntPtr)buffer;
+            buffers[I] = (IntPtr)AllocateBuffer(bufferBytes);
         }
-    }
-
-    private void DestroyQueue()
-    {
-        if (queue != IntPtr.Zero)
-        {
-            // An immediate disposal waits for a running callback and guarantees that no further ones occur.
-            _ = AudioQueueDispose(queue, MacBoolean.True);
-            queue = IntPtr.Zero;
-        }
-
-        if (queueHandle.IsAllocated) { queueHandle.Free(); }
     }
 
     /// <summary>
@@ -212,12 +207,16 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     /// <returns><see langword="true"/> when the buffer was enqueued.</returns>
     private unsafe bool FillAndEnqueue(AudioQueueBuffer* buffer)
     {
-        int read;
+        uint read;
         try
         {
-            read = provider!.Read(new Span<byte>(buffer->mAudioData, (int)buffer->mAudioDataBytesCapacity));
-            read = Math.Clamp(read, 0, (int)buffer->mAudioDataBytesCapacity);
-            read -= read % blockAlign;
+            read = Math.Clamp(
+                (uint)provider!.Read(buffer->GetSpanToWriteBuffer()),
+                0U,
+                buffer->mAudioDataBytesCapacity
+            );
+            // The queue can handle non-block-aligned audio data.
+            // read -= read % (uint)blockAlign;
         }
         catch (Exception ex)
         {
@@ -232,9 +231,17 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
             return false;
         }
 
-        buffer->mAudioDataByteSize = (uint)read;
+        buffer->mAudioDataByteSize = read;
         _ = Interlocked.Add(ref submittedFrames, read / blockAlign);
-        return AudioQueueEnqueueBuffer(queue, buffer, 0, null) == 0;
+        try
+        {
+            EnqueueBuffer(buffer);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void ScheduleCompletion()
@@ -256,7 +263,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
         {
             // The buffers that are still queued play out, and the property listener reports the end.
             player.draining = true;
-            _ = AudioQueueStop(queue, MacBoolean.False);
+            try { player.Stop(false); } catch { }
         }
     }
 
@@ -273,12 +280,11 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
         }
     }
 
-    private unsafe void UpdatePlayedFrames()
+    private void UpdatePlayedFrames()
     {
-        AudioTimeStamp stamp = default;
-        if (queue != IntPtr.Zero &&
-            AudioQueueGetCurrentTime(queue, IntPtr.Zero, &stamp, null) == 0 &&
-            stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid)
+        AudioTimeStamp stamp;
+        if (queueHandle != IntPtr.Zero &&
+            ObtainAudioTimeStamp(out stamp)
         )
         {
             playedFrames = Math.Clamp((long)stamp.mSampleTime, playedFrames, Interlocked.Read(ref submittedFrames));
@@ -312,7 +318,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     private void StopQueue()
     {
         stopping = true;
-        _ = AudioQueueStop(queue, MacBoolean.True);
+        try { Stop(true); } catch { }
         state = PlaybackState.Stopped;
     }
 
@@ -322,7 +328,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     private double GetDeviceLatencyMilliseconds()
     {
         AudioDevice device = GetEffectiveDevice();
-        return 1000d * device.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) / device.NominalSampleRate;
+        return TimeSpan.MillisecondsPerSecond * device.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) / device.NominalSampleRate;
     }
 
     #endregion
@@ -333,7 +339,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     public int LatencyMilliseconds { get; }
 
     /// <summary>The number of buffers that the latency is divided into.</summary>
-    public int NumberOfBuffers { get; }
+    public int NumberOfBuffers => buffers.Length;
 
     /// <summary>The device to play to, or <see langword="null"/> when following the default output device.</summary>
     public AudioDevice? Device { get; }
@@ -348,10 +354,18 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     /// The gain of this player, from 0 to 1. It is applied by the queue
     /// and does not modify the volume of the device.
     /// </summary>
+    /// <remarks>
+    /// This property is only effective after the queue has been successfully
+    /// initialized.
+    /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">The value is less than 0, or more than 1.</exception>
     public float Volume
     {
-        get => volume;
+        get
+        {
+            if (queueHandle == IntPtr.Zero) { return 0f; }
+            return QueryParameter(AudioQueueParameterID.kAudioQueueParam_Volume);
+        }
         set
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(value, 0f);
@@ -360,11 +374,10 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
             try
             {
                 ObjectDisposedException.ThrowIf(HasFlagFast(PlayerFlags.Disposed), this);
-                if (queue != IntPtr.Zero)
+                if (queueHandle != IntPtr.Zero)
                 {
-                    AudioQueueException.ThrowIfError(AudioQueueSetParameter(queue, AudioQueueParameterID.kAudioQueueParam_Volume, value));
+                    SetParameter(AudioQueueParameterID.kAudioQueueParam_Volume, value);
                 }
-                volume = value;
             }
             finally
             {
@@ -407,7 +420,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
             {
                 UpdatePlayedFrames();
                 long queuedFrames = Interlocked.Read(ref submittedFrames) - playedFrames;
-                return TimeSpan.FromMilliseconds(GetDeviceLatencyMilliseconds() + (1000d * queuedFrames / provider!.WaveFormat.SampleRate));
+                return TimeSpan.FromMilliseconds(GetDeviceLatencyMilliseconds() + (TimeSpan.MillisecondsPerSecond * queuedFrames / provider!.WaveFormat.SampleRate));
             }
             finally
             {
@@ -460,7 +473,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
             }
             catch
             {
-                DestroyQueue();
+                if (thisQueueHandle.IsAllocated) { thisQueueHandle.Free(); }
                 throw;
             }
         }
@@ -481,7 +494,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
 
             if (state == PlaybackState.Paused)
             {
-                AudioQueueException.ThrowIfError(AudioQueueStart(queue, null));
+                Start();
                 state = PlaybackState.Playing;
                 return;
             }
@@ -510,17 +523,20 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
                 return;
             }
 
-            int status = AudioQueueStart(queue, null);
-            if (status != 0)
+            try
+            {
+                Start();
+            }
+            catch
             {
                 StopQueue();
-                AudioQueueException.ThrowIfError(status);
+                throw;
             }
 
             if (sourceEnded)
             {
                 draining = true;
-                _ = AudioQueueStop(queue, MacBoolean.False);
+                try { Stop(false); } catch { }
             }
         }
         finally
@@ -530,14 +546,14 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
     }
 
     /// <inheritdoc />
-    public void Pause()
+    public new void Pause()
     {
         ThrowIfInvalidOrDisposed();
         lockObject.Enter();
         try
         {
             if (state != PlaybackState.Playing) { return; }
-            AudioQueueException.ThrowIfError(AudioQueuePause(queue));
+            base.Pause();
             state = PlaybackState.Paused;
         }
         finally
@@ -566,8 +582,27 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
         FirePlaybackStopped(null);
     }
 
+    #endregion
+
+    private void DisposeInternal(bool disposing)
+    {
+        try
+        {
+            base.Dispose(disposing);
+        }
+        finally
+        {
+            if (disposing && thisQueueHandle.IsAllocated) { thisQueueHandle.Free(); }
+        }
+    }
+
     /// <inheritdoc />
-    public void Dispose()
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Usage",
+        "CA2215:Dispose methods should call base class dispose",
+        Justification = "Called via DisposeInternal"
+    )]
+    protected override void Dispose(bool disposing)
     {
         bool wasPlaying;
         lockObject.Enter();
@@ -578,7 +613,7 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
             wasPlaying = state != PlaybackState.Stopped;
             stopping = true;
             state = PlaybackState.Stopped;
-            DestroyQueue();
+            DisposeInternal(disposing);
         }
         finally
         {
@@ -590,9 +625,4 @@ public sealed class AudioQueuePlayer : IWavePlayer, IWaveLatency, IWavePosition,
         deviceWillGoAway?.Dispose();
         if (wasPlaying) { FirePlaybackStopped(null); }
     }
-
-    /// <inheritdoc />
-    public ValueTask DisposeAsync() => new(Task.Run(Dispose));
-
-    #endregion
 }

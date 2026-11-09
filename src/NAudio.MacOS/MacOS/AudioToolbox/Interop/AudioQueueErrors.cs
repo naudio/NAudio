@@ -5,37 +5,6 @@
 
 namespace NAudio.MacOS.AudioToolbox.Interop;
 
-/*
-    @constant   kAudioQueueErr_InvalidCodecAccess
-    				Access to the required codec is not permitted (possibly due to incompatible
-    				AudioSession settings on iOS).
-    @constant   kAudioQueueErr_QueueInvalidated
-    				On iOS derived platforms (excluding Catalyst), the audio server has exited,
-    				causing this audio queue to have become invalid.
-    @constant   kAudioQueueErr_TooManyTaps
-    				
-    @constant   kAudioQueueErr_InvalidTapContext
-    				GetTapSourceAudio can only be called from the tap's callback.
-    @constant   kAudioQueueErr_InvalidTapType
-    				
-    @constant   kAudioQueueErr_RecordUnderrun
-    				During recording, data was lost because there was no enqueued buffer into which
-    				to store it.
-    @constant   kAudioQueueErr_BufferEnqueuedTwice
-    				A buffer was enqueued twice on an input queue (before being returned as a result
-    				of being filled or from Reset).
-    @constant   kAudioQueueErr_CannotStartYet
-    				Starting the audio queue failed because an internal reconfiguration (typically
-    				initiated by a hardware stream format or sample rate change) was in progress.
-    				Sleeping briefly and retrying is recommended.
-    @constant   kAudioQueueErr_EnqueueDuringReset
-    				
-    @constant   kAudioQueueErr_InvalidOfflineMode
-    				The operation requires the queue to be in offline mode but it isn't, or vice
-    				versa. (Offline mode is entered and exited via
-    				AudioQueueSetOfflineRenderFormat).
-*/
-
 internal static class AudioQueueErrors
 {
     /// <summary>

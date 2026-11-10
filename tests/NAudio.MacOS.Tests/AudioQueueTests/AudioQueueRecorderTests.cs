@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using NAudio.Wave;
+using NAudio.MacOS.CoreAudio;
 
 using NUnit.Framework;
 
@@ -13,6 +14,8 @@ namespace NAudio.MacOS.Tests.AudioQueueTests;
 [Category("IntegrationTest")]
 public class AudioQueueRecorderTests
 {
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
     [OneTimeSetUp]
     public void VerifyMacOS() => MacOSVerify.VerifyIsOSMacOSFloorAtLeast(10, 5);
 
@@ -178,5 +181,85 @@ public class AudioQueueRecorderTests
         Assert.DoesNotThrow(recorder.StartRecording);
 
         Assert.DoesNotThrow(recorder.Dispose);
+    }
+
+    private static void RequireInputDevice()
+    {
+        if (AudioSystemObject.Instance.DefaultInputDevice is null) { Assert.Ignore("No input device is available."); }
+    }
+
+    [Test]
+    public void RecorderDeliversAudioAndCanRestart()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+        Assert.That(recorder.CaptureFormat.Encoding, Is.EqualTo(WaveFormatEncoding.IeeeFloat));
+
+        long bytes = 0;
+        int stops = 0;
+        recorder.DataAvailable += (data, _, _) => Interlocked.Add(ref bytes, data.Length);
+        recorder.RecordingStopped += (_, _) => Interlocked.Increment(ref stops);
+
+        for (int I = 0; I < 2; I++)
+        {
+            Interlocked.Exchange(ref bytes, 0);
+            recorder.StartRecording();
+            Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Capturing));
+            Thread.Sleep(500);
+            recorder.StopRecording();
+            Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+            Assert.That(Interlocked.Read(ref bytes), Is.GreaterThan(0L));
+            Assert.That(Interlocked.Read(ref bytes) % recorder.CaptureFormat.BlockAlign, Is.EqualTo(0L));
+        }
+
+        // The events are posted to the synchronization context captured when building.
+        Assert.That(SpinWait.SpinUntil(() => Volatile.Read(ref stops) == 2, Timeout), Is.True);
+    }
+
+    [Test]
+    public void RecorderHandlerFailureIsReported()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+        var source = new TaskCompletionSource<StoppedEventArgs>(TaskCreationOptions.RunContinuationsAsynchronously);
+        recorder.DataAvailable += (_, _, _) => throw new InvalidOperationException("handler failure");
+        recorder.RecordingStopped += (_, e) => source.TrySetResult(e);
+
+        recorder.StartRecording();
+
+        Assert.That(source.Task.Wait(Timeout), Is.True);
+        Assert.That(source.Task.Result.Exception, Is.TypeOf<InvalidOperationException>());
+    }
+
+    [Test]
+    public void StopRecordingFromDataAvailableDoesNotDeadlock()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+        using var returned = new ManualResetEventSlim(false);
+        using var stopped = new ManualResetEventSlim(false);
+        Exception thrown = null;
+        int callbacks = 0;
+
+        recorder.RecordingStopped += (_, _) => stopped.Set();
+        recorder.DataAvailable += (_, _, _) =>
+        {
+            // Stop from the queue's own thread; this must not wait for the running callback.
+            if (Interlocked.Increment(ref callbacks) != 3) { return; }
+            try { recorder.StopRecording(); }
+            catch (Exception ex) { thrown = ex; }
+            returned.Set();
+        };
+
+        recorder.StartRecording();
+
+        Assert.That(returned.Wait(Timeout), Is.True, "StopRecording called from DataAvailable did not return.");
+        Assert.That(thrown, Is.Null);
+        Assert.That(stopped.Wait(Timeout), Is.True, "RecordingStopped was not raised.");
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+
+        // The recorder stays usable after stopping itself.
+        Assert.DoesNotThrow(recorder.StartRecording);
+        Assert.DoesNotThrow(recorder.StopRecording);
     }
 }

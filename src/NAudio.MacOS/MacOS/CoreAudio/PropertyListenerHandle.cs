@@ -122,15 +122,27 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
     {
         // First try to remove the mapping, then the listener registration itself.
         _ = handlerMappings.TryRemove(handlerId, out _);
-        AudioObject.ThrowOnStatusError(
+        var status = NativeMethods.AudioObjectRemovePropertyListener(
+            audioObject.objectId,
             address,
-            NativeMethods.AudioObjectRemovePropertyListener(
-                audioObject.objectId,
-                address,
-                listener,
-                handlerId
-            )
+            listener,
+            handlerId
         );
+
+        // The older code could throw if the device/object was destroyed by the HAL.
+        // So, this now governs those specific cases and the error is just silently
+        // ignored.
+        if (
+            status != ErrorConstants.kAudioHardwareNoError &&
+            status != ErrorConstants.kAudioHardwareBadDeviceError &&
+            status != ErrorConstants.kAudioHardwareBadObjectError
+        )
+        {
+            AudioObject.ThrowOnStatusError(
+                address,
+                status
+            );
+        }
     }
 
     /// <summary>

@@ -1,9 +1,10 @@
 
 using System;
 using System.Threading.Tasks;
-using NAudio.MacOS.AudioToolbox.Interop;
+
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreAudioTypes;
+using NAudio.MacOS.AudioToolbox.Interop;
 
 namespace NAudio.MacOS.AudioToolbox;
 
@@ -13,7 +14,7 @@ namespace NAudio.MacOS.AudioToolbox;
 /// Instead, use the dedicated subclasses of this class, 
 /// located at the <see cref="NAudio.Wave"/> namespace.
 /// </summary>
-public unsafe abstract class AudioQueueBase : IDisposable, IAsyncDisposable
+public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// Provides the handle to the underlying Audio Queue object. <br />

@@ -2,16 +2,14 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-using NAudio.MacOS;
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudioTypes;
-using NAudio.MacOS.CoreFoundationApi;
 using NAudio.MacOS.AudioToolbox.Interop;
 
 using static NAudio.MacOS.AudioToolbox.Interop.NativeMethods;
@@ -20,83 +18,68 @@ namespace NAudio.Wave;
 
 /// <summary>
 /// An audio recorder based on Audio Queue Services. Create it with <see cref="AudioQueueRecorderBuilder"/>. <br />
-/// Audio is delivered as 32-bit float interleaved samples on a thread of the queue, so a garbage
-/// collection or a slow handler does not lose audio unless it takes longer than the queued buffers.
 /// The capture format is chosen when the recorder is built; the queue converts to it if the device changes.
 /// </summary>
 /// <seealso cref="AudioQueueRecorderBuilder"/>
 [SupportedOSPlatform("ios2.0")]
 [SupportedOSPlatform("macos10.5")]
-public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLatency
+public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
 {
     private readonly Lock lockObject;
-    private readonly SynchronizationContext? syncContext;
-    private readonly PropertyListenerHandle? deviceWillGoAway;
-    private readonly AudioStreamBasicDescription queueFormat;
-    private readonly double bufferSeconds;
     private readonly IntPtr[] buffers;
-    private IntPtr queue;
-    private GCHandle queueHandle;
+    private readonly double bufferSeconds;
+    private readonly SynchronizationContext? syncContext;
+    private readonly AudioStreamBasicDescription queueFormat;
+    private readonly PropertyListenerHandle? deviceWillGoAway;
+
     private int runId;
     private bool disposed;
     private bool invalidated;
-    private CaptureState state;
-    // These are read by the callback of the queue.
-    private volatile bool stopping;
+    private GCHandle thisQueueHandle;
+    private volatile CaptureState state;
+
+    // This field is read by the callback of the queue.
     private volatile Exception? failure;
 
     internal unsafe AudioQueueRecorder(
         int latencyMilliseconds,
         int numberOfBuffers,
         AudioDevice? device,
-        bool levelMeteringEnabled,
         SynchronizationContext? syncContext
     )
     {
-        VersioningVerifier.VerifyWeAreInSupportedVersion();
         AudioDevice effectiveDevice = device ?? AudioSystemObject.Instance.DefaultInputDevice ?? throw new InvalidOperationException("No default input device is available.");
         if (!effectiveDevice.IsAlive)
         {
             throw new InvalidOperationException("This device will be removed soon, and as such cannot be used as a capture device.");
         }
 
-        LatencyMilliseconds = latencyMilliseconds;
-        NumberOfBuffers = numberOfBuffers;
         Device = device;
-        LevelMeteringEnabled = levelMeteringEnabled;
-        this.syncContext = syncContext;
-        lockObject = new();
         state = CaptureState.Stopped;
+        this.syncContext = syncContext;
+        LatencyMilliseconds = latencyMilliseconds;
+
+        lockObject = new();
         buffers = new IntPtr[numberOfBuffers];
 
         queueFormat = SelectFormat(effectiveDevice);
-        CaptureFormat = WaveFormat.CreateIeeeFloatWaveFormat((int)queueFormat.mSampleRate, (int)queueFormat.mChannelsPerFrame);
         long frames = Math.Max(1L, (long)queueFormat.mSampleRate * latencyMilliseconds / (1000L * numberOfBuffers));
         bufferSeconds = frames / queueFormat.mSampleRate;
 
         try
         {
-            queueHandle = GCHandle.Alloc(this);
-            AudioQueueException.ThrowIfError(AudioQueueNewInput(in queueFormat, &OnBufferFilled, GCHandle.ToIntPtr(queueHandle), IntPtr.Zero, IntPtr.Zero, 0, out queue));
+            thisQueueHandle = GCHandle.Alloc(this);
+            AudioQueueException.ThrowIfError(AudioQueueNewInput(in queueFormat, &OnBufferFilled, GCHandle.ToIntPtr(thisQueueHandle), IntPtr.Zero, IntPtr.Zero, 0, out queueHandle));
 
             if (device is not null)
             {
-                using CFString uid = CFString.CreateFromString(device.DeviceUID);
-                IntPtr uidRef = uid.NativeObject;
-                AudioQueueException.ThrowIfError(AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_CurrentDevice, (IntPtr)(&uidRef), (uint)sizeof(IntPtr)));
+                SetStringProperty(AudioQueueProperties.kAudioQueueProperty_CurrentDevice, device.DeviceUID);
             }
 
-            if (levelMeteringEnabled)
-            {
-                uint enabled = 1U;
-                AudioQueueException.ThrowIfError(AudioQueueSetProperty(queue, AudioQueueProperties.kAudioQueueProperty_EnableLevelMetering, (IntPtr)(&enabled), sizeof(uint)));
-            }
-
-            uint bytes = checked((uint)(frames * queueFormat.mBytesPerFrame));
+            int bytes = checked((int)(frames * queueFormat.mBytesPerFrame));
             for (int I = 0; I < buffers.Length; I++)
             {
-                AudioQueueException.ThrowIfError(AudioQueueAllocateBuffer(queue, bytes, out AudioQueueBuffer* buffer));
-                buffers[I] = (IntPtr)buffer;
+                buffers[I] = (IntPtr)AllocateBuffer(bytes);
             }
 
             if (device is not null)
@@ -107,7 +90,7 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         }
         catch
         {
-            DestroyQueue();
+            DestroyQueue(true);
             throw;
         }
     }
@@ -116,13 +99,14 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
 
     private static AudioStreamBasicDescription SelectFormat(AudioDevice device)
     {
-        double sampleRate = 0d;
         uint channels = 0U;
+        AudioStreamBasicDescription description = default;
+
         foreach (var stream in device.GetStreams(AudioObjectPropertyScopeConstants.Input))
         {
             var format = stream.VirtualFormatNative;
             if (format.mFormatID != AudioFormatIDs.kAudioFormatLinearPCM) { continue; }
-            if (sampleRate == 0d) { sampleRate = format.mSampleRate; }
+            if (description.mFormatID == 0U) { description = format; }
             channels += format.mChannelsPerFrame;
         }
 
@@ -130,8 +114,20 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         {
             throw new InvalidOperationException("The specified device does not provide any streams to perform capture on!");
         }
+        else if (description.mFormatID == 0U)
+        {
+            throw new InvalidOperationException("The specified device does not provide a proper PCM/IEEE floating-point audio format!");
+        }
 
-        return AudioStreamBasicDescription.FillOutASBDForLPCM(sampleRate, channels, 32U, 32U, true, !BitConverter.IsLittleEndian);
+        if (description.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved))
+        {
+            description.mFormatFlags &= AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
+            description.mBytesPerFrame = description.mBytesPerPacket = channels * description.mBytesPerFrame;
+        }
+
+        description.mChannelsPerFrame = channels;
+
+        return description;
     }
 
     [StackTraceHidden]
@@ -177,35 +173,30 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         FireRecordingStopped(new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError));
     }
 
-    private void DestroyQueue()
+    private void DestroyQueue(bool disposing)
     {
-        if (queue != IntPtr.Zero)
+        try
         {
-            // An immediate disposal waits for a running callback and guarantees that no further ones occur.
-            _ = AudioQueueDispose(queue, MacBoolean.True);
-            queue = IntPtr.Zero;
+            base.Dispose(disposing);
         }
-
-        if (queueHandle.IsAllocated) { queueHandle.Free(); }
+        finally
+        {
+            if (thisQueueHandle.IsAllocated) { thisQueueHandle.Free(); }
+        }
     }
 
     private void StopQueue()
     {
-        stopping = true;
-        _ = AudioQueueStop(queue, MacBoolean.True);
-        state = CaptureState.Stopped;
-    }
-
-    private double ToSeconds(in AudioTimeStamp stamp)
-    {
-        if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid))
+        try
         {
-            return stamp.mSampleTime / queueFormat.mSampleRate;
+            state = CaptureState.Stopping;
+            Stop(true);
         }
-
-        return stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid)
-            ? CoreAudioFunctions.ConvertHostTimeToSeconds(stamp.mHostTime)
-            : 0d;
+        catch { }
+        finally
+        {
+            state = CaptureState.Stopped;
+        }
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -217,9 +208,13 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         {
             if (buffer->mAudioDataByteSize != 0)
             {
-                double firstByte = recorder.ToSeconds(*startTime);
-                double current = firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / recorder.queueFormat.mSampleRate);
-                recorder.DataAvailable?.Invoke(buffer->GetSpanToReadBuffer(), current, firstByte);
+                double sampleRate = recorder.queueFormat.mSampleRate;
+                double firstByte = StampToSeconds(*startTime, sampleRate);
+                recorder.DataAvailable?.Invoke(
+                    buffer->GetSpanToReadBuffer(),
+                    firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / sampleRate),
+                    firstByte
+                );
             }
         }
         catch (Exception ex)
@@ -229,7 +224,7 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
             return;
         }
 
-        if (!recorder.stopping)
+        if (recorder.state == CaptureState.Capturing)
         {
             _ = AudioQueueEnqueueBuffer(queue, buffer, 0, null);
         }
@@ -267,16 +262,39 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
     public int LatencyMilliseconds { get; }
 
     /// <summary>The number of buffers that the latency is divided into.</summary>
-    public int NumberOfBuffers { get; }
+    public int NumberOfBuffers => buffers.Length;
 
     /// <summary>The device to capture from, or <see langword="null"/> when following the default input device.</summary>
     public AudioDevice? Device { get; }
 
-    /// <summary>Whether level metering is enabled.</summary>
-    public bool LevelMeteringEnabled { get; }
-
     /// <summary>The format of the captured audio.</summary>
-    public WaveFormat CaptureFormat { get; }
+    public WaveFormat CaptureFormat
+    {
+        get
+        {
+            ChannelLayoutHandle? handle;
+            Speakers speakers = Speakers.None;
+            if (queueHandle != IntPtr.Zero && (handle = GetChannelLayout()) is not null)
+            {
+                try
+                {
+                    speakers = MacUtils.ConstructSpeakersValue(
+                        handle.DangerousGetHandle(),
+                        out var needsTranslation,
+                        out _
+                    );
+                    // Do not advertise speakers if they do not need translation.
+                    if (needsTranslation) { speakers = Speakers.None; }
+                }
+                catch { speakers = Speakers.None; }
+                finally
+                {
+                    handle.Dispose();
+                }
+            }
+            return MacUtils.ConstructWaveFormatFromASBD(queueFormat, speakers);
+        }
+    }
 
     /// <summary>The current state of the capture.</summary>
     public CaptureState CaptureState => state;
@@ -301,14 +319,14 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         }
     }
 
+    /// <summary>Raised when the capture stops.</summary>
+    public event EventHandler<StoppedEventArgs>? RecordingStopped;
+
     /// <summary>
     /// Raised on a thread of the queue when a buffer of captured audio is available. <br />
     /// The handler must not stop or dispose the recorder, because both wait for the handler to return.
     /// </summary>
     public event AudioQueueCaptureDataAvailableHandler? DataAvailable;
-
-    /// <summary>Raised when the capture stops.</summary>
-    public event EventHandler<StoppedEventArgs>? RecordingStopped;
 
     /// <summary>Starts capturing. Does nothing if the capture is already running.</summary>
     public unsafe void StartRecording()
@@ -321,16 +339,12 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
 
             runId++;
             failure = null;
-            stopping = false;
 
             try
             {
-                foreach (IntPtr buffer in buffers)
-                {
-                    AudioQueueException.ThrowIfError(AudioQueueEnqueueBuffer(queue, (AudioQueueBuffer*)buffer, 0, null));
-                }
+                foreach (var buffer in buffers) { EnqueueBuffer((AudioQueueBuffer*)buffer); }
 
-                AudioQueueException.ThrowIfError(AudioQueueStart(queue, null));
+                Start();
                 state = CaptureState.Capturing;
             }
             catch
@@ -363,8 +377,15 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         FireRecordingStopped(null);
     }
 
+    #endregion
+
     /// <inheritdoc />
-    public void Dispose()
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Usage",
+        "CA2215:Dispose methods should call base class dispose",
+        Justification = "Called via DisposeInternal"
+    )]
+    protected override void Dispose(bool disposing)
     {
         bool wasCapturing;
         lockObject.Enter();
@@ -373,13 +394,13 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
             if (disposed) { return; }
             disposed = true;
             wasCapturing = state != CaptureState.Stopped;
-            stopping = true;
-            state = CaptureState.Stopped;
-            DestroyQueue();
+            state = CaptureState.Stopping;
+            DestroyQueue(disposing);
         }
         finally
         {
             lockObject.Exit();
+            state = CaptureState.Stopped;
         }
 
         // The listener is removed outside of the lock, because
@@ -387,9 +408,4 @@ public sealed class AudioQueueRecorder : IDisposable, IAsyncDisposable, IWaveLat
         deviceWillGoAway?.Dispose();
         if (wasCapturing) { FireRecordingStopped(null); }
     }
-
-    /// <inheritdoc />
-    public ValueTask DisposeAsync() => new(Task.Run(Dispose));
-
-    #endregion
 }

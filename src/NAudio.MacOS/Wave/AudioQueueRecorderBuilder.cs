@@ -19,7 +19,6 @@ public sealed class AudioQueueRecorderBuilder
     private int latencyMilliseconds = 100;
     private int numberOfBuffers = 4;
     private AudioDevice? device;
-    private bool levelMetering;
 
     /// <summary>Sets the total amount of audio queued for capture. The default is 100 ms.</summary>
     /// <param name="latencyMs">The latency in milliseconds.</param>
@@ -62,17 +61,9 @@ public sealed class AudioQueueRecorderBuilder
         return this;
     }
 
-    /// <summary>Enables level metering on the queue.</summary>
-    /// <returns>This builder instance, so that calls can be chained.</returns>
-    public AudioQueueRecorderBuilder EnableLevelMetering()
-    {
-        levelMetering = true;
-        return this;
-    }
-
     /// <summary>Creates a recorder with the current settings.</summary>
     /// <returns>A new <see cref="AudioQueueRecorder"/> instance.</returns>
-    public AudioQueueRecorder Build() => new(latencyMilliseconds, numberOfBuffers, device, levelMetering, SynchronizationContext.Current);
+    public AudioQueueRecorder Build() => new(latencyMilliseconds, numberOfBuffers, device, SynchronizationContext.Current);
 
     /// <summary>Creates a recorder with the current settings without blocking the caller.</summary>
     /// <returns>A task that provides a new <see cref="AudioQueueRecorder"/> instance.</returns>
@@ -80,6 +71,6 @@ public sealed class AudioQueueRecorderBuilder
     {
         // The events are raised on the context of the caller, which the thread pool does not have.
         var context = SynchronizationContext.Current;
-        return Task.Run(() => new AudioQueueRecorder(latencyMilliseconds, numberOfBuffers, device, levelMetering, context));
+        return Task.Run(() => new AudioQueueRecorder(latencyMilliseconds, numberOfBuffers, device, context));
     }
 }

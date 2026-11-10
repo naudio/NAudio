@@ -50,7 +50,6 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
         int latencyMilliseconds,
         int numberOfBuffers,
         AudioDevice? device,
-        bool levelMeteringEnabled,
         TimePitchAlgorithm timePitchAlgorithm,
         SynchronizationContext? syncContext
     )
@@ -66,7 +65,6 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
         this.syncContext = syncContext;
         TimePitchAlgorithm = timePitchAlgorithm;
         LatencyMilliseconds = latencyMilliseconds;
-        LevelMeteringEnabled = levelMeteringEnabled;
 
         lockObject = new();
         buffers = new IntPtr[numberOfBuffers];
@@ -178,11 +176,6 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
                 AudioQueueProperties.kAudioQueueProperty_ChannelLayout,
                 MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)extensible.ChannelMask)
             );
-        }
-
-        if (LevelMeteringEnabled)
-        {
-            SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_EnableLevelMetering, 1U);
         }
 
         // Both of these properties may only be set while the queue is stopped.
@@ -343,9 +336,6 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
 
     /// <summary>The device to play to, or <see langword="null"/> when following the default output device.</summary>
     public AudioDevice? Device { get; }
-
-    /// <summary>Whether level metering is enabled.</summary>
-    public bool LevelMeteringEnabled { get; }
 
     /// <summary>The time-pitch algorithm of the queue.</summary>
     public TimePitchAlgorithm TimePitchAlgorithm { get; }

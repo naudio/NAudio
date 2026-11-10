@@ -20,7 +20,6 @@ public sealed class AudioQueuePlayerBuilder
     private int latencyMilliseconds = 100;
     private int numberOfBuffers = 4;
     private AudioDevice? device;
-    private bool levelMetering;
     private TimePitchAlgorithm timePitchAlgorithm = TimePitchAlgorithm.Default;
 
     /// <summary>Sets the total amount of audio queued ahead of the device. The default is 100 ms.</summary>
@@ -64,14 +63,6 @@ public sealed class AudioQueuePlayerBuilder
         return this;
     }
 
-    /// <summary>Enables level metering on the queue.</summary>
-    /// <returns>This builder instance, so that calls can be chained.</returns>
-    public AudioQueuePlayerBuilder EnableLevelMetering()
-    {
-        levelMetering = true;
-        return this;
-    }
-
     /// <summary>Sets the time-pitch algorithm of the queue. When not called, the system default is used.</summary>
     /// <param name="a">The algorithm to use. See <see cref="TimePitchAlgorithmConstants"/>.</param>
     /// <returns>This builder instance, so that calls can be chained.</returns>
@@ -83,7 +74,7 @@ public sealed class AudioQueuePlayerBuilder
 
     /// <summary>Creates a player with the current settings.</summary>
     /// <returns>A new <see cref="AudioQueuePlayer"/> instance.</returns>
-    public AudioQueuePlayer Build() => new(latencyMilliseconds, numberOfBuffers, device, levelMetering, timePitchAlgorithm, SynchronizationContext.Current);
+    public AudioQueuePlayer Build() => new(latencyMilliseconds, numberOfBuffers, device, timePitchAlgorithm, SynchronizationContext.Current);
 
     /// <summary>Creates a player with the current settings without blocking the caller.</summary>
     /// <returns>A task that provides a new <see cref="AudioQueuePlayer"/> instance.</returns>
@@ -91,6 +82,6 @@ public sealed class AudioQueuePlayerBuilder
     {
         // The events are raised on the context of the caller, which the thread pool does not have.
         var context = SynchronizationContext.Current;
-        return Task.Run(() => new AudioQueuePlayer(latencyMilliseconds, numberOfBuffers, device, levelMetering, timePitchAlgorithm, context));
+        return Task.Run(() => new AudioQueuePlayer(latencyMilliseconds, numberOfBuffers, device, timePitchAlgorithm, context));
     }
 }

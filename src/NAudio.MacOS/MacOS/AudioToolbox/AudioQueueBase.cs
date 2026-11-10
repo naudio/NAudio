@@ -22,12 +22,60 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
     /// </summary>
     protected IntPtr queueHandle;
 
+    private AudioQueueLevelMeterData? data;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AudioQueueBase"/> class.
     /// </summary>
     public AudioQueueBase()
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
+        data = null;
+    }
+
+    /// <summary>
+    /// Gets level metering data for this audio queue.
+    /// </summary>
+    public AudioQueueLevelMeterData LevelMeter
+    {
+        get
+        {
+            if (data is null)
+            {
+                data = new();
+                if (queueHandle == IntPtr.Zero) { return data; }
+                SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_EnableLevelMetering, 1U);
+            }
+            if (queueHandle == IntPtr.Zero) { return data; }
+            data.UpdateMeterData(GetAudioLevelMeterStates());
+            return data;
+        }
+    }
+
+    private AudioQueueLevelMeterState[] GetAudioLevelMeterStates()
+    {
+        AudioQueueLevelMeterState[] states;
+        AudioQueueException.ThrowIfError(
+            NativeMethods.AudioQueueGetPropertySize(
+                queueHandle,
+                AudioQueueProperties.kAudioQueueProperty_CurrentLevelMeter,
+                out var size
+            )
+        );
+        states = new AudioQueueLevelMeterState[size / sizeof(AudioQueueLevelMeterState)];
+        fixed (AudioQueueLevelMeterState* ptrStates = states)
+        {
+            AudioQueueException.ThrowIfError(
+                NativeMethods.AudioQueueGetProperty(
+                    queueHandle,
+                    AudioQueueProperties.kAudioQueueProperty_CurrentLevelMeter,
+                    new(&ptrStates),
+                    ref size
+                )
+            );
+        }
+        Array.Resize(ref states, (int)(size / sizeof(AudioQueueLevelMeterState)));
+        return states;
     }
 
     #region Properties, listeners and parameters
@@ -39,7 +87,9 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
     /// <returns>The current value of the parameter.</returns>
     internal float QueryParameter(AudioQueueParameterID id)
     {
-        AudioQueueException.ThrowIfError(NativeMethods.AudioQueueGetParameter(queueHandle, id, out var value));
+        AudioQueueException.ThrowIfError(
+            NativeMethods.AudioQueueGetParameter(queueHandle, id, out var value)
+        );
         return value;
     }
 
@@ -86,30 +136,31 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
         return strInterop.ToString();
     }
 
-    internal AudioQueueLevelMeterState[] GetAudioLevelMeterStates()
+    internal ChannelLayoutHandle? GetChannelLayout()
     {
-        AudioQueueLevelMeterState[] states;
-        AudioQueueException.ThrowIfError(
-            NativeMethods.AudioQueueGetPropertySize(
-                queueHandle,
-                AudioQueueProperties.kAudioQueueProperty_CurrentLevelMeter,
-                out uint size
-            )
+        uint size;
+        int status = NativeMethods.AudioQueueGetPropertySize(
+            queueHandle,
+            AudioQueueProperties.kAudioQueueProperty_ChannelLayout,
+            out size
         );
-        states = new AudioQueueLevelMeterState[size / sizeof(AudioQueueLevelMeterState)];
-        fixed (AudioQueueLevelMeterState* ptrStates = states)
+        if (status != 0) { return null; }
+        var handle = ChannelLayoutHandle.Allocate(size);
+        status = NativeMethods.AudioQueueGetProperty(
+            queueHandle,
+            AudioQueueProperties.kAudioQueueProperty_ChannelLayout,
+            handle.DangerousGetHandle(),
+            ref size
+        );
+        if (status == 0)
         {
-            AudioQueueException.ThrowIfError(
-                NativeMethods.AudioQueueGetProperty(
-                    queueHandle,
-                    AudioQueueProperties.kAudioQueueProperty_CurrentLevelMeter,
-                    new(&ptrStates),
-                    ref size
-                )
-            );
+            return handle;
         }
-        Array.Resize(ref states, (int)(size / sizeof(AudioQueueLevelMeterState)));
-        return states;
+        else
+        {
+            handle.Dispose();
+            return null;
+        }
     }
 
     internal void SetUIntProperty(AudioQueuePropertyID property, uint value)

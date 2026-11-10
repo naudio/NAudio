@@ -191,7 +191,7 @@ internal static partial class MacUtils
         numberOfBuffers = 4;
         if (totalLatency > TimeSpan.MillisecondsPerSecond)
         {
-            numberOfBuffers += 2 * (totalLatency % 1000);
+            numberOfBuffers += 2 * (totalLatency / 1000);
         }
         perBufferLatency = totalLatency / numberOfBuffers;
     }

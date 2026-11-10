@@ -36,6 +36,10 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
     /// <summary>
     /// Gets level metering data for this audio queue.
     /// </summary>
+    /// <remarks>
+    /// Do not cache the value of this property to a field or to a variable:
+    /// the level meter data are updated from repeated calls of this property.
+    /// </remarks>
     public AudioQueueLevelMeterData LevelMeter
     {
         get
@@ -47,7 +51,14 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
                 SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_EnableLevelMetering, 1U);
             }
             if (queueHandle == IntPtr.Zero) { return data; }
-            data.UpdateMeterData(GetAudioLevelMeterStates());
+            try
+            {
+                // For now, let's not relay any exceptions to the caller
+                // TODO: Verify in which states this does throw, 
+                // and if does throw, what it does throw.
+                data.UpdateMeterData(GetAudioLevelMeterStates());
+            }
+            catch { }
             return data;
         }
     }
@@ -69,7 +80,7 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
                 NativeMethods.AudioQueueGetProperty(
                     queueHandle,
                     AudioQueueProperties.kAudioQueueProperty_CurrentLevelMeter,
-                    new(&ptrStates),
+                    new(ptrStates),
                     ref size
                 )
             );

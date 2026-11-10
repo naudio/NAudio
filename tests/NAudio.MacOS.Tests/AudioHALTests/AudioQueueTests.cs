@@ -46,10 +46,9 @@ public class AudioQueueTests
     [Test]
     public void BuilderValuesReachThePlayer()
     {
-        using var player = new AudioQueuePlayerBuilder().WithLatency(200).WithNumberOfBuffers(5).EnableLevelMetering().WithTimePitchAlgorithm(TimePitchAlgorithmConstants.Spectral).Build();
+        using var player = new AudioQueuePlayerBuilder().WithPerBufferLatency(200).WithNumberOfBuffers(5).WithTimePitchAlgorithm(TimePitchAlgorithmConstants.Spectral).Build();
         Assert.That(player.LatencyMilliseconds, Is.EqualTo(200));
         Assert.That(player.NumberOfBuffers, Is.EqualTo(5));
-        Assert.That(player.LevelMeteringEnabled, Is.True);
         Assert.That(player.TimePitchAlgorithm, Is.EqualTo(TimePitchAlgorithmConstants.Spectral));
         Assert.That(player.Device, Is.Null);
     }
@@ -135,9 +134,9 @@ public class AudioQueueTests
     }
 
     [Test]
-    public void TimePitchAndMeteringCanBeEnabled()
+    public void TimePitchCanBeEnabled()
     {
-        using var configured = new AudioQueuePlayerBuilder().EnableLevelMetering().WithTimePitchAlgorithm(TimePitchAlgorithmConstants.TimeDomain).Build();
+        using var configured = new AudioQueuePlayerBuilder().WithTimePitchAlgorithm(TimePitchAlgorithmConstants.TimeDomain).Build();
         Assert.DoesNotThrow(() => configured.Init(Tone(0.2)));
     }
 

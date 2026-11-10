@@ -12,8 +12,6 @@ using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.AudioToolbox.Interop;
 
-using static NAudio.MacOS.AudioToolbox.Interop.NativeMethods;
-
 namespace NAudio.Wave;
 
 /// <summary>
@@ -63,13 +61,14 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
         buffers = new IntPtr[numberOfBuffers];
 
         queueFormat = SelectFormat(effectiveDevice);
-        long frames = Math.Max(1L, (long)queueFormat.mSampleRate * latencyMilliseconds / (1000L * numberOfBuffers));
+        long frames = Math.Max(1L, (long)queueFormat.mSampleRate * latencyMilliseconds / (TimeSpan.MillisecondsPerSecond * numberOfBuffers));
         bufferSeconds = frames / queueFormat.mSampleRate;
 
         try
         {
             thisQueueHandle = GCHandle.Alloc(this);
-            AudioQueueException.ThrowIfError(AudioQueueNewInput(in queueFormat, &OnBufferFilled, GCHandle.ToIntPtr(thisQueueHandle), IntPtr.Zero, IntPtr.Zero, 0, out queueHandle));
+
+            AudioQueueException.ThrowIfError(NativeMethods.AudioQueueNewInput(in queueFormat, &OnBufferFilled, GCHandle.ToIntPtr(thisQueueHandle), IntPtr.Zero, IntPtr.Zero, 0U, out queueHandle));
 
             if (device is not null)
             {
@@ -128,6 +127,37 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
         description.mChannelsPerFrame = channels;
 
         return description;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static unsafe void OnBufferFilled(IntPtr userData, IntPtr queue, AudioQueueBuffer* buffer, AudioTimeStamp* startTime, uint packetCount, AudioStreamPacketDescription* packetDescriptions)
+    {
+        if (GCHandle.FromIntPtr(userData).Target is not AudioQueueRecorder recorder || recorder.failure is not null) { return; }
+
+        try
+        {
+            if (buffer->mAudioDataByteSize != 0)
+            {
+                double sampleRate = recorder.queueFormat.mSampleRate;
+                double firstByte = StampToSeconds(*startTime, sampleRate);
+                recorder.DataAvailable?.Invoke(
+                    buffer->GetSpanToReadBuffer(),
+                    firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / sampleRate),
+                    firstByte
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            recorder.failure = ex;
+            _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.recorder.CompleteAfterFailure(state.run), (recorder, run: recorder.runId), false);
+            return;
+        }
+
+        if (recorder.state == CaptureState.Capturing)
+        {
+            _ = NativeMethods.AudioQueueEnqueueBuffer(queue, buffer, 0, null);
+        }
     }
 
     [StackTraceHidden]
@@ -196,37 +226,6 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
         finally
         {
             state = CaptureState.Stopped;
-        }
-    }
-
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static unsafe void OnBufferFilled(IntPtr userData, IntPtr queue, AudioQueueBuffer* buffer, AudioTimeStamp* startTime, uint packetCount, AudioStreamPacketDescription* packetDescriptions)
-    {
-        if (GCHandle.FromIntPtr(userData).Target is not AudioQueueRecorder recorder || recorder.failure is not null) { return; }
-
-        try
-        {
-            if (buffer->mAudioDataByteSize != 0)
-            {
-                double sampleRate = recorder.queueFormat.mSampleRate;
-                double firstByte = StampToSeconds(*startTime, sampleRate);
-                recorder.DataAvailable?.Invoke(
-                    buffer->GetSpanToReadBuffer(),
-                    firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / sampleRate),
-                    firstByte
-                );
-            }
-        }
-        catch (Exception ex)
-        {
-            recorder.failure = ex;
-            _ = ThreadPool.UnsafeQueueUserWorkItem(static state => state.recorder.CompleteAfterFailure(state.run), (recorder, run: recorder.runId), false);
-            return;
-        }
-
-        if (recorder.state == CaptureState.Capturing)
-        {
-            _ = AudioQueueEnqueueBuffer(queue, buffer, 0, null);
         }
     }
 

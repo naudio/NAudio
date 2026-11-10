@@ -3,6 +3,8 @@
 
 #pragma warning disable IDE0055 // We want the constants to have a consistent view.
 
+using System;
+
 namespace NAudio.MacOS.AudioToolbox.Interop;
 
 /// <summary>
@@ -12,6 +14,7 @@ namespace NAudio.MacOS.AudioToolbox.Interop;
 ///	In the flags passed to AudioQueueProcessingTapNew, either the PreEffects
 ///	or PostEffects flag must be set, but not both. 
 /// </summary>
+[Flags]
 internal enum AudioQueueProcessingTapFlags : uint
 {
     //  these are flags that are passed to both the constructor and the callback

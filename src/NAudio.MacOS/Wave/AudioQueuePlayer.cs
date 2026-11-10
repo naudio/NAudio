@@ -12,8 +12,6 @@ using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.AudioToolbox.Interop;
 
-using static NAudio.MacOS.AudioToolbox.Interop.NativeMethods;
-
 namespace NAudio.Wave;
 
 /// <summary>
@@ -54,7 +52,6 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
         SynchronizationContext? syncContext
     )
     {
-        VersioningVerifier.VerifyWeAreInSupportedVersion();
         if (device is not null && !device.IsAlive)
         {
             throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a playback device.");
@@ -145,7 +142,7 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
         thisQueueHandle = GCHandle.Alloc(this);
 
         AudioQueueException.ThrowIfError(
-            AudioQueueNewOutput(
+            NativeMethods.AudioQueueNewOutput(
                 MacUtils.ConstructASBDFromWaveFormat(format),
                 &OnBufferCompleted,
                 GCHandle.ToIntPtr(thisQueueHandle),
@@ -267,7 +264,12 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
 
         uint isRunning = 1;
         uint size = sizeof(uint);
-        if (AudioQueueGetProperty(queue, AudioQueueProperties.kAudioQueueProperty_IsRunning, (IntPtr)(&isRunning), ref size) == 0 && isRunning == 0)
+        if (NativeMethods.AudioQueueGetProperty(
+                queue,
+                AudioQueueProperties.kAudioQueueProperty_IsRunning,
+                (IntPtr)(&isRunning),
+                ref size
+            ) == 0 && isRunning == 0)
         {
             player.ScheduleCompletion();
         }

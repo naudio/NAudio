@@ -185,4 +185,14 @@ internal static partial class MacUtils
             throw new AggregateException(exceptions);
         }
     }
+
+    public static void GetPerBufferLatencyAndNumberOfBuffersFromTotalLatency(int totalLatency, out int perBufferLatency, out int numberOfBuffers)
+    {
+        numberOfBuffers = 4;
+        if (totalLatency > TimeSpan.MillisecondsPerSecond)
+        {
+            numberOfBuffers += 2 * (totalLatency % 1000);
+        }
+        perBufferLatency = totalLatency / numberOfBuffers;
+    }
 }

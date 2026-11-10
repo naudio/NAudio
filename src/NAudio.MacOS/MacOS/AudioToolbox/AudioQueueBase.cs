@@ -20,14 +20,14 @@ public abstract unsafe class AudioQueueBase : IDisposable, IAsyncDisposable
     /// Provides the handle to the underlying Audio Queue object. <br />
     /// This should be assigned to a valid value by the derived objects.
     /// </summary>
-    protected IntPtr queueHandle;
+    private protected IntPtr queueHandle;
 
     private AudioQueueLevelMeterData? data;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AudioQueueBase"/> class.
     /// </summary>
-    public AudioQueueBase()
+    internal AudioQueueBase()
     {
         VersioningVerifier.VerifyWeAreInSupportedVersion();
         data = null;

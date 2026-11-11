@@ -26,6 +26,10 @@ namespace NAudio.Wave;
 public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency, IWavePosition
 {
     private int runId;
+    // Volume value kept before the player is initialized.
+    // After the player is initialized, the volume is kept
+    // updated with the queue's volume control.
+    private float volume;
     private int blockAlign;
     private long playedFrames;
     private PlayerFlags flags;
@@ -48,7 +52,7 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
         int latencyMilliseconds,
         int numberOfBuffers,
         AudioDevice? device,
-        TimePitchAlgorithm timePitchAlgorithm,
+        TimePitchAlgorithm? timePitchAlgorithm,
         SynchronizationContext? syncContext
     )
     {
@@ -57,6 +61,7 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
             throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a playback device.");
         }
 
+        volume = 1f;
         Device = device;
         state = PlaybackState.Stopped;
         this.syncContext = syncContext;
@@ -176,14 +181,13 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
         }
 
         // Both of these properties may only be set while the queue is stopped.
-        if (TimePitchAlgorithm != TimePitchAlgorithm.Default)
+        if (TimePitchAlgorithm is not null)
         {
             SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_EnableTimePitch, 1U);
             SetUIntProperty(AudioQueueProperties.kAudioQueueProperty_TimePitchAlgorithm, (uint)TimePitchAlgorithm);
         }
 
-        // Force volume to be 1f during first-shot startup.
-        SetParameter(AudioQueueParameterID.kAudioQueueParam_Volume, 1f);
+        SetParameter(AudioQueueParameterID.kAudioQueueParam_Volume, volume);
 
         for (int I = 0; I < buffers.Length; I++)
         {
@@ -339,8 +343,8 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
     /// <summary>The device to play to, or <see langword="null"/> when following the default output device.</summary>
     public AudioDevice? Device { get; }
 
-    /// <summary>The time-pitch algorithm of the queue.</summary>
-    public TimePitchAlgorithm TimePitchAlgorithm { get; }
+    /// <summary>The time-pitch algorithm of the queue. Returns <see langword="null"/> if the time-pitch feature is disabled.</summary>
+    public TimePitchAlgorithm? TimePitchAlgorithm { get; }
 
     /// <summary>
     /// The gain of this player, from 0 to 1. It is applied by the queue
@@ -353,11 +357,9 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
     /// <exception cref="ArgumentOutOfRangeException">The value is less than 0, or more than 1.</exception>
     public float Volume
     {
-        get
-        {
-            if (queueHandle == IntPtr.Zero) { return 0f; }
-            return QueryParameter(AudioQueueParameterID.kAudioQueueParam_Volume);
-        }
+        get => HasFlagFast(PlayerFlags.Initialized)
+                ? queueHandle == IntPtr.Zero ? 0f : QueryParameter(AudioQueueParameterID.kAudioQueueParam_Volume)
+                : volume;
         set
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(value, 0f);
@@ -366,15 +368,150 @@ public sealed class AudioQueuePlayer : AudioQueueBase, IWavePlayer, IWaveLatency
             try
             {
                 ObjectDisposedException.ThrowIf(HasFlagFast(PlayerFlags.Disposed), this);
-                if (queueHandle != IntPtr.Zero)
+                if (HasFlagFast(PlayerFlags.Initialized))
                 {
-                    SetParameter(AudioQueueParameterID.kAudioQueueParam_Volume, value);
+                    if (queueHandle != IntPtr.Zero)
+                    {
+                        SetParameter(AudioQueueParameterID.kAudioQueueParam_Volume, value);
+                    }
+                }
+                else
+                {
+                    volume = value;
                 }
             }
             finally
             {
                 lockObject.Exit();
             }
+        }
+    }
+
+    /// <summary>
+    /// A value ranging from 0.5 to 2.0 indicating the rate that the audio plays. <br />
+    /// Only applicable when the <see cref="TimePitchAlgorithm"/> property is not <see langword="null"/>.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">During setting the property: The value is less than 0.5, or more than 2.0 .</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The time/pitch processor is inactive for this audio queue instance. <br /> <br />
+    ///
+    /// -or- <br /> <br />
+    ///
+    /// The player has not yet been initialized.
+    /// </exception>
+    [SupportedOSPlatform("macos10.6")]
+    public float PlayRate
+    {
+        get
+        {
+            ThrowIfInvalidOrDisposed();
+            return TimePitchAlgorithm is null
+                ? throw new InvalidOperationException("The time/pitch processor has not been enabled!")
+                : QueryParameter(AudioQueueParameterID.kAudioQueueParam_PlayRate);
+        }
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, 0.5f);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 2.0f);
+            if (TimePitchAlgorithm is null)
+            {
+                throw new InvalidOperationException("The time/pitch processor has not been enabled!");
+            }
+            else
+            {
+                SetParameter(AudioQueueParameterID.kAudioQueueParam_PlayRate, value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A value ranging from -2400 to 2400 indicating the number of cents to pitch-shift the queue's playback
+    /// (1200 cents is one octave).
+    /// </summary>
+    /// <remarks>
+    /// Note that this requires the time-pitch algorithm to have been set to
+    /// <see cref="TimePitchAlgorithmConstants.Spectral"/> during building.
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">During setting the property: The value is less than -2400, or more than 2400 .</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The time/pitch processor is inactive for this audio queue instance. <br /> <br />
+    ///
+    /// -or- <br /> <br />
+    ///
+    /// The time/pitch processor was not initialized with the <see cref="TimePitchAlgorithmConstants.Spectral"/> algorithm. <br /> <br />
+    /// 
+    /// -or- <br /> <br />
+    /// 
+    /// The player has not yet been initialized.
+    /// </exception>
+    [SupportedOSPlatform("macos10.6")]
+    public float Pitch
+    {
+        get
+        {
+            ThrowIfInvalidOrDisposed();
+            return TimePitchAlgorithm == TimePitchAlgorithmConstants.Spectral
+                ? QueryParameter(AudioQueueParameterID.kAudioQueueParam_Pitch)
+                : throw new InvalidOperationException("The time/pitch processor has not been initialized with the spectral algorithm!");
+        }
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, -2400f);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 2400f);
+            if (TimePitchAlgorithm == TimePitchAlgorithmConstants.Spectral)
+            {
+                SetParameter(AudioQueueParameterID.kAudioQueueParam_Pitch, value);
+            }
+            else
+            {
+                throw new InvalidOperationException("The time/pitch processor has not been enabled!");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A value from -1 to 1 indicating the pan position of a mono source (-1 = hard left, 0 = center, 1 = hard right). <br />
+    /// For a stereo source this parameter affects left/right balance. <br />
+    /// For multi-channel sources, this parameter has no effect.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">During setting the property: The value is less than -1.0, or more than 1.0 .</exception>
+    /// <exception cref="InvalidOperationException">The player has not yet been initialized.</exception>
+    public float Pan
+    {
+        get
+        {
+            ThrowIfInvalidOrDisposed();
+            return QueryParameter(AudioQueueParameterID.kAudioQueueParam_Pan);
+        }
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, -1f);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 1f);
+            ThrowIfInvalidOrDisposed();
+            SetParameter(AudioQueueParameterID.kAudioQueueParam_Pan, value);
+        }
+    }
+
+    /// <summary>
+    /// A value of type <see cref="TimeSpan"/> over which subsequent volume changes will be ramped. <br />
+    /// For example, to fade out from full unity gain to silence over the course of 1
+    /// second, set the <see cref="VolumeRampTime"/> property to 1 second then set 
+    /// the <see cref="Volume"/> property to 0.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">During setting the property: The represented time is a negative value.</exception>
+    /// <exception cref="InvalidOperationException">The player has not yet been initialized.</exception>
+    public TimeSpan VolumeRampTime
+    {
+        get
+        {
+            ThrowIfInvalidOrDisposed();
+            return TimeSpan.FromSeconds(QueryParameter(AudioQueueParameterID.kAudioQueueParam_VolumeRampTime));
+        }
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value.Ticks);
+            ThrowIfInvalidOrDisposed();
+            SetParameter(AudioQueueParameterID.kAudioQueueParam_VolumeRampTime, (float)value.TotalSeconds);
         }
     }
 

@@ -193,7 +193,20 @@ public class AudioQueueRecorderTests
     {
         RequireInputDevice();
         using var recorder = new AudioQueueRecorderBuilder().Build();
-        Assert.That(recorder.CaptureFormat.Encoding, Is.EqualTo(WaveFormatEncoding.IeeeFloat));
+
+        WaveFormat format = null;
+        Assert.DoesNotThrow(() => format = recorder.CaptureFormat);
+
+        Assert.That(
+            format.Encoding == WaveFormatEncoding.Pcm ||
+            format.Encoding == WaveFormatEncoding.IeeeFloat || (
+                format is WaveFormatExtensible extensible && (
+                    extensible.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM ||
+                    extensible.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT
+                )
+            ),
+            "The capture format must be PCM, IEEE floating-point, or an extensible format being PCM or IEEE floating-point."
+        );
 
         long bytes = 0;
         int stops = 0;

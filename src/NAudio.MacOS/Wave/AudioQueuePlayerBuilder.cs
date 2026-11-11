@@ -18,10 +18,10 @@ namespace NAudio.Wave;
 [SupportedOSPlatform("macos10.5")]
 public sealed class AudioQueuePlayerBuilder
 {
-    private int latencyMillisecondsPerBuffer = 100;
-    private int numberOfBuffers = 4;
+    private int latencyMilliseconds = 100;
+    private int? numberOfBuffers;
     private AudioDevice? device;
-    private TimePitchAlgorithm timePitchAlgorithm = TimePitchAlgorithm.Default;
+    private TimePitchAlgorithm? timePitchAlgorithm;
 
     /// <summary>Sets the total amount of audio queued ahead of the device. The default is 100 ms.</summary>
     /// <param name="latencyMs">The latency in milliseconds.</param>
@@ -30,22 +30,7 @@ public sealed class AudioQueuePlayerBuilder
     public AudioQueuePlayerBuilder WithLatency(int latencyMs)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(latencyMs);
-        MacUtils.GetPerBufferLatencyAndNumberOfBuffersFromTotalLatency(
-            latencyMs,
-            out latencyMillisecondsPerBuffer,
-            out numberOfBuffers
-        );
-        return this;
-    }
-
-    /// <summary>Sets the total amount of audio queued ahead of the device for each buffer. The default is 100 ms.</summary>
-    /// <param name="latencyMs">The latency of each buffer in milliseconds.</param>
-    /// <returns>This builder instance, so that calls can be chained.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">The specified value is zero or negative.</exception>
-    public AudioQueuePlayerBuilder WithPerBufferLatency(int latencyMs)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(latencyMs);
-        latencyMillisecondsPerBuffer = latencyMs;
+        latencyMilliseconds = latencyMs;
         return this;
     }
 
@@ -88,9 +73,11 @@ public sealed class AudioQueuePlayerBuilder
         return this;
     }
 
+    private int NumberOfBuffers => numberOfBuffers ?? MacUtils.GetNumberOfBuffersFromTotalLatency(latencyMilliseconds);
+
     /// <summary>Creates a player with the current settings.</summary>
     /// <returns>A new <see cref="AudioQueuePlayer"/> instance.</returns>
-    public AudioQueuePlayer Build() => new(latencyMillisecondsPerBuffer, numberOfBuffers, device, timePitchAlgorithm, SynchronizationContext.Current);
+    public AudioQueuePlayer Build() => new(latencyMilliseconds, NumberOfBuffers, device, timePitchAlgorithm, SynchronizationContext.Current);
 
     /// <summary>Creates a player with the current settings without blocking the caller.</summary>
     /// <returns>A task that provides a new <see cref="AudioQueuePlayer"/> instance.</returns>
@@ -98,6 +85,6 @@ public sealed class AudioQueuePlayerBuilder
     {
         // The events are raised on the context of the caller, which the thread pool does not have.
         var context = SynchronizationContext.Current;
-        return Task.Run(() => new AudioQueuePlayer(latencyMillisecondsPerBuffer, numberOfBuffers, device, timePitchAlgorithm, context));
+        return Task.Run(() => new AudioQueuePlayer(latencyMilliseconds, NumberOfBuffers, device, timePitchAlgorithm, context));
     }
 }

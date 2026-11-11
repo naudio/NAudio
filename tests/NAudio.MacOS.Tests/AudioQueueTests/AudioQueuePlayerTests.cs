@@ -97,7 +97,7 @@ public class AudioQueuePlayerTests
     [Test]
     public void BuilderValuesReachThePlayer()
     {
-        using var player = new AudioQueuePlayerBuilder().WithPerBufferLatency(200).WithNumberOfBuffers(5).WithTimePitchAlgorithm(TimePitchAlgorithmConstants.Spectral).Build();
+        using var player = new AudioQueuePlayerBuilder().WithLatency(200).WithNumberOfBuffers(5).WithTimePitchAlgorithm(TimePitchAlgorithmConstants.Spectral).Build();
         Assert.That(player.LatencyMilliseconds, Is.EqualTo(200));
         Assert.That(player.NumberOfBuffers, Is.EqualTo(5));
         Assert.That(player.TimePitchAlgorithm, Is.EqualTo(TimePitchAlgorithmConstants.Spectral));

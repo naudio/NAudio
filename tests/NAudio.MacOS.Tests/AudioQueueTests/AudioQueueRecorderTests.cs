@@ -56,38 +56,38 @@ public class AudioQueueRecorderTests
         AudioQueueRecorder recorder = new AudioQueueRecorderBuilder().Build();
 
         Exception capturedException = null;
-        bool dataAvailableDetected = false;
-        int recordedBytes = 0;
-        // PENDING: Adding async support to the recorder.
-        // int I = 0;
+        // PENDING: Adding proper async recording support.
+        // bool dataAvailableDetected = false;
+        int recordedBytes = 0, I = 0;
 
+        /*
         recorder.DataAvailable += (o, _, _) =>
         {
             dataAvailableDetected = true;
         };
+        */
 
         recorder.RecordingStopped += (sender, args) =>
         {
             capturedException = args.Exception;
         };
 
-        // PENDING: Adding async support to the recorder.
-
-        /*
-
         // Attempt to capture 15 buffers.
-        await foreach (CoreAudioCaptureBuffer buffer in recorder.CaptureAsync())
+        await foreach (var buffer in recorder.CaptureAsync())
         {
             recordedBytes += buffer.Buffer.Length;
             if (I == 15) { break; }
             I++;
         }
-        */
 
+        // PENDING: We currently use the DataAvailable event to pull captured data from the recorder,
+        // but the users should see DataAvailable events dispatching.
+        /*
         if (dataAvailableDetected)
         {
             Assert.Fail("Should not return data while using the async model");
         }
+        */
 
         if (capturedException is not null)
         {

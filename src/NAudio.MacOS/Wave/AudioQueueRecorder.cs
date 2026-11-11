@@ -2,7 +2,9 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Runtime.Versioning;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
@@ -326,6 +328,52 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
     /// The handler must not stop or dispose the recorder, because both wait for the handler to return.
     /// </summary>
     public event AudioQueueCaptureDataAvailableHandler? DataAvailable;
+
+    /// <summary>
+    /// Asynchronously captures audio data from the specified input device.
+    /// </summary>
+    /// <param name="cancellationToken">The token that can be used to manually stop recording (Although it is also possible by calling the <see cref="StopRecording"/> method).</param>
+    /// <returns>An enumerable instance returning capture buffers in an asynchronous manner.</returns>
+    /// <exception cref="ObjectDisposedException">This recorder instance has been disposed of.</exception>
+    /// <exception cref="InvalidOperationException">This recorder instance is already been in use.</exception>
+    /// <exception cref="CoreAudioException">The device that is used by the recorder is not existing.</exception>
+    public async IAsyncEnumerable<AudioQueueCaptureBuffer> CaptureAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        Exception? exception = null;
+        System.Collections.Concurrent.ConcurrentQueue<AudioQueueCaptureBuffer> queue = new();
+        EventHandler<StoppedEventArgs> stoppedHandler = (sender, e) => exception = e.Exception;
+        AudioQueueCaptureDataAvailableHandler dataHandler = (buffer, v1, v2) => queue.Enqueue(new(buffer.ToArray(), v1, v2));
+
+        StartRecording();
+
+        DataAvailable += dataHandler;
+        RecordingStopped += stoppedHandler;
+
+        try
+        {
+            AudioQueueCaptureBuffer? buffer;
+            // The recorder may be stopped in three cases: 
+            // 1. A cancellation request from the passed in token.
+            // 2. An exception surfaced through the PlaybackStopped event.
+            // 3. The capture state was externally changed (e.g. by explicitly calling StopRecording)
+            while ((!cancellationToken.IsCancellationRequested) && state == CaptureState.Capturing)
+            {
+                while (queue.IsEmpty) { await Task.Delay(5, cancellationToken); }
+                while (queue.TryDequeue(out buffer)) { yield return buffer; }
+            }
+        }
+        finally
+        {
+            DataAvailable -= dataHandler;
+            RecordingStopped -= stoppedHandler;
+            // Stop recording if not already been done.
+            StopRecording();
+        }
+
+        if (exception is not null) { throw exception; }
+    }
 
     /// <summary>Starts capturing. Does nothing if the capture is already running.</summary>
     public unsafe void StartRecording()

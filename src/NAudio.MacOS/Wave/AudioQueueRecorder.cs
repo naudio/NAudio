@@ -122,7 +122,7 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
 
         if (description.mFormatFlags.HasFlag(AudioFormatFlags.kAudioFormatFlagIsNonInterleaved))
         {
-            description.mFormatFlags &= AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
+            description.mFormatFlags &= ~AudioFormatFlags.kAudioFormatFlagIsNonInterleaved;
             description.mBytesPerFrame = description.mBytesPerPacket = channels * description.mBytesPerFrame;
         }
 

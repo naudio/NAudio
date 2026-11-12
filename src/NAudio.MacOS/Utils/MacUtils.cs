@@ -185,4 +185,8 @@ internal static partial class MacUtils
             throw new AggregateException(exceptions);
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetNumberOfBuffersFromTotalLatency(int totalLatency)
+        => Math.Clamp((totalLatency + 10) / 25, 4, 48);
 }

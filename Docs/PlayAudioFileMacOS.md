@@ -1,8 +1,8 @@
 ﻿## Play an Audio File on macOS with Core Audio
 
 On macOS there is no WASAPI or WaveOut. The `NAudio.MacOS` package adds
-`CoreAudioPlayer`, an `IWavePlayer` that plays through the Core Audio
-HAL. It is referenced explicitly (it is not part of the `NAudio`
+`CoreAudioPlayer`, an `IWavePlayer` that plays through Apple's Audio
+Queue Services. It is referenced explicitly (it is not part of the `NAudio`
 meta-package), and it ships pre-release only while its API settles, so
 `--prerelease` is required:
 
@@ -30,10 +30,13 @@ using (var outputDevice = new CoreAudioPlayer())   // default output device
 
 > [!NOTE]
 The `CoreAudioPlayer` does not require any device format negotiation to be done
-by your side. That is managed by the internal algorithms of the class. When the format
-of your wave provider does not match the HAL's current format, it resamples internally
-to match it. Because the HAL format changes frequently, 
-the class handles these changes for you appropriately.
+by your side. The Audio Queue converts the format of your wave provider to the format of the device.
+
+> [!NOTE]
+The player queues audio ahead of the device, so a garbage collection or a slow
+provider does not interrupt playback unless it takes longer than the queued audio.
+Set `DesiredLatency` (milliseconds, 100 by default) and `NumberOfBuffers` (4 by default) before calling `Init`
+to trade latency against the risk of dropouts. The parameterless constructor follows the system's default output device.
 
 ### Selecting the output device to perform playback
 

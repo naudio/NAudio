@@ -1,7 +1,7 @@
 ﻿## Record from a device on macOS with Core Audio
 
 The `NAudio.MacOS` package provides `CoreAudioRecorder`, which records
-from a Core Audio (HAL) input device. It ships pre-release only while its API
+from a Core Audio input device through Apple's Audio Queue Services. It ships pre-release only while its API
 settles, so `--prerelease` is required:
 
 ```sh
@@ -13,14 +13,14 @@ It has to be noted down that the `CoreAudioRecorder` class does *not* implement
 
 1. Recording requires an explicit initialization.
 
-This happens because the HAL decides the audio format to record, not us.
+This happens because the device decides the audio format to record, not us.
 Because we have to do several things to ensure that it is possible to record,
 this preparation takes some time.
 
 2. The recording format is not something that you can request.
 
-The format is decided by the HAL and may be changed at any time.
-It is not something you decide.
+The sample rate and channel count come from the device and may be changed at any time.
+Samples are always delivered as 32-bit float interleaved.
 
 An example creating a new wave file directly from recording:
 
@@ -56,7 +56,7 @@ input.StopRecording();
 
 > [!CAUTION]
 `audioData` is a `ReadOnlySpan<byte>` pointing at a buffer owned by the
-HAL, so write or copy it to your own buffer before the handler returns 
+Audio Queue, so write or copy it to your own buffer before the handler returns 
 — storing the span itself will later read memory that has been reused.
 
 Alternatively, `CaptureAsync` yields `CoreAudioCaptureBuffer` objects,
@@ -74,8 +74,8 @@ await foreach (var buffer in input.CaptureAsync(cts.Token))
 ```
 
 > [!NOTE]
-Both recording forms hand you HAL timestamps (in seconds) for the start of
-the I/O cycle and for the first byte captured, which is what you need to
+Both recording forms hand you timestamps (in seconds) for the end of
+the delivered buffer and for the first byte captured, which is what you need to
 line a recording up against another clock.
 
 > [!NOTE]
@@ -88,6 +88,10 @@ You can restart the recording, or completely abort it.
 Creating a `CoreAudioRecorder` instance with the parameterless constructor
 may result in a `InvalidOperationException` exception, if there is not a proper
 input device that macOS can use to capture audio.
+
+> [!NOTE]
+Set `DesiredLatency` (milliseconds, 100 by default) and `NumberOfBuffers` (4 by default)
+before initializing to trade latency against the risk of dropouts.
 
 ### Recording permissions
 

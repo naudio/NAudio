@@ -4,7 +4,7 @@ using System;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides an event handler that provides the audio data captured by a CoreAudioCapture instance.
+/// Provides an event handler that provides the audio data captured by a <see cref="AudioQueueRecorder"/> instance.
 /// </summary>
 /// <remarks>
 /// Note that the <paramref name="audioData"/> parameter points to an arbitrary memory block
@@ -17,22 +17,22 @@ namespace NAudio.Wave;
 /// <param name="audioData">The span of bytes containing the capture data.</param>
 /// <param name="currentTimeInSeconds">A HAL timestamp, in seconds, that indicate when the HAL started the I/O cycle.</param>
 /// <param name="firstByteAcquiredFromHALTimeInSeconds">A HAL timestamp, in seconds, that indicate when the first byte of the currently provided audio data was retrieved.</param>
-public delegate void CoreAudioCaptureDataAvailableHandler(
+public delegate void AudioQueueCaptureDataAvailableHandler(
     ReadOnlySpan<byte> audioData,
     double currentTimeInSeconds,
     double firstByteAcquiredFromHALTimeInSeconds
 );
 
 /// <summary>
-/// Provides a buffer containing data captured from a <see cref="CoreAudioRecorder"/> instance.
+/// Provides a buffer containing data captured from a <see cref="AudioQueueRecorder"/> instance.
 /// </summary>
-public sealed class CoreAudioCaptureBuffer
+public sealed class AudioQueueCaptureBuffer
 {
     private readonly byte[] data;
     private readonly double currentTimeInSeconds;
     private readonly double firstByteAcquiredFromHALTimeInSeconds;
 
-    internal CoreAudioCaptureBuffer(
+    internal AudioQueueCaptureBuffer(
         byte[] data,
         double currentTimeInSeconds,
         double firstByteAcquiredFromHALTimeInSeconds

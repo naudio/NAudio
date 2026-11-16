@@ -1,8 +1,8 @@
-﻿
+﻿using NAudio.Wave;
 using System;
 using System.Threading.Channels;
 
-namespace NAudio.Wave;
+namespace NAudio.Utils;
 
 /// <summary>
 /// Receives the buffers and the end of a capture of a <see cref="AudioQueueRecorder"/> directly from the recorder,

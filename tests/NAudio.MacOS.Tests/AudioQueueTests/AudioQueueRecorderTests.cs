@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using NAudio.Wave;
 using NAudio.MacOS.CoreAudio;
@@ -274,5 +275,103 @@ public class AudioQueueRecorderTests
         // The recorder stays usable after stopping itself.
         Assert.DoesNotThrow(recorder.StartRecording);
         Assert.DoesNotThrow(recorder.StopRecording);
+    }
+
+    private static async Task<int> CountWithTimeoutAsync(IAsyncEnumerable<AudioQueueCaptureBuffer> buffers, Func<int, bool> stopWhen = null)
+    {
+        int count = 0;
+        Task enumeration = Task.Run(async () =>
+        {
+            await foreach (var buffer in buffers)
+            {
+                Assert.That(buffer.Buffer.Length, Is.GreaterThan(0));
+                int seen = Interlocked.Increment(ref count);
+                if (stopWhen is not null && stopWhen(seen)) { break; }
+            }
+        });
+
+        if (await Task.WhenAny(enumeration, Task.Delay(Timeout)) != enumeration)
+        {
+            Assert.Fail("The asynchronous capture did not end.");
+        }
+
+        await enumeration;
+        return count;
+    }
+
+    [Test]
+    public async Task CaptureAsyncCanBeLeftAndStartedAgain()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+
+        for (int I = 0; I < 2; I++)
+        {
+            Assert.That(await CountWithTimeoutAsync(recorder.CaptureAsync(), count => count == 5), Is.EqualTo(5));
+            Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+        }
+    }
+
+    [Test]
+    public async Task CaptureAsyncEndsWhenStopRecordingIsCalled()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+
+        Task stop = Task.Run(async () =>
+        {
+            await Task.Delay(300);
+            recorder.StopRecording();
+        });
+
+        Assert.That(await CountWithTimeoutAsync(recorder.CaptureAsync()), Is.GreaterThan(0));
+        await stop;
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+    }
+
+    [Test]
+    public void CaptureAsyncThrowsWhenAnotherHandlerFails()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+        int callbacks = 0;
+
+        // After a failing handler, the queue delivers nothing more; the capture must still end.
+        recorder.DataAvailable += (_, _, _) =>
+        {
+            if (Interlocked.Increment(ref callbacks) == 5) { throw new InvalidOperationException("handler failure"); }
+        };
+
+        var exception = Assert.CatchAsync<InvalidOperationException>(() => CountWithTimeoutAsync(recorder.CaptureAsync()));
+        Assert.That(exception.Message, Is.EqualTo("handler failure"));
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+    }
+
+    [Test]
+    public void CaptureAsyncCancellationStopsTheRecorder()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+        using var cancellation = new CancellationTokenSource(300);
+
+        Assert.CatchAsync<OperationCanceledException>(() => CountWithTimeoutAsync(recorder.CaptureAsync(cancellation.Token)));
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Stopped));
+    }
+
+    [Test]
+    public async Task CaptureAsyncCannotRunTwiceAtOnce()
+    {
+        RequireInputDevice();
+        using var recorder = new AudioQueueRecorderBuilder().Build();
+
+        await using var first = recorder.CaptureAsync().GetAsyncEnumerator();
+        Assert.That(await first.MoveNextAsync(), Is.True);
+
+        await using var second = recorder.CaptureAsync().GetAsyncEnumerator();
+        Assert.ThrowsAsync<InvalidOperationException>(async () => await second.MoveNextAsync());
+
+        // The failed attempt must not stop the capture that is running.
+        Assert.That(recorder.CaptureState, Is.EqualTo(CaptureState.Capturing));
+        Assert.That(await first.MoveNextAsync(), Is.True);
     }
 }

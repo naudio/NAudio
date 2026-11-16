@@ -2,7 +2,6 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Runtime.Versioning;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -40,6 +39,9 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
 
     // This field is read by the callback of the queue.
     private volatile Exception? failure;
+
+    // Set while CaptureAsync runs; read by the callback of the queue.
+    private volatile AudioQueueCaptureSink? captureSink;
 
     internal unsafe AudioQueueRecorder(
         int latencyMilliseconds,
@@ -142,11 +144,13 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
             {
                 double sampleRate = recorder.queueFormat.mSampleRate;
                 double firstByte = StampToSeconds(*startTime, sampleRate);
-                recorder.DataAvailable?.Invoke(
-                    buffer->GetSpanToReadBuffer(),
-                    firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / sampleRate),
-                    firstByte
-                );
+                double current = firstByte + ((double)buffer->mAudioDataByteSize / recorder.queueFormat.mBytesPerFrame / sampleRate);
+                ReadOnlySpan<byte> audioData = buffer->GetSpanToReadBuffer();
+
+                // The asynchronous capture is fed first and does not depend on the public event,
+                // so a failing user handler cannot drop buffers that were already captured.
+                recorder.captureSink?.Write(audioData, current, firstByte);
+                recorder.DataAvailable?.Invoke(audioData, current, firstByte);
             }
         }
         catch (Exception ex)
@@ -202,7 +206,9 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
             lockObject.Exit();
         }
 
-        FireRecordingStopped(new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError));
+        var exception = new CoreAudioException("The device used to perform I/O is now gone.", MacOS.CoreAudio.Interop.ErrorConstants.kAudioHardwareBadDeviceError);
+        captureSink?.Complete(exception);
+        FireRecordingStopped(exception);
     }
 
     private void DestroyQueue(bool disposing)
@@ -246,7 +252,30 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
             lockObject.Exit();
         }
 
+        captureSink?.Complete(exception);
         FireRecordingStopped(exception);
+    }
+
+    /// <summary>
+    /// Stops the capture started by <see cref="CaptureAsync(CancellationToken)"/> when it ends. <br />
+    /// Unlike <see cref="StopRecording"/>, it never throws, so it cannot hide the exception that ended the enumeration,
+    /// and it leaves alone a capture that was stopped and started again in the meantime.
+    /// </summary>
+    private void StopCaptureRun(int run)
+    {
+        lockObject.Enter();
+        try
+        {
+            if (run != runId || state == CaptureState.Stopped || disposed) { return; }
+            StopQueue();
+        }
+        finally
+        {
+            lockObject.Exit();
+        }
+
+        captureSink?.Complete(null);
+        FireRecordingStopped(null);
     }
 
     private double GetLatencyInSeconds()
@@ -330,49 +359,61 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
     public event AudioQueueCaptureDataAvailableHandler? DataAvailable;
 
     /// <summary>
-    /// Asynchronously captures audio data from the specified input device.
+    /// Starts capturing and returns the captured buffers asynchronously. <br />
+    /// The capture stops when the enumeration ends: by leaving the loop, through <paramref name="cancellationToken"/>,
+    /// or when the recorder stops (by <see cref="StopRecording"/>, by <see cref="AudioQueueBase.Dispose()"/>, or because of a failure).
     /// </summary>
-    /// <param name="cancellationToken">The token that can be used to manually stop recording (Although it is also possible by calling the <see cref="StopRecording"/> method).</param>
+    /// <remarks>
+    /// The buffers are received directly from the queue rather than through <see cref="DataAvailable"/>,
+    /// whose handlers keep running during the capture. <br />
+    /// If the capture fails (a <see cref="DataAvailable"/> handler throws, or the device goes away), the buffers
+    /// captured before the failure are returned first, and then the exception that stopped the capture is thrown.
+    /// </remarks>
+    /// <param name="cancellationToken">The token that stops the capture; cancelling it throws <see cref="OperationCanceledException"/>.</param>
     /// <returns>An enumerable instance returning capture buffers in an asynchronous manner.</returns>
     /// <exception cref="ObjectDisposedException">This recorder instance has been disposed of.</exception>
-    /// <exception cref="InvalidOperationException">This recorder instance is already been in use.</exception>
+    /// <exception cref="InvalidOperationException">This recorder instance is already capturing.</exception>
     /// <exception cref="CoreAudioException">The device that is used by the recorder is not existing.</exception>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
     public async IAsyncEnumerable<AudioQueueCaptureBuffer> CaptureAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
-        Exception? exception = null;
-        System.Collections.Concurrent.ConcurrentQueue<AudioQueueCaptureBuffer> queue = new();
-        EventHandler<StoppedEventArgs> stoppedHandler = (sender, e) => exception = e.Exception;
-        AudioQueueCaptureDataAvailableHandler dataHandler = (buffer, v1, v2) => queue.Enqueue(new(buffer.ToArray(), v1, v2));
+        int run = -1;
+        AudioQueueCaptureSink sink = new();
 
-        StartRecording();
-
-        DataAvailable += dataHandler;
-        RecordingStopped += stoppedHandler;
+        lockObject.Enter();
+        try
+        {
+            ThrowIfInvalidOrDisposed();
+            if (state != CaptureState.Stopped || captureSink is not null)
+            {
+                throw new InvalidOperationException("The recorder is already capturing.");
+            }
+            captureSink = sink;
+        }
+        finally
+        {
+            lockObject.Exit();
+        }
 
         try
         {
-            AudioQueueCaptureBuffer? buffer;
-            // The recorder may be stopped in three cases: 
-            // 1. A cancellation request from the passed in token.
-            // 2. An exception surfaced through the PlaybackStopped event.
-            // 3. The capture state was externally changed (e.g. by explicitly calling StopRecording)
-            while ((!cancellationToken.IsCancellationRequested) && state == CaptureState.Capturing)
+            StartRecording();
+            run = runId;
+
+            // The sink is completed by every path that stops the recorder, with the exception
+            // that stopped it, if any; the reader then drains the remaining buffers and ends or throws.
+            while (await sink.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                while (queue.IsEmpty) { await Task.Delay(5, cancellationToken); }
-                while (queue.TryDequeue(out buffer)) { yield return buffer; }
+                while (sink.Reader.TryRead(out var buffer)) { yield return buffer; }
             }
         }
         finally
         {
-            DataAvailable -= dataHandler;
-            RecordingStopped -= stoppedHandler;
-            // Stop recording if not already been done.
-            StopRecording();
+            StopCaptureRun(run);
+            captureSink = null;
         }
-
-        if (exception is not null) { throw exception; }
     }
 
     /// <summary>Starts capturing. Does nothing if the capture is already running.</summary>
@@ -421,6 +462,7 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
             lockObject.Exit();
         }
 
+        captureSink?.Complete(null);
         FireRecordingStopped(null);
     }
 
@@ -453,6 +495,7 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
         // The listener is removed outside of the lock, because
         // removing it waits for a running notification, which itself takes the lock.
         deviceWillGoAway?.Dispose();
+        captureSink?.Complete(null);
         if (wasCapturing) { FireRecordingStopped(null); }
     }
 }

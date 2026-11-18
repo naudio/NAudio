@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -15,13 +16,13 @@ public sealed class BroadcastExtension
     /// Helper: formats a <see cref="DateTime"/> into the <c>yyyy-MM-dd</c> form
     /// expected by <see cref="OriginationDate"/>.
     /// </summary>
-    public static string FormatOriginationDate(DateTime date) => date.ToString("yyyy-MM-dd");
+    public static string FormatOriginationDate(DateTime date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Helper: formats a <see cref="DateTime"/> into the <c>HH:mm:ss</c> form
     /// expected by <see cref="OriginationTime"/>.
     /// </summary>
-    public static string FormatOriginationTime(DateTime time) => time.ToString("HH:mm:ss");
+    public static string FormatOriginationTime(DateTime time) => time.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Description (up to 256 bytes in the file).

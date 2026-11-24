@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using NAudio.Wave;
@@ -174,6 +175,25 @@ public class WaveFileWriterExtensionsTests
         var dt = new DateTime(2026, 4, 23, 14, 5, 6);
         Assert.That(BroadcastExtension.FormatOriginationDate(dt), Is.EqualTo("2026-04-23"));
         Assert.That(BroadcastExtension.FormatOriginationTime(dt), Is.EqualTo("14:05:06"));
+    }
+
+    [Test]
+    public void BroadcastExtensionDateTimeHelpersIgnoreCurrentCulture()
+    {
+        var dt = new DateTime(2026, 4, 23, 14, 5, 6);
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            // th-TH uses the Buddhist calendar (year 2569); fi-FI uses "." as the time separator
+            CultureInfo.CurrentCulture = new CultureInfo("th-TH");
+            Assert.That(BroadcastExtension.FormatOriginationDate(dt), Is.EqualTo("2026-04-23"));
+            CultureInfo.CurrentCulture = new CultureInfo("fi-FI");
+            Assert.That(BroadcastExtension.FormatOriginationTime(dt), Is.EqualTo("14:05:06"));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
     }
 
     // --- WriteInfoMetadata -----------------------------------------------------

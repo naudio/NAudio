@@ -1,6 +1,8 @@
-﻿using NAudio.Wave;
+﻿
 using System;
 using System.Threading.Channels;
+
+using NAudio.Wave;
 
 namespace NAudio.Utils;
 

@@ -124,7 +124,7 @@
       href: ExtendedAudioFileServicesReader.md
     - name: Use the Extended Audio File Services writer to write compressed files
       href: ExtendedAudioFileServicesWriter.md
-    - name: Play an audio file on macOS (Core Audio)
+    - name: Play an audio file on macOS (Audio Queue Services)
       href: PlayAudioFileMacOS.md
-    - name: Record an audio file on macOS (Core Audio)
+    - name: Record an audio file on macOS (Audio Queue Services)
       href: RecordAudioFileMacOS.md

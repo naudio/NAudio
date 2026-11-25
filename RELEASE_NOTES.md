@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * **macOS wrappers (preview)**: **Breaking:** `CoreAudioPlayer` and `CoreAudioRecorder` now use Audio Queue Services instead of a HAL I/O procedure, so garbage collections no longer cause dropouts; both gain `DesiredLatency` and `NumberOfBuffers`. `CoreAudioPlayer.Pause` now reports `PlaybackState.Paused`, its `OutputWaveFormat` is now the provider's format, and `CoreAudioRecorder` always delivers 32-bit float interleaved samples (#1511) Removed `CoreAudioIOProcedure` and `AudioDevice.GetStreamUsage`/`SetStreamUsage`.
  * `AiffFileReader` no longer reads the pad byte after an odd-sized SSND chunk as sound data, so 8-bit files with an odd number of sample bytes no longer gain an extra sample frame
  * Fixed `BroadcastExtension.FormatOriginationDate` and `FormatOriginationTime` producing non-ISO text (for example a Buddhist-calendar year, or `.` as the time separator) when the current culture differs from the invariant one
  * `AiffFileReader` now reads files that leave off the pad byte after an odd-sized SSND chunk at the end of the file, instead of throwing "No SSND chunk found"

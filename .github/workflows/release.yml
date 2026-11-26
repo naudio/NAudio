@@ -1,0 +1,252 @@
+name: release
+
+# Publishes NAudio 2.x maintenance releases. Adapted from release.yml on main
+# (NAudio 3); keep the two in step where they overlap.
+#
+# Two triggers:
+#   - workflow_dispatch (manual): cuts a pre-release, "<VersionPrefix>-preview.<run_number>"
+#     by default; an optional `milestone` input overrides the suffix (e.g. "rc.1").
+#   - push of a v* tag on a release/2.x commit: cuts a final release matching <VersionPrefix>.
+#
+# Why this file has the same name as main's: GitHub only lists dispatchable workflows
+# that exist on the default branch, but runs the copy from the branch you pick. With the
+# same name, "release" in the Actions tab (or `gh workflow run release.yml --ref release/2.x`)
+# runs this file. Tag pushes run the workflow file at the tagged commit, so v2.* tags run this
+# file and v3.* tags run main's. The NuGet trusted-publishing policy is keyed on the workflow
+# file name, so it covers both.
+on:
+  workflow_dispatch:
+    inputs:
+      milestone:
+        description: "Optional pre-release label (e.g. rc.1). Leave blank for auto preview.<run_number>."
+        required: false
+        type: string
+  push:
+    tags: ['v*']
+
+permissions:
+  id-token: write    # for NuGet trusted publishing (OIDC)
+  contents: write    # for `gh release create`
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Dispatch must come from release/2.x. Tag pushes are unrestricted because
+      # the tag itself is the gate (and must match VersionPrefix, checked below).
+      - name: Verify branch (dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/release/2.x') {
+            Write-Error "2.x release dispatch must be from release/2.x (got $env:GITHUB_REF)."
+            exit 1
+          }
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $prefix = @($props.Project.PropertyGroup | ForEach-Object { $_.VersionPrefix } | Where-Object { $_ })[0]
+          if (-not $prefix) {
+            Write-Error "VersionPrefix not found in Directory.Build.props"
+            exit 1
+          }
+          if (-not $prefix.StartsWith('2.')) {
+            Write-Error "VersionPrefix $prefix is not a 2.x version; this is the release/2.x release workflow."
+            exit 1
+          }
+
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $tagVersion = $env:GITHUB_REF -replace 'refs/tags/v',''
+            if ($tagVersion -ne $prefix) {
+              Write-Error "Tag v$tagVersion does not match VersionPrefix $prefix in Directory.Build.props. Bump the prefix and retag."
+              exit 1
+            }
+            $version = $tagVersion
+            $packArgs = ""
+            $isFinal = 'true'
+          } else {
+            $milestone = '${{ inputs.milestone }}'
+            if ([string]::IsNullOrWhiteSpace($milestone)) {
+              $suffix = "preview.${{ github.run_number }}"
+            } else {
+              $suffix = $milestone.Trim()
+            }
+            $version = "$prefix-$suffix"
+            $packArgs = "-p:VersionSuffix=$suffix"
+            $isFinal = 'false'
+          }
+
+          Write-Host "Resolved version: $version (is_final=$isFinal)"
+          "version=$version"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "is_final=$isFinal"    | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "pack_args=$packArgs"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      # Final releases use the '### <version>' section of RELEASE_NOTES.md (and must
+      # have one); pre-releases use '### Unreleased' if present. The same file feeds
+      # the package release notes and the GitHub Release body (finals only).
+      - name: Extract RELEASE_NOTES.md section
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $isFinal = '${{ steps.version.outputs.is_final }}' -eq 'true'
+
+          if ($isFinal) {
+            $pattern = "^### $([regex]::Escape($version))(\s|$)"
+            $label = "### $version"
+          } else {
+            $pattern = "^### Unreleased(\s|$)"
+            $label = "### Unreleased"
+          }
+
+          $lines = Get-Content RELEASE_NOTES.md
+          $start = -1
+          $end = $lines.Length
+          for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -match $pattern) {
+              $start = $i + 1
+            } elseif ($start -ge 0 -and $lines[$i] -match "^### ") {
+              $end = $i
+              break
+            }
+          }
+
+          if ($start -lt 0) {
+            if ($isFinal) {
+              Write-Error "RELEASE_NOTES.md has no '$label (...)' section. Rename '### Unreleased' to '### $version (DD MMM YYYY)' before tagging."
+              exit 1
+            } else {
+              Write-Warning "RELEASE_NOTES.md has no '$label' section; package release notes will be empty."
+              "" | Out-File -FilePath release-body.md -Encoding utf8
+            }
+          } else {
+            $body = ''
+            if ($end -gt $start) { $body = $lines[$start..($end - 1)] -join "`n" }
+            $body = [regex]::Replace($body, '<!--[\s\S]*?-->', '').Trim()
+
+            # NuGet.org caps PackageReleaseNotes at 35,000 characters and rejects an
+            # oversized package at push time. Fail here instead, before anything is built.
+            $limit = 35000
+            if ($body.Length -gt $limit) {
+              Write-Error "Release notes section '$label' is $($body.Length) chars, over NuGet's $limit-character PackageReleaseNotes limit."
+              exit 1
+            }
+
+            $body | Out-File -FilePath release-body.md -Encoding utf8
+            Write-Host "Extracted '$label' ($($body.Length) of $limit chars) to release-body.md."
+          }
+
+      - name: Restore
+        run: dotnet restore NAudio.sln
+
+      # The package projects set GeneratePackageOnBuild, so this build also packs them
+      # and runs package validation against the baseline release (see Directory.Build.targets).
+      # Any CPU matches build.yml; NAudioUniversalDemo has no Any CPU entry and is skipped.
+      - name: Build
+        run: dotnet build NAudio.sln --configuration Release --no-restore ${{ steps.version.outputs.pack_args }}
+
+      # VSTest-mode spelling (positional project, --logger), as in build.yml: this
+      # branch has no global.json opting into Microsoft.Testing.Platform.
+      - name: Test
+        run: >
+          dotnet test NAudioTests/NAudioTests.csproj
+          --configuration Release
+          --no-build
+          --filter "TestCategory!=IntegrationTest"
+
+      # Pack the packages explicitly, into one folder and with the release notes, so the
+      # tool/sample apps are never shipped. A new package must be added to this list.
+      - name: Pack
+        shell: pwsh
+        run: |
+          $packages = @(
+            'NAudio.Core',
+            'NAudio.Asio',
+            'NAudio.WinForms',
+            'NAudio.Midi',
+            'NAudio.WinMM',
+            'NAudio.Wasapi',
+            'NAudio.Uap',
+            'NAudio',
+            'NAudio.Extras'
+          )
+          $notesPath = Join-Path $env:GITHUB_WORKSPACE "release-body.md"
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          foreach ($pkg in $packages) {
+            dotnet pack "$pkg/$pkg.csproj" `
+              --configuration Release `
+              --no-build `
+              --output artifacts `
+              -p:PackageReleaseNotesFile="$notesPath" `
+              ${{ steps.version.outputs.pack_args }}
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          $count = @(Get-ChildItem artifacts\*.nupkg).Count
+          if ($count -ne $packages.Count) {
+            Write-Error "Expected $($packages.Count) packages in artifacts/, found $count."
+            exit 1
+          }
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg-${{ steps.version.outputs.version }}
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+
+      # NuGet trusted publishing via OIDC - the same policy and NUGET_USER variable as main.
+      - name: NuGet login (trusted publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      # dotnet nuget push doesn't expand globs and PowerShell doesn't expand wildcards
+      # for external commands, so loop explicitly (also gives per-package errors).
+      - name: Push to NuGet
+        shell: pwsh
+        run: |
+          $packages = Get-ChildItem -Path "artifacts\*.nupkg"
+          if (-not $packages) {
+            Write-Error "No .nupkg files found in artifacts/"
+            exit 1
+          }
+          foreach ($pkg in $packages) {
+            Write-Host "Pushing $($pkg.Name)"
+            dotnet nuget push $pkg.FullName `
+              --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to push $($pkg.Name)"
+              exit $LASTEXITCODE
+            }
+          }
+
+      # GitHub Release on final tag runs only. --latest=false is essential here: without it
+      # a 2.x release would become the repository's "Latest" release, displacing NAudio 3.
+      - name: Create GitHub Release (final only)
+        if: steps.version.outputs.is_final == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $assets = @(Get-ChildItem -Path "artifacts\*.nupkg" | ForEach-Object { $_.FullName })
+          if ($assets.Count -eq 0) {
+            Write-Error "No .nupkg files found in artifacts/ to attach to the release"
+            exit 1
+          }
+          gh release create "v${{ steps.version.outputs.version }}" `
+            --title "NAudio ${{ steps.version.outputs.version }}" `
+            --notes-file release-body.md `
+            --verify-tag `
+            --latest=false `
+            @assets

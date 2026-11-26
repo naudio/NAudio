@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Restore
         run: dotnet restore NAudio.sln
@@ -63,7 +63,7 @@ jobs:
       # They are uploaded so a PR's packages can be tried out; releases are
       # built and pushed by release.yml.
       - name: Upload packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packages
           path: '**/bin/Release/*.nupkg'
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: ${{ runner.temp }}/TestResults/*.trx

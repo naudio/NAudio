@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -44,7 +44,7 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
     private volatile AudioQueueCaptureSink? captureSink;
 
     internal unsafe AudioQueueRecorder(
-        int latencyMilliseconds,
+        int bufferLengthMilliseconds,
         int numberOfBuffers,
         AudioDevice? device,
         SynchronizationContext? syncContext
@@ -59,13 +59,13 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
         Device = device;
         state = CaptureState.Stopped;
         this.syncContext = syncContext;
-        LatencyMilliseconds = latencyMilliseconds;
+        BufferMilliseconds = bufferLengthMilliseconds;
 
         lockObject = new();
         buffers = new IntPtr[numberOfBuffers];
 
         queueFormat = SelectFormat(effectiveDevice);
-        long frames = Math.Max(1L, (long)queueFormat.mSampleRate * latencyMilliseconds / (TimeSpan.MillisecondsPerSecond * numberOfBuffers));
+        long frames = Math.Max(1L, (long)queueFormat.mSampleRate * bufferLengthMilliseconds / (TimeSpan.MillisecondsPerSecond * numberOfBuffers));
         bufferSeconds = frames / queueFormat.mSampleRate;
 
         try
@@ -288,14 +288,17 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
 
     #region Public API
 
+    /// <summary>The device to capture from, or <see langword="null"/> when following the default input device.</summary>
+    public AudioDevice? Device { get; }
+
     /// <summary>The total amount of audio queued for capture, in milliseconds.</summary>
-    public int LatencyMilliseconds { get; }
+    public int BufferMilliseconds { get; }
+
+    /// <summary>The current state of the capture.</summary>
+    public CaptureState CaptureState => state;
 
     /// <summary>The number of buffers that the latency is divided into.</summary>
     public int NumberOfBuffers => buffers.Length;
-
-    /// <summary>The device to capture from, or <see langword="null"/> when following the default input device.</summary>
-    public AudioDevice? Device { get; }
 
     /// <summary>The format of the captured audio.</summary>
     public WaveFormat CaptureFormat
@@ -325,9 +328,6 @@ public sealed class AudioQueueRecorder : AudioQueueBase, IWaveLatency
             return MacUtils.ConstructWaveFormatFromASBD(queueFormat, speakers);
         }
     }
-
-    /// <summary>The current state of the capture.</summary>
-    public CaptureState CaptureState => state;
 
     /// <inheritdoc />
     public TimeSpan AverageLatency

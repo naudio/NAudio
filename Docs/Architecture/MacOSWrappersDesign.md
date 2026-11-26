@@ -1,4 +1,4 @@
-## NAudio 3 — macOS wrappers: architecture and design
+﻿## NAudio 3 — macOS wrappers: architecture and design
 
 How the NAudio 3 macOS wrappers were put together and which were
 the goals for this effort. This document aims to capture
@@ -156,6 +156,11 @@ during several key interactions with the API.
 
 ### Playback/Recording
 
+> [!IMPORTANT]
+Playback/Recording through the macOS HAL API is now deprecated in favor of the
+Audio Queue Services. See below for the reason why this is done, and why we chose
+for that to be done. See also the issue #1511.
+
 To actually provide or retrieve data to/from an actual
 hardware device, the HAL offers us the I/O procedure.
 
@@ -312,6 +317,35 @@ and provides support for any MIME type that is available from the API.
 
 In fact, the supported file types can be queried. 
 See the `AudioFileLibraryInformation` class for more information.
+
+### Audio Queue Services API
+
+Newer versions of the macOS wrappers provide the Audio Queue Services API
+instead of the low-level HAL API for playback/recording.
+
+The reason for this is GC transitions.
+
+The issue #1511 fully describes the GC transitions between native and managed code done during the
+reverse P/Invoke I/O procedure call as the culprit for losing samples during playback/recording.
+The Core Audio HAL requires, by design, the audio code passed to it's I/O procedure to return as 
+immediately as possible, and if any call loses the deadline HAL gives, the samples related to
+these calls are never rendered or captured. However, a .NET GC execution can take much longer
+time than the deadline Core Audio gives to us, so it is practically useless.
+Instead, the playback/recording now uses the Audio Queue Services API, and that from now on is the default API.
+
+> [!NOTE]
+For those who are interested for the older HAL API code, it can be found in https://github.com/mdcdi1315/NAudio/tree/macos-wrappers-old-coreaudioplayer-impl .
+
+This API offers the following features for the NAudio users:
+
+1. Complete control over the latency (or the buffer length during recording)
+that the playback gets data from the audio provider, or providing data to the
+data available event during recording. This was not previously available due to
+the HAL design.
+
+2. Fluent builder classes, that can be used to build player/recorder instances effectively,
+and they have a couple of configuration options that they can use. This does also align the way initialzation
+is done on WASAPI on Windows.
 
 ## 7. For the future...
 

@@ -97,7 +97,7 @@ namespace NAudio.Wave;
 
 public sealed class AudioQueueRecorderBuilder
 {
-    public AudioQueueRecorderBuilder WithLatency(int latencyMs);
+    public AudioQueueRecorderBuilder WithBufferLength(int lengthMs);
 
     public AudioQueueRecorderBuilder WithNumberOfBuffers(int bufferCount);
 
@@ -117,7 +117,7 @@ Note that the method captures the synchornization context of the thread where
 `BuildAsync` is called, and the recording stopped events are dispatched on that
 synchronization context, if one is set.
 
-#### The `WithLatency` method
+#### The `WithBufferLength` method
 
 For the audio queue to record audio, the class internally allocates buffers
 and sets their size based on this value. So, this method specifies the size,

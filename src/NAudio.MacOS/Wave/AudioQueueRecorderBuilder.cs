@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,18 +17,18 @@ namespace NAudio.Wave;
 [SupportedOSPlatform("macos10.5")]
 public sealed class AudioQueueRecorderBuilder
 {
-    private int latencyMilliseconds = 100;
+    private int bufferLengthMilliseconds = 100;
     private int? numberOfBuffers;
     private AudioDevice? device;
 
-    /// <summary>Sets the total amount of audio queued for capture. The default is 100 ms for 4 buffers.</summary>
-    /// <param name="latencyMs">The latency in milliseconds.</param>
+    /// <summary>Sets the total amount of audio queued for capture for each buffer. The default is 100 ms for 4 buffers.</summary>
+    /// <param name="lengthMs">The per-buffer length in milliseconds.</param>
     /// <returns>This builder instance, so that calls can be chained.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The specified value is zero or negative.</exception>
-    public AudioQueueRecorderBuilder WithLatency(int latencyMs)
+    public AudioQueueRecorderBuilder WithBufferLength(int lengthMs)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(latencyMs);
-        latencyMilliseconds = latencyMs;
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(lengthMs);
+        bufferLengthMilliseconds = lengthMs;
         return this;
     }
 
@@ -62,11 +62,11 @@ public sealed class AudioQueueRecorderBuilder
         return this;
     }
 
-    private int NumberOfBuffers => numberOfBuffers ?? MacUtils.GetNumberOfBuffersFromTotalLatency(latencyMilliseconds);
+    private int NumberOfBuffers => numberOfBuffers ?? MacUtils.GetNumberOfBuffersFromTotalLatency(bufferLengthMilliseconds);
 
     /// <summary>Creates a recorder with the current settings.</summary>
     /// <returns>A new <see cref="AudioQueueRecorder"/> instance.</returns>
-    public AudioQueueRecorder Build() => new(latencyMilliseconds, NumberOfBuffers, device, SynchronizationContext.Current);
+    public AudioQueueRecorder Build() => new(bufferLengthMilliseconds, NumberOfBuffers, device, SynchronizationContext.Current);
 
     /// <summary>Creates a recorder with the current settings without blocking the caller.</summary>
     /// <returns>A task that provides a new <see cref="AudioQueueRecorder"/> instance.</returns>
@@ -74,6 +74,6 @@ public sealed class AudioQueueRecorderBuilder
     {
         // The events are raised on the context of the caller, which the thread pool does not have.
         var context = SynchronizationContext.Current;
-        return Task.Run(() => new AudioQueueRecorder(latencyMilliseconds, NumberOfBuffers, device, context));
+        return Task.Run(() => new AudioQueueRecorder(bufferLengthMilliseconds, NumberOfBuffers, device, context));
     }
 }

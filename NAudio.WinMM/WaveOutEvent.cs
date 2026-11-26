@@ -97,6 +97,7 @@ namespace NAudio.Wave
                 // normally we don't allow calling Init twice, but as experiment, see if we can clean up and go again
                 // try to allow reuse of this waveOut device
                 // n.b. risky if Playback thread has not exited
+                ResetDevice();
                 DisposeBuffers();
                 CloseWaveOut();
             }
@@ -117,7 +118,7 @@ namespace NAudio.Wave
             playbackState = PlaybackState.Stopped;
             for (var n = 0; n < NumberOfBuffers; n++)
             {
-                buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
+                buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock, CanQueueBuffer);
             }
         }
 
@@ -162,11 +163,24 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Evaluated by each buffer under waveOutLock just before waveOutWrite. Stop() sets
+        /// Stopped before it takes that lock to call waveOutReset, so once the reset has happened
+        /// no buffer can be queued again. Without this, a buffer the playback thread was filling
+        /// while Stop() ran went back into the device queue after the reset (issue #1515).
+        /// </summary>
+        private bool CanQueueBuffer() => playbackState != PlaybackState.Stopped;
+
         private void DoPlayback()
         {
+            // Cache the callback event and buffers in locals: Dispose() nulls the fields without
+            // waiting for this thread, which would otherwise turn these into NullReferenceExceptions.
+            var callback = callbackEvent;
+            var currentBuffers = buffers;
+            if (callback == null || currentBuffers == null) return;
             while (playbackState != PlaybackState.Stopped)
             {
-                if (!callbackEvent.WaitOne(DesiredLatency))
+                if (!callback.WaitOne(DesiredLatency))
                 {
                     if (playbackState == PlaybackState.Playing)
                     {
@@ -179,18 +193,21 @@ namespace NAudio.Wave
                 if (playbackState == PlaybackState.Playing)
                 {
                     int queued = 0;
-                    foreach (var buffer in buffers)
+                    foreach (var buffer in currentBuffers)
                     {
                         if (buffer.InQueue || buffer.OnDone())
                         {
                             queued++;
                         }
                     }
-                    if (queued == 0)
+                    // Nothing queued while still Playing means we got to the end. If Stop() ran
+                    // meanwhile, the buffers were refused rather than exhausted and the loop exits
+                    // by itself; don't touch the event, which Dispose() may already have closed.
+                    if (queued == 0 && playbackState == PlaybackState.Playing)
                     {
                         // we got to the end
                         playbackState = PlaybackState.Stopped;
-                        callbackEvent.Set();
+                        callback.Set();
                     }
                 }
             }
@@ -308,19 +325,28 @@ namespace NAudio.Wave
 
             if (disposing)
             {
+                // Return any buffer the device still holds before unpreparing them, so
+                // waveOutUnprepareHeader and waveOutClose don't fail with WAVERR_STILLPLAYING.
+                ResetDevice();
                 DisposeBuffers();
             }
 
             CloseWaveOut();
         }
 
+        private void ResetDevice()
+        {
+            lock (waveOutLock)
+            {
+                if (hWaveOut != IntPtr.Zero)
+                {
+                    WaveInterop.waveOutReset(hWaveOut);
+                }
+            }
+        }
+
         private void CloseWaveOut()
         {
-            if (callbackEvent != null)
-            {
-                callbackEvent.Close();
-                callbackEvent = null;
-            }
             lock (waveOutLock)
             {
                 if (hWaveOut != IntPtr.Zero)
@@ -328,6 +354,12 @@ namespace NAudio.Wave
                     WaveInterop.waveOutClose(hWaveOut);
                     hWaveOut= IntPtr.Zero;
                 }
+            }
+            // The device signals this event as buffers complete, so close it after the device.
+            if (callbackEvent != null)
+            {
+                callbackEvent.Close();
+                callbackEvent = null;
             }
         }
 

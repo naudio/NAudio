@@ -1,5 +1,7 @@
 ### Unreleased
 
+ * Fixed `WaveOutEvent` crashing with an access violation in the audio driver after `Stop()`/`Dispose()`: a buffer filled while `Stop()` ran could be queued again after the device was reset, and `Dispose()` then unpinned it while the driver still owned it (#1515)
+
 ### 2.4.0 (26 Aug 2026)
 
  * Added `DeviceCount` and `GetCapabilities` static methods to `WaveOutEvent` so output devices can be enumerated without referencing `NAudio.WinForms` (#1331, #777)

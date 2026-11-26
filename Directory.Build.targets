@@ -1,0 +1,32 @@
+<Project>
+  <!--
+    Settings for the nine NAudio NuGet packages only. They live here rather than in
+    Directory.Build.props because this file is imported after each csproj, so it can
+    tell the package projects (the ones that set GeneratePackageOnBuild) apart from
+    the tests, demos and tools.
+  -->
+  <PropertyGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+    <!-- Package validation runs at pack time, which on this branch is every build.
+         It fails the build if a package drops a public API or a target framework that
+         the baseline release shipped, which a 2.x patch release must never do.
+         Keep the baseline on the latest stable 2.x release (see ReleaseInstructions.md
+         on main). Restore downloads the baseline package, which is why this is scoped
+         to the package projects. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>2.4.0</PackageValidationBaselineVersion>
+  </PropertyGroup>
+
+  <!--
+    If PackageReleaseNotesFile is supplied (the release workflow passes
+    -p:PackageReleaseNotesFile=<path>), load its contents into PackageReleaseNotes
+    so NuGet displays them on the package page. No-op when the property is unset or
+    the file is missing, so local builds and packs keep working with no extra setup.
+  -->
+  <Target Name="LoadPackageReleaseNotesFromFile"
+          BeforeTargets="GenerateNuspec"
+          Condition="'$(PackageReleaseNotesFile)' != '' and Exists('$(PackageReleaseNotesFile)')">
+    <PropertyGroup>
+      <PackageReleaseNotes>$([System.IO.File]::ReadAllText('$(PackageReleaseNotesFile)'))</PackageReleaseNotes>
+    </PropertyGroup>
+  </Target>
+</Project>

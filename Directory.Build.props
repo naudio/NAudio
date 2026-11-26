@@ -1,5 +1,11 @@
 <Project>
   <PropertyGroup>
+    <!-- Lockstep version for all NAudio 2.x NuGet packages. The release workflow
+         adds a <VersionSuffix> on pre-release builds (e.g. preview.NN). The tool apps
+         (AudioFileInspector, MidiFileConverter, MixDiff) keep their own <Version>.
+         Bump this right after each stable release, so previews sort above it. -->
+    <VersionPrefix>2.4.1</VersionPrefix>
+
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Enable analyzers but don't set default severities - .globalconfig controls rule severities -->

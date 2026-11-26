@@ -18,6 +18,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
     private IWaveProvider? waveStream;
     private volatile PlaybackState playbackState;
     private AutoResetEvent? callbackEvent;
+    private Thread? playbackThread;
     private bool isDisposed;
 
     /// <summary>
@@ -88,7 +89,8 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         {
             // normally we don't allow calling Init twice, but as experiment, see if we can clean up and go again
             // try to allow reuse of this waveOut device
-            // n.b. risky if Playback thread has not exited
+            WaitForPlaybackThread();
+            ResetDevice();
             DisposeBuffers();
             CloseWaveOut();
         }
@@ -120,7 +122,7 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         playbackState = PlaybackState.Stopped;
         for (var n = 0; n < NumberOfBuffers; n++)
         {
-            buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
+            buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock, CanQueueBuffer);
         }
     }
 
@@ -135,15 +137,20 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         }
         if (playbackState == PlaybackState.Stopped)
         {
+            // After a Stop(), the previous playback thread can still be finishing a Read. Let it
+            // exit first: otherwise it would see Playing again and keep queueing buffers, and its
+            // exit would then set the state back to Stopped underneath the new thread.
+            WaitForPlaybackThread();
             playbackState = PlaybackState.Playing;
             callbackEvent.Set(); // give the thread a kick
-            var playbackThread = new Thread(PlaybackThread)
+            var thread = new Thread(PlaybackThread)
             {
                 IsBackground = true,
                 Name = "NAudio WaveOut Playback",
                 Priority = ThreadPriority.AboveNormal
             };
-            playbackThread.Start();
+            playbackThread = thread;
+            thread.Start();
         }
         else if (playbackState == PlaybackState.Paused)
         {
@@ -168,6 +175,30 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
             playbackState = PlaybackState.Stopped;
             // we're exiting our background thread
             RaisePlaybackStoppedEvent(exception);
+        }
+    }
+
+    /// <summary>
+    /// Passed to each <see cref="WaveOutBuffer"/> and evaluated under <see cref="waveOutLock"/>
+    /// just before <c>waveOutWrite</c>. <see cref="Stop"/> sets <see cref="PlaybackState.Stopped"/>
+    /// before it takes that lock to call <c>waveOutReset</c>, so once the reset has happened no
+    /// buffer can be queued again. Without this, a buffer the playback thread was filling while
+    /// Stop() ran went back into the device queue after the reset (issue #1515).
+    /// Writes while paused stay allowed: they queue behind waveOutPause and play on resume.
+    /// </summary>
+    private bool CanQueueBuffer() => playbackState != PlaybackState.Stopped;
+
+    /// <summary>
+    /// Waits for the playback thread to exit, unless called from that thread
+    /// (e.g. from a <see cref="PlaybackStopped"/> handler with no synchronization context),
+    /// where waiting would deadlock. By then the thread has finished with the buffers.
+    /// </summary>
+    private void WaitForPlaybackThread()
+    {
+        var thread = playbackThread;
+        if (thread != null && thread != Thread.CurrentThread)
+        {
+            thread.Join();
         }
     }
 
@@ -323,6 +354,24 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
     public PlaybackState PlaybackState => playbackState;
 
     /// <summary>
+    /// True if any buffer is currently queued on the device. For tests: after <see cref="Stop"/>
+    /// has returned and the playback thread has exited, this must be false (issue #1515).
+    /// </summary>
+    internal bool AnyBufferQueued
+    {
+        get
+        {
+            var current = buffers;
+            if (current == null) return false;
+            foreach (var buffer in current)
+            {
+                if (buffer.InQueue) return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Volume for this device 1.0 is full scale
     /// </summary>
     public float Volume
@@ -354,16 +403,34 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
         if (disposing)
         {
             Stop();
+            // Don't release buffers or the device while the playback thread can still be using
+            // them, or reading from a source the caller is about to dispose.
+            WaitForPlaybackThread();
+            ResetDevice();
             DisposeBuffers();
         }
 
         CloseWaveOut();
     }
 
+    /// <summary>
+    /// Returns any buffer the device still holds, so unpreparing the buffers and closing the
+    /// device don't fail with WAVERR_STILLPLAYING (which leaks the buffer and leaves the
+    /// device open). Normally nothing is queued by now; this is a safety net.
+    /// </summary>
+    private void ResetDevice()
+    {
+        lock (waveOutLock)
+        {
+            if (hWaveOut != IntPtr.Zero)
+            {
+                WaveInterop.waveOutReset(hWaveOut);
+            }
+        }
+    }
+
     private void CloseWaveOut()
     {
-        callbackEvent?.Close();
-        callbackEvent = null;
         lock (waveOutLock)
         {
             if (hWaveOut != IntPtr.Zero)
@@ -372,6 +439,9 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
                 hWaveOut = IntPtr.Zero;
             }
         }
+        // Only now: the device signals this event as buffers complete, so close it after the device.
+        callbackEvent?.Close();
+        callbackEvent = null;
     }
 
     private void DisposeBuffers()

@@ -5,10 +5,12 @@ name: build
 # windows-latest ships the .NET 8/9/10 SDKs, Windows SDK 10.0.26100 and the
 # .NET Framework 4.7.2 targeting pack, which between them cover every TFM in
 # NAudio.sln - so no setup-dotnet step and no Windows SDK install is needed.
-# (The Azure pipeline this replaces installed Windows SDK 10.1.18362 via
+# (The retired Azure pipeline installed Windows SDK 10.1.18362 via
 # chocolatey, dating from when NAudio.Uap was a UWP project. It now targets
 # net9.0-windows10.0.26100 and gets its Windows projections from the
 # Microsoft.Windows.SDK.NET.Ref NuGet package instead.)
+#
+# Publishing to NuGet is done by release.yml, not from these artifacts.
 
 on:
   pull_request:
@@ -31,7 +33,7 @@ jobs:
       - name: Restore
         run: dotnet restore NAudio.sln
 
-      # Any CPU matches what the Azure pipeline built. Note that
+      # Any CPU matches what the retired Azure pipeline built. Note that
       # NAudioUniversalDemo (WinUI 3) has no Release|Any CPU Build entry in
       # NAudio.sln - it has no AnyCPU platform - so it is restored but not
       # built, exactly as before.
@@ -56,13 +58,10 @@ jobs:
           --results-directory ${{ runner.temp }}/TestResults
 
       # All nine package projects set GeneratePackageOnBuild, so the Release
-      # build above already produced the .nupkg files. Uploading them lets a
-      # release be pushed from a CI-built artifact instead of a local build.
-      #
-      # The glob wildcards start at the repo root, so upload-artifact roots the
-      # zip there and preserves <Package>/bin/Release/<Package>.<version>.nupkg
-      # - the exact layout publish.ps1 globs for. Extract into an empty
-      # directory, drop publish.ps1 alongside, and it runs unchanged.
+      # build above already produced the .nupkg files - and ran package
+      # validation against the baseline release (see Directory.Build.targets).
+      # They are uploaded so a PR's packages can be tried out; releases are
+      # built and pushed by release.yml.
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:

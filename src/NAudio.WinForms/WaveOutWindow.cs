@@ -351,9 +351,11 @@ public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
         Interlocked.Decrement(ref queuedBuffers);
 
         Exception? exception = null;
-        if (playbackState == PlaybackState.Playing)
+        // Check the state inside waveOutLock: Stop() sets Stopped before taking this lock to call
+        // waveOutReset, so a buffer can't be queued again after the reset (issue #1515).
+        lock (waveOutLock)
         {
-            lock (waveOutLock)
+            if (playbackState == PlaybackState.Playing)
             {
                 try
                 {

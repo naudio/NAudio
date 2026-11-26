@@ -13,6 +13,7 @@ the NuGet `PackageReleaseNotes` field, which has a hard 35,000-character
 limit and fails the release build if exceeded.
 -->
 
+ * Fixed `WaveOut` queueing a buffer again after `Stop()` had reset the device when `Stop()` ran while the playback thread was reading from the source, so audio no longer continues briefly after `Stop()` and `Dispose()` no longer leaks the buffer and device handle; `Dispose()` and a `Play()` straight after `Stop()` now wait for the previous playback thread to exit, and `WaveOutWindow` gets the same fix (#1515)
  * `AiffFileReader` no longer reads the pad byte after an odd-sized SSND chunk as sound data, so 8-bit files with an odd number of sample bytes no longer gain an extra sample frame
  * Fixed `BroadcastExtension.FormatOriginationDate` and `FormatOriginationTime` producing non-ISO text (for example a Buddhist-calendar year, or `.` as the time separator) when the current culture differs from the invariant one
  * `AiffFileReader` now reads files that leave off the pad byte after an odd-sized SSND chunk at the end of the file, instead of throwing "No SSND chunk found"

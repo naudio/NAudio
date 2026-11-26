@@ -16,6 +16,7 @@ internal class WaveOutBuffer : IDisposable
     private readonly IWaveProvider waveStream;
     private readonly Lock waveOutLock;
     private readonly Lock waveStreamLock;
+    private readonly Func<bool>? canQueue;
     private readonly int headerSize;
     private GCHandle hBuffer;
     private IntPtr hWaveOut;
@@ -36,8 +37,15 @@ internal class WaveOutBuffer : IDisposable
     /// <param name="bufferSize">Buffer size in bytes</param>
     /// <param name="bufferFillStream">Stream to provide more data</param>
     /// <param name="waveOutLock">Lock to protect WaveOut API's from being called on >1 thread</param>
-    public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IWaveProvider bufferFillStream, Lock waveOutLock)
+    /// <param name="canQueue">
+    /// Optional check, evaluated while holding <paramref name="waveOutLock"/> immediately before
+    /// <c>waveOutWrite</c>. Returning false skips the write. The owner's <c>Stop()</c> changes its
+    /// state before calling <c>waveOutReset</c> under the same lock, so a buffer filled while
+    /// <c>Stop()</c> runs can never be queued again after the reset (issue #1515).
+    /// </param>
+    public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IWaveProvider bufferFillStream, Lock waveOutLock, Func<bool>? canQueue = null)
     {
+        this.canQueue = canQueue;
         this.bufferSize = bufferSize;
         buffer = new byte[bufferSize];
         hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
@@ -131,7 +139,11 @@ internal class WaveOutBuffer : IDisposable
 
     #endregion
 
-    /// this is called by the WAVE callback and should be used to refill the buffer
+    /// <summary>
+    /// Refills the buffer from the source and queues it on the device.
+    /// Returns false if the source has ended, or if the buffer was not queued because the
+    /// owner is stopping.
+    /// </summary>
     public bool OnDone()
     {
         int bytes;
@@ -151,8 +163,7 @@ internal class WaveOutBuffer : IDisposable
         // driver, and a concurrent reader of CurrentLatency must never see the pair
         // (InQueue = true, stale filledTimestamp from a previous cycle).
         Volatile.Write(ref filledTimestamp, Stopwatch.GetTimestamp());
-        WriteToWaveOut();
-        return true;
+        return WriteToWaveOut();
     }
 
     /// <summary>
@@ -168,9 +179,9 @@ internal class WaveOutBuffer : IDisposable
     {
         get
         {
-            // WaveOut disposes its buffers without joining the playback thread, and the
-            // public IWaveLatency.CurrentLatency reads this from any thread, so the block may
-            // already be freed. Report "not queued" rather than dereferencing released memory.
+            // The public IWaveLatency.CurrentLatency reads this from any thread, so the block
+            // may already have been freed by Dispose. Report "not queued" rather than
+            // dereferencing released memory.
             if (headerPtr == IntPtr.Zero) return false;
             return (Header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
         }
@@ -181,12 +192,16 @@ internal class WaveOutBuffer : IDisposable
     /// </summary>
     public int BufferSize => bufferSize;
 
-    private void WriteToWaveOut()
+    private bool WriteToWaveOut()
     {
         MmResult result;
 
         lock (waveOutLock)
         {
+            if (canQueue != null && !canQueue())
+            {
+                return false;
+            }
             result = WaveInterop.waveOutWrite(hWaveOut, headerPtr, headerSize);
         }
         if (result != MmResult.NoError)
@@ -195,6 +210,7 @@ internal class WaveOutBuffer : IDisposable
         }
 
         GC.KeepAlive(this);
+        return true;
     }
 
 }

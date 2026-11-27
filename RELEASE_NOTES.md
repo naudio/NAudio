@@ -1,6 +1,7 @@
 ### Unreleased
 
  * Fixed `WaveOutEvent` crashing with an access violation in the audio driver after `Stop()`/`Dispose()`: a buffer filled while `Stop()` ran could be queued again after the device was reset, and `Dispose()` then unpinned it while the driver still owned it (#1515)
+ * Added a README to each NuGet package, shown on its NuGet.org page
 
 ### 2.4.0 (26 Aug 2026)
 

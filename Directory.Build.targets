@@ -17,6 +17,18 @@
   </PropertyGroup>
 
   <!--
+    One shared README for all nine packages, shown on their NuGet pages. It is a
+    separate file from the repository README.md because NuGet doesn't render
+    repository-relative links or images, which that file uses throughout.
+  -->
+  <PropertyGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)PackageReadme.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+
+  <!--
     If PackageReleaseNotesFile is supplied (the release workflow passes
     -p:PackageReleaseNotesFile=<path>), load its contents into PackageReleaseNotes
     so NuGet displays them on the package page. No-op when the property is unset or
